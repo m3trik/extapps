@@ -19,6 +19,8 @@ import os
 import tempfile
 from typing import List, Union, Tuple, Dict, Any
 
+from qtpy.QtWidgets import QPushButton
+
 # From this package:
 from pythontk.img_utils._img_utils import ImgUtils
 from pythontk.img_utils.map_factory import MapFactory
@@ -29,8 +31,8 @@ from pythontk.file_utils._file_utils import FileUtils
 class MapConverterSlots(ImgUtils):
     """Switchboard slots for ``map_converter.ui``.
 
-    Slot methods are bound to widgets by name. The ``Use Selection`` header
-    toggle (installed by :meth:`header_init`) routes every tool through
+    Slot methods are bound to widgets by name. The ``Use Selection`` footer
+    toggle (installed by :meth:`footer_init`) routes every tool through
     :attr:`texture_provider` when set; otherwise tools fall back to a file
     dialog. Set :attr:`source_dir` to seed the initial dialog directory.
     """
@@ -59,7 +61,7 @@ class MapConverterSlots(ImgUtils):
         """Callable returning a list of texture paths from the host DCC selection.
 
         Set by the host integration to power the global "Use Selection"
-        header toggle. Returns None when running standalone — every tool
+        footer toggle. Returns None when running standalone — every tool
         then falls back to the file dialog regardless of the toggle's
         state.
         """
@@ -69,23 +71,22 @@ class MapConverterSlots(ImgUtils):
     def texture_provider(self, fn):
         self._texture_provider = fn
 
-    def header_init(self, widget):
-        """Add the global Use-Selection toggle to the header menu."""
-        widget.menu.add(
-            "QCheckBox",
-            setText="Use Selection",
-            setObjectName="chk_use_selection",
-            setChecked=False,
-            setToolTip=(
-                "When enabled, every tool reads texture paths from the host "
-                "DCC's current selection instead of opening a file browser."
-            ),
+    def footer_init(self, widget):
+        """Add the global Use-Selection toggle to the footer."""
+        self.btn_use_selection = QPushButton("Use Selection")
+        self.btn_use_selection.setObjectName("btn_use_selection")
+        self.btn_use_selection.setCheckable(True)
+        self.btn_use_selection.setChecked(False)
+        self.btn_use_selection.setToolTip(
+            "When enabled, every tool reads texture paths from the host "
+            "DCC's current selection instead of opening a file browser."
         )
+        widget.add_widget(self.btn_use_selection, side="right", background=True)
 
     def _selection_enabled(self):
-        """True when the header's Use-Selection toggle is on."""
+        """True when the footer's Use-Selection toggle is on."""
         try:
-            return self.ui.header.menu.chk_use_selection.isChecked()
+            return self.btn_use_selection.isChecked()
         except (AttributeError, RuntimeError):
             return False
 

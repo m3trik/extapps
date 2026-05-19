@@ -57,7 +57,7 @@ Application shell for the Map Converter UI.
 
 Map Converter UI — slot file for ``map_converter.ui``.
 
-- **[`class MapConverterSlots(ImgUtils)`](extapps/extapps/map_converter/slots.py#L31)** — Switchboard slots for ``map_converter.ui``.
+- **[`class MapConverterSlots(ImgUtils)`](extapps/extapps/map_converter/slots.py#L29)** — Switchboard slots for ``map_converter.ui``.
   - `MapConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
   - `MapConverterSlots.source_dir(self, value)` — Set the starting directory for file dialogs.
   - `MapConverterSlots.texture_provider(self)` *(property)* — Callable returning a list of texture paths from the host DCC selection.

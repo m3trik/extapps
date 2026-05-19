@@ -4,18 +4,16 @@
 
 Bundles texture-map conversion, channel packing, PBR-workflow prep, and bulk
 optimization into a single Switchboard panel. The heavy lifting lives in
-``MapFactory`` / ``ImgUtils`` — this module is the UI wiring only.
+``MapFactory`` / ``ImgUtils`` (in pythontk) — this module is the UI wiring only.
 
-Two public classes:
-    MapConverterSlots
-        Switchboard slot class. Method names map to widget ``objectName`` in
-        the .ui file: ``tb*`` = toolbutton (has an options menu populated by
-        the matching ``*_init`` hook), ``b*`` = plain button. Host integrations
-        can inject a ``texture_provider`` callable to read the DCC selection.
-    MapConverterUi
-        Standalone launcher. ``MapConverterUi()`` returns a wired-up UI; run
-        the module directly to open it outside any host (``python -m
-        pythontk.img_utils.map_converter``).
+This module exposes :class:`MapConverterSlots` — the Switchboard slot class.
+Method names map to widget ``objectName`` in the .ui file: ``tb*`` =
+toolbutton (has an options menu populated by the matching ``*_init`` hook),
+``b*`` = plain button. Host integrations can inject a ``texture_provider``
+callable to read the DCC selection.
+
+The standalone launcher :class:`MapConverterUI` lives in the sibling
+:mod:`extapps.map_converter.launcher` module.
 """
 import os
 import tempfile

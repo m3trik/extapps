@@ -20,6 +20,7 @@ DEFAULT_INCLUDE = {
     "metashape_workflow.slots": ["MetashapeWorkflowSlots"],
     "metashape_workflow._metashape_workflow": [
         "MetashapeWorkflow",
+        "get_image_filepaths",
         "get_metashape_version",
         "is_license_valid",
         "is_metashape_available",
@@ -42,6 +43,7 @@ __all__ = [
     "MetashapeWorkflowUI",
     "MetashapeWorkflowSlots",
     "MetashapeWorkflow",
+    "get_image_filepaths",
     "get_metashape_version",
     "is_license_valid",
     "is_metashape_available",

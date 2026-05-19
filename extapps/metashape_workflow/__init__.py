@@ -14,6 +14,7 @@ __package__ = "extapps.metashape_workflow"
 DEFAULT_INCLUDE = {
     "_metashape_workflow": [
         "MetashapeWorkflow",
+        "get_image_filepaths",
         "get_metashape_version",
         "is_license_valid",
         "is_metashape_available",
@@ -30,6 +31,7 @@ __all__ = [
     "MetashapeWorkflow",
     "MetashapeWorkflowUI",
     "MetashapeWorkflowSlots",
+    "get_image_filepaths",
     "get_metashape_version",
     "is_license_valid",
     "is_metashape_available",

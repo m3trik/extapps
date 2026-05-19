@@ -22,7 +22,7 @@ class MapPackerSlots(ImgUtils):
     ]
     output_formats = ["PNG", "TGA", "JPG", "BMP", "TIFF", "EXR"]
 
-    PRESET_DIR = "~/.pythontk/presets/map_packer"
+    PRESET_DIR = "extapps/map_packer"
 
     # Built-in presets defined using human-readable names.
     # Resolved to combo indices at seed time via grayscale_types/output_formats.

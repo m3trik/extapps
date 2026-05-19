@@ -1,8 +1,8 @@
 # extapps
 
-**Role**: Standalone Switchboard panels for content-pipeline workflows. Each tool is an external uitk app discovered via the `uitk.external_tools.in_process` entry-point group.
+**Role**: Standalone Switchboard panels for content-pipeline workflows. Each app is a uitk external app discovered via the `uitk.external_apps.in_process` entry-point group.
 
-**Nav**: [← root](../CLAUDE.md) · **Deps**: [pythontk](../pythontk/CLAUDE.md) · [uitk](../uitk/CLAUDE.md) · **Used by**: [tentacle](../tentacle/CLAUDE.md) (via ExternalToolHandler discovery)
+**Nav**: [← root](../CLAUDE.md) · **Deps**: [pythontk](../pythontk/CLAUDE.md) · [uitk](../uitk/CLAUDE.md) · **Used by**: [tentacle](../tentacle/CLAUDE.md) (via ExternalAppHandler discovery)
 
 ## Scope
 
@@ -18,7 +18,7 @@ Tools that do NOT belong here:
 
 ## Hard rules
 
-- **All tools register via `uitk.external_tools.in_process` entry points.** No host (tentacle, mayatk, etc.) directly imports a tool's slot class. Hosts launch tools through uitk's `ExternalToolHandler`.
+- **All apps register via `uitk.external_apps.in_process` entry points.** No host (tentacle, mayatk, etc.) directly imports an app's slot class. Hosts launch apps through uitk's `ExternalAppHandler`.
 - **Engine / domain logic lives in `pythontk`.** Slot classes here only do UI wiring + dispatch to pythontk APIs.
 
 ## Structure

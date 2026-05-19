@@ -4,8 +4,8 @@ Standalone Switchboard panels for content-pipeline workflows.
 
 # extapps
 
-Each tool is a self-contained subpackage that registers itself with uitk's
-`ExternalToolHandler` via the `uitk.external_tools.in_process` entry-point
+Each app is a self-contained subpackage that registers itself with uitk's
+`ExternalAppHandler` via the `uitk.external_apps.in_process` entry-point
 group. Hosts (tentacle, mayatk, etc.) discover and launch them automatically
 — no host-side imports required.
 
@@ -33,10 +33,10 @@ python -c "from extapps.map_compositor import MapCompositorUI; MapCompositorUI()
 
 ## Launch (from a host)
 
-Hosts that load uitk's `ExternalToolHandler` discover tools automatically:
+Hosts that load uitk's `ExternalAppHandler` discover apps automatically:
 
 ```python
-sb.handlers.external_tool.launch("map_compositor")
+sb.handlers.external_app.launch("map_compositor")
 ```
 
 ## Dependencies

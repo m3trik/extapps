@@ -29,7 +29,7 @@ ui = MetashapeWorkflowUI()
 ui.show(pos="screen", app_exec=True)
 ```
 
-The package self-registers as a `uitk.external_tools.in_process` entry point, so any uitk host (e.g. tentacle) discovers it automatically — no host-side wiring needed.
+The package self-registers as a `uitk.external_apps.in_process` entry point, so any uitk host (e.g. tentacle) discovers it automatically — no host-side wiring needed.
 
 ### Programmatic
 

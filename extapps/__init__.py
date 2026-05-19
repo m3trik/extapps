@@ -2,15 +2,15 @@
 # coding=utf-8
 """extapps — standalone Switchboard panels for content-pipeline workflows.
 
-Each subpackage is a self-contained tool registered via the
-``uitk.external_tools.in_process`` entry-point group (see ``pyproject.toml``).
+Each subpackage is a self-contained app registered via the
+``uitk.external_apps.in_process`` entry-point group (see ``pyproject.toml``).
 Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
-``ExternalToolHandler`` — no host-side knowledge required.
+``ExternalAppHandler`` — no host-side knowledge required.
 """
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 DEFAULT_INCLUDE = {

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "extapps"
+dynamic = ["version", "readme"]
+description = "Standalone Switchboard panels for content-pipeline workflows (map compositing, photogrammetry, texture conversion, mesh conversion)."
+authors = [{name = "Ryan Simpson", email = "m3trik@outlook.com"}]
+license = {text = "MIT"}
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = ["pythontk", "uitk", "qtpy"]
+
+[project.urls]
+Homepage = "https://github.com/m3trik/extapps"
+Repository = "https://github.com/m3trik/extapps"
+
+# Each tool self-describes as a uitk external tool. uitk's
+# ExternalToolHandler discovers and registers them with hosts (tentacle,
+# mayatk, etc.) — no host-side knowledge required. Group ``.in_process``
+# declares the preferred launch mode (parented under the host's Qt loop).
+[project.entry-points."uitk.external_tools.in_process"]
+map_compositor = "extapps.map_compositor:MapCompositorUI"
+metashape_workflow = "extapps.metashape_workflow:MetashapeWorkflowUI"
+map_converter = "extapps.map_converter:MapConverterUI"
+map_packer = "extapps.map_packer:MapPackerUI"
+mesh_convert = "extapps.mesh_convert:MeshConvertUI"
+
+[tool.setuptools.dynamic]
+version = {attr = "extapps.__version__"}
+readme = {file = "docs/README.md", content-type = "text/markdown"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["extapps*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.ui", "*.json", "*.txt", "*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = [".", "test"]

@@ -1,0 +1,923 @@
+{
+  "name": "extapps",
+  "source_root": "extapps/extapps",
+  "generated_at": "2026-05-19",
+  "modules": [
+    {
+      "relpath": "map_compositor/launcher.py",
+      "summary": "Application shell for the Map Compositor UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapCompositorUI",
+          "summary": "",
+          "line": 27,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "map_compositor/slots.py",
+      "summary": "UI slot bindings for the map_compositor window.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapCompositorSlots",
+          "summary": "UI slot handler.",
+          "line": 50,
+          "bases": [],
+          "members": [
+            {
+              "name": "removeNormalMap",
+              "qualname": "MapCompositorSlots.removeNormalMap",
+              "kind": "property",
+              "signature": "(self) -> bool",
+              "summary": "",
+              "line": 106,
+              "deprecated": false
+            },
+            {
+              "name": "removeNormalMap",
+              "qualname": "MapCompositorSlots.removeNormalMap",
+              "kind": "method",
+              "signature": "(self, value: bool) -> None",
+              "summary": "",
+              "line": 110,
+              "deprecated": false
+            },
+            {
+              "name": "input_dir",
+              "qualname": "MapCompositorSlots.input_dir",
+              "kind": "property",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 115,
+              "deprecated": false
+            },
+            {
+              "name": "output_dir",
+              "qualname": "MapCompositorSlots.output_dir",
+              "kind": "property",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 119,
+              "deprecated": false
+            },
+            {
+              "name": "map_name",
+              "qualname": "MapCompositorSlots.map_name",
+              "kind": "property",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 123,
+              "deprecated": false
+            },
+            {
+              "name": "header_init",
+              "qualname": "MapCompositorSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the header menu with global options.",
+              "line": 201,
+              "deprecated": false
+            },
+            {
+              "name": "txt000_init",
+              "qualname": "MapCompositorSlots.txt000_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Init Source Directory",
+              "line": 280,
+              "deprecated": false
+            },
+            {
+              "name": "txt001_init",
+              "qualname": "MapCompositorSlots.txt001_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Init Destination Directory",
+              "line": 300,
+              "deprecated": false
+            },
+            {
+              "name": "txt002_init",
+              "qualname": "MapCompositorSlots.txt002_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Init Map Name",
+              "line": 320,
+              "deprecated": false
+            },
+            {
+              "name": "b002",
+              "qualname": "MapCompositorSlots.b002",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Combine Maps",
+              "line": 330,
+              "deprecated": false
+            },
+            {
+              "name": "process",
+              "qualname": "MapCompositorSlots.process",
+              "kind": "method",
+              "signature": "(self, images, input_dir, output_dir, map_name=None)",
+              "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
+              "line": 340,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "map_converter/launcher.py",
+      "summary": "Application shell for the Map Converter UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapConverterUI",
+          "summary": "Standalone launcher.",
+          "line": 12,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "map_converter/slots.py",
+      "summary": "Map Converter UI — slot file for ``map_converter.ui``.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapConverterSlots",
+          "summary": "Switchboard slots for ``map_converter.ui``.",
+          "line": 31,
+          "bases": [
+            "ImgUtils"
+          ],
+          "members": [
+            {
+              "name": "source_dir",
+              "qualname": "MapConverterSlots.source_dir",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "Get the starting directory for file dialogs.",
+              "line": 50,
+              "deprecated": false
+            },
+            {
+              "name": "source_dir",
+              "qualname": "MapConverterSlots.source_dir",
+              "kind": "method",
+              "signature": "(self, value)",
+              "summary": "Set the starting directory for file dialogs.",
+              "line": 55,
+              "deprecated": false
+            },
+            {
+              "name": "texture_provider",
+              "qualname": "MapConverterSlots.texture_provider",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "Callable returning a list of texture paths from the host DCC selection.",
+              "line": 60,
+              "deprecated": false
+            },
+            {
+              "name": "texture_provider",
+              "qualname": "MapConverterSlots.texture_provider",
+              "kind": "method",
+              "signature": "(self, fn)",
+              "summary": "",
+              "line": 71,
+              "deprecated": false
+            },
+            {
+              "name": "header_init",
+              "qualname": "MapConverterSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Add the global Use-Selection toggle to the header menu.",
+              "line": 74,
+              "deprecated": false
+            },
+            {
+              "name": "tb000_init",
+              "qualname": "MapConverterSlots.tb000_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the Optimize toolbutton's option menu (format, clamp, modifier).",
+              "line": 145,
+              "deprecated": false
+            },
+            {
+              "name": "tb000",
+              "qualname": "MapConverterSlots.tb000",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Optimize a texture map(s)",
+              "line": 214,
+              "deprecated": false
+            },
+            {
+              "name": "tb001_init",
+              "qualname": "MapConverterSlots.tb001_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "",
+              "line": 309,
+              "deprecated": false
+            },
+            {
+              "name": "tb001",
+              "qualname": "MapConverterSlots.tb001",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
+              "line": 319,
+              "deprecated": false
+            },
+            {
+              "name": "tb003_init",
+              "qualname": "MapConverterSlots.tb003_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
+              "line": 376,
+              "deprecated": false
+            },
+            {
+              "name": "tb003",
+              "qualname": "MapConverterSlots.tb003",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Bump/Height to Normal converter (single entry point with options).",
+              "line": 402,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "MapConverterSlots.b000",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert DirectX to OpenGL",
+              "line": 442,
+              "deprecated": false
+            },
+            {
+              "name": "b001",
+              "qualname": "MapConverterSlots.b001",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert OpenGL to DirectX",
+              "line": 459,
+              "deprecated": false
+            },
+            {
+              "name": "b004",
+              "qualname": "MapConverterSlots.b004",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Batch pack Transparency into Albedo across texture sets.",
+              "line": 476,
+              "deprecated": false
+            },
+            {
+              "name": "b005",
+              "qualname": "MapConverterSlots.b005",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Batch pack Smoothness or Roughness into Metallic across texture sets.",
+              "line": 519,
+              "deprecated": false
+            },
+            {
+              "name": "b006",
+              "qualname": "MapConverterSlots.b006",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Unpack Metallic and Smoothness maps from MetallicSmoothness textures.",
+              "line": 563,
+              "deprecated": false
+            },
+            {
+              "name": "b007",
+              "qualname": "MapConverterSlots.b007",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
+              "line": 593,
+              "deprecated": false
+            },
+            {
+              "name": "b008_init",
+              "qualname": "MapConverterSlots.b008_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the MSAO pack toolbutton's option menu (channel layout).",
+              "line": 620,
+              "deprecated": false
+            },
+            {
+              "name": "b008",
+              "qualname": "MapConverterSlots.b008",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Batch pack Metallic, AO, and Smoothness/Roughness into an MSAO texture.",
+              "line": 636,
+              "deprecated": false
+            },
+            {
+              "name": "b009_init",
+              "qualname": "MapConverterSlots.b009_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the MSAO unpack toolbutton's option menu (channel layout).",
+              "line": 694,
+              "deprecated": false
+            },
+            {
+              "name": "b009",
+              "qualname": "MapConverterSlots.b009",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Unpack Metallic, AO, and Smoothness maps from MSAO textures.",
+              "line": 715,
+              "deprecated": false
+            },
+            {
+              "name": "b013_init",
+              "qualname": "MapConverterSlots.b013_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the MRAO pack toolbutton's option menu (channel layout).",
+              "line": 748,
+              "deprecated": false
+            },
+            {
+              "name": "b013",
+              "qualname": "MapConverterSlots.b013",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Batch pack Metallic, Roughness/Smoothness, and AO into an MRAO texture.",
+              "line": 764,
+              "deprecated": false
+            },
+            {
+              "name": "b014_init",
+              "qualname": "MapConverterSlots.b014_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the MRAO unpack toolbutton's option menu (channel layout).",
+              "line": 819,
+              "deprecated": false
+            },
+            {
+              "name": "b014",
+              "qualname": "MapConverterSlots.b014",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Unpack Metallic, Roughness, and AO from MRAO textures.",
+              "line": 840,
+              "deprecated": false
+            },
+            {
+              "name": "b015",
+              "qualname": "MapConverterSlots.b015",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Batch pack AO, Roughness/Smoothness, and Metallic into an ORM texture.",
+              "line": 873,
+              "deprecated": false
+            },
+            {
+              "name": "b016",
+              "qualname": "MapConverterSlots.b016",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Unpack AO, Roughness, and Metallic from ORM textures.",
+              "line": 925,
+              "deprecated": false
+            },
+            {
+              "name": "b010",
+              "qualname": "MapConverterSlots.b010",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert Smoothness maps to Roughness maps.",
+              "line": 953,
+              "deprecated": false
+            },
+            {
+              "name": "b011",
+              "qualname": "MapConverterSlots.b011",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert Roughness maps to Smoothness maps.",
+              "line": 979,
+              "deprecated": false
+            },
+            {
+              "name": "b012",
+              "qualname": "MapConverterSlots.b012",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Batch prepare textures for PBR workflow using MapFactory.",
+              "line": 1005,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "map_packer/launcher.py",
+      "summary": "Application shell for the Map Packer UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapPackerUI",
+          "summary": "",
+          "line": 11,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "map_packer/slots.py",
+      "summary": "",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapPackerSlots",
+          "summary": "",
+          "line": 9,
+          "bases": [
+            "ImgUtils"
+          ],
+          "members": [
+            {
+              "name": "header_init",
+              "qualname": "MapPackerSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Configure the header menu with presets for common packed map types.",
+              "line": 104,
+              "deprecated": false
+            },
+            {
+              "name": "source_dir",
+              "qualname": "MapPackerSlots.source_dir",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "",
+              "line": 147,
+              "deprecated": false
+            },
+            {
+              "name": "source_dir",
+              "qualname": "MapPackerSlots.source_dir",
+              "kind": "method",
+              "signature": "(self, value)",
+              "summary": "",
+              "line": 151,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "MapPackerSlots.b000",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Batch pack up to 4 channels into RGBA maps across texture sets.",
+              "line": 154,
+              "deprecated": false
+            },
+            {
+              "name": "b001",
+              "qualname": "MapPackerSlots.b001",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Open the last output directory in the system file explorer.",
+              "line": 234,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "mesh_convert/launcher.py",
+      "summary": "Application shell for the Mesh Convert UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MeshConvertUI",
+          "summary": "",
+          "line": 11,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "mesh_convert/slots.py",
+      "summary": "",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MeshConvertSlots",
+          "summary": "Switchboard slots for the Mesh Converter UI.",
+          "line": 13,
+          "bases": [
+            "MeshConvert"
+          ],
+          "members": [
+            {
+              "name": "source_dir",
+              "qualname": "MeshConvertSlots.source_dir",
+              "kind": "property",
+              "signature": "(self) -> str",
+              "summary": "Starting directory for the FBX file dialog.",
+              "line": 32,
+              "deprecated": false
+            },
+            {
+              "name": "source_dir",
+              "qualname": "MeshConvertSlots.source_dir",
+              "kind": "method",
+              "signature": "(self, value: str) -> None",
+              "summary": "",
+              "line": 37,
+              "deprecated": false
+            },
+            {
+              "name": "fbx_provider",
+              "qualname": "MeshConvertSlots.fbx_provider",
+              "kind": "property",
+              "signature": "(self) -> Optional[Callable[[], Iterable[str]]]",
+              "summary": "Callable returning FBX paths from the host DCC selection.",
+              "line": 41,
+              "deprecated": false
+            },
+            {
+              "name": "fbx_provider",
+              "qualname": "MeshConvertSlots.fbx_provider",
+              "kind": "method",
+              "signature": "(self, fn: Optional[Callable[[], Iterable[str]]]) -> None",
+              "summary": "",
+              "line": 51,
+              "deprecated": false
+            },
+            {
+              "name": "header_init",
+              "qualname": "MeshConvertSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Add the From-FBX-references toggle to the header menu.",
+              "line": 54,
+              "deprecated": false
+            },
+            {
+              "name": "tb000_init",
+              "qualname": "MeshConvertSlots.tb000_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Set up the FBX -> GLB tool button option box.",
+              "line": 142,
+              "deprecated": false
+            },
+            {
+              "name": "tb000",
+              "qualname": "MeshConvertSlots.tb000",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Convert the selected FBX file(s) to GLB beside their source.",
+              "line": 174,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "metashape_workflow/_metashape_workflow.py",
+      "summary": "",
+      "functions": [
+        {
+          "name": "is_metashape_available",
+          "qualname": "is_metashape_available",
+          "kind": "function",
+          "signature": "() -> bool",
+          "summary": "True if the Metashape Python module imported successfully.",
+          "line": 15,
+          "deprecated": false
+        },
+        {
+          "name": "is_license_valid",
+          "qualname": "is_license_valid",
+          "kind": "function",
+          "signature": "() -> bool",
+          "summary": "True if a valid Metashape license is reachable.",
+          "line": 20,
+          "deprecated": false
+        },
+        {
+          "name": "get_metashape_version",
+          "qualname": "get_metashape_version",
+          "kind": "function",
+          "signature": "() -> str",
+          "summary": "",
+          "line": 30,
+          "deprecated": false
+        },
+        {
+          "name": "get_image_filepaths",
+          "qualname": "get_image_filepaths",
+          "kind": "function",
+          "signature": "(directory: str) -> List[str]",
+          "summary": "Return absolute paths to all images in `directory` (non-recursive).",
+          "line": 331,
+          "deprecated": false
+        }
+      ],
+      "classes": [
+        {
+          "name": "MetashapeWorkflow",
+          "summary": "Wrapper around Agisoft Metashape's Python API for the standard",
+          "line": 39,
+          "bases": [],
+          "members": [
+            {
+              "name": "get_license_info",
+              "qualname": "MetashapeWorkflow.get_license_info",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 80,
+              "deprecated": false
+            },
+            {
+              "name": "create_chunk",
+              "qualname": "MetashapeWorkflow.create_chunk",
+              "kind": "method",
+              "signature": "(self, label: str = 'New Chunk')",
+              "summary": "",
+              "line": 102,
+              "deprecated": false
+            },
+            {
+              "name": "add_images",
+              "qualname": "MetashapeWorkflow.add_images",
+              "kind": "method",
+              "signature": "(self, image_sources: Union[str, Sequence[str]])",
+              "summary": "Add images from a directory path (non-recursive) or list of paths.",
+              "line": 110,
+              "deprecated": false
+            },
+            {
+              "name": "align_photos",
+              "qualname": "MetashapeWorkflow.align_photos",
+              "kind": "method",
+              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
+              "summary": "",
+              "line": 140,
+              "deprecated": false
+            },
+            {
+              "name": "generate_depth_maps",
+              "qualname": "MetashapeWorkflow.generate_depth_maps",
+              "kind": "method",
+              "signature": "(self, downscale: int = 2, filter_mode=None)",
+              "summary": "",
+              "line": 172,
+              "deprecated": false
+            },
+            {
+              "name": "build_model",
+              "qualname": "MetashapeWorkflow.build_model",
+              "kind": "method",
+              "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count=None)",
+              "summary": "",
+              "line": 190,
+              "deprecated": false
+            },
+            {
+              "name": "build_texture",
+              "qualname": "MetashapeWorkflow.build_texture",
+              "kind": "method",
+              "signature": "(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
+              "summary": "",
+              "line": 223,
+              "deprecated": false
+            },
+            {
+              "name": "save_project",
+              "qualname": "MetashapeWorkflow.save_project",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "",
+              "line": 259,
+              "deprecated": false
+            },
+            {
+              "name": "export_model",
+              "qualname": "MetashapeWorkflow.export_model",
+              "kind": "method",
+              "signature": "(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)",
+              "summary": "",
+              "line": 270,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "metashape_workflow/launcher.py",
+      "summary": "Application shell for the Metashape Workflow UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MetashapeWorkflowUI",
+          "summary": "",
+          "line": 13,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "metashape_workflow/slots.py",
+      "summary": "",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MetashapeWorkflowSlots",
+          "summary": "Switchboard slots for the Metashape Workflow UI.",
+          "line": 90,
+          "bases": [
+            "ptk.LoggingMixin"
+          ],
+          "members": [
+            {
+              "name": "header_init",
+              "qualname": "MetashapeWorkflowSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 121,
+              "deprecated": false
+            },
+            {
+              "name": "txt000_init",
+              "qualname": "MetashapeWorkflowSlots.txt000_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Project Directory",
+              "line": 149,
+              "deprecated": false
+            },
+            {
+              "name": "txt000",
+              "qualname": "MetashapeWorkflowSlots.txt000",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 172,
+              "deprecated": false
+            },
+            {
+              "name": "txt001_init",
+              "qualname": "MetashapeWorkflowSlots.txt001_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Project Name",
+              "line": 175,
+              "deprecated": false
+            },
+            {
+              "name": "txt002_init",
+              "qualname": "MetashapeWorkflowSlots.txt002_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Frames Directory",
+              "line": 186,
+              "deprecated": false
+            },
+            {
+              "name": "txt002",
+              "qualname": "MetashapeWorkflowSlots.txt002",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 215,
+              "deprecated": false
+            },
+            {
+              "name": "cmb000_init",
+              "qualname": "MetashapeWorkflowSlots.cmb000_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Preset",
+              "line": 220,
+              "deprecated": false
+            },
+            {
+              "name": "btn_stages_init",
+              "qualname": "MetashapeWorkflowSlots.btn_stages_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Pipeline-stages popup — QMenu of checkboxes attached to the button.",
+              "line": 227,
+              "deprecated": false
+            },
+            {
+              "name": "btn_advanced_init",
+              "qualname": "MetashapeWorkflowSlots.btn_advanced_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Advanced-params popup — labeled form inside a QMenu via QWidgetAction.",
+              "line": 249,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "MetashapeWorkflowSlots.b000",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Run Workflow",
+              "line": 295,
+              "deprecated": false
+            },
+            {
+              "name": "btn_instructions",
+              "qualname": "MetashapeWorkflowSlots.btn_instructions",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 304,
+              "deprecated": false
+            },
+            {
+              "name": "cmb003",
+              "qualname": "MetashapeWorkflowSlots.cmb003",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "Log level changed",
+              "line": 307,
+              "deprecated": false
+            },
+            {
+              "name": "btn_browse_project",
+              "qualname": "MetashapeWorkflowSlots.btn_browse_project",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 312,
+              "deprecated": false
+            },
+            {
+              "name": "btn_explore_project",
+              "qualname": "MetashapeWorkflowSlots.btn_explore_project",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 320,
+              "deprecated": false
+            },
+            {
+              "name": "btn_browse_frames",
+              "qualname": "MetashapeWorkflowSlots.btn_browse_frames",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 323,
+              "deprecated": false
+            },
+            {
+              "name": "btn_explore_frames",
+              "qualname": "MetashapeWorkflowSlots.btn_explore_frames",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 331,
+              "deprecated": false
+            },
+            {
+              "name": "btn_extract_frames",
+              "qualname": "MetashapeWorkflowSlots.btn_extract_frames",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Extract frames from a video file into the frames directory.",
+              "line": 334,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

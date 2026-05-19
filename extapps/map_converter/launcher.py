@@ -1,0 +1,39 @@
+# !/usr/bin/python
+# coding=utf-8
+"""Application shell for the Map Converter UI.
+
+Engine logic lives in :class:`pythontk.ImgUtils` / :class:`pythontk.MapFactory`
+and slot bindings in :mod:`extapps.map_converter.slots`; this module
+only assembles the Switchboard-driven UI and provides the script
+entry point.
+"""
+
+
+class MapConverterUI:
+    """Standalone launcher. Constructing the class returns a configured UI.
+
+    ``__new__`` is overridden to return the wired Switchboard UI directly,
+    so ``MapConverterUI()`` yields the UI (not an instance). Use this when
+    running outside a host DCC. Hosts that need to inject a
+    ``texture_provider`` should register :class:`MapConverterSlots`
+    themselves rather than going through this launcher.
+    """
+
+    def __new__(cls):
+        from uitk import Switchboard
+        from extapps.map_converter.slots import MapConverterSlots
+
+        sb = Switchboard(ui_source="map_converter.ui", slot_source=MapConverterSlots)
+        ui = sb.loaded_ui.map_converter
+
+        ui.set_attributes(WA_TranslucentBackground=True)
+        ui.set_flags(FramelessWindowHint=True)
+        ui.style.set(theme="dark", style_class="translucentBgWithBorder")
+        ui.header.config_buttons("menu", "minimize", "hide")
+        return ui
+
+
+# -----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    MapConverterUI().show(pos="screen", app_exec=True)

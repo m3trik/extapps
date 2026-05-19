@@ -22,10 +22,9 @@ Three assertions:
 
 Run::
 
-    & "C:\\Program Files\\Autodesk\\Maya2025\\bin\\mayapy.exe" metashape_workflow/test/test_loads.py
+    pytest extapps/test/test_metashape_workflow.py
 
-Any Python with ``qtpy`` and the monorepo on PYTHONPATH works — mayapy is
-convenient because it has those set up already.
+Any Python with ``qtpy`` and the monorepo on PYTHONPATH works.
 """
 from __future__ import annotations
 

@@ -155,4 +155,4 @@ API_REGISTRY](../../pythontk/API_REGISTRY.md).
 
 ## License
 
-MIT. See [LICENSE](../../LICENSE) at the repo root (extapps inherits MIT from its `pyproject.toml`).
+MIT. See [LICENSE](../LICENSE).

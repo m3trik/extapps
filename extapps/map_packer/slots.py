@@ -178,51 +178,23 @@ class MapPackerSlots(ImgUtils):
         fmt = self.ui.cmbFormat.currentText().upper()
 
         success = False
-        for base_name, files in texture_sets.items():
-            sorted_maps = MapFactory.sort_images_by_type(files)
-            assigned = {c: None for c in self.channels}
-            available_map_types = {MapFactory.resolve_map_type(f): f for f in files}
-            used_files = set()
-
-            for idx, channel in enumerate(self.channels):
-                map_type = combos[idx]
-                if map_type == "None":
-                    continue
-                file = next(
-                    (
-                        f
-                        for f in files
-                        if MapFactory.resolve_map_type(f) == map_type
-                        and f not in used_files
-                    ),
-                    None,
+        total_sets = len(texture_sets)
+        with self.sb.progress(
+            total=total_sets, text=f"Packing 0/{total_sets} sets"
+        ) as update:
+            for i, (base_name, files) in enumerate(texture_sets.items()):
+                success = self._pack_set(
+                    base_name=base_name,
+                    files=files,
+                    combos=combos,
+                    suffix=suffix,
+                    ext=ext,
+                    fmt=fmt,
+                ) or success
+                update(
+                    i + 1,
+                    f"Packed set {i + 1}/{total_sets}: {base_name}",
                 )
-                if file:
-                    assigned[channel] = file
-                    used_files.add(file)
-                    continue
-                # Try conversion if not found
-                converted = self.get_converted_map(map_type, available_map_types)
-                if converted is not None:
-                    assigned[channel] = converted
-                    continue
-                print(
-                    f"// Required map '{map_type}' for channel {channel} in '{base_name}' not found and cannot be converted. Skipping."
-                )
-                break  # skip this set if not all required maps are present
-
-            if any(assigned[c] for c in self.channels):
-                out_mode = "RGBA" if assigned["A"] else "RGB"
-                output_dir = FileUtils.format_path(files[0], "path")
-                output_path = f"{output_dir}/{base_name}{suffix}.{ext}"
-                self.pack_channels(
-                    channel_files=assigned,
-                    output_path=output_path,
-                    out_mode=out_mode,
-                    output_format=fmt,
-                )
-                print(f"// Packed map saved: {output_path}")
-                success = True
 
         if success:
             self._last_output_dir = FileUtils.format_path(file_paths[0], "path")
@@ -230,6 +202,60 @@ class MapPackerSlots(ImgUtils):
             self.ui.b001.setEnabled(True)
         else:
             self.ui.b001.setEnabled(False)
+
+    def _pack_set(self, *, base_name, files, combos, suffix, ext, fmt) -> bool:
+        """Helper for ``b000`` — pack a single texture set. Returns True
+        if at least one channel was assigned and the output written.
+
+        Matches the pre-refactor behavior: stop assigning at the first
+        missing-and-unconvertible required map, but pack whatever
+        partial assignment we have if anything stuck.
+        """
+        assigned = {c: None for c in self.channels}
+        available_map_types = {MapFactory.resolve_map_type(f): f for f in files}
+        used_files = set()
+
+        for idx, channel in enumerate(self.channels):
+            map_type = combos[idx]
+            if map_type == "None":
+                continue
+            file = next(
+                (
+                    f
+                    for f in files
+                    if MapFactory.resolve_map_type(f) == map_type
+                    and f not in used_files
+                ),
+                None,
+            )
+            if file:
+                assigned[channel] = file
+                used_files.add(file)
+                continue
+            # Try conversion if not found
+            converted = self.get_converted_map(map_type, available_map_types)
+            if converted is not None:
+                assigned[channel] = converted
+                continue
+            print(
+                f"// Required map '{map_type}' for channel {channel} in '{base_name}' not found and cannot be converted. Skipping."
+            )
+            break  # skip remaining channels for this set
+
+        if not any(assigned[c] for c in self.channels):
+            return False
+
+        out_mode = "RGBA" if assigned["A"] else "RGB"
+        output_dir = FileUtils.format_path(files[0], "path")
+        output_path = f"{output_dir}/{base_name}{suffix}.{ext}"
+        self.pack_channels(
+            channel_files=assigned,
+            output_path=output_path,
+            out_mode=out_mode,
+            output_format=fmt,
+        )
+        print(f"// Packed map saved: {output_path}")
+        return True
 
     def b001(self):
         """Open the last output directory in the system file explorer."""

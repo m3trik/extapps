@@ -25,6 +25,7 @@ from qtpy.QtWidgets import QPushButton
 from pythontk.img_utils._img_utils import ImgUtils
 from pythontk.img_utils.map_factory import MapFactory
 from pythontk.img_utils.map_registry import MapRegistry
+from pythontk.img_utils.texture_optimizer import TextureOptimizer
 from pythontk.file_utils._file_utils import FileUtils
 
 
@@ -233,77 +234,109 @@ class MapConverterSlots(ImgUtils):
 
         registry = MapRegistry()
 
-        for texture_path in texture_paths:
-            print(f"Optimizing: {texture_path} ..")
-
-            # Apply the secondary scale to non-critical maps so masks/roughness/
-            # etc. shrink relative to base color and normals.
-            effective_max_size = max_size
-            if max_size and secondary_scale != 1.0:
-                map_type_key = MapFactory.resolve_map_type(texture_path, key=True)
-                if not registry.is_resolution_critical(map_type_key):
-                    effective_max_size = max(1, int(max_size * secondary_scale))
-                    print(
-                        f"// Secondary scale {secondary_scale:g}x → clamp "
-                        f"{effective_max_size} ({map_type_key or 'unknown type'})"
-                    )
-
-            if not modifier:
-                # Overwrite mode: optimize in place. optimize_texture handles
-                # the optional move-to-old-folder for us.
-                optimized_map_path = self.optimize_texture(
+        total = len(texture_paths)
+        with self.sb.progress(
+            total=total, text=f"Optimizing 0/{total}"
+        ) as update:
+            for i, texture_path in enumerate(texture_paths):
+                self._optimize_one(
                     texture_path,
+                    file_type=file_type,
+                    max_size=max_size,
+                    secondary_scale=secondary_scale,
+                    mode=mode,
+                    modifier=modifier,
+                    old_folder=old_folder,
+                    registry=registry,
+                )
+                update(
+                    i + 1,
+                    f"Optimized {i + 1}/{total}: {os.path.basename(texture_path)}",
+                )
+        self.source_dir = FileUtils.format_path(texture_paths[0], "path")
+
+    def _optimize_one(
+        self,
+        texture_path,
+        *,
+        file_type,
+        max_size,
+        secondary_scale,
+        mode,
+        modifier,
+        old_folder,
+        registry,
+    ):
+        """Helper for ``tb000`` — optimize one texture path."""
+        print(f"Optimizing: {texture_path} ..")
+
+        # Apply the secondary scale to non-critical maps so masks/roughness/
+        # etc. shrink relative to base color and normals.
+        effective_max_size = max_size
+        if max_size and secondary_scale != 1.0:
+            map_type_key = MapFactory.resolve_map_type(texture_path, key=True)
+            if not registry.is_resolution_critical(map_type_key):
+                effective_max_size = max(1, int(max_size * secondary_scale))
+                print(
+                    f"// Secondary scale {secondary_scale:g}x → clamp "
+                    f"{effective_max_size} ({map_type_key or 'unknown type'})"
+                )
+
+        if not modifier:
+            # Overwrite mode: optimize in place. optimize_texture handles
+            # the optional move-to-old-folder for us.
+            optimized_map_path = TextureOptimizer.optimize_texture(
+                texture_path,
+                output_type=file_type,
+                max_size=effective_max_size,
+                old_files_folder=old_folder or None,
+                optimize_bit_depth=True,
+            )
+        else:
+            # Rename mode: place the modifier between base name and
+            # map-type suffix and save alongside the original.
+            directory = FileUtils.format_path(texture_path, "path")
+            base_name = self.get_base_texture_name(texture_path)
+            map_type = MapFactory.resolve_map_type(texture_path, key=False) or ""
+            out_ext = (
+                (file_type or FileUtils.format_path(texture_path, "ext"))
+                .lower()
+                .lstrip(".")
+            )
+            new_base = (
+                f"{modifier}_{base_name}"
+                if mode == "prefix"
+                else f"{base_name}_{modifier}"
+            )
+            out_filename = (
+                f"{new_base}_{map_type}.{out_ext}"
+                if map_type
+                else f"{new_base}.{out_ext}"
+            )
+            target_path = os.path.join(directory, out_filename)
+
+            # Same-drive temp dir so the final os.replace is a fast rename
+            # and overwrites cleanly on re-run. We can't pass
+            # old_files_folder here because optimize_texture would archive
+            # the original into the temp dir and lose it on cleanup.
+            with tempfile.TemporaryDirectory(dir=directory) as temp_dir:
+                temp_result = TextureOptimizer.optimize_texture(
+                    texture_path,
+                    output_dir=temp_dir,
                     output_type=file_type,
                     max_size=effective_max_size,
-                    old_files_folder=old_folder or None,
                     optimize_bit_depth=True,
                 )
-            else:
-                # Rename mode: place the modifier between base name and
-                # map-type suffix and save alongside the original.
-                directory = FileUtils.format_path(texture_path, "path")
-                base_name = self.get_base_texture_name(texture_path)
-                map_type = MapFactory.resolve_map_type(texture_path, key=False) or ""
-                out_ext = (
-                    (file_type or FileUtils.format_path(texture_path, "ext"))
-                    .lower()
-                    .lstrip(".")
+                os.replace(temp_result, target_path)
+
+            if old_folder:
+                FileUtils.move_file(
+                    texture_path, os.path.join(directory, old_folder)
                 )
-                new_base = (
-                    f"{modifier}_{base_name}"
-                    if mode == "prefix"
-                    else f"{base_name}_{modifier}"
-                )
-                out_filename = (
-                    f"{new_base}_{map_type}.{out_ext}"
-                    if map_type
-                    else f"{new_base}.{out_ext}"
-                )
-                target_path = os.path.join(directory, out_filename)
 
-                # Same-drive temp dir so the final os.replace is a fast rename
-                # and overwrites cleanly on re-run. We can't pass
-                # old_files_folder here because optimize_texture would archive
-                # the original into the temp dir and lose it on cleanup.
-                with tempfile.TemporaryDirectory(dir=directory) as temp_dir:
-                    temp_result = self.optimize_texture(
-                        texture_path,
-                        output_dir=temp_dir,
-                        output_type=file_type,
-                        max_size=effective_max_size,
-                        optimize_bit_depth=True,
-                    )
-                    os.replace(temp_result, target_path)
+            optimized_map_path = target_path
 
-                if old_folder:
-                    FileUtils.move_file(
-                        texture_path, os.path.join(directory, old_folder)
-                    )
-
-                optimized_map_path = target_path
-
-            print(f"// Result: {optimized_map_path}")
-        self.source_dir = FileUtils.format_path(texture_paths[0], "path")
+        print(f"// Result: {optimized_map_path}")
 
     def tb001_init(self, widget):
         """ """

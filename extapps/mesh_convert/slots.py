@@ -185,52 +185,54 @@ class MeshConvertSlots(MeshConvert):
         check_materials = widget.option_box.menu.chk_check_materials.isChecked()
         extra_args = ["--draco"] if draco else None
 
-        # Conversion of a half-GB FBX takes ~75 s. Block re-clicks and signal
-        # busy state so the window doesn't look like it has hung.
-        from qtpy.QtCore import Qt
-        from qtpy.QtWidgets import QApplication
-
+        # Conversion of a half-GB FBX takes ~75 s. Block re-clicks while
+        # the footer progress bar reports per-file progress.
         widget.setEnabled(False)
-        QApplication.setOverrideCursor(Qt.WaitCursor)
         all_findings: List[Tuple[str, List[Dict[str, str]]]] = []
+        total = len(fbx_paths)
         try:
             ok_count = 0
-            for fbx_path in fbx_paths:
-                print(f"Converting: {fbx_path} ..")
-                QApplication.processEvents()  # drain UI events between files
-                try:
-                    out_path = self.fbx_to_glb(
-                        fbx_path,
-                        overwrite=overwrite,
-                        auto_install=False,
-                        extra_args=extra_args,
+            with self.sb.progress(
+                total=total, text=f"Converting 0/{total}"
+            ) as update:
+                for i, fbx_path in enumerate(fbx_paths):
+                    print(f"Converting: {fbx_path} ..")
+                    try:
+                        out_path = self.fbx_to_glb(
+                            fbx_path,
+                            overwrite=overwrite,
+                            auto_install=False,
+                            extra_args=extra_args,
+                        )
+                        print(f"// Result: {out_path}")
+                        ok_count += 1
+                        if check_materials:
+                            try:
+                                findings = self.check_glb_materials(out_path)
+                            except (RuntimeError, ValueError, OSError) as exc:
+                                print(f"// Material check failed for {out_path}: {exc}")
+                                findings = []
+                            if findings:
+                                all_findings.append((out_path, findings))
+                                for f in findings:
+                                    print(
+                                        f"//   [WARN] {f['material']} "
+                                        f"(alphaMode={f['alpha_mode']}, "
+                                        f"image={f['image']}): {f['reason']}"
+                                    )
+                            else:
+                                print(f"// Material check OK: {os.path.basename(out_path)}")
+                    except FileExistsError as exc:
+                        print(f"// Skipped (exists, overwrite=False): {exc}")
+                    except (RuntimeError, OSError) as exc:
+                        print(f"// Error converting {fbx_path}: {exc}")
+                    update(
+                        i + 1,
+                        f"Converted {i + 1}/{total}: {os.path.basename(fbx_path)}",
                     )
-                    print(f"// Result: {out_path}")
-                    ok_count += 1
-                    if check_materials:
-                        try:
-                            findings = self.check_glb_materials(out_path)
-                        except (RuntimeError, ValueError, OSError) as exc:
-                            print(f"// Material check failed for {out_path}: {exc}")
-                            findings = []
-                        if findings:
-                            all_findings.append((out_path, findings))
-                            for f in findings:
-                                print(
-                                    f"//   [WARN] {f['material']} "
-                                    f"(alphaMode={f['alpha_mode']}, "
-                                    f"image={f['image']}): {f['reason']}"
-                                )
-                        else:
-                            print(f"// Material check OK: {os.path.basename(out_path)}")
-                except FileExistsError as exc:
-                    print(f"// Skipped (exists, overwrite=False): {exc}")
-                except (RuntimeError, OSError) as exc:
-                    print(f"// Error converting {fbx_path}: {exc}")
 
-            print(f"// Mesh Converter: {ok_count}/{len(fbx_paths)} succeeded.")
+            print(f"// Mesh Converter: {ok_count}/{total} succeeded.")
         finally:
-            QApplication.restoreOverrideCursor()
             widget.setEnabled(True)
 
         if all_findings:

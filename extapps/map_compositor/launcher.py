@@ -7,21 +7,12 @@ slot bindings in :mod:`extapps.map_compositor.slots`; this module only
 assembles the Switchboard-driven UI and provides the script entry point.
 """
 
-from qtpy import QtCore, QtWidgets
+from uitk import configure_high_dpi
 
-# High-DPI scaling must be enabled before QApplication is constructed,
-# otherwise the standalone launcher renders Header/Footer text at
-# ~half the size they take inside Maya or tentacle (both hosts
-# pre-configure DPI scaling on their own QApplication, which we then
-# reuse). Only set the attributes when we will be the ones creating
-# the QApplication — setting them after construction is a no-op and
-# can emit a warning. The symbols are gone on Qt 6 (scaling is the
-# default), so each lookup is guarded for forward compatibility.
-if QtWidgets.QApplication.instance() is None:
-    for _attr in ("AA_EnableHighDpiScaling", "AA_UseHighDpiPixmaps"):
-        flag = getattr(QtCore.Qt, _attr, None)
-        if flag is not None:
-            QtCore.QCoreApplication.setAttribute(flag, True)
+# Must run before QApplication is constructed, so before any import
+# that touches Switchboard. No-ops inside DCC hosts that already own
+# the QApplication.
+configure_high_dpi()
 
 
 class MapCompositorUI:

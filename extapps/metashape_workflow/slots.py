@@ -477,42 +477,55 @@ class MetashapeWorkflowSlots(ptk.LoggingMixin):
                 f"{[k for k, v in stages.items() if v]}"
             )
 
-            self.workflow = MetashapeWorkflow(
-                project_path=project_dir,
-                name=project_name,
-                progress=self._on_progress,
-            )
-            self.logger.info(self.workflow.get_license_info())
-            if self.workflow.mock_mode:
-                self.logger.warning("Running in mock mode — no actual processing.")
-
-            self.workflow.create_chunk(f"{project_name} — {params['preset_name']}")
-
-            if stages["stage_align"] or stages["stage_depth"] or stages["stage_model"]:
-                self.workflow.add_images(frames_dir)
-
-            if stages["stage_align"]:
-                self.workflow.align_photos(downscale=params["align_downscale"])
-
-            if stages["stage_depth"]:
-                self.workflow.generate_depth_maps(
-                    downscale=params["depth_downscale"],
-                    filter_mode=self._resolve_depth_filter(params["depth_filter"]),
+            # The Metashape SDK already drives ``self._on_progress``
+            # with fine-grained (stage, fraction) updates. The footer's
+            # indeterminate marquee gets ticked once per pipeline step
+            # so users see motion even when no specific stage is active.
+            with self.sb.progress(text="Working: Metashape Workflow") as tick:
+                self.workflow = MetashapeWorkflow(
+                    project_path=project_dir,
+                    name=project_name,
+                    progress=self._on_progress,
                 )
+                self.logger.info(self.workflow.get_license_info())
+                if self.workflow.mock_mode:
+                    self.logger.warning("Running in mock mode — no actual processing.")
 
-            if stages["stage_model"]:
-                self.workflow.build_model(
-                    face_count=self._resolve_face_count(params["face_count"]),
-                )
+                self.workflow.create_chunk(f"{project_name} — {params['preset_name']}")
+                tick(text="Chunk created")
 
-            if stages["stage_texture"]:
-                self.workflow.build_texture(texture_size=params["texture_size"])
+                if stages["stage_align"] or stages["stage_depth"] or stages["stage_model"]:
+                    self.workflow.add_images(frames_dir)
+                    tick(text="Images added")
 
-            if stages["stage_save"]:
-                self.workflow.save_project()
+                if stages["stage_align"]:
+                    self.workflow.align_photos(downscale=params["align_downscale"])
+                    tick(text="Photos aligned")
 
-            if stages["stage_export"]:
-                self.workflow.export_model()
+                if stages["stage_depth"]:
+                    self.workflow.generate_depth_maps(
+                        downscale=params["depth_downscale"],
+                        filter_mode=self._resolve_depth_filter(params["depth_filter"]),
+                    )
+                    tick(text="Depth maps generated")
+
+                if stages["stage_model"]:
+                    self.workflow.build_model(
+                        face_count=self._resolve_face_count(params["face_count"]),
+                    )
+                    tick(text="Model built")
+
+                if stages["stage_texture"]:
+                    self.workflow.build_texture(texture_size=params["texture_size"])
+                    tick(text="Texture built")
+
+                if stages["stage_save"]:
+                    self.workflow.save_project()
+                    tick(text="Project saved")
+
+                if stages["stage_export"]:
+                    self.workflow.export_model()
+                    tick(text="Model exported")
 
             self.logger.info("Workflow completed successfully.")
 

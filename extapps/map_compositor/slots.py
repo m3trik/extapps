@@ -206,7 +206,7 @@ class MapCompositorSlots:
             setObjectName="chk_optimize",
             setChecked=self.engine.optimize_output,
             setToolTip=(
-                "Run ImgUtils.optimize_texture on each saved map "
+                "Run MapOptimizer.optimize_map on each saved map "
                 "(enforces map-type bit depth and mode)."
             ),
             stateChanged=self._on_optimize_toggled,

@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-05-19",
+  "generated_at": "2026-05-23",
   "modules": [
     {
       "relpath": "map_compositor/launcher.py",
@@ -11,7 +11,7 @@
         {
           "name": "MapCompositorUI",
           "summary": "",
-          "line": 27,
+          "line": 18,
           "bases": [],
           "members": []
         }
@@ -139,7 +139,7 @@
         {
           "name": "MapConverterUI",
           "summary": "Standalone launcher.",
-          "line": 12,
+          "line": 18,
           "bases": [],
           "members": []
         }
@@ -153,7 +153,7 @@
         {
           "name": "MapConverterSlots",
           "summary": "Switchboard slots for ``map_converter.ui``.",
-          "line": 29,
+          "line": 32,
           "bases": [
             "ImgUtils"
           ],
@@ -164,7 +164,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "Get the starting directory for file dialogs.",
-              "line": 48,
+              "line": 51,
               "deprecated": false
             },
             {
@@ -173,7 +173,7 @@
               "kind": "method",
               "signature": "(self, value)",
               "summary": "Set the starting directory for file dialogs.",
-              "line": 53,
+              "line": 56,
               "deprecated": false
             },
             {
@@ -182,7 +182,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "Callable returning a list of texture paths from the host DCC selection.",
-              "line": 58,
+              "line": 61,
               "deprecated": false
             },
             {
@@ -191,16 +191,16 @@
               "kind": "method",
               "signature": "(self, fn)",
               "summary": "",
-              "line": 69,
+              "line": 72,
               "deprecated": false
             },
             {
-              "name": "header_init",
-              "qualname": "MapConverterSlots.header_init",
+              "name": "footer_init",
+              "qualname": "MapConverterSlots.footer_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Add the global Use-Selection toggle to the header menu.",
-              "line": 72,
+              "summary": "Add the global Use-Selection toggle to the footer.",
+              "line": 75,
               "deprecated": false
             },
             {
@@ -209,7 +209,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Optimize toolbutton's option menu (format, clamp, modifier).",
-              "line": 143,
+              "line": 145,
               "deprecated": false
             },
             {
@@ -218,7 +218,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Optimize a texture map(s)",
-              "line": 212,
+              "line": 214,
               "deprecated": false
             },
             {
@@ -227,7 +227,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 307,
+              "line": 341,
               "deprecated": false
             },
             {
@@ -236,7 +236,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 317,
+              "line": 351,
               "deprecated": false
             },
             {
@@ -245,7 +245,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 374,
+              "line": 408,
               "deprecated": false
             },
             {
@@ -254,7 +254,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 400,
+              "line": 434,
               "deprecated": false
             },
             {
@@ -263,7 +263,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert DirectX to OpenGL",
-              "line": 440,
+              "line": 474,
               "deprecated": false
             },
             {
@@ -272,7 +272,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert OpenGL to DirectX",
-              "line": 457,
+              "line": 491,
               "deprecated": false
             },
             {
@@ -281,7 +281,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 474,
+              "line": 508,
               "deprecated": false
             },
             {
@@ -290,7 +290,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Smoothness or Roughness into Metallic across texture sets.",
-              "line": 517,
+              "line": 551,
               "deprecated": false
             },
             {
@@ -299,7 +299,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Metallic and Smoothness maps from MetallicSmoothness textures.",
-              "line": 561,
+              "line": 595,
               "deprecated": false
             },
             {
@@ -308,7 +308,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 591,
+              "line": 625,
               "deprecated": false
             },
             {
@@ -317,7 +317,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the MSAO pack toolbutton's option menu (channel layout).",
-              "line": 618,
+              "line": 652,
               "deprecated": false
             },
             {
@@ -326,7 +326,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch pack Metallic, AO, and Smoothness/Roughness into an MSAO texture.",
-              "line": 634,
+              "line": 668,
               "deprecated": false
             },
             {
@@ -335,7 +335,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the MSAO unpack toolbutton's option menu (channel layout).",
-              "line": 692,
+              "line": 726,
               "deprecated": false
             },
             {
@@ -344,7 +344,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Unpack Metallic, AO, and Smoothness maps from MSAO textures.",
-              "line": 713,
+              "line": 747,
               "deprecated": false
             },
             {
@@ -353,7 +353,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the MRAO pack toolbutton's option menu (channel layout).",
-              "line": 746,
+              "line": 780,
               "deprecated": false
             },
             {
@@ -362,7 +362,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch pack Metallic, Roughness/Smoothness, and AO into an MRAO texture.",
-              "line": 762,
+              "line": 796,
               "deprecated": false
             },
             {
@@ -371,7 +371,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the MRAO unpack toolbutton's option menu (channel layout).",
-              "line": 817,
+              "line": 851,
               "deprecated": false
             },
             {
@@ -380,7 +380,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Unpack Metallic, Roughness, and AO from MRAO textures.",
-              "line": 838,
+              "line": 872,
               "deprecated": false
             },
             {
@@ -389,7 +389,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack AO, Roughness/Smoothness, and Metallic into an ORM texture.",
-              "line": 871,
+              "line": 905,
               "deprecated": false
             },
             {
@@ -398,7 +398,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack AO, Roughness, and Metallic from ORM textures.",
-              "line": 923,
+              "line": 957,
               "deprecated": false
             },
             {
@@ -407,7 +407,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 951,
+              "line": 985,
               "deprecated": false
             },
             {
@@ -416,7 +416,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 977,
+              "line": 1011,
               "deprecated": false
             },
             {
@@ -425,7 +425,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch prepare textures for PBR workflow using MapFactory.",
-              "line": 1003,
+              "line": 1037,
               "deprecated": false
             }
           ]
@@ -440,7 +440,7 @@
         {
           "name": "MapPackerUI",
           "summary": "",
-          "line": 11,
+          "line": 17,
           "bases": [],
           "members": []
         }
@@ -501,7 +501,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 234,
+              "line": 260,
               "deprecated": false
             }
           ]
@@ -516,7 +516,7 @@
         {
           "name": "MeshConvertUI",
           "summary": "",
-          "line": 11,
+          "line": 17,
           "bases": [],
           "members": []
         }
@@ -743,7 +743,7 @@
         {
           "name": "MetashapeWorkflowUI",
           "summary": "",
-          "line": 13,
+          "line": 19,
           "bases": [],
           "members": []
         }

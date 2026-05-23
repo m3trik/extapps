@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-05-19_
+_Generated: 2026-05-23_
 
 ## Index
 
@@ -25,7 +25,7 @@ _Generated: 2026-05-19_
 
 Application shell for the Map Compositor UI.
 
-- **[`class MapCompositorUI`](extapps/extapps/map_compositor/launcher.py#L27)**
+- **[`class MapCompositorUI`](extapps/extapps/map_compositor/launcher.py#L18)**
 
 <a id="map_compositor--slots"></a>
 ### `map_compositor/slots.py`
@@ -50,19 +50,19 @@ UI slot bindings for the map_compositor window.
 
 Application shell for the Map Converter UI.
 
-- **[`class MapConverterUI`](extapps/extapps/map_converter/launcher.py#L12)** — Standalone launcher.
+- **[`class MapConverterUI`](extapps/extapps/map_converter/launcher.py#L18)** — Standalone launcher.
 
 <a id="map_converter--slots"></a>
 ### `map_converter/slots.py`
 
 Map Converter UI — slot file for ``map_converter.ui``.
 
-- **[`class MapConverterSlots(ImgUtils)`](extapps/extapps/map_converter/slots.py#L29)** — Switchboard slots for ``map_converter.ui``.
+- **[`class MapConverterSlots(ImgUtils)`](extapps/extapps/map_converter/slots.py#L32)** — Switchboard slots for ``map_converter.ui``.
   - `MapConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
   - `MapConverterSlots.source_dir(self, value)` — Set the starting directory for file dialogs.
   - `MapConverterSlots.texture_provider(self)` *(property)* — Callable returning a list of texture paths from the host DCC selection.
   - `MapConverterSlots.texture_provider(self, fn)`
-  - `MapConverterSlots.header_init(self, widget)` — Add the global Use-Selection toggle to the header menu.
+  - `MapConverterSlots.footer_init(self, widget)` — Add the global Use-Selection toggle to the footer.
   - `MapConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu (format, clamp, modifier).
   - `MapConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
   - `MapConverterSlots.tb001_init(self, widget)`
@@ -94,7 +94,7 @@ Map Converter UI — slot file for ``map_converter.ui``.
 
 Application shell for the Map Packer UI.
 
-- **[`class MapPackerUI`](extapps/extapps/map_packer/launcher.py#L11)**
+- **[`class MapPackerUI`](extapps/extapps/map_packer/launcher.py#L17)**
 
 <a id="map_packer--slots"></a>
 ### `map_packer/slots.py`
@@ -111,7 +111,7 @@ Application shell for the Map Packer UI.
 
 Application shell for the Mesh Convert UI.
 
-- **[`class MeshConvertUI`](extapps/extapps/mesh_convert/launcher.py#L11)**
+- **[`class MeshConvertUI`](extapps/extapps/mesh_convert/launcher.py#L17)**
 
 <a id="mesh_convert--slots"></a>
 ### `mesh_convert/slots.py`
@@ -148,7 +148,7 @@ Application shell for the Mesh Convert UI.
 
 Application shell for the Metashape Workflow UI.
 
-- **[`class MetashapeWorkflowUI`](extapps/extapps/metashape_workflow/launcher.py#L13)**
+- **[`class MetashapeWorkflowUI`](extapps/extapps/metashape_workflow/launcher.py#L19)**
 
 <a id="metashape_workflow--slots"></a>
 ### `metashape_workflow/slots.py`

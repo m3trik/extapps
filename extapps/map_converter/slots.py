@@ -25,7 +25,7 @@ from qtpy.QtWidgets import QPushButton
 from pythontk.img_utils._img_utils import ImgUtils
 from pythontk.img_utils.map_factory import MapFactory
 from pythontk.img_utils.map_registry import MapRegistry
-from pythontk.img_utils.texture_optimizer import TextureOptimizer
+from pythontk.img_utils.map_optimizer import MapOptimizer
 from pythontk.file_utils._file_utils import FileUtils
 
 
@@ -219,7 +219,7 @@ class MapConverterSlots(ImgUtils):
         if not texture_paths:
             return
 
-        # Falsy sentinels ("", 0) → None so optimize_texture preserves
+        # Falsy sentinels ("", 0) → None so optimize_map preserves
         # the original format / skips clamping respectively.
         file_type = widget.option_box.menu.cmb001.currentData() or None
         max_size = widget.option_box.menu.cmb000.currentData() or None
@@ -283,9 +283,9 @@ class MapConverterSlots(ImgUtils):
                 )
 
         if not modifier:
-            # Overwrite mode: optimize in place. optimize_texture handles
+            # Overwrite mode: optimize in place. optimize_map handles
             # the optional move-to-old-folder for us.
-            optimized_map_path = TextureOptimizer.optimize_texture(
+            optimized_map_path = MapOptimizer.optimize_map(
                 texture_path,
                 output_type=file_type,
                 max_size=effective_max_size,
@@ -317,10 +317,10 @@ class MapConverterSlots(ImgUtils):
 
             # Same-drive temp dir so the final os.replace is a fast rename
             # and overwrites cleanly on re-run. We can't pass
-            # old_files_folder here because optimize_texture would archive
+            # old_files_folder here because optimize_map would archive
             # the original into the temp dir and lose it on cleanup.
             with tempfile.TemporaryDirectory(dir=directory) as temp_dir:
-                temp_result = TextureOptimizer.optimize_texture(
+                temp_result = MapOptimizer.optimize_map(
                     texture_path,
                     output_dir=temp_dir,
                     output_type=file_type,

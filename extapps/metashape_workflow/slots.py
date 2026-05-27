@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
 from uitk import AttributeSpec, Signals, make_widget
+from uitk.widgets.mixins.tooltip_mixin import fmt
 
 from ._metashape_workflow import (
     MetashapeWorkflow,
@@ -128,20 +129,36 @@ class MetashapeWorkflowSlots(ptk.LoggingMixin):
             setCurrentIndex=1,
             setToolTip="Set the log level.",
         )
-        widget.menu.add("Separator", setTitle="About")
-        widget.menu.add(
-            "QPushButton",
-            setText="Instructions",
-            setObjectName="btn_instructions",
-            setToolTip=(
-                "Metashape Workflow — automate photogrammetry processing.\n\n"
-                "1. Set the project directory (where .psx + outputs go).\n"
-                "2. Set the frames directory (source images) — or extract from a\n"
-                "   video using the frames field's option button.\n"
-                "3. Pick a quality preset.\n"
-                "4. Select which pipeline stages to run.\n"
-                "5. Tweak advanced parameters as needed, then Run Workflow."
-            ),
+        widget.set_help_text(
+            fmt(
+                title="Metashape Workflow",
+                body="Automate Agisoft Metashape photogrammetry processing "
+                "from a single panel — project setup, source frames, quality "
+                "preset, pipeline stages, and advanced tuning.",
+                steps=[
+                    "Set the <b>Project Directory</b> (where the .psx and "
+                    "outputs go).",
+                    "Set the <b>Frames Directory</b> (source images), or use "
+                    "the field's option button (▸) to extract frames from a "
+                    "video file.",
+                    "Pick a <b>Quality Preset</b> (low / medium / high / "
+                    "ultra-high).",
+                    "Check which <b>Pipeline Stages</b> to run.",
+                    "Tweak advanced parameters as needed.",
+                    "Press <b>Run Workflow</b>.",
+                ],
+                sections=[
+                    ("Header menu", [
+                        "<b>Log Level</b> — DEBUG / INFO / WARNING / ERROR "
+                        "verbosity for the embedded log panel.",
+                    ]),
+                ],
+                notes=[
+                    "Requires the Agisoft Metashape Python module to be "
+                    "importable in this environment. The panel reports if "
+                    "the SDK is missing or the license is invalid.",
+                ],
+            )
         )
 
     # ------------------------------------------------------------------ paths
@@ -299,10 +316,6 @@ class MetashapeWorkflowSlots(ptk.LoggingMixin):
             return
         self.ui.txt003.clear()
         self._run_workflow()
-
-    # Header menu callbacks — `btn_instructions` is tooltip-only (no action needed)
-    def btn_instructions(self) -> None:
-        pass
 
     def cmb003(self, widget) -> None:
         """Log level changed"""

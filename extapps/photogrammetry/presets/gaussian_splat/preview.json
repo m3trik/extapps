@@ -1,0 +1,5 @@
+{
+    "_comment": "Fast preview splat - a short Brush training run to check coverage / convergence before a long bake. More training steps is a VRAM-free quality lever, so the only difference from 'high' is fewer steps.",
+    "total_steps": 7000,
+    "max_resolution": 1920
+}

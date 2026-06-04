@@ -1,0 +1,9 @@
+{
+    "_comment": "Fast preview - a quick low-quality reconstruction to check coverage/alignment before committing to a multi-hour full bake. High image/depth downscale + low mesh density + a small texture page. Pair with the panel's 'Align only' run mode for the fastest input-prep A/B. Input pre-processing stays at defaults.",
+    "quality": "draft",
+    "align_downscale": 4,
+    "depth_downscale": 4,
+    "depth_filter": "mild",
+    "face_count": "low",
+    "texture_size": "2048"
+}

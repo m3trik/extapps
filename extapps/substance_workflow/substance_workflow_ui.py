@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'metashape_workflow.ui'
+## Form generated from reading UI file 'substance_workflow.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
@@ -30,13 +30,13 @@ class Ui_QtUi(object):
         if not QtUi.objectName():
             QtUi.setObjectName(u"QtUi")
         QtUi.setEnabled(True)
-        QtUi.resize(600, 411)
+        QtUi.resize(600, 360)
         QtUi.setTabShape(QTabWidget.Triangular)
         QtUi.setDockNestingEnabled(True)
         QtUi.setDockOptions(QMainWindow.AllowNestedDocks|QMainWindow.AllowTabbedDocks|QMainWindow.AnimatedDocks|QMainWindow.ForceTabbedDocks)
         self.central_widget = QWidget(QtUi)
         self.central_widget.setObjectName(u"central_widget")
-        self.central_widget.setMinimumSize(QSize(600, 280))
+        self.central_widget.setMinimumSize(QSize(600, 240))
         self.verticalLayout_2 = QVBoxLayout(self.central_widget)
         self.verticalLayout_2.setSpacing(2)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -82,13 +82,13 @@ class Ui_QtUi(object):
 
         self.verticalLayout_3.addWidget(self.txt002)
 
-        self.presets = QGroupBox(self.File)
-        self.presets.setObjectName(u"presets")
-        self.horizontalLayout_2 = QHBoxLayout(self.presets)
+        self.painter_group = QGroupBox(self.File)
+        self.painter_group.setObjectName(u"painter_group")
+        self.horizontalLayout_2 = QHBoxLayout(self.painter_group)
         self.horizontalLayout_2.setSpacing(1)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.cmb000 = ComboBox(self.presets)
+        self.cmb000 = ComboBox(self.painter_group)
         self.cmb000.setObjectName(u"cmb000")
         self.cmb000.setMinimumSize(QSize(0, 19))
         self.cmb000.setMaximumSize(QSize(16777215, 19))
@@ -96,11 +96,18 @@ class Ui_QtUi(object):
         self.horizontalLayout_2.addWidget(self.cmb000)
 
 
-        self.verticalLayout_3.addWidget(self.presets)
+        self.verticalLayout_3.addWidget(self.painter_group)
 
         self.layout_option_buttons = QHBoxLayout()
         self.layout_option_buttons.setSpacing(1)
         self.layout_option_buttons.setObjectName(u"layout_option_buttons")
+        self.btn_launch = QPushButton(self.File)
+        self.btn_launch.setObjectName(u"btn_launch")
+        self.btn_launch.setMinimumSize(QSize(0, 19))
+        self.btn_launch.setMaximumSize(QSize(16777215, 19))
+
+        self.layout_option_buttons.addWidget(self.btn_launch)
+
         self.btn_stages = QPushButton(self.File)
         self.btn_stages.setObjectName(u"btn_stages")
         self.btn_stages.setMinimumSize(QSize(0, 19))
@@ -166,30 +173,34 @@ class Ui_QtUi(object):
     # setupUi
 
     def retranslateUi(self, QtUi):
-        self.header.setText(QCoreApplication.translate("QtUi", u"METASHAPE WORKFLOW", None))
+        self.header.setText(QCoreApplication.translate("QtUi", u"SUBSTANCE WORKFLOW", None))
         self.File.setTitle("")
 #if QT_CONFIG(tooltip)
-        self.txt000.setToolTip(QCoreApplication.translate("QtUi", u"Directory where the Metashape project (.psx) and exported model will be saved.", None))
+        self.txt000.setToolTip(QCoreApplication.translate("QtUi", u"Mesh file (.fbx/.obj/...) used to create a new Painter project.", None))
 #endif // QT_CONFIG(tooltip)
-        self.txt000.setPlaceholderText(QCoreApplication.translate("QtUi", u"Project Directory:", None))
+        self.txt000.setPlaceholderText(QCoreApplication.translate("QtUi", u"Mesh File:", None))
 #if QT_CONFIG(tooltip)
-        self.txt001.setToolTip(QCoreApplication.translate("QtUi", u"Optional basename for the project and exported model. Defaults to the project directory name.", None))
+        self.txt001.setToolTip(QCoreApplication.translate("QtUi", u"Optional Painter project template (.spt) used when creating a new project.", None))
 #endif // QT_CONFIG(tooltip)
-        self.txt001.setPlaceholderText(QCoreApplication.translate("QtUi", u"Project Name (optional):", None))
+        self.txt001.setPlaceholderText(QCoreApplication.translate("QtUi", u"Template (optional):", None))
 #if QT_CONFIG(tooltip)
-        self.txt002.setToolTip(QCoreApplication.translate("QtUi", u"Folder containing the source images for photogrammetry.", None))
+        self.txt002.setToolTip(QCoreApplication.translate("QtUi", u"Project save path (.spp). If this file exists it is opened; otherwise a new project is created from the mesh and saved here.", None))
 #endif // QT_CONFIG(tooltip)
-        self.txt002.setPlaceholderText(QCoreApplication.translate("QtUi", u"Frames Directory:", None))
-        self.presets.setTitle(QCoreApplication.translate("QtUi", u"Preset:", None))
+        self.txt002.setPlaceholderText(QCoreApplication.translate("QtUi", u"Project Save Path (.spp):", None))
+        self.painter_group.setTitle(QCoreApplication.translate("QtUi", u"Painter:", None))
 #if QT_CONFIG(tooltip)
-        self.cmb000.setToolTip(QCoreApplication.translate("QtUi", u"Quality preset. Controls alignment / depth downscale, face count, and texture size.", None))
+        self.cmb000.setToolTip(QCoreApplication.translate("QtUi", u"Which installed Substance 3D Painter to launch. Each session launches a NEW Painter instance \u2014 your open session is never touched.", None))
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(tooltip)
-        self.btn_stages.setToolTip(QCoreApplication.translate("QtUi", u"Select which pipeline stages to run.", None))
+        self.btn_launch.setToolTip(QCoreApplication.translate("QtUi", u"Launch a fresh Painter and connect over the bridge. Click again to close it.", None))
 #endif // QT_CONFIG(tooltip)
-        self.btn_stages.setText(QCoreApplication.translate("QtUi", u"Pipeline Stages", None))
+        self.btn_launch.setText(QCoreApplication.translate("QtUi", u"Launch Painter", None))
 #if QT_CONFIG(tooltip)
-        self.btn_advanced.setToolTip(QCoreApplication.translate("QtUi", u"Advanced parameters (texture size, face count, filters, frame-extraction step).", None))
+        self.btn_stages.setToolTip(QCoreApplication.translate("QtUi", u"Select which workflow stages to run.", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_stages.setText(QCoreApplication.translate("QtUi", u"Stages", None))
+#if QT_CONFIG(tooltip)
+        self.btn_advanced.setToolTip(QCoreApplication.translate("QtUi", u"Advanced bake parameters (AO rays, distances, curvature, blend mode).", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_advanced.setText(QCoreApplication.translate("QtUi", u"Advanced", None))
         self.b000.setText(QCoreApplication.translate("QtUi", u"Run Workflow", None))

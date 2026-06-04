@@ -1,0 +1,12 @@
+{
+    "_comment": "Specular / low-texture metal (reflective machinery, fabrication bays). View-dependent highlights and featureless surfaces break multi-view stereo, so depth comes out noisy: floater 'snow' and ghosted / melted geometry. Metashape honors these knobs directly; RealityScan's equivalents (image/depth downscale, depth-map filtering, a tight reconstruction region, masking) are GUI-only - see TUNING.md. KEY findings baked in here: (1) generic_preselection + a raised tiepoint_limit are the levers that actually align featureless metal (reference preselection has no coords to work from); (2) keep depth downscale at 2 (full-res ds=1/Ultra OVER-fits the specular noise and warps geometry); (3) do NOT crank mesh component removal - it strips real detail without fixing depth-level noise - a single light smoothing pass is the right denoise instead.",
+    "align_downscale": 2,
+    "depth_downscale": 2,
+    "depth_filter": "moderate",
+    "face_count": "high",
+    "mask_background": true,
+    "generic_preselection": true,
+    "keypoint_limit": 60000,
+    "tiepoint_limit": 20000,
+    "smooth_strength": 1
+}

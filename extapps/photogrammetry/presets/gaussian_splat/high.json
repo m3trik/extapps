@@ -1,0 +1,5 @@
+{
+    "_comment": "Highest-quality splat: a long Brush training run (50k steps) at full spherical-harmonics degree for view-dependent detail. Slower but VRAM-free vs raising the gaussian budget (which tends to OOM an 8 GB card).",
+    "total_steps": 50000,
+    "sh_degree": 3
+}

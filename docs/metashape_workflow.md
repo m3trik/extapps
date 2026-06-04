@@ -24,7 +24,7 @@ A licensed Metashape Pro desktop install or a reachable license server is requir
 ### GUI
 
 ```python
-from extapps.metashape_workflow import MetashapeWorkflowUI
+from extapps.photogrammetry.metashape_workflow import MetashapeWorkflowUI
 ui = MetashapeWorkflowUI()
 ui.show(pos="screen", app_exec=True)
 ```
@@ -34,7 +34,7 @@ The package self-registers as a `uitk.external_apps.in_process` entry point, so 
 ### Programmatic
 
 ```python
-from extapps.metashape_workflow import MetashapeWorkflow
+from extapps.photogrammetry.metashape_workflow import MetashapeWorkflow
 
 wf = MetashapeWorkflow(
     project_path="path/to/project",
@@ -87,7 +87,7 @@ frames = ex.extract_frames(
 
 ## Quality presets
 
-Defined in [`extapps/metashape_workflow/slots.py`](../extapps/metashape_workflow/slots.py):
+Defined in [`extapps/photogrammetry/metashape_workflow/slots.py`](../extapps/photogrammetry/metashape_workflow/slots.py):
 
 | Preset | Align ds | Depth ds | Face count | Texture |
 |---|---|---|---|---|
@@ -124,7 +124,7 @@ Scope is intentionally narrow ([extapps/test/test_metashape_workflow.py](../test
 
 ## Adding a preset
 
-Presets live at module scope. Edit [`PRESETS`](../extapps/metashape_workflow/slots.py) directly:
+Presets live at module scope. Edit [`PRESETS`](../extapps/photogrammetry/metashape_workflow/slots.py) directly:
 
 ```python
 PRESETS["Ultra"] = {
@@ -140,7 +140,7 @@ PRESETS["Ultra"] = {
 ## Layout
 
 ```
-extapps/metashape_workflow/
+extapps/photogrammetry/metashape_workflow/
 ├── __init__.py                  # public API via pythontk bootstrap_package
 ├── _metashape_workflow.py       # MetashapeWorkflow + module-level helpers
 ├── slots.py                     # GUI slots (MetashapeWorkflowSlots)

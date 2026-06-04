@@ -1,0 +1,5 @@
+$Using( "RealityScan.Report.ProjectInformationExportFunctionSet" )
+$Using( "RealityScan.Report.IteratorsFunctionSet" )
+$Using( "RealityScan.Report.ComponentFunctionSet" )
+$Using( "RealityScan.Report.ModelExportFunctionSet" )
+$ExportProjectInfo(<qc images="$(imageCount)" comps="$(componentCount)">$IterateComponents(<c cams="$(componentCamerasCount)">$ComponentInfo("$(componentGUID)",<pts>$(componentPointsCount)</pts>)$ExportModels(<m tris="$(modelTriangleCount)" verts="$(modelVertexCount)" parts="$(modelPartCount)"/>)</c>)</qc>)

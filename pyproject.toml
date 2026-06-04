@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "extapps"
 dynamic = ["version", "readme"]
-description = "Standalone Switchboard panels for content-pipeline workflows (map compositing, photogrammetry, texture conversion, mesh conversion)."
+description = "Standalone Switchboard panels for content-pipeline workflows (map compositing, photogrammetry, Substance Painter automation, texture conversion, mesh conversion)."
 authors = [{name = "Ryan Simpson", email = "m3trik@outlook.com"}]
 license = {text = "MIT"}
 requires-python = ">=3.9"
@@ -27,10 +27,14 @@ Repository = "https://github.com/m3trik/extapps"
 # declares the preferred launch mode (parented under the host's Qt loop).
 [project.entry-points."uitk.external_apps.in_process"]
 map_compositor = "extapps.map_compositor:MapCompositorUI"
-metashape_workflow = "extapps.metashape_workflow:MetashapeWorkflowUI"
+metashape_workflow = "extapps.photogrammetry.metashape_workflow:MetashapeWorkflowUI"
+realityscan_workflow = "extapps.photogrammetry.realityscan_workflow:RealityScanWorkflowUI"
+gaussian_splat_workflow = "extapps.photogrammetry.gaussian_splat_workflow:GaussianSplatWorkflowUI"
+substance_workflow = "extapps.substance_workflow:SubstanceWorkflowUI"
 map_converter = "extapps.map_converter:MapConverterUI"
 map_packer = "extapps.map_packer:MapPackerUI"
 mesh_convert = "extapps.mesh_convert:MeshConvertUI"
+marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI"
 
 [tool.setuptools.dynamic]
 version = {attr = "extapps.__version__"}
@@ -41,7 +45,11 @@ where = ["."]
 include = ["extapps*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.ui", "*.json", "*.txt", "*.md"]
+"*" = ["*.ui", "*.json", "*.txt", "*.md", "*.html"]
+# Built-in run-template presets ship in a plain data subdir (not a package), so
+# the top-level "*" json glob (package-dir only) doesn't reach them. They live in
+# per-engine subdirs (presets/<engine>/*.json) — presets are engine-scoped.
+"extapps.photogrammetry" = ["presets/*/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

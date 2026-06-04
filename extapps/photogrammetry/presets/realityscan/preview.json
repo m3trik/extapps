@@ -1,0 +1,4 @@
+{
+    "_comment": "Fast preview for RealityScan - a quick low-quality reconstruction (RC preview model) to check coverage / alignment before committing to a full bake. RC's quality tier is the main CLI-reachable knob (preview/normal/high); the image/depth-downscale dials Metashape exposes are GUI-only here.",
+    "quality": "draft"
+}

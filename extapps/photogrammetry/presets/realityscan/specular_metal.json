@@ -1,0 +1,4 @@
+{
+    "_comment": "Specular / low-texture metal for RealityScan. RC's CLI/RSNode API can't reach the levers that actually tame specular noise (image/depth downscale, depth-map filtering strength, a tight reconstruction region) - those are GUI / per-project Settings only; see TUNING.md. So this preset only flags background masking (RC prints a note - its mask import isn't wired; mask in the GUI). It deliberately does NOT crank min_component_size: cranking the mesh-cleanup floor strips real detail without fixing the depth-level noise. For shiny metal, prefer the Metashape engine, which CAN reach those levers (presets/metashape/specular_metal.json).",
+    "mask_background": true
+}

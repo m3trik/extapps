@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>600</width>
-    <height>411</height>
+    <height>360</height>
    </rect>
   </property>
   <property name="tabShape">
@@ -26,7 +26,7 @@
    <property name="minimumSize">
     <size>
      <width>600</width>
-     <height>280</height>
+     <height>240</height>
     </size>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -65,7 +65,7 @@
          </font>
         </property>
         <property name="text">
-         <string>METASHAPE WORKFLOW</string>
+         <string>SUBSTANCE WORKFLOW</string>
         </property>
        </widget>
       </item>
@@ -117,10 +117,10 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Directory where the Metashape project (.psx) and exported model will be saved.</string>
+            <string>Mesh file (.fbx/.obj/...) used to create a new Painter project.</string>
            </property>
            <property name="placeholderText">
-            <string>Project Directory:</string>
+            <string>Mesh File:</string>
            </property>
           </widget>
          </item>
@@ -139,10 +139,10 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Optional basename for the project and exported model. Defaults to the project directory name.</string>
+            <string>Optional Painter project template (.spt) used when creating a new project.</string>
            </property>
            <property name="placeholderText">
-            <string>Project Name (optional):</string>
+            <string>Template (optional):</string>
            </property>
           </widget>
          </item>
@@ -161,17 +161,17 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Folder containing the source images for photogrammetry.</string>
+            <string>Project save path (.spp). If this file exists it is opened; otherwise a new project is created from the mesh and saved here.</string>
            </property>
            <property name="placeholderText">
-            <string>Frames Directory:</string>
+            <string>Project Save Path (.spp):</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="presets">
+          <widget class="QGroupBox" name="painter_group">
            <property name="title">
-            <string>Preset:</string>
+            <string>Painter:</string>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <property name="spacing">
@@ -204,7 +204,7 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>Quality preset. Controls alignment / depth downscale, face count, and texture size.</string>
+               <string>Which installed Substance 3D Painter to launch. Each session launches a NEW Painter instance — your open session is never touched.</string>
               </property>
              </widget>
             </item>
@@ -216,6 +216,28 @@
            <property name="spacing">
             <number>1</number>
            </property>
+           <item>
+            <widget class="QPushButton" name="btn_launch">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>19</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>19</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Launch a fresh Painter and connect over the bridge. Click again to close it.</string>
+             </property>
+             <property name="text">
+              <string>Launch Painter</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <widget class="QPushButton" name="btn_stages">
              <property name="minimumSize">
@@ -231,10 +253,10 @@
               </size>
              </property>
              <property name="toolTip">
-              <string>Select which pipeline stages to run.</string>
+              <string>Select which workflow stages to run.</string>
              </property>
              <property name="text">
-              <string>Pipeline Stages</string>
+              <string>Stages</string>
              </property>
             </widget>
            </item>
@@ -253,7 +275,7 @@
               </size>
              </property>
              <property name="toolTip">
-              <string>Advanced parameters (texture size, face count, filters, frame-extraction step).</string>
+              <string>Advanced bake parameters (AO rays, distances, curvature, blend mode).</string>
              </property>
              <property name="text">
               <string>Advanced</string>

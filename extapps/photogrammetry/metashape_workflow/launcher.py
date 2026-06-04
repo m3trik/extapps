@@ -3,8 +3,8 @@
 """Application shell for the Metashape Workflow UI.
 
 The Metashape SDK wrapper lives in
-:mod:`extapps.metashape_workflow._metashape_workflow` (SDK-coupled,
-not generic) and slot bindings in :mod:`extapps.metashape_workflow.slots`;
+:mod:`extapps.photogrammetry.metashape_workflow._metashape_workflow` (SDK-coupled,
+not generic) and slot bindings in :mod:`extapps.photogrammetry.metashape_workflow.slots`;
 this module only assembles the Switchboard-driven UI and provides the
 script entry point.
 """
@@ -18,9 +18,10 @@ configure_high_dpi()
 
 class MetashapeWorkflowUI:
     def __new__(cls, *args, **kwargs):
+        from qtpy import QtCore
         from uitk import Switchboard
         from extapps import __version__
-        from extapps.metashape_workflow.slots import MetashapeWorkflowSlots
+        from extapps.photogrammetry.metashape_workflow.slots import MetashapeWorkflowSlots
 
         sb = Switchboard(
             *args,
@@ -30,9 +31,15 @@ class MetashapeWorkflowUI:
         )
         ui = sb.loaded_ui.metashape_workflow
         ui.set_attributes(WA_TranslucentBackground=True)
-        # Use the uitk Header in place of the native OS frame so window
-        # controls live on the header (matches map_compositor pattern).
-        ui.set_flags(FramelessWindowHint=True)
+        # Frameless chromed window: the uitk Header supplies the window
+        # controls in place of the native OS frame. Set the SAME clean flag
+        # set as uitk's WindowPanel / editor reference rather than OR-ing
+        # FramelessWindowHint onto a QMainWindow's defaults — those defaults
+        # carry native decoration hints which, on a frameless host-owned
+        # window, make it float always-on-top of its parent. With the clean
+        # set it behaves as a normal window that parents to the host (e.g.
+        # Maya, via the external-app handler) without staying on top.
+        ui.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
         ui.style.set(theme="dark", style_class="bgWithBorder")
 
         # Surface window controls on the header now that the OS frame is gone.

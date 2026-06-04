@@ -1,0 +1,4 @@
+{
+    "_comment": "Highest quality for RealityScan - the RC high model, then simplified to the profile's UV budget before unwrap (texture detail is unaffected - it bakes from the source photos). Best on well-textured, matte subjects. For specular / low-texture metal RC can't reach the denoise levers from the CLI; mask + set a tight reconstruction region in the GUI (see specular_metal + TUNING.md).",
+    "quality": "max"
+}

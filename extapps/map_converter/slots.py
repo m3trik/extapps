@@ -155,7 +155,7 @@ class MapConverterSlots(ImgUtils):
         # that still evaluate falsy in the ``if not file_type`` / ``if not
         # max_size`` checks below.
         widget.option_box.menu.cmb001.add(
-            [("Original", "")] + [(ext.upper(), ext) for ext in self.texture_file_types],
+            [("Original", "")] + [(ext.upper(), ext) for ext in self.writable],
             prefix="Format:",
         )
 

@@ -262,7 +262,7 @@ class GaussianSplatWorkflowSlots(PhotogrammetryPanelSlots):
             return ["--publish"]
         return []
 
-    def _help_spec(self) -> dict:
+    def help_spec(self) -> dict:
         return dict(
             title="Brush Splat Workflow",
             body="Train a 3D Gaussian Splat from a COLMAP dataset with Brush, and "

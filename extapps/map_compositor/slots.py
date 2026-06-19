@@ -33,7 +33,8 @@ def _build_intro() -> str:
     """
     return (
         "<u>Quickstart</u><br>"
-        "&nbsp;&nbsp;1. Set the <b>source</b> and <b>destination</b> directories.<br>"
+        "&nbsp;&nbsp;1. Set the <b>source</b> (a directory of maps, or specific "
+        "image files) and the <b>destination</b> directory.<br>"
         "&nbsp;&nbsp;2. (Optional) Set a <b>map name</b> prefix.<br>"
         "&nbsp;&nbsp;3. Click <b>Combine Maps</b>.<br><br>"
         "<u>Required Substance Painter Export Settings</u><br>"
@@ -91,9 +92,10 @@ class MapCompositorSlots:
         self.ui.footer.setDefaultStatusText("Ready.")
 
         # The primary action ("Combine Maps") lives in the footer with a
-        # styled background so it stands out from the status text. Connect
-        # to the existing slot method directly — Switchboard won't auto-wire
-        # it because the button isn't part of the .ui tree.
+        # styled background so it stands out from the status text. It is wired
+        # explicitly to b002 and carries no objectName, so Switchboard's
+        # name-based auto-wiring (which DOES process add_widget footer widgets)
+        # resolves no slot for it and leaves it untouched.
         self.combine_btn = QPushButton("Combine Maps")
         self.combine_btn.setToolTip("Start the compositing process.")
         self.combine_btn.clicked.connect(self.b002)
@@ -148,8 +150,19 @@ class MapCompositorSlots:
                     opt.add_recent_value(v)
         return opt
 
-    def _bind_dir_actions(self, widget, browse_title: str):
-        """Attach Set (browse-directory) and Open (reveal-in-explorer) buttons.
+    def _bind_dir_actions(
+        self,
+        widget,
+        browse_title: str,
+        *,
+        browse_files_title: Optional[str] = None,
+    ):
+        """Attach Open (reveal-in-explorer) and browse buttons to a path field.
+
+        Always adds an Open button plus a browse-for-directory button. When
+        *browse_files_title* is given, also adds a browse-for-image-files
+        button so the field can hold an explicit set of source images
+        (``os.pathsep``-joined) instead of a single directory.
 
         Returns the Open ActionOption so the caller can toggle its enabled
         state from the text-change handler.
@@ -159,21 +172,128 @@ class MapCompositorSlots:
 
         open_opt = ActionOption(
             wrapped_widget=widget,
-            callback=lambda: self._open_dir(widget.text()),
+            callback=lambda: self._open_dir(self._field_dir(widget.text())),
             icon="open_external",
-            tooltip="Open this directory in the file explorer.",
+            tooltip="Open this location in the file explorer.",
         )
         widget.option_box.add_option(open_opt)
+
+        if browse_files_title:
+            files_opt = ActionOption(
+                wrapped_widget=widget,
+                callback=lambda: self._browse_source_files(
+                    widget, browse_files_title
+                ),
+                icon="image",
+                tooltip="Browse for individual image files.",
+                settings_key=False,
+            )
+            widget.option_box.add_option(files_opt)
 
         browse_opt = BrowseOption(
             wrapped_widget=widget,
             mode="directory",
             title=browse_title,
+            start_dir=lambda: self._field_dir(widget.text()),
             tooltip="Browse for a directory.",
         )
         widget.option_box.add_option(browse_opt)
 
         return open_opt
+
+    def _browse_source_files(self, widget, title: str) -> None:
+        """Open a multi-select image dialog and store the joined paths.
+
+        Selected files are written back to *widget* as an ``os.pathsep``-
+        joined string (the representation :meth:`_resolve_source` and the
+        source validator both understand) and recorded to the field's
+        recent-values history.
+        """
+        file_types = [f"*.{ext}" for ext in ptk.ImgUtils.readable]
+        paths = self.sb.file_dialog(
+            file_types=file_types,
+            title=title,
+            start_dir=self._field_dir(widget.text()) or os.path.expanduser("~"),
+            filter_description="Images",
+            allow_multiple=True,
+        )
+        if not paths:
+            return
+        if isinstance(paths, str):
+            paths = [paths]
+        widget.setText(os.pathsep.join(paths))
+        recent = getattr(self, "_recent_input_dirs", None)
+        if recent is not None:
+            recent.record(widget.text())
+
+    @staticmethod
+    def _source_parts(text: str) -> list:
+        """Tokenize a source field into its ``os.pathsep``-joined components.
+
+        Single source of truth for how the field is split — the file-selection
+        join scheme lives here so the helpers below stay in sync.
+        """
+        return [p for p in (text or "").split(os.pathsep) if p.strip()]
+
+    @classmethod
+    def _split_source(cls, text: str) -> list:
+        """Split a source field into its image-file parts.
+
+        Returns the list of file paths when the field holds an
+        ``os.pathsep``-joined file selection (or a single file). Returns an
+        empty list when the field holds a single existing directory — the
+        caller then treats it as directory mode.
+        """
+        parts = cls._source_parts(text)
+        if len(parts) == 1 and os.path.isdir(parts[0]):
+            return []
+        return parts
+
+    @classmethod
+    def _field_dir(cls, text: str) -> str:
+        """Resolve a path field's text to a directory.
+
+        Accepts a directory, a single file, or an ``os.pathsep``-joined list
+        of files; returns the directory to reveal/browse-from. Empty when it
+        can't be resolved.
+        """
+        parts = cls._source_parts(text)
+        if not parts:
+            return ""
+        first = parts[0]
+        if os.path.isdir(first):
+            return first
+        parent = os.path.dirname(first)
+        return parent if os.path.isdir(parent) else ""
+
+    @classmethod
+    def _validate_source(cls, text: str) -> bool:
+        """Validate the source field: a directory OR image file(s)."""
+        parts = cls._source_parts(text)
+        if not parts:
+            return False
+        if len(parts) == 1 and ptk.is_valid(parts[0], "dir"):
+            return True
+        return all(ptk.is_valid(p, "file") for p in parts)
+
+    def _resolve_source(self):
+        """Resolve the source field into ``(images, source_dir)``.
+
+        The field holds either a single directory or an ``os.pathsep``-joined
+        list of image files. Returns the ``{path: image}`` mapping the engine
+        expects plus a representative directory used for naming/validation.
+        """
+        text = self.input_dir
+        if not text:
+            return {}, ""
+        files = self._split_source(text)
+        if files:  # explicit image-file selection
+            files = [f for f in files if os.path.isfile(f)]
+            images = {f: ptk.ImgUtils.load_image(f) for f in files}
+            source_dir = os.path.dirname(files[0]) if files else ""
+            return images, source_dir
+        # Directory mode (existing behaviour).
+        return ptk.get_images(text), text
 
     @staticmethod
     def _open_dir(path: Optional[str]) -> None:
@@ -278,7 +398,7 @@ class MapCompositorSlots:
         )
 
     def txt000_init(self, widget):
-        """Init Source Directory"""
+        """Init Source — a directory of maps, or specific image files."""
         self._recent_input_dirs = self._bind_recent_values(
             widget,
             "map_compositor_input_dirs",
@@ -286,11 +406,13 @@ class MapCompositorSlots:
             auto_record=True,
         )
         self._open_input_dir = self._bind_dir_actions(
-            widget, browse_title="Select a directory containing image files."
+            widget,
+            browse_title="Select a directory containing image files.",
+            browse_files_title="Select source image files.",
         )
         widget.set_validator(
-            "dir",
-            invalid_tooltip="Invalid directory",
+            self._validate_source,
+            invalid_tooltip="Not a valid directory or image-file selection",
             empty_tooltip=self.default_toolTip_txt000,
         )
         widget.validated.connect(
@@ -333,13 +455,18 @@ class MapCompositorSlots:
         self.ui.footer.setStatusText("Loading maps …")
         self.engine.logger.info("Loading maps ..", preset="italic")
         self.sb.app.processEvents()
-        images = ptk.get_images(self.input_dir)
-        self.process(images, self.input_dir, self.output_dir, self.map_name)
+        images, source_dir = self._resolve_source()
+        self.process(images, source_dir, self.output_dir, self.map_name)
 
     # --- orchestration ---
-    def process(self, images, input_dir, output_dir, map_name=None):
-        """Validate dirs, prepare sorted-image groups, and drive the engine."""
-        if not (input_dir and output_dir):
+    def process(self, images, source_dir, output_dir, map_name=None):
+        """Validate dirs, prepare sorted-image groups, and drive the engine.
+
+        *source_dir* is the directory the maps came from — either the
+        directory the user selected, or the parent of an explicit image-file
+        selection. It is used for output validation and the default map name.
+        """
+        if not (source_dir and output_dir):
             self.engine.logger.error(
                 "You must specify a source and destination directory."
             )
@@ -347,7 +474,7 @@ class MapCompositorSlots:
             return
 
         invalid_dir = next(
-            (d for d in (input_dir, output_dir) if not ptk.is_valid(d, "dir")),
+            (d for d in (source_dir, output_dir) if not ptk.is_valid(d, "dir")),
             None,
         )
         if invalid_dir:
@@ -356,7 +483,7 @@ class MapCompositorSlots:
             return
 
         if not map_name:
-            map_name = ptk.format_path(input_dir, "dir")
+            map_name = ptk.format_path(source_dir, "dir")
 
         sorted_images = ptk.MapFactory.sort_images_by_type(images)
         has_normal_pair = ptk.MapFactory.contains_map_types(

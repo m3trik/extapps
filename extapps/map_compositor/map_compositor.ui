@@ -101,10 +101,10 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Set the directory where your maps to be combined are located.</string>
+           <string>Set the source of maps to combine — a directory, or specific image files (use the image-files browse button).</string>
           </property>
           <property name="placeholderText">
-           <string>&lt;Source Directory&gt;</string>
+           <string>&lt;Source Directory or Images&gt;</string>
           </property>
          </widget>
         </item>

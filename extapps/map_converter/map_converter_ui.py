@@ -29,7 +29,7 @@ class Ui_QtUi(object):
         if not QtUi.objectName():
             QtUi.setObjectName(u"QtUi")
         QtUi.setEnabled(True)
-        QtUi.resize(200, 382)
+        QtUi.resize(200, 303)
         QtUi.setTabShape(QTabWidget.Triangular)
         QtUi.setDockNestingEnabled(True)
         QtUi.setDockOptions(QMainWindow.AllowNestedDocks|QMainWindow.AllowTabbedDocks|QMainWindow.AnimatedDocks|QMainWindow.ForceTabbedDocks)
@@ -121,6 +121,16 @@ class Ui_QtUi(object):
 
         self.verticalLayout_3.addWidget(self.tb001)
 
+        self.tb003 = PushButton(self.groupBox_2)
+        self.tb003.setObjectName(u"tb003")
+        self.tb003.setEnabled(True)
+        sizePolicy.setHeightForWidth(self.tb003.sizePolicy().hasHeightForWidth())
+        self.tb003.setSizePolicy(sizePolicy)
+        self.tb003.setMinimumSize(QSize(0, 19))
+        self.tb003.setMaximumSize(QSize(16777215, 19))
+
+        self.verticalLayout_3.addWidget(self.tb003)
+
         self.tb000 = PushButton(self.groupBox_2)
         self.tb000.setObjectName(u"tb000")
         self.tb000.setEnabled(True)
@@ -131,15 +141,15 @@ class Ui_QtUi(object):
 
         self.verticalLayout_3.addWidget(self.tb000)
 
-        self.tb003 = PushButton(self.groupBox_2)
-        self.tb003.setObjectName(u"tb003")
-        self.tb003.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.tb003.sizePolicy().hasHeightForWidth())
-        self.tb003.setSizePolicy(sizePolicy)
-        self.tb003.setMinimumSize(QSize(0, 19))
-        self.tb003.setMaximumSize(QSize(16777215, 19))
+        self.tb002 = PushButton(self.groupBox_2)
+        self.tb002.setObjectName(u"tb002")
+        self.tb002.setEnabled(True)
+        sizePolicy.setHeightForWidth(self.tb002.sizePolicy().hasHeightForWidth())
+        self.tb002.setSizePolicy(sizePolicy)
+        self.tb002.setMinimumSize(QSize(0, 19))
+        self.tb002.setMaximumSize(QSize(16777215, 19))
 
-        self.verticalLayout_3.addWidget(self.tb003)
+        self.verticalLayout_3.addWidget(self.tb002)
 
 
         self.verticalLayout_4.addWidget(self.groupBox_2)
@@ -160,46 +170,6 @@ class Ui_QtUi(object):
 
         self.verticalLayout_2.addWidget(self.b004)
 
-        self.b005 = QPushButton(self.groupBox)
-        self.b005.setObjectName(u"b005")
-        self.b005.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b005.sizePolicy().hasHeightForWidth())
-        self.b005.setSizePolicy(sizePolicy)
-        self.b005.setMinimumSize(QSize(0, 19))
-        self.b005.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_2.addWidget(self.b005)
-
-        self.b008 = PushButton(self.groupBox)
-        self.b008.setObjectName(u"b008")
-        self.b008.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b008.sizePolicy().hasHeightForWidth())
-        self.b008.setSizePolicy(sizePolicy)
-        self.b008.setMinimumSize(QSize(0, 19))
-        self.b008.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_2.addWidget(self.b008)
-
-        self.b013 = PushButton(self.groupBox)
-        self.b013.setObjectName(u"b013")
-        self.b013.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b013.sizePolicy().hasHeightForWidth())
-        self.b013.setSizePolicy(sizePolicy)
-        self.b013.setMinimumSize(QSize(0, 19))
-        self.b013.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_2.addWidget(self.b013)
-
-        self.b015 = QPushButton(self.groupBox)
-        self.b015.setObjectName(u"b015")
-        self.b015.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b015.sizePolicy().hasHeightForWidth())
-        self.b015.setSizePolicy(sizePolicy)
-        self.b015.setMinimumSize(QSize(0, 19))
-        self.b015.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_2.addWidget(self.b015)
-
 
         self.verticalLayout_4.addWidget(self.groupBox)
 
@@ -218,46 +188,6 @@ class Ui_QtUi(object):
         self.b007.setMaximumSize(QSize(16777215, 19))
 
         self.verticalLayout_5.addWidget(self.b007)
-
-        self.b006 = QPushButton(self.groupBox_3)
-        self.b006.setObjectName(u"b006")
-        self.b006.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b006.sizePolicy().hasHeightForWidth())
-        self.b006.setSizePolicy(sizePolicy)
-        self.b006.setMinimumSize(QSize(0, 19))
-        self.b006.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_5.addWidget(self.b006)
-
-        self.b009 = PushButton(self.groupBox_3)
-        self.b009.setObjectName(u"b009")
-        self.b009.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b009.sizePolicy().hasHeightForWidth())
-        self.b009.setSizePolicy(sizePolicy)
-        self.b009.setMinimumSize(QSize(0, 19))
-        self.b009.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_5.addWidget(self.b009)
-
-        self.b014 = PushButton(self.groupBox_3)
-        self.b014.setObjectName(u"b014")
-        self.b014.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b014.sizePolicy().hasHeightForWidth())
-        self.b014.setSizePolicy(sizePolicy)
-        self.b014.setMinimumSize(QSize(0, 19))
-        self.b014.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_5.addWidget(self.b014)
-
-        self.b016 = QPushButton(self.groupBox_3)
-        self.b016.setObjectName(u"b016")
-        self.b016.setEnabled(True)
-        sizePolicy.setHeightForWidth(self.b016.sizePolicy().hasHeightForWidth())
-        self.b016.setSizePolicy(sizePolicy)
-        self.b016.setMinimumSize(QSize(0, 19))
-        self.b016.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_5.addWidget(self.b016)
 
 
         self.verticalLayout_4.addWidget(self.groupBox_3)
@@ -320,55 +250,27 @@ class Ui_QtUi(object):
 #endif // QT_CONFIG(tooltip)
         self.tb001.setText(QCoreApplication.translate("QtUi", u"Spec Gloss to PBR", None))
 #if QT_CONFIG(tooltip)
+        self.tb003.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">Bump to Normal</span><br/>Converts Bump/Height to Normal with options available in the tool menu.<br/><br/><span style=\" font-weight:600;\">Options:</span> Choose OpenGL or DirectX format and set intensity.</p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.tb003.setText(QCoreApplication.translate("QtUi", u"Bump to Normal", None))
+#if QT_CONFIG(tooltip)
         self.tb000.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">Optimize Texture</span><br/>Optimizes a texture by clamping the maximum size and adjusting the image (such as setting bit depth) according to the map type.<br/><br/><span style=\" font-weight:600;\">Usage:</span> Select the texture map(s) to optimize.<br/><br/>The optimized texture will be created in the same directory, with the original file moved to an <span style=\" font-style:italic;\">old</span> folder. </p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.tb000.setText(QCoreApplication.translate("QtUi", u"Optimize", None))
 #if QT_CONFIG(tooltip)
-        self.tb003.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">Bump to Normal</span><br/>Converts Bump/Height to Normal with options available in the tool menu.<br/><br/><span style=\" font-weight:600;\">Options:</span> Choose OpenGL or DirectX format and set intensity.</p></body></html>", None))
+        self.tb002.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">Flip Channels</span><br/>Invert, swap, broadcast, or constant-fill an image's R/G/B/A channels.<br/><br/><span style=\" font-weight:600;\">Options:</span> Per output channel, choose its source (optionally inverted, or Black/White). Set a suffix to save a copy; empty overwrites the source.<br/><br/><span style=\" font-weight:600;\">Usage:</span> Select texture map(s). Batch processing is supported.</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
-        self.tb003.setText(QCoreApplication.translate("QtUi", u"Bump to Normal", None))
-        self.groupBox.setTitle(QCoreApplication.translate("QtUi", u"Pack:", None))
+        self.tb002.setText(QCoreApplication.translate("QtUi", u"Flip Channels", None))
+        self.groupBox.setTitle(QCoreApplication.translate("QtUi", u"Pack (Color+Alpha):", None))
 #if QT_CONFIG(tooltip)
         self.b004.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">Pack Transparency into Albedo</span><br/>Combines a <span style=\" font-weight:600;\">Transparency (Opacity)</span> map into the <span style=\" font-weight:600;\">Albedo</span> map.<br/><br/><span style=\" font-weight:600;\">Usage:</span> Select an <span style=\" font-weight:600;\">Albedo</span> and an <span style=\" font-weight:600;\">Opacity</span> map.  Select multiple maps from different sets to batch process.<br/><br/>- If an existing <span style=\" font-weight:600;\">Albedo Transparency</span> map of the same name exists, it will be <span style=\" font-weight:600;\">overwritten</span>.<br/>- If a <span style=\" font-weight:600;\">BaseColor</span> map is provided, it will be converted to <span style=\" font-weight:600;\">Albedo</span>. </p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.b004.setText(QCoreApplication.translate("QtUi", u"Albedo Transparency", None))
-#if QT_CONFIG(tooltip)
-        self.b005.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">Pack Smoothness or Roughness into Metallic</span><br/>Combines a <span style=\" font-weight:600;\">Smoothness</span> or <span style=\" font-weight:600;\">Roughness</span> map into the <span style=\" font-weight:600;\">Metallic</span> map.<br/><br/><span style=\" font-weight:600;\">Usage:</span> Select a <span style=\" font-weight:600;\">Roughness</span> and a <span style=\" font-weight:600;\">Metallic</span> map.  Select multiple maps from different sets to batch process.<br/><br/>- If an existing <span style=\" font-weight:600;\">Metallic Smoothness</span> map of the same name exists, it will be <span style=\" font-weight:600;\">overwritten</span>.</p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b005.setText(QCoreApplication.translate("QtUi", u"Metallic Smoothness", None))
-#if QT_CONFIG(tooltip)
-        self.b008.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p>Pack Metallic Smoothness AO  </p><p>Combines Metallic, Smoothness (or Roughness), and Ambient Occlusion maps into a single packed texture.  </p><p><br/></p><p>Usage: Select Metallic, Roughness (or Smoothness), and AO maps. Multiple sets can be processed in batch.  </p><p><br/></p><p>- RGBA (HDRP Mask Map): R=Metallic, G=AO, B=Detail, A=Smoothness.  </p><p>- RGB (3-channel parallel to MRAO): R=Metallic, G=Smoothness, B=AO.  </p><p>- If an existing MSAO map of the same name exists, it will be overwritten.</p><p><br/></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b008.setText(QCoreApplication.translate("QtUi", u"MSAO", None))
-#if QT_CONFIG(tooltip)
-        self.b013.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p>Pack Metallic Roughness AO  </p><p>Combines Metallic, Roughness (or Smoothness), and Ambient Occlusion maps into a single packed texture.  </p><p><br/></p><p>Usage: Select Metallic, Roughness (or Smoothness), and AO maps. Multiple sets can be processed in batch.  </p><p><br/></p><p>- RGB (default, industry standard): R=Metallic, G=Roughness, B=AO.  </p><p>- RGBA (mirror of MSAO): R=Metallic, G=AO, B=Detail, A=Roughness.  </p><p>- If an existing MRAO map of the same name exists, it will be overwritten.</p><p><br/></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b013.setText(QCoreApplication.translate("QtUi", u"MRAO", None))
-#if QT_CONFIG(tooltip)
-        self.b015.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p>Pack Occlusion Roughness Metallic  </p><p>Combines Ambient Occlusion, Roughness (or Smoothness), and Metallic maps into a single packed ORM texture.  </p><p><br/></p><p>Usage: Select Metallic, Roughness (or Smoothness), and AO maps. Multiple sets can be processed in batch.  </p><p><br/></p><p>- Output channels: R=Occlusion, G=Roughness, B=Metallic (Unreal/glTF convention).  </p><p>- If an existing ORM map of the same name exists, it will be overwritten.</p><p><br/></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b015.setText(QCoreApplication.translate("QtUi", u"ORM", None))
-        self.groupBox_3.setTitle(QCoreApplication.translate("QtUi", u"Unpack:", None))
+        self.groupBox_3.setTitle(QCoreApplication.translate("QtUi", u"Unpack (Color+Alpha):", None))
 #if QT_CONFIG(tooltip)
         self.b007.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">Unpack Specular and Glossiness to separate maps.</span><br/>Extracts the Glossiness map from the Specular map's alpha channel.<br/><br/><span style=\" font-weight:600;\">Usage:</span> Select a <span style=\" font-weight:600;\">Specular </span>map.<br/><br/>- If extraction fails, the Glossiness map will be approximated using the <span style=\" font-weight:600;\">Specular</span> map.<br/>- If an existing Specular or Glossiness map of the same name exists, it will be <span style=\" font-weight:600;\">overwritten</span>. </p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.b007.setText(QCoreApplication.translate("QtUi", u"Spec Gloss", None))
-#if QT_CONFIG(tooltip)
-        self.b006.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p><span style=\" font-weight:600;\">UnPack MetallicSmoothness into separate Metallic and Smoothness maps.</span><br/><br/><span style=\" font-weight:600;\">Usage:</span> Select a <span style=\" font-weight:600;\">MetallicSmoothness</span> map. Select multiple maps from different sets to batch process.<br/><br/>- If an existing <span style=\" font-weight:600;\">Metallic or Smoothness</span> map of the same name exists, it will be <span style=\" font-weight:600;\">overwritten</span>.</p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b006.setText(QCoreApplication.translate("QtUi", u"Metallic Smoothness", None))
-#if QT_CONFIG(tooltip)
-        self.b009.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p>Unpack Metallic Smoothness AO  </p><p>Separates a packed MetallicSmoothnessAO map into individual Metallic, Smoothness (or Roughness), and AO maps.  </p><p><br/></p><p>Usage: Select one or more MSAO maps to process. Batch processing is supported.  </p><p><br/></p><p>- Output maps: Metallic, Smoothness (or Roughness), and AO.  </p><p>- Layout defaults to Auto-detect from image mode (RGBA = HDRP Mask Map, RGB = 3-channel parallel layout); override via the options menu when the file's name lies about its layout.  </p><p>- If existing maps of the same name exist, they will be overwritten.</p><p><br/></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b009.setText(QCoreApplication.translate("QtUi", u"MSAO", None))
-#if QT_CONFIG(tooltip)
-        self.b014.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p>Unpack Metallic Roughness AO  </p><p>Separates a packed MetallicRoughnessAO map into individual Metallic, Roughness, and AO maps.  </p><p><br/></p><p>Usage: Select one or more MRAO maps to process. Batch processing is supported.  </p><p><br/></p><p>- Output maps: Metallic, Roughness, and AO.  </p><p>- Layout defaults to Auto-detect from image mode (RGB = industry standard, RGBA = MSAO mirror); override via the options menu when needed.  </p><p>- If existing maps of the same name exist, they will be overwritten.</p><p><br/></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b014.setText(QCoreApplication.translate("QtUi", u"MRAO", None))
-#if QT_CONFIG(tooltip)
-        self.b016.setToolTip(QCoreApplication.translate("QtUi", u"<html><head/><body><p>Unpack Occlusion Roughness Metallic  </p><p>Separates a packed ORM map into individual Occlusion, Roughness, and Metallic maps.  </p><p><br/></p><p>Usage: Select one or more ORM maps to process. Batch processing is supported.  </p><p><br/></p><p>- Input channels: R=Occlusion, G=Roughness, B=Metallic (Unreal/glTF convention).  </p><p>- If existing maps of the same name exist, they will be overwritten.</p><p><br/></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.b016.setText(QCoreApplication.translate("QtUi", u"ORM", None))
         pass
     # retranslateUi
 

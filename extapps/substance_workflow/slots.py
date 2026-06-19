@@ -290,6 +290,13 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
         self._run_workflow()
 
     # Option-box browse callbacks
+    def set_mesh_path(self, path: str) -> None:
+        """Pre-fill the mesh field (e.g. a host exported the current selection to it).
+
+        Public hand-off point for hosts that drive this panel — the Blender Substance *bridge*
+        exports the selection to FBX and calls this before showing the panel."""
+        self.ui.txt000.setText(path or "")
+
     def btn_browse_mesh(self) -> None:
         f = self.sb.file_dialog(
             file_types=MESH_EXTS,

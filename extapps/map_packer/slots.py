@@ -35,6 +35,14 @@ class MapPackerSlots(ImgUtils):
             "format": "PNG",
             "suffix": "_ORM",
         },
+        "MRAO (Metallic, Roughness, AO)": {
+            "R": "Metallic",
+            "G": "Roughness",
+            "B": "Ambient_Occlusion",
+            "A": "None",
+            "format": "PNG",
+            "suffix": "_MRAO",
+        },
         "MSAO (HDRP Mask Map)": {
             "R": "Metallic",
             "G": "Ambient_Occlusion",
@@ -102,7 +110,27 @@ class MapPackerSlots(ImgUtils):
             self.ui.cmbA.setCurrentIndex(self.ui.cmbA.findText("None"))
 
     def header_init(self, widget):
-        """Configure the header menu with presets for common packed map types."""
+        """Configure the header menu: Pack/Unpack mode + presets.
+
+        The channel layout (R/G/B/A → map type) is direction-agnostic, so a
+        single set of presets serves both packing and unpacking. The Mode
+        toggle decides the direction (see :meth:`_on_mode_changed`).
+        """
+        widget.menu.setTitle("Map Packer Options")
+        cmb_mode = widget.menu.add(
+            "QComboBox",
+            setObjectName="cmb_mode",
+            addItems=["Pack", "Unpack"],
+            setToolTip=(
+                "Pack: combine the per-channel source maps into one packed "
+                "texture.\n"
+                "Unpack: split a packed texture back into its per-channel maps "
+                "(each channel's selected map type names the output file)."
+            ),
+        )
+        cmb_mode.restore_state = True
+        cmb_mode.currentTextChanged.connect(self._on_mode_changed)
+
         presets = widget.menu.presets
         presets.preset_dir = self.PRESET_DIR
         # Seed built-in presets BEFORE setup so the combo is populated on first launch.
@@ -118,6 +146,39 @@ class MapPackerSlots(ImgUtils):
                 self.ui.txtSuffix,
             ],
         )
+        # Sync the button text / option enablement to the (restored) mode.
+        self._on_mode_changed(cmb_mode.currentText())
+
+    def _unpack_mode(self) -> bool:
+        """True when the header Mode toggle is set to Unpack.
+
+        Defaults to False (Pack) when the header menu hasn't been built yet, so
+        callers can read it safely at any point.
+        """
+        try:
+            return self.ui.header.menu.cmb_mode.currentText() == "Unpack"
+        except (AttributeError, RuntimeError):
+            return False
+
+    def _on_mode_changed(self, mode: str):
+        """Reflect the Pack/Unpack mode in the UI.
+
+        Behavior is read live from :meth:`_unpack_mode` at action time, so this
+        is purely cosmetic: relabel the action button and disable options that
+        don't apply to the current direction.
+        """
+        unpack = mode == "Unpack"
+        self.ui.b000.setText("Unpack" if unpack else "Pack")
+        # The Suffix names the single packed output; when unpacking, each output
+        # is auto-named by its channel's map type, so the field is irrelevant.
+        self.ui.txtSuffix.setEnabled(not unpack)
+        # In pack mode the alpha channel's availability follows the output
+        # format. In unpack mode the alpha combo selects what to extract from
+        # the input image, so it must stay enabled regardless of format.
+        if unpack:
+            self.ui.cmbA.setEnabled(True)
+        else:
+            self._on_format_changed(self.ui.cmbFormat.currentText())
 
     def _seed_builtin_presets(self, preset_mgr):
         """Write built-in preset JSON files if they don't already exist.
@@ -151,13 +212,37 @@ class MapPackerSlots(ImgUtils):
     def source_dir(self, value):
         self._source_dir = value
 
-    def b000(self):
-        """Batch pack up to 4 channels into RGBA maps across texture sets."""
-        file_paths = self.sb.file_dialog(
+    def _select_textures(self, title):
+        """Open the texture file dialog seeded from the current source dir."""
+        return self.sb.file_dialog(
             file_types=[f"*.{ext}" for ext in self.texture_file_types],
-            title="Select textures for batch packing (multiple sets allowed):",
+            title=title,
             start_dir=self.source_dir,
             allow_multiple=True,
+        )
+
+    def _finish_batch(self, success, file_paths):
+        """Post-batch bookkeeping shared by pack/unpack: on success, point the
+        source dir at the output and enable the 'open output' button; otherwise
+        leave it disabled."""
+        if success:
+            self._last_output_dir = FileUtils.format_path(file_paths[0], "path")
+            self.source_dir = self._last_output_dir
+            self.ui.b001.setEnabled(True)
+        else:
+            self.ui.b001.setEnabled(False)
+
+    def b000(self):
+        """Run the configured channel operation: Pack (default) or Unpack."""
+        if self._unpack_mode():
+            self._unpack_files()
+        else:
+            self._pack_files()
+
+    def _pack_files(self):
+        """Batch pack up to 4 channels into RGBA maps across texture sets."""
+        file_paths = self._select_textures(
+            "Select textures for batch packing (multiple sets allowed):"
         )
         if not file_paths:
             print("No files selected.")
@@ -183,25 +268,23 @@ class MapPackerSlots(ImgUtils):
             total=total_sets, text=f"Packing 0/{total_sets} sets"
         ) as update:
             for i, (base_name, files) in enumerate(texture_sets.items()):
-                success = self._pack_set(
-                    base_name=base_name,
-                    files=files,
-                    combos=combos,
-                    suffix=suffix,
-                    ext=ext,
-                    fmt=fmt,
-                ) or success
+                success = (
+                    self._pack_set(
+                        base_name=base_name,
+                        files=files,
+                        combos=combos,
+                        suffix=suffix,
+                        ext=ext,
+                        fmt=fmt,
+                    )
+                    or success
+                )
                 update(
                     i + 1,
                     f"Packed set {i + 1}/{total_sets}: {base_name}",
                 )
 
-        if success:
-            self._last_output_dir = FileUtils.format_path(file_paths[0], "path")
-            self.source_dir = self._last_output_dir
-            self.ui.b001.setEnabled(True)
-        else:
-            self.ui.b001.setEnabled(False)
+        self._finish_batch(success, file_paths)
 
     def _pack_set(self, *, base_name, files, combos, suffix, ext, fmt) -> bool:
         """Helper for ``b000`` — pack a single texture set. Returns True
@@ -233,7 +316,7 @@ class MapPackerSlots(ImgUtils):
                 used_files.add(file)
                 continue
             # Try conversion if not found
-            converted = self.get_converted_map(map_type, available_map_types)
+            converted = MapFactory.get_converted_map(map_type, available_map_types)
             if converted is not None:
                 assigned[channel] = converted
                 continue
@@ -254,8 +337,76 @@ class MapPackerSlots(ImgUtils):
             out_mode=out_mode,
             output_format=fmt,
         )
-        print(f"// Packed map saved: {output_path}")
+        print(f"// Result: Packed map saved: {output_path}")
         return True
+
+    def _unpack_files(self):
+        """Batch unpack packed textures into per-channel maps.
+
+        The same R/G/B/A → map-type assignment used for packing now describes
+        what each channel of the *input* holds; each assigned channel is
+        extracted to ``<base>_<MapType>.<ext>`` beside the source.
+        """
+        file_paths = self._select_textures(
+            "Select packed textures to unpack into per-channel maps:"
+        )
+        if not file_paths:
+            print("No files selected.")
+            self.ui.b001.setEnabled(False)
+            return
+
+        combos = [
+            self.ui.cmbR.currentText(),
+            self.ui.cmbG.currentText(),
+            self.ui.cmbB.currentText(),
+            self.ui.cmbA.currentText(),
+        ]
+        ext = self.ui.cmbFormat.currentText().lower()
+        fmt = self.ui.cmbFormat.currentText().upper()
+
+        success = False
+        total = len(file_paths)
+        with self.sb.progress(total=total, text=f"Unpacking 0/{total}") as update:
+            for i, file in enumerate(file_paths):
+                success = (
+                    self._unpack_one(file=file, combos=combos, ext=ext, fmt=fmt)
+                    or success
+                )
+                update(
+                    i + 1,
+                    f"Unpacked {i + 1}/{total}: {FileUtils.format_path(file, 'name')}",
+                )
+
+        self._finish_batch(success, file_paths)
+
+    def _unpack_one(self, *, file, combos, ext, fmt) -> bool:
+        """Helper for ``_unpack_files`` — split one packed texture. Returns True
+        if at least one channel was extracted and written.
+
+        Channels set to ``None`` are skipped; channels absent from the source
+        image (e.g. ``A`` on an RGB input) are skipped by ``extract_channels``.
+        """
+        channel_config = {
+            channel: {"suffix": f"_{combos[idx]}"}
+            for idx, channel in enumerate(self.channels)
+            if combos[idx] != "None"
+        }
+        if not channel_config:
+            return False
+
+        output_dir = FileUtils.format_path(file, "path")
+        results = self.extract_channels(
+            file,
+            channel_config,
+            output_dir=output_dir,
+            save=True,
+            output_format=fmt,
+            ext=ext,
+        )
+        written = [p for p in results.values() if p]
+        for path in written:
+            print(f"// Result: Extracted map saved: {path}")
+        return bool(written)
 
     def b001(self):
         """Open the last output directory in the system file explorer."""

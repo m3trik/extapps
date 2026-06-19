@@ -28,7 +28,6 @@ from pythontk.img_utils.map_registry import MapRegistry
 from pythontk.img_utils.map_optimizer import MapOptimizer
 from pythontk.file_utils._file_utils import FileUtils
 
-
 class MapConverterSlots(ImgUtils):
     """Switchboard slots for ``map_converter.ui``.
 
@@ -73,21 +72,30 @@ class MapConverterSlots(ImgUtils):
         self._texture_provider = fn
 
     def footer_init(self, widget):
-        """Add the global Use-Selection toggle to the footer."""
-        self.btn_use_selection = QPushButton("Use Selection")
-        self.btn_use_selection.setObjectName("btn_use_selection")
-        self.btn_use_selection.setCheckable(True)
-        self.btn_use_selection.setChecked(False)
-        self.btn_use_selection.setToolTip(
+        """Add the global Use-Selection toggle to the footer.
+
+        The button is held under ``_use_selection_btn`` — deliberately *not* an
+        attribute matching its ``objectName`` ("btn_use_selection"). Switchboard
+        resolves a widget's slot via ``getattr(slots, objectName)``; an attribute
+        of that name would hand back this (non-callable) button and make wiring
+        its ``clicked`` signal fail with "is not a callable object". It is a pure
+        state toggle (read on demand by :meth:`_selection_enabled`), so it
+        intentionally has no slot.
+        """
+        self._use_selection_btn = QPushButton("Use Selection")
+        self._use_selection_btn.setObjectName("btn_use_selection")
+        self._use_selection_btn.setCheckable(True)
+        self._use_selection_btn.setChecked(False)
+        self._use_selection_btn.setToolTip(
             "When enabled, every tool reads texture paths from the host "
             "DCC's current selection instead of opening a file browser."
         )
-        widget.add_widget(self.btn_use_selection, side="right", background=True)
+        widget.add_widget(self._use_selection_btn, side="right", background=True)
 
     def _selection_enabled(self):
         """True when the footer's Use-Selection toggle is on."""
         try:
-            return self.btn_use_selection.isChecked()
+            return self._use_selection_btn.isChecked()
         except (AttributeError, RuntimeError):
             return False
 
@@ -379,7 +387,6 @@ class MapConverterSlots(ImgUtils):
         try:
             results = MapFactory.prepare_maps(
                 spec_map_paths,
-                callback=print,
                 **workflow_config,
             )
 
@@ -471,6 +478,126 @@ class MapConverterSlots(ImgUtils):
         except Exception:
             pass
 
+    # Output channel ← source choices for the Flip Channels tool. ``-X`` marks
+    # an inverted source; ``0``/``1`` write a constant. Shared by the option-box
+    # builder and (implicitly) the dispatch in :meth:`tb002`.
+    _FLIP_SOURCES = [
+        ("R", "R"),
+        ("G", "G"),
+        ("B", "B"),
+        ("A", "A"),
+        ("R (inv)", "-R"),
+        ("G (inv)", "-G"),
+        ("B (inv)", "-B"),
+        ("A (inv)", "-A"),
+        ("Black", "0"),
+        ("White", "1"),
+    ]
+
+    def tb002_init(self, widget):
+        """Populate the Flip Channels option menu (per-channel source + suffix)."""
+        widget.option_box.menu.setTitle("Flip Channels")
+
+        for idx, channel in enumerate("RGBA"):
+            name = f"cmb_{channel.lower()}"
+            widget.option_box.menu.add(
+                "QComboBox",
+                setObjectName=name,
+                setToolTip=(
+                    f"Source for the output {channel} channel. '(inv)' inverts "
+                    "the source; Black/White write a constant. The default "
+                    f"keeps the original {channel}."
+                ),
+            )
+            combo = getattr(widget.option_box.menu, name)
+            combo.add(self._FLIP_SOURCES, prefix=f"{channel} ← ")
+            combo.setCurrentIndex(idx)  # identity default (R←R, G←G, …)
+
+        widget.option_box.menu.add(
+            "QLineEdit",
+            setObjectName="txt_suffix",
+            setPlaceholderText="empty = overwrite",
+            setToolTip=(
+                "Suffix appended to the base name (before the extension). "
+                "Empty overwrites the source file."
+            ),
+        )
+
+    def tb002(self, widget):
+        """Flip/swizzle texture channels (per-channel invert, swap, or constant fill).
+
+        Each output channel pulls from a chosen source via
+        :meth:`ImgUtils.swizzle_channels`; the ``-`` (inverted) sources are
+        applied afterward with :meth:`ImgUtils.invert_channels`, keeping both
+        primitives pure and composable.
+        """
+        texture_paths = self._get_texture_paths(
+            title="Select texture map(s) to flip/swizzle:",
+        )
+        if not texture_paths:
+            return
+
+        menu = widget.option_box.menu
+        tokens = {
+            channel: getattr(menu, f"cmb_{channel.lower()}").currentData()
+            for channel in "RGBA"
+        }
+        suffix = menu.txt_suffix.text().strip()
+
+        # Each token is a swizzle source, optionally inverted (the ``-`` prefix).
+        # Only *non-identity* sources enter the swizzle map — so an untouched
+        # ``A`` slot doesn't force an alpha channel onto an RGB image, and a
+        # pure invert leaves the map empty (skipping the RGBA promotion below).
+        # Inverts ride separately so the two pure primitives compose.
+        swizzle_map = {}
+        invert_dests = ""
+        for dest, token in tokens.items():
+            if token.startswith("-"):
+                invert_dests += dest
+            source = token.lstrip("-").upper()
+            if source != dest:
+                swizzle_map[dest] = source
+
+        if not swizzle_map and not invert_dests and not suffix:
+            print("// Flip Channels: identity selection, nothing to do.")
+            return
+
+        total = len(texture_paths)
+        with self.sb.progress(total=total, text=f"Flipping 0/{total}") as update:
+            for i, path in enumerate(texture_paths):
+                self._flip_one(
+                    path,
+                    swizzle_map=swizzle_map,
+                    invert_dests=invert_dests,
+                    suffix=suffix,
+                )
+                update(
+                    i + 1, f"Flipped {i + 1}/{total}: {os.path.basename(path)}"
+                )
+
+        self.source_dir = FileUtils.format_path(texture_paths[0], "path")
+
+    def _flip_one(self, path, *, swizzle_map, invert_dests, suffix):
+        """Helper for ``tb002`` — flip/swizzle one texture path."""
+        print(f"Flipping channels: {path} ..")
+        # Skip the swizzle for a pure invert so the input's mode is preserved
+        # exactly (a grayscale map stays grayscale instead of promoting to RGB).
+        image = (
+            self.swizzle_channels(path, swizzle_map)
+            if swizzle_map
+            else self.ensure_image(path)
+        )
+        if invert_dests:
+            image = self.invert_channels(image, invert_dests)
+
+        directory = FileUtils.format_path(path, "path")
+        stem = FileUtils.format_path(path, "name")
+        ext = FileUtils.format_path(path, "ext").lstrip(".")
+        out_name = f"{stem}{suffix}.{ext}" if suffix else f"{stem}.{ext}"
+        output_path = os.path.join(directory, out_name)
+        self.save_image(image, output_path)
+        print(f"// Result: {output_path}")
+
     def b000(self):
         """Convert DirectX to OpenGL"""
         dx_map_paths = self._get_texture_paths(
@@ -548,80 +675,6 @@ class MapConverterSlots(ImgUtils):
         except Exception:
             pass
 
-    def b005(self):
-        """Batch pack Smoothness or Roughness into Metallic across texture sets."""
-        paths = self._get_texture_paths(
-            title="Select one or more sets of metallic and smoothness/roughness maps:",
-        )
-        if not paths:
-            return
-
-        texture_sets = MapFactory.group_textures_by_set(paths)
-
-        for base_name, files in texture_sets.items():
-            sorted_maps = MapFactory.sort_images_by_type(files)
-
-            metallic_map_path = sorted_maps.get("Metallic", [None])[0]
-            smooth_map_path = sorted_maps.get("Smoothness", [None])[0]
-            rough_map_path = sorted_maps.get("Roughness", [None])[0]
-
-            if not metallic_map_path:
-                print(f"Skipping {base_name}: No Metallic map found.")
-                continue
-
-            alpha_map_path = smooth_map_path or rough_map_path
-            invert_alpha = rough_map_path is not None
-
-            if not alpha_map_path:
-                print(f"Skipping {base_name}: No Smoothness or Roughness map found.")
-                continue
-
-            print(
-                f"Packing {'Roughness' if invert_alpha else 'Smoothness'} from: {alpha_map_path}\n\tinto: {metallic_map_path} .."
-            )
-
-            packed_path = MapFactory.pack_smoothness_into_metallic(
-                metallic_map_path,
-                alpha_map_path,
-                invert_alpha=invert_alpha,
-            )
-            print(f"// Result: {packed_path}")
-
-        try:
-            self.source_dir = FileUtils.format_path(paths[0], "path")
-        except Exception:
-            pass
-
-    def b006(self):
-        """Unpack Metallic and Smoothness maps from MetallicSmoothness textures."""
-        print("Unpacking Metallic and Smoothness maps ..")
-        metallic_smoothness_paths = self._get_texture_paths(
-            title="Select MetallicSmoothness maps to unpack:",
-            map_type_filter=["Metallic_Smoothness"],
-        )
-        if not metallic_smoothness_paths:
-            return
-
-        for metallic_smoothness_path in metallic_smoothness_paths:
-            print(f"Unpacking: {metallic_smoothness_path} ..")
-
-            try:
-                metallic_path, smoothness_path = MapFactory.unpack_metallic_smoothness(
-                    metallic_smoothness_path
-                )
-                print(f"// Metallic map: {metallic_path}")
-                print(f"// Smoothness map: {smoothness_path}")
-
-            except Exception as e:
-                print(f"// Error unpacking {metallic_smoothness_path}: {e}")
-
-        try:
-            self.source_dir = FileUtils.format_path(
-                metallic_smoothness_paths[0], "path"
-            )
-        except Exception:
-            pass
-
     def b007(self):
         """Unpack Specular and Gloss maps from SpecularGloss textures."""
         specular_gloss_paths = self._get_texture_paths(
@@ -646,339 +699,6 @@ class MapConverterSlots(ImgUtils):
 
         try:
             self.source_dir = FileUtils.format_path(specular_gloss_paths[0], "path")
-        except Exception:
-            pass
-
-    def b008_init(self, widget):
-        """Populate the MSAO pack toolbutton's option menu (channel layout)."""
-        widget.option_box.menu.setTitle("Pack MSAO")
-        widget.option_box.menu.add(
-            "QComboBox",
-            setObjectName="cmb_msao_layout",
-            setToolTip=(
-                "RGBA: HDRP Mask Map (R=Metallic, G=AO, B=Detail, A=Smoothness).\n"
-                "RGB: 3-channel parallel layout (R=Metallic, G=Smoothness, B=AO)."
-            ),
-        )
-        widget.option_box.menu.cmb_msao_layout.add(
-            [("RGBA (HDRP Mask Map)", "rgba"), ("RGB (3-channel)", "rgb")],
-            prefix="Layout:",
-        )
-
-    def b008(self, widget):
-        """Batch pack Metallic, AO, and Smoothness/Roughness into an MSAO texture."""
-        paths = self._get_texture_paths(
-            title="Select one or more sets of Metallic, Ambient Occlusion, and Smoothness maps:",
-        )
-        if not paths:
-            return
-
-        layout = (
-            widget.option_box.menu.cmb_msao_layout.currentData() or "rgba"
-        )
-
-        texture_sets = MapFactory.group_textures_by_set(paths)
-
-        for base_name, files in texture_sets.items():
-            sorted_maps = MapFactory.sort_images_by_type(files)
-
-            metallic_map_path = sorted_maps.get("Metallic", [None])[0]
-            ao_map_path = sorted_maps.get("Ambient_Occlusion", [None])[0]
-            smoothness_map_path = sorted_maps.get("Smoothness", [None])[0]
-            roughness_map_path = sorted_maps.get("Roughness", [None])[0]
-
-            if not metallic_map_path:
-                print(f"Skipping {base_name}: No Metallic map found.")
-                continue
-
-            if not ao_map_path:
-                print(f"Skipping {base_name}: No Ambient Occlusion map found.")
-                continue
-
-            alpha_map_path = smoothness_map_path or roughness_map_path
-            invert_alpha = roughness_map_path is not None
-
-            if not alpha_map_path:
-                print(f"Skipping {base_name}: No Smoothness or Roughness map found.")
-                continue
-
-            print(f"Packing MSAO ({layout.upper()}) for {base_name}:")
-            print(f"  Metallic: {metallic_map_path}")
-            print(f"  AO:       {ao_map_path}")
-            print(
-                f"  {'Roughness' if invert_alpha else 'Smoothness'}: {alpha_map_path}"
-            )
-
-            packed_path = MapFactory.pack_msao_texture(
-                metallic_map_path,
-                ao_map_path,
-                alpha_map_path,
-                invert_alpha=invert_alpha,
-                layout=layout,
-            )
-            print(f"// Result: {packed_path}")
-
-        try:
-            self.source_dir = FileUtils.format_path(paths[0], "path")
-        except Exception:
-            pass
-
-    def b009_init(self, widget):
-        """Populate the MSAO unpack toolbutton's option menu (channel layout)."""
-        widget.option_box.menu.setTitle("Unpack MSAO")
-        widget.option_box.menu.add(
-            "QComboBox",
-            setObjectName="cmb_msao_unpack_layout",
-            setToolTip=(
-                "Auto-detect: pick layout from the source image mode (RGBA → HDRP Mask Map, RGB → 3-channel).\n"
-                "RGBA: force HDRP Mask Map (R=Metallic, G=AO, B=Detail, A=Smoothness).\n"
-                "RGB: force 3-channel parallel layout (R=Metallic, G=Smoothness, B=AO)."
-            ),
-        )
-        widget.option_box.menu.cmb_msao_unpack_layout.add(
-            [
-                ("Auto-detect", ""),
-                ("RGBA (HDRP Mask Map)", "rgba"),
-                ("RGB (3-channel)", "rgb"),
-            ],
-            prefix="Layout:",
-        )
-
-    def b009(self, widget):
-        """Unpack Metallic, AO, and Smoothness maps from MSAO textures."""
-        msao_paths = self._get_texture_paths(
-            title="Select MSAO (MetallicSmoothnessAO) maps to unpack:",
-            map_type_filter=["MSAO"],
-        )
-        if not msao_paths:
-            return
-
-        layout = (
-            widget.option_box.menu.cmb_msao_unpack_layout.currentData() or None
-        )
-
-        for msao_path in msao_paths:
-            label = (layout or "auto").upper()
-            print(f"Unpacking MSAO [{label}]: {msao_path} ..")
-
-            try:
-                metallic_path, ao_path, smoothness_path = (
-                    MapFactory.unpack_msao_texture(msao_path, layout=layout)
-                )
-                print(f"// Metallic map: {metallic_path}")
-                print(f"// AO map: {ao_path}")
-                print(f"// Smoothness map: {smoothness_path}")
-
-            except Exception as e:
-                print(f"// Error unpacking {msao_path}: {e}")
-
-        try:
-            self.source_dir = FileUtils.format_path(msao_paths[0], "path")
-        except Exception:
-            pass
-
-    def b013_init(self, widget):
-        """Populate the MRAO pack toolbutton's option menu (channel layout)."""
-        widget.option_box.menu.setTitle("Pack MRAO")
-        widget.option_box.menu.add(
-            "QComboBox",
-            setObjectName="cmb_mrao_layout",
-            setToolTip=(
-                "RGB: industry standard (R=Metallic, G=Roughness, B=AO).\n"
-                "RGBA: MSAO mirror (R=Metallic, G=AO, B=Detail, A=Roughness)."
-            ),
-        )
-        widget.option_box.menu.cmb_mrao_layout.add(
-            [("RGB (3-channel)", "rgb"), ("RGBA (MSAO mirror)", "rgba")],
-            prefix="Layout:",
-        )
-
-    def b013(self, widget):
-        """Batch pack Metallic, Roughness/Smoothness, and AO into an MRAO texture."""
-        paths = self._get_texture_paths(
-            title="Select one or more sets of Metallic, Roughness, and Ambient Occlusion maps:",
-        )
-        if not paths:
-            return
-
-        layout = widget.option_box.menu.cmb_mrao_layout.currentData() or "rgb"
-
-        texture_sets = MapFactory.group_textures_by_set(paths)
-
-        for base_name, files in texture_sets.items():
-            sorted_maps = MapFactory.sort_images_by_type(files)
-
-            metallic_map_path = sorted_maps.get("Metallic", [None])[0]
-            ao_map_path = sorted_maps.get("Ambient_Occlusion", [None])[0]
-            roughness_map_path = sorted_maps.get("Roughness", [None])[0]
-            smoothness_map_path = sorted_maps.get("Smoothness", [None])[0]
-
-            if not metallic_map_path:
-                print(f"Skipping {base_name}: No Metallic map found.")
-                continue
-
-            # Prefer Roughness; fall back to Smoothness with inversion.
-            roughness_source = roughness_map_path or smoothness_map_path
-            invert_roughness = (
-                roughness_map_path is None and smoothness_map_path is not None
-            )
-
-            if not roughness_source:
-                print(f"Skipping {base_name}: No Roughness or Smoothness map found.")
-                continue
-
-            print(f"Packing MRAO ({layout.upper()}) for {base_name}:")
-            print(f"  Metallic:  {metallic_map_path}")
-            print(
-                f"  {'Smoothness' if invert_roughness else 'Roughness'}: {roughness_source}"
-            )
-            print(f"  AO:        {ao_map_path or '(missing — defaults to white)'}")
-
-            packed_path = MapFactory.pack_mrao_texture(
-                metallic_map_path,
-                roughness_source,
-                ao_map_path,
-                invert_roughness=invert_roughness,
-                layout=layout,
-            )
-            print(f"// Result: {packed_path}")
-
-        try:
-            self.source_dir = FileUtils.format_path(paths[0], "path")
-        except Exception:
-            pass
-
-    def b014_init(self, widget):
-        """Populate the MRAO unpack toolbutton's option menu (channel layout)."""
-        widget.option_box.menu.setTitle("Unpack MRAO")
-        widget.option_box.menu.add(
-            "QComboBox",
-            setObjectName="cmb_mrao_unpack_layout",
-            setToolTip=(
-                "Auto-detect: pick layout from the source image mode (RGB → industry standard, RGBA → MSAO mirror).\n"
-                "RGB: force 3-channel industry layout (R=Metallic, G=Roughness, B=AO).\n"
-                "RGBA: force MSAO mirror (R=Metallic, G=AO, B=Detail, A=Roughness)."
-            ),
-        )
-        widget.option_box.menu.cmb_mrao_unpack_layout.add(
-            [
-                ("Auto-detect", ""),
-                ("RGB (3-channel)", "rgb"),
-                ("RGBA (MSAO mirror)", "rgba"),
-            ],
-            prefix="Layout:",
-        )
-
-    def b014(self, widget):
-        """Unpack Metallic, Roughness, and AO from MRAO textures."""
-        mrao_paths = self._get_texture_paths(
-            title="Select MRAO (MetallicRoughnessAO) maps to unpack:",
-            map_type_filter=["MRAO"],
-        )
-        if not mrao_paths:
-            return
-
-        layout = (
-            widget.option_box.menu.cmb_mrao_unpack_layout.currentData() or None
-        )
-
-        for mrao_path in mrao_paths:
-            label = (layout or "auto").upper()
-            print(f"Unpacking MRAO [{label}]: {mrao_path} ..")
-
-            try:
-                metallic_path, roughness_path, ao_path = (
-                    MapFactory.unpack_mrao_texture(mrao_path, layout=layout)
-                )
-                print(f"// Metallic map:  {metallic_path}")
-                print(f"// Roughness map: {roughness_path}")
-                print(f"// AO map:        {ao_path}")
-
-            except Exception as e:
-                print(f"// Error unpacking {mrao_path}: {e}")
-
-        try:
-            self.source_dir = FileUtils.format_path(mrao_paths[0], "path")
-        except Exception:
-            pass
-
-    def b015(self):
-        """Batch pack AO, Roughness/Smoothness, and Metallic into an ORM texture."""
-        paths = self._get_texture_paths(
-            title="Select one or more sets of Ambient Occlusion, Roughness, and Metallic maps:",
-        )
-        if not paths:
-            return
-
-        texture_sets = MapFactory.group_textures_by_set(paths)
-
-        for base_name, files in texture_sets.items():
-            sorted_maps = MapFactory.sort_images_by_type(files)
-
-            ao_map_path = sorted_maps.get("Ambient_Occlusion", [None])[0]
-            metallic_map_path = sorted_maps.get("Metallic", [None])[0]
-            roughness_map_path = sorted_maps.get("Roughness", [None])[0]
-            smoothness_map_path = sorted_maps.get("Smoothness", [None])[0]
-
-            # Prefer Roughness; fall back to Smoothness with inversion.
-            roughness_source = roughness_map_path or smoothness_map_path
-            invert_roughness = (
-                roughness_map_path is None and smoothness_map_path is not None
-            )
-
-            if not roughness_source:
-                print(f"Skipping {base_name}: No Roughness or Smoothness map found.")
-                continue
-
-            if not metallic_map_path:
-                print(f"Skipping {base_name}: No Metallic map found.")
-                continue
-
-            print(f"Packing ORM for {base_name}:")
-            print(f"  AO (R):        {ao_map_path or '(missing — defaults to white)'}")
-            print(
-                f"  {'Smoothness' if invert_roughness else 'Roughness'} (G): {roughness_source}"
-            )
-            print(f"  Metallic (B):  {metallic_map_path}")
-
-            packed_path = MapFactory.pack_orm_texture(
-                ao_map_path,
-                roughness_source,
-                metallic_map_path,
-                invert_roughness=invert_roughness,
-            )
-            print(f"// Result: {packed_path}")
-
-        try:
-            self.source_dir = FileUtils.format_path(paths[0], "path")
-        except Exception:
-            pass
-
-    def b016(self):
-        """Unpack AO, Roughness, and Metallic from ORM textures."""
-        orm_paths = self._get_texture_paths(
-            title="Select ORM (Occlusion Roughness Metallic) maps to unpack:",
-            map_type_filter=["ORM"],
-        )
-        if not orm_paths:
-            return
-
-        for orm_path in orm_paths:
-            print(f"Unpacking ORM: {orm_path} ..")
-
-            try:
-                ao_path, roughness_path, metallic_path = (
-                    MapFactory.unpack_orm_texture(orm_path)
-                )
-                print(f"// AO map:        {ao_path}")
-                print(f"// Roughness map: {roughness_path}")
-                print(f"// Metallic map:  {metallic_path}")
-
-            except Exception as e:
-                print(f"// Error unpacking {orm_path}: {e}")
-
-        try:
-            self.source_dir = FileUtils.format_path(orm_paths[0], "path")
         except Exception:
             pass
 
@@ -1035,16 +755,12 @@ class MapConverterSlots(ImgUtils):
             pass
 
     def b012(self):
-        """Batch prepare textures for PBR workflow using MapFactory.
+        """Batch-prepare textures for a target PBR workflow using MapFactory.
 
-        Supports multiple workflows:
-        - Standard PBR (separate maps)
-        - Unity URP (Albedo+Transparency, Metallic+Smoothness)
-        - Unity HDRP (MSAO Mask Map)
-        - Unreal Engine
-        - glTF 2.0
-        - Godot
-        - Specular/Glossiness
+        Workflow presets come from :class:`pythontk.MapRegistry` — the single
+        source of truth the Maya "Update Materials" tool also reads — so a named
+        workflow yields identical settings in both tools. (This method used to
+        carry its own copy of the configs, which had drifted from the registry.)
         """
         # Get texture paths
         texture_paths = self._get_texture_paths(
@@ -1053,17 +769,9 @@ class MapConverterSlots(ImgUtils):
         if not texture_paths:
             return
 
-        # Present workflow options
-        workflow_options = [
-            "Standard PBR (Separate Maps)",
-            "Unity URP (Packed: Albedo+Alpha, Metallic+Smoothness)",
-            "Unity HDRP (Mask Map: MSAO)",
-            "MRAO (Packed: Metallic+Roughness+AO)",
-            "Unreal Engine (BaseColor+Alpha)",
-            "glTF 2.0 (Separate Maps)",
-            "Godot (Separate Maps)",
-            "Specular/Glossiness Workflow",
-        ]
+        # Workflow presets are owned by MapRegistry (SSoT); offer its names.
+        registry = MapRegistry()
+        workflow_names = list(registry.get_workflow_presets())
 
         from qtpy.QtWidgets import QInputDialog
 
@@ -1071,78 +779,22 @@ class MapConverterSlots(ImgUtils):
             None,
             "Select PBR Workflow",
             "Choose target workflow:",
-            workflow_options,
+            workflow_names,
             0,
             False,
         )
         if not ok:
             return
 
-        # Map workflow to config
-        workflow_configs = {
-            "Standard PBR (Separate Maps)": {
-                "albedo_transparency": False,
-                "metallic_smoothness": False,
-                "mask_map": False,
-                "normal_type": "OpenGL",
-                "output_extension": "png",
-            },
-            "Unity URP (Packed: Albedo+Alpha, Metallic+Smoothness)": {
-                "albedo_transparency": True,
-                "metallic_smoothness": True,
-                "mask_map": False,
-                "normal_type": "OpenGL",
-                "output_extension": "png",
-            },
-            "Unity HDRP (Mask Map: MSAO)": {
-                "albedo_transparency": False,
-                "metallic_smoothness": False,
-                "mask_map": True,
-                "normal_type": "OpenGL",
-                "output_extension": "png",
-            },
-            "MRAO (Packed: Metallic+Roughness+AO)": {
-                "albedo_transparency": False,
-                "metallic_smoothness": False,
-                "mask_map": False,
-                "mrao_map": True,
-                "normal_type": "OpenGL",
-                "output_extension": "png",
-            },
-            "Unreal Engine (BaseColor+Alpha)": {
-                "albedo_transparency": True,
-                "metallic_smoothness": False,
-                "mask_map": False,
-                "normal_type": "DirectX",
-                "output_extension": "png",
-            },
-            "glTF 2.0 (Separate Maps)": {
-                "albedo_transparency": False,
-                "metallic_smoothness": False,
-                "mask_map": False,
-                "normal_type": "OpenGL",
-                "output_extension": "png",
-            },
-            "Godot (Separate Maps)": {
-                "albedo_transparency": False,
-                "metallic_smoothness": False,
-                "mask_map": False,
-                "normal_type": "OpenGL",
-                "output_extension": "png",
-            },
-            "Specular/Glossiness Workflow": {
-                "albedo_transparency": False,
-                "metallic_smoothness": True,
-                "mask_map": False,
-                "normal_type": "OpenGL",
-                "output_extension": "png",
-            },
-        }
-
-        config = workflow_configs.get(workflow)
+        # Resolve to a full MapFactory config (applies aliases, derives
+        # resize/convert_format). Drop the human-readable description and keep
+        # the panel's long-standing default output format.
+        config = registry.resolve_config(workflow)
         if not config:
             print(f"Unknown workflow: {workflow}")
             return
+        config.pop("description", None)
+        config.setdefault("output_extension", "png")
 
         print(f"\n{'='*60}")
         print(f"Preparing textures for {workflow}")
@@ -1151,7 +803,6 @@ class MapConverterSlots(ImgUtils):
         try:
             results = MapFactory.prepare_maps(
                 texture_paths,
-                callback=print,
                 **config,
             )
 

@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-05-30",
+  "generated_at": "2026-06-19",
   "modules": [
     {
       "relpath": "map_compositor/launcher.py",
@@ -25,7 +25,7 @@
         {
           "name": "MapCompositorSlots",
           "summary": "UI slot handler.",
-          "line": 50,
+          "line": 51,
           "bases": [],
           "members": [
             {
@@ -34,7 +34,7 @@
               "kind": "property",
               "signature": "(self) -> bool",
               "summary": "",
-              "line": 106,
+              "line": 108,
               "deprecated": false
             },
             {
@@ -43,7 +43,7 @@
               "kind": "method",
               "signature": "(self, value: bool) -> None",
               "summary": "",
-              "line": 110,
+              "line": 112,
               "deprecated": false
             },
             {
@@ -52,7 +52,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 115,
+              "line": 117,
               "deprecated": false
             },
             {
@@ -61,7 +61,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 119,
+              "line": 121,
               "deprecated": false
             },
             {
@@ -70,7 +70,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 123,
+              "line": 125,
               "deprecated": false
             },
             {
@@ -79,7 +79,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the header menu with global options.",
-              "line": 201,
+              "line": 321,
               "deprecated": false
             },
             {
@@ -87,8 +87,8 @@
               "qualname": "MapCompositorSlots.txt000_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Init Source Directory",
-              "line": 280,
+              "summary": "Init Source — a directory of maps, or specific image files.",
+              "line": 400,
               "deprecated": false
             },
             {
@@ -97,7 +97,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Destination Directory",
-              "line": 300,
+              "line": 422,
               "deprecated": false
             },
             {
@@ -106,7 +106,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Map Name",
-              "line": 320,
+              "line": 442,
               "deprecated": false
             },
             {
@@ -115,16 +115,16 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 330,
+              "line": 452,
               "deprecated": false
             },
             {
               "name": "process",
               "qualname": "MapCompositorSlots.process",
               "kind": "method",
-              "signature": "(self, images, input_dir, output_dir, map_name=None)",
+              "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 340,
+              "line": 462,
               "deprecated": false
             }
           ]
@@ -153,7 +153,7 @@
         {
           "name": "MapConverterSlots",
           "summary": "Switchboard slots for ``map_converter.ui``.",
-          "line": 32,
+          "line": 31,
           "bases": [
             "ImgUtils"
           ],
@@ -164,7 +164,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "Get the starting directory for file dialogs.",
-              "line": 51,
+              "line": 50,
               "deprecated": false
             },
             {
@@ -173,7 +173,7 @@
               "kind": "method",
               "signature": "(self, value)",
               "summary": "Set the starting directory for file dialogs.",
-              "line": 56,
+              "line": 55,
               "deprecated": false
             },
             {
@@ -182,7 +182,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "Callable returning a list of texture paths from the host DCC selection.",
-              "line": 61,
+              "line": 60,
               "deprecated": false
             },
             {
@@ -191,7 +191,7 @@
               "kind": "method",
               "signature": "(self, fn)",
               "summary": "",
-              "line": 72,
+              "line": 71,
               "deprecated": false
             },
             {
@@ -200,7 +200,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Add the global Use-Selection toggle to the footer.",
-              "line": 75,
+              "line": 74,
               "deprecated": false
             },
             {
@@ -209,7 +209,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Optimize toolbutton's option menu (format, clamp, modifier).",
-              "line": 145,
+              "line": 153,
               "deprecated": false
             },
             {
@@ -218,7 +218,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Optimize a texture map(s)",
-              "line": 214,
+              "line": 222,
               "deprecated": false
             },
             {
@@ -227,7 +227,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 341,
+              "line": 349,
               "deprecated": false
             },
             {
@@ -236,7 +236,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 351,
+              "line": 359,
               "deprecated": false
             },
             {
@@ -245,7 +245,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 408,
+              "line": 415,
               "deprecated": false
             },
             {
@@ -254,7 +254,25 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 434,
+              "line": 441,
+              "deprecated": false
+            },
+            {
+              "name": "tb002_init",
+              "qualname": "MapConverterSlots.tb002_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
+              "line": 497,
+              "deprecated": false
+            },
+            {
+              "name": "tb002",
+              "qualname": "MapConverterSlots.tb002",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
+              "line": 526,
               "deprecated": false
             },
             {
@@ -263,7 +281,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert DirectX to OpenGL",
-              "line": 474,
+              "line": 601,
               "deprecated": false
             },
             {
@@ -272,7 +290,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert OpenGL to DirectX",
-              "line": 491,
+              "line": 618,
               "deprecated": false
             },
             {
@@ -281,25 +299,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 508,
-              "deprecated": false
-            },
-            {
-              "name": "b005",
-              "qualname": "MapConverterSlots.b005",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Batch pack Smoothness or Roughness into Metallic across texture sets.",
-              "line": 551,
-              "deprecated": false
-            },
-            {
-              "name": "b006",
-              "qualname": "MapConverterSlots.b006",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Unpack Metallic and Smoothness maps from MetallicSmoothness textures.",
-              "line": 595,
+              "line": 635,
               "deprecated": false
             },
             {
@@ -308,97 +308,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 625,
-              "deprecated": false
-            },
-            {
-              "name": "b008_init",
-              "qualname": "MapConverterSlots.b008_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the MSAO pack toolbutton's option menu (channel layout).",
-              "line": 652,
-              "deprecated": false
-            },
-            {
-              "name": "b008",
-              "qualname": "MapConverterSlots.b008",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Batch pack Metallic, AO, and Smoothness/Roughness into an MSAO texture.",
-              "line": 668,
-              "deprecated": false
-            },
-            {
-              "name": "b009_init",
-              "qualname": "MapConverterSlots.b009_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the MSAO unpack toolbutton's option menu (channel layout).",
-              "line": 726,
-              "deprecated": false
-            },
-            {
-              "name": "b009",
-              "qualname": "MapConverterSlots.b009",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Unpack Metallic, AO, and Smoothness maps from MSAO textures.",
-              "line": 747,
-              "deprecated": false
-            },
-            {
-              "name": "b013_init",
-              "qualname": "MapConverterSlots.b013_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the MRAO pack toolbutton's option menu (channel layout).",
-              "line": 780,
-              "deprecated": false
-            },
-            {
-              "name": "b013",
-              "qualname": "MapConverterSlots.b013",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Batch pack Metallic, Roughness/Smoothness, and AO into an MRAO texture.",
-              "line": 796,
-              "deprecated": false
-            },
-            {
-              "name": "b014_init",
-              "qualname": "MapConverterSlots.b014_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the MRAO unpack toolbutton's option menu (channel layout).",
-              "line": 851,
-              "deprecated": false
-            },
-            {
-              "name": "b014",
-              "qualname": "MapConverterSlots.b014",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Unpack Metallic, Roughness, and AO from MRAO textures.",
-              "line": 872,
-              "deprecated": false
-            },
-            {
-              "name": "b015",
-              "qualname": "MapConverterSlots.b015",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Batch pack AO, Roughness/Smoothness, and Metallic into an ORM texture.",
-              "line": 905,
-              "deprecated": false
-            },
-            {
-              "name": "b016",
-              "qualname": "MapConverterSlots.b016",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Unpack AO, Roughness, and Metallic from ORM textures.",
-              "line": 957,
+              "line": 678,
               "deprecated": false
             },
             {
@@ -407,7 +317,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 985,
+              "line": 705,
               "deprecated": false
             },
             {
@@ -416,7 +326,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 1011,
+              "line": 731,
               "deprecated": false
             },
             {
@@ -424,8 +334,8 @@
               "qualname": "MapConverterSlots.b012",
               "kind": "method",
               "signature": "(self)",
-              "summary": "Batch prepare textures for PBR workflow using MapFactory.",
-              "line": 1037,
+              "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
+              "line": 757,
               "deprecated": false
             }
           ]
@@ -464,8 +374,8 @@
               "qualname": "MapPackerSlots.header_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Configure the header menu with presets for common packed map types.",
-              "line": 104,
+              "summary": "Configure the header menu: Pack/Unpack mode + presets.",
+              "line": 112,
               "deprecated": false
             },
             {
@@ -474,7 +384,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 147,
+              "line": 208,
               "deprecated": false
             },
             {
@@ -483,7 +393,7 @@
               "kind": "method",
               "signature": "(self, value)",
               "summary": "",
-              "line": 151,
+              "line": 212,
               "deprecated": false
             },
             {
@@ -491,8 +401,8 @@
               "qualname": "MapPackerSlots.b000",
               "kind": "method",
               "signature": "(self)",
-              "summary": "Batch pack up to 4 channels into RGBA maps across texture sets.",
-              "line": 154,
+              "summary": "Run the configured channel operation: Pack (default) or Unpack.",
+              "line": 235,
               "deprecated": false
             },
             {
@@ -501,12 +411,218 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 260,
+              "line": 411,
               "deprecated": false
             }
           ]
         }
       ]
+    },
+    {
+      "relpath": "marmoset_workflow/_marmoset_engine.py",
+      "summary": "Drive Marmoset Toolbag from the outside -- launch + templated automation.",
+      "functions": [
+        {
+          "name": "list_templates",
+          "qualname": "list_templates",
+          "kind": "function",
+          "signature": "() -> List[Path]",
+          "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
+          "line": 59,
+          "deprecated": false
+        },
+        {
+          "name": "template_modes",
+          "qualname": "template_modes",
+          "kind": "function",
+          "signature": "(template_path: Path) -> Tuple[str, ...]",
+          "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
+          "line": 64,
+          "deprecated": false
+        },
+        {
+          "name": "list_template_modes",
+          "qualname": "list_template_modes",
+          "kind": "function",
+          "signature": "() -> List[Tuple[str, str]]",
+          "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
+          "line": 73,
+          "deprecated": false
+        }
+      ],
+      "classes": [
+        {
+          "name": "MarmosetEngine",
+          "summary": "Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.",
+          "line": 83,
+          "bases": [
+            "ptk.Deliverer",
+            "ptk.LoggingMixin"
+          ],
+          "members": [
+            {
+              "name": "toolbag_path",
+              "qualname": "MarmosetEngine.toolbag_path",
+              "kind": "property",
+              "signature": "(self) -> Optional[str]",
+              "summary": "Resolve the Toolbag executable path.",
+              "line": 122,
+              "deprecated": false
+            },
+            {
+              "name": "toolbag_path",
+              "qualname": "MarmosetEngine.toolbag_path",
+              "kind": "method",
+              "signature": "(self, value: Optional[str]) -> None",
+              "summary": "",
+              "line": 141,
+              "deprecated": false
+            },
+            {
+              "name": "toolbag_log_path",
+              "qualname": "MarmosetEngine.toolbag_log_path",
+              "kind": "property",
+              "signature": "(self) -> Optional[str]",
+              "summary": "Resolve Toolbag's application log file (script prints + tracebacks).",
+              "line": 145,
+              "deprecated": false
+            },
+            {
+              "name": "preflight",
+              "qualname": "MarmosetEngine.preflight",
+              "kind": "method",
+              "signature": "(self, bridge, request) -> bool",
+              "summary": "Validate the (template, mode) before the bridge produces its payload.",
+              "line": 156,
+              "deprecated": false
+            },
+            {
+              "name": "deliver",
+              "qualname": "MarmosetEngine.deliver",
+              "kind": "method",
+              "signature": "(self, bridge, payload, request) -> Optional[Dict[str, Any]]",
+              "summary": "Hand the produced model + manifests to Toolbag via :meth:`send`.",
+              "line": 168,
+              "deprecated": false
+            },
+            {
+              "name": "send",
+              "qualname": "MarmosetEngine.send",
+              "kind": "method",
+              "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, output_dir: Optional[str] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]",
+              "summary": "Render *template* in *mode* against *model_path* and hand off to Toolbag.",
+              "line": 190,
+              "deprecated": false
+            },
+            {
+              "name": "render_template",
+              "qualname": "MarmosetEngine.render_template",
+              "kind": "method",
+              "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None) -> Optional[str]",
+              "summary": "Return the rendered Toolbag Python script body, or *None* on miss.",
+              "line": 330,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "marmoset_workflow/_toolbag_helpers.py",
+      "summary": "Shared helpers for Marmoset Toolbag template scripts.",
+      "functions": [
+        {
+          "name": "derive_per_run_log_path",
+          "qualname": "derive_per_run_log_path",
+          "kind": "function",
+          "signature": "(manifest_path)",
+          "summary": "Return the ``<base>.toolbag.log`` path next to *manifest_path*.",
+          "line": 41,
+          "deprecated": false
+        },
+        {
+          "name": "begin_log",
+          "qualname": "begin_log",
+          "kind": "function",
+          "signature": "(reference_path)",
+          "summary": "Start a fresh log file alongside *reference_path*.",
+          "line": 55,
+          "deprecated": false
+        },
+        {
+          "name": "log",
+          "qualname": "log",
+          "kind": "function",
+          "signature": "(msg)",
+          "summary": "Print *msg* and (best-effort) append it to the active log file.",
+          "line": 75,
+          "deprecated": false
+        },
+        {
+          "name": "find_material",
+          "qualname": "find_material",
+          "kind": "function",
+          "signature": "(name, scene_mats)",
+          "summary": "Return the Toolbag material whose name matches *name*.",
+          "line": 153,
+          "deprecated": false
+        },
+        {
+          "name": "load_manifest",
+          "qualname": "load_manifest",
+          "kind": "function",
+          "signature": "(manifest_path)",
+          "summary": "Return the ``materials`` dict from a MatManifest JSON sidecar.",
+          "line": 168,
+          "deprecated": false
+        },
+        {
+          "name": "wire_materials_from_manifest",
+          "qualname": "wire_materials_from_manifest",
+          "kind": "function",
+          "signature": "(manifest_path, verbose=True)",
+          "summary": "Wire every texture slot in *manifest_path* onto matching Toolbag mats.",
+          "line": 185,
+          "deprecated": false
+        },
+        {
+          "name": "split_high_low",
+          "qualname": "split_high_low",
+          "kind": "function",
+          "signature": "(objects, high_suffix, low_suffix, pre_classified=None)",
+          "summary": "Group *objects* into ``(highs, lows, others)`` by name suffix.",
+          "line": 309,
+          "deprecated": false
+        },
+        {
+          "name": "collect_mesh_objects",
+          "qualname": "collect_mesh_objects",
+          "kind": "function",
+          "signature": "(root)",
+          "summary": "Recursively gather ``mset.MeshObject`` descendants of *root*.",
+          "line": 391,
+          "deprecated": false
+        },
+        {
+          "name": "apply_sky_preset",
+          "qualname": "apply_sky_preset",
+          "kind": "function",
+          "signature": "(preset_path)",
+          "summary": "Load a ``.tbsky`` preset onto the scene's existing SkyObject.",
+          "line": 431,
+          "deprecated": false
+        },
+        {
+          "name": "frame_in_viewport",
+          "qualname": "frame_in_viewport",
+          "kind": "function",
+          "signature": "()",
+          "summary": "Frame the imported scene in the viewport (best-effort).",
+          "line": 455,
+          "deprecated": false
+        }
+      ],
+      "classes": []
     },
     {
       "relpath": "marmoset_workflow/launcher.py",
@@ -564,7 +680,7 @@
         {
           "name": "MarmosetWorkflowSlots",
           "summary": "Switchboard slots wired to ``marmoset_workflow.ui``.",
-          "line": 45,
+          "line": 47,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -575,7 +691,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 70,
+              "line": 90,
               "deprecated": false
             },
             {
@@ -584,7 +700,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 74,
+              "line": 94,
               "deprecated": false
             },
             {
@@ -593,7 +709,7 @@
               "kind": "method",
               "signature": "(self) -> MarmosetEngine",
               "summary": "",
-              "line": 77,
+              "line": 97,
               "deprecated": false
             },
             {
@@ -602,7 +718,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Engine templates filtered to the 'set up a project' subset.",
-              "line": 80,
+              "line": 100,
               "deprecated": false
             },
             {
@@ -611,7 +727,7 @@
               "kind": "method",
               "signature": "(self, pairs: List[Tuple[str, str]]) -> int",
               "summary": "Prefer 'lookdev (send_to)', else first entry.",
-              "line": 87,
+              "line": 107,
               "deprecated": false
             },
             {
@@ -620,16 +736,16 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 157,
+              "line": 177,
               "deprecated": false
             },
             {
-              "name": "header_init",
-              "qualname": "MarmosetWorkflowSlots.header_init",
+              "name": "set_model_path",
+              "qualname": "MarmosetWorkflowSlots.set_model_path",
               "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Configure the header menu with utilities + help text.",
-              "line": 166,
+              "signature": "(self, path: str) -> None",
+              "summary": "Pre-fill the Model File field (e.g.",
+              "line": 182,
               "deprecated": false
             },
             {
@@ -638,12 +754,121 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Set up the picked model in Toolbag using the chosen template + mode.",
-              "line": 220,
+              "line": 199,
               "deprecated": false
             }
           ]
         }
       ]
+    },
+    {
+      "relpath": "marmoset_workflow/template_params.py",
+      "summary": "Plain default values + literal formatting for Marmoset template tokens.",
+      "functions": [
+        {
+          "name": "python_literal",
+          "qualname": "python_literal",
+          "kind": "function",
+          "signature": "(value: Any) -> str",
+          "summary": "Format *value* as a Python source literal for template substitution.",
+          "line": 49,
+          "deprecated": false
+        },
+        {
+          "name": "defaults",
+          "qualname": "defaults",
+          "kind": "function",
+          "signature": "() -> Dict[str, Any]",
+          "summary": "Return a copy of :data:`DEFAULTS`.",
+          "line": 60,
+          "deprecated": false
+        },
+        {
+          "name": "to_context",
+          "qualname": "to_context",
+          "kind": "function",
+          "signature": "(values: Dict[str, Any]) -> Dict[str, str]",
+          "summary": "Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.",
+          "line": 65,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
+      "relpath": "marmoset_workflow/templates/import.py",
+      "summary": "Open the model in Toolbag and wire materials from the manifest.",
+      "functions": [
+        {
+          "name": "main",
+          "qualname": "main",
+          "kind": "function",
+          "signature": "()",
+          "summary": "",
+          "line": 32,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
+      "relpath": "marmoset_workflow/templates/lookdev.py",
+      "summary": "Open the model in Toolbag, apply a Sky preset, and frame the model.",
+      "functions": [
+        {
+          "name": "main",
+          "qualname": "main",
+          "kind": "function",
+          "signature": "()",
+          "summary": "",
+          "line": 41,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
+      "relpath": "marmoset_workflow/toolbag_log.py",
+      "summary": "Marmoset Toolbag log-file resolution, classification, and live tailing.",
+      "functions": [
+        {
+          "name": "resolve_toolbag_log_path",
+          "qualname": "resolve_toolbag_log_path",
+          "kind": "function",
+          "signature": "(toolbag_exe: Optional[str]) -> Optional[str]",
+          "summary": "Return the path to Toolbag's application log, robust to version bumps.",
+          "line": 29,
+          "deprecated": false
+        },
+        {
+          "name": "classify_log_line",
+          "qualname": "classify_log_line",
+          "kind": "function",
+          "signature": "(line: str) -> Optional[Tuple[str, str]]",
+          "summary": "Map a Toolbag log line to ``(level, line)`` for routing into a logger.",
+          "line": 83,
+          "deprecated": false
+        },
+        {
+          "name": "dispatch_log_lines",
+          "qualname": "dispatch_log_lines",
+          "kind": "function",
+          "signature": "(lines, logger) -> None",
+          "summary": "Forward each classified line to *logger* at its routed level.",
+          "line": 134,
+          "deprecated": false
+        },
+        {
+          "name": "start_toolbag_log_tail",
+          "qualname": "start_toolbag_log_tail",
+          "kind": "function",
+          "signature": "(log_path: str, start_offset: int, process, logger, poll_interval: float = 0.4, file_wait_timeout: float = 60.0)",
+          "summary": "Tail *log_path* from *start_offset* in a daemon thread.",
+          "line": 148,
+          "deprecated": false
+        }
+      ],
+      "classes": []
     },
     {
       "relpath": "mesh_convert/launcher.py",
@@ -740,6 +965,253 @@
       ]
     },
     {
+      "relpath": "photogrammetry/_panel_slots.py",
+      "summary": "Shared scaffolding for the photogrammetry workflow panels.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "PhotogrammetryPanelSlots",
+          "summary": "Base for the photogrammetry workflow panels (engine-agnostic scaffolding).",
+          "line": 44,
+          "bases": [
+            "BridgeSlotsBase"
+          ],
+          "members": [
+            {
+              "name": "header_menu_items",
+              "qualname": "PhotogrammetryPanelSlots.header_menu_items",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Process-runner header menu: Cancel Run / Open Output Folder / Clear",
+              "line": 90,
+              "deprecated": false
+            },
+            {
+              "name": "make_preset_store",
+              "qualname": "PhotogrammetryPanelSlots.make_preset_store",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Semantic-preset mode: the engine-scoped store the headless runner uses",
+              "line": 107,
+              "deprecated": false
+            },
+            {
+              "name": "resolved_project_name",
+              "qualname": "PhotogrammetryPanelSlots.resolved_project_name",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 213,
+              "deprecated": false
+            },
+            {
+              "name": "cancel_run",
+              "qualname": "PhotogrammetryPanelSlots.cancel_run",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 234,
+              "deprecated": false
+            },
+            {
+              "name": "open_output_folder",
+              "qualname": "PhotogrammetryPanelSlots.open_output_folder",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Reveal the output folder.",
+              "line": 248,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "PhotogrammetryPanelSlots.b000",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Run Workflow.",
+              "line": 256,
+              "deprecated": false
+            }
+          ]
+        },
+        {
+          "name": "FramesSourceMixin",
+          "summary": "A single 'Source' row + browser for image-in panels (Metashape, RC).",
+          "line": 332,
+          "bases": [],
+          "members": [
+            {
+              "name": "resolved_frames_dir",
+              "qualname": "FramesSourceMixin.resolved_frames_dir",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 364,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/_process_runner.py",
+      "summary": "Async, log-streaming process runner shared by the photogrammetry panels.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ProcessRunner",
+          "summary": "Launch + asynchronously stream a child process into Qt callbacks.",
+          "line": 37,
+          "bases": [
+            "ptk.LoggingMixin"
+          ],
+          "members": [
+            {
+              "name": "exe",
+              "qualname": "ProcessRunner.exe",
+              "kind": "property",
+              "signature": "(self) -> Optional[str]",
+              "summary": "Path of the engine executable used (display / diagnostics).",
+              "line": 53,
+              "deprecated": false
+            },
+            {
+              "name": "is_available",
+              "qualname": "ProcessRunner.is_available",
+              "kind": "method",
+              "signature": "(self) -> bool",
+              "summary": "True when a real run is possible (the engine was discovered).",
+              "line": 57,
+              "deprecated": false
+            },
+            {
+              "name": "is_running",
+              "qualname": "ProcessRunner.is_running",
+              "kind": "method",
+              "signature": "(self) -> bool",
+              "summary": "",
+              "line": 75,
+              "deprecated": false
+            },
+            {
+              "name": "start",
+              "qualname": "ProcessRunner.start",
+              "kind": "method",
+              "signature": "(self, argv: Sequence[str], on_line: Optional[Callable[[str], None]] = None, on_done: Optional[Callable[[int], None]] = None, cwd: Optional[str] = None) -> None",
+              "summary": "Launch the engine command asynchronously.",
+              "line": 82,
+              "deprecated": false
+            },
+            {
+              "name": "cancel",
+              "qualname": "ProcessRunner.cancel",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Kill an in-flight run (no-op when idle).",
+              "line": 120,
+              "deprecated": false
+            }
+          ]
+        },
+        {
+          "name": "PyModuleRunner",
+          "summary": "``ProcessRunner`` for engines whose headless driver is a normal-Python",
+          "line": 157,
+          "bases": [
+            "ProcessRunner"
+          ],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/_shared_params.py",
+      "summary": "Input pre-processing parameter specs shared by the image-in engines.",
+      "functions": [
+        {
+          "name": "render_flag_argv",
+          "qualname": "render_flag_argv",
+          "kind": "function",
+          "signature": "(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'",
+          "summary": "Render *values* into CLI flags — the shared loop behind every engine's",
+          "line": 129,
+          "deprecated": false
+        },
+        {
+          "name": "preprocessing_argv",
+          "qualname": "preprocessing_argv",
+          "kind": "function",
+          "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
+          "summary": "Render the input pre-processing CLI flags from collected *values*.",
+          "line": 158,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
+      "relpath": "photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py",
+      "summary": "Local, async runner the Brush (gaussian-splat) panel dispatches to.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "GaussianSplatRunner",
+          "summary": "Discover Brush + asynchronously drive its ``run_combined``.",
+          "line": 21,
+          "bases": [
+            "PyModuleRunner"
+          ],
+          "members": [
+            {
+              "name": "exe",
+              "qualname": "GaussianSplatRunner.exe",
+              "kind": "property",
+              "signature": "(self) -> Optional[str]",
+              "summary": "",
+              "line": 27,
+              "deprecated": false
+            },
+            {
+              "name": "is_available",
+              "qualname": "GaussianSplatRunner.is_available",
+              "kind": "method",
+              "signature": "(self) -> bool",
+              "summary": "True when a Brush executable was found (set BRUSH_EXE or install).",
+              "line": 30,
+              "deprecated": false
+            }
+          ]
+        },
+        {
+          "name": "BrushInstallRunner",
+          "summary": "Stream the Brush downloader (pythontk.AppInstaller) in a child process.",
+          "line": 41,
+          "bases": [
+            "PyModuleRunner"
+          ],
+          "members": [
+            {
+              "name": "exe",
+              "qualname": "BrushInstallRunner.exe",
+              "kind": "property",
+              "signature": "(self) -> Optional[str]",
+              "summary": "",
+              "line": 54,
+              "deprecated": false
+            },
+            {
+              "name": "is_available",
+              "qualname": "BrushInstallRunner.is_available",
+              "kind": "method",
+              "signature": "(self) -> bool",
+              "summary": "",
+              "line": 57,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "relpath": "photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py",
       "summary": "Brush gaussian-splat workflow engine.",
       "functions": [
@@ -749,7 +1221,7 @@
           "kind": "function",
           "signature": "() -> Optional[str]",
           "summary": "Return the Brush executable path or None.",
-          "line": 39,
+          "line": 57,
           "deprecated": false
         },
         {
@@ -758,7 +1230,16 @@
           "kind": "function",
           "signature": "() -> bool",
           "summary": "",
-          "line": 55,
+          "line": 87,
+          "deprecated": false
+        },
+        {
+          "name": "install_brush",
+          "qualname": "install_brush",
+          "kind": "function",
+          "signature": "(progress_callback: Optional[Callable[[int, int], None]] = None) -> str",
+          "summary": "Download + install Brush via :class:`pythontk.AppInstaller`;",
+          "line": 115,
           "deprecated": false
         },
         {
@@ -767,7 +1248,7 @@
           "kind": "function",
           "signature": "(ply_path: str) -> Optional[int]",
           "summary": "Gaussian count from a splat ``.ply`` header (``element vertex N``).",
-          "line": 59,
+          "line": 138,
           "deprecated": false
         }
       ],
@@ -775,7 +1256,7 @@
         {
           "name": "GaussianSplatWorkflow",
           "summary": "Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``.",
-          "line": 74,
+          "line": 153,
           "bases": [],
           "members": [
             {
@@ -784,7 +1265,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 107,
+              "line": 186,
               "deprecated": false
             },
             {
@@ -793,7 +1274,7 @@
               "kind": "method",
               "signature": "(self, colmap_dir: str, total_steps: int = 30000, max_resolution: int = 1920, max_splats: int = 10000000, sh_degree: int = 3, growth_grad_threshold: Optional[float] = None, growth_select_fraction: Optional[float] = None, export_path: Optional[str] = None, export_name: Optional[str] = None, export_every: Optional[int] = None, eval_split_every: Optional[int] = None, eval_every: Optional[int] = None, eval_save_to_disk: bool = False) -> Optional[str]",
               "summary": "Train a splat from a COLMAP dataset;",
-              "line": 149,
+              "line": 228,
               "deprecated": false
             },
             {
@@ -802,7 +1283,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "",
-              "line": 224,
+              "line": 303,
               "deprecated": false
             }
           ]
@@ -810,60 +1291,103 @@
       ]
     },
     {
-      "relpath": "photogrammetry/gaussian_splat_workflow/_sugar_mesh.py",
-      "summary": "SuGaR mesh-extraction workflow engine.",
+      "relpath": "photogrammetry/gaussian_splat_workflow/_install_brush.py",
+      "summary": "Headless entry point: download + install Brush via pythontk.AppInstaller.",
       "functions": [
         {
-          "name": "find_sugar_dir",
-          "qualname": "find_sugar_dir",
+          "name": "main",
+          "qualname": "main",
+          "kind": "function",
+          "signature": "() -> int",
+          "summary": "",
+          "line": 19,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
+      "relpath": "photogrammetry/gaussian_splat_workflow/_splat_publish.py",
+      "summary": "Engine-delivery stage for the splat track — clean + convert to engine formats.",
+      "functions": [
+        {
+          "name": "find_splat_transform",
+          "qualname": "find_splat_transform",
           "kind": "function",
           "signature": "() -> Optional[str]",
-          "summary": "Return the SuGaR repo dir or None.",
-          "line": 50,
+          "summary": "Return the ``splat-transform`` executable path or None.",
+          "line": 65,
           "deprecated": false
         },
         {
-          "name": "is_sugar_available",
-          "qualname": "is_sugar_available",
+          "name": "is_splat_transform_available",
+          "qualname": "is_splat_transform_available",
           "kind": "function",
           "signature": "() -> bool",
           "summary": "",
-          "line": 69,
+          "line": 79,
           "deprecated": false
         }
       ],
       "classes": [
         {
-          "name": "SugarMeshWorkflow",
-          "summary": "COLMAP dataset → SuGaR refined textured ``.obj`` mesh.",
-          "line": 73,
+          "name": "SplatPublishWorkflow",
+          "summary": "Clean a trained 3DGS ``.ply`` and convert it to engine-ready formats.",
+          "line": 90,
           "bases": [],
           "members": [
             {
-              "name": "get_sugar_info",
-              "qualname": "SugarMeshWorkflow.get_sugar_info",
+              "name": "get_publish_info",
+              "qualname": "SplatPublishWorkflow.get_publish_info",
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 116,
+              "line": 123,
               "deprecated": false
             },
             {
-              "name": "extract_mesh",
-              "qualname": "SugarMeshWorkflow.extract_mesh",
+              "name": "clean",
+              "qualname": "SplatPublishWorkflow.clean",
               "kind": "method",
-              "signature": "(self, colmap_dir: str, regularization: str = 'dn_consistency', high_poly: bool = True, refinement_time: str = 'short', surface_level: float = 0.3, export_obj: bool = True, export_ply: bool = False, use_eval_split: bool = False, gpu: int = 0, white_background: bool = False) -> Optional[str]",
-              "summary": "Run SuGaR's full pipeline on a COLMAP dataset;",
-              "line": 142,
+              "signature": "(self, in_ply: str, out_ply: Optional[str] = None, rotate: Optional[Union[str, Sequence[float]]] = None, filter_floaters: bool = True, filter_nan: bool = True, min_opacity: Optional[float] = None, crop_box: Optional[Union[str, Sequence[float]]] = None, crop_sphere: Optional[Union[str, Sequence[float]]] = None, decimate: Optional[Union[str, int]] = None) -> str",
+              "summary": "Clean a trained splat ``.ply``;",
+              "line": 215,
+              "deprecated": false
+            },
+            {
+              "name": "to_unity",
+              "qualname": "SplatPublishWorkflow.to_unity",
+              "kind": "method",
+              "signature": "(self, clean_ply: str, out_path: Optional[str] = None, spz_version: int = 4) -> str",
+              "summary": "Convert a (cleaned) ``.ply`` to Unity-ready ``.spz``;",
+              "line": 260,
+              "deprecated": false
+            },
+            {
+              "name": "to_web",
+              "qualname": "SplatPublishWorkflow.to_web",
+              "kind": "method",
+              "signature": "(self, clean_ply: str, out_dir: Optional[str] = None, web_format: str = 'sog', with_viewer: bool = True) -> Dict[str, Optional[str]]",
+              "summary": "Convert a (cleaned) ``.ply`` for the browser;",
+              "line": 284,
+              "deprecated": false
+            },
+            {
+              "name": "publish",
+              "qualname": "SplatPublishWorkflow.publish",
+              "kind": "method",
+              "signature": "(self, in_ply: str, targets: Sequence[str] = ('unity', 'web'), out_dir: Optional[str] = None, spz_version: int = 4, web_format: str = 'sog', with_viewer: bool = True, **clean_kwargs) -> Dict[str, object]",
+              "summary": "Clean *in_ply* once, then emit each requested target from the result.",
+              "line": 315,
               "deprecated": false
             },
             {
               "name": "finalize_run",
-              "qualname": "SugarMeshWorkflow.finalize_run",
+              "qualname": "SplatPublishWorkflow.finalize_run",
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "",
-              "line": 280,
+              "line": 357,
               "deprecated": false
             }
           ]
@@ -871,8 +1395,56 @@
       ]
     },
     {
+      "relpath": "photogrammetry/gaussian_splat_workflow/launcher.py",
+      "summary": "Application shell for the Brush (gaussian-splat) Workflow UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "GaussianSplatWorkflowUI",
+          "summary": "",
+          "line": 15,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/gaussian_splat_workflow/parameters.py",
+      "summary": "Tunable parameters surfaced in the Brush (gaussian-splat) Workflow panel.",
+      "functions": [
+        {
+          "name": "to_argv",
+          "qualname": "to_argv",
+          "kind": "function",
+          "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
+          "summary": "Render collected param *values* into ``run_combined`` CLI flags via the",
+          "line": 83,
+          "deprecated": false
+        },
+        {
+          "name": "referenced_keys",
+          "qualname": "referenced_keys",
+          "kind": "function",
+          "signature": "(source: str = '') -> 'set[str]'",
+          "summary": "Params relevant to the selected run mode — drives row visibility.",
+          "line": 98,
+          "deprecated": false
+        },
+        {
+          "name": "defaults",
+          "qualname": "defaults",
+          "kind": "function",
+          "signature": "() -> 'Dict[str, Any]'",
+          "summary": "Return ``{key: default}`` for every registered parameter.",
+          "line": 108,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
       "relpath": "photogrammetry/gaussian_splat_workflow/run_combined.py",
-      "summary": "Driver for the gaussian-splat track: Brush splat and/or SuGaR mesh.",
+      "summary": "Driver for the gaussian-splat track: Brush splat training + engine publish.",
       "functions": [
         {
           "name": "main",
@@ -880,11 +1452,136 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 40,
+          "line": 46,
           "deprecated": false
         }
       ],
       "classes": []
+    },
+    {
+      "relpath": "photogrammetry/gaussian_splat_workflow/slots.py",
+      "summary": "Slots for the Brush (gaussian-splat) Workflow panel.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "GaussianSplatWorkflowSlots",
+          "summary": "Switchboard slots wired to ``gaussian_splat_workflow.ui``.",
+          "line": 37,
+          "bases": [
+            "PhotogrammetryPanelSlots"
+          ],
+          "members": [
+            {
+              "name": "resolved_colmap_dir",
+              "qualname": "GaussianSplatWorkflowSlots.resolved_colmap_dir",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 91,
+              "deprecated": false
+            },
+            {
+              "name": "params_module",
+              "qualname": "GaussianSplatWorkflowSlots.params_module",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "",
+              "line": 118,
+              "deprecated": false
+            },
+            {
+              "name": "template_dir",
+              "qualname": "GaussianSplatWorkflowSlots.template_dir",
+              "kind": "property",
+              "signature": "(self) -> Path",
+              "summary": "",
+              "line": 122,
+              "deprecated": false
+            },
+            {
+              "name": "make_bridge",
+              "qualname": "GaussianSplatWorkflowSlots.make_bridge",
+              "kind": "method",
+              "signature": "(self) -> GaussianSplatRunner",
+              "summary": "",
+              "line": 125,
+              "deprecated": false
+            },
+            {
+              "name": "header_init",
+              "qualname": "GaussianSplatWorkflowSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 129,
+              "deprecated": false
+            },
+            {
+              "name": "open_brush_viewer",
+              "qualname": "GaussianSplatWorkflowSlots.open_brush_viewer",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Open Brush's GUI viewer with nothing loaded (``brush`` defaults to the",
+              "line": 173,
+              "deprecated": false
+            },
+            {
+              "name": "open_result_in_brush",
+              "qualname": "GaussianSplatWorkflowSlots.open_result_in_brush",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Open the latest trained splat in Brush's viewer.",
+              "line": 178,
+              "deprecated": false
+            },
+            {
+              "name": "install_brush",
+              "qualname": "GaussianSplatWorkflowSlots.install_brush",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Download + install Brush if it isn't already discoverable.",
+              "line": 207,
+              "deprecated": false
+            },
+            {
+              "name": "cancel_run",
+              "qualname": "GaussianSplatWorkflowSlots.cancel_run",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Cancel an in-flight Brush download too — the base 'Cancel Run' action",
+              "line": 240,
+              "deprecated": false
+            },
+            {
+              "name": "list_template_modes",
+              "qualname": "GaussianSplatWorkflowSlots.list_template_modes",
+              "kind": "method",
+              "signature": "(self) -> List[Tuple[str, str]]",
+              "summary": "",
+              "line": 250,
+              "deprecated": false
+            },
+            {
+              "name": "default_output_dir",
+              "qualname": "GaussianSplatWorkflowSlots.default_output_dir",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 253,
+              "deprecated": false
+            },
+            {
+              "name": "help_spec",
+              "qualname": "GaussianSplatWorkflowSlots.help_spec",
+              "kind": "method",
+              "signature": "(self) -> dict",
+              "summary": "",
+              "line": 265,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
     },
     {
       "relpath": "photogrammetry/metashape_workflow/_metashape_connection.py",
@@ -894,7 +1591,7 @@
         {
           "name": "MetashapeConnection",
           "summary": "Discover + headlessly drive ``metashape.exe -r <script>`` from any host.",
-          "line": 34,
+          "line": 36,
           "bases": [],
           "members": [
             {
@@ -902,8 +1599,8 @@
               "qualname": "MetashapeConnection.find_exe",
               "kind": "staticmethod",
               "signature": "() -> Optional[str]",
-              "summary": "Locate ``metashape.exe``: ``$METASHAPE_EXE`` → :meth:`AppLauncher.find_app`",
-              "line": 41,
+              "summary": "Locate ``metashape.exe``: ``$METASHAPE_EXE`` → the profile's",
+              "line": 43,
               "deprecated": false
             },
             {
@@ -912,7 +1609,7 @@
               "kind": "method",
               "signature": "(self) -> bool",
               "summary": "True if a metashape.exe was found (i.e.",
-              "line": 55,
+              "line": 62,
               "deprecated": false
             },
             {
@@ -921,7 +1618,7 @@
               "kind": "method",
               "signature": "(self, script_path: str, args: Optional[Sequence[str]] = None, cwd: Optional[str] = None, timeout: Optional[float] = None, log_file: Optional[str] = None, env: Optional[dict] = None)",
               "summary": "Run a Python *script* inside Metashape headless via ``-r``.",
-              "line": 59,
+              "line": 66,
               "deprecated": false
             },
             {
@@ -930,7 +1627,42 @@
               "kind": "method",
               "signature": "(self, args: Optional[Sequence[str]] = None, **kwargs)",
               "summary": "Convenience: drive this package's ``run_combined`` workflow headless.",
-              "line": 86,
+              "line": 93,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/metashape_workflow/_metashape_runner.py",
+      "summary": "Local, async runner the Metashape panel dispatches to.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MetashapeRunner",
+          "summary": "Discover + asynchronously drive ``run_combined`` in the local Metashape.",
+          "line": 26,
+          "bases": [
+            "ProcessRunner"
+          ],
+          "members": [
+            {
+              "name": "exe",
+              "qualname": "MetashapeRunner.exe",
+              "kind": "property",
+              "signature": "(self) -> Optional[str]",
+              "summary": "",
+              "line": 34,
+              "deprecated": false
+            },
+            {
+              "name": "is_available",
+              "qualname": "MetashapeRunner.is_available",
+              "kind": "method",
+              "signature": "(self) -> bool",
+              "summary": "True when a local ``metashape.exe`` was found (a real run is possible).",
+              "line": 37,
               "deprecated": false
             }
           ]
@@ -974,7 +1706,7 @@
           "kind": "function",
           "signature": "(directory: str) -> List[str]",
           "summary": "Return absolute paths to all images in `directory` (non-recursive).",
-          "line": 1108,
+          "line": 1216,
           "deprecated": false
         }
       ],
@@ -993,7 +1725,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 126,
+              "line": 134,
               "deprecated": false
             },
             {
@@ -1002,7 +1734,7 @@
               "kind": "method",
               "signature": "(self, label: str = 'New Chunk')",
               "summary": "",
-              "line": 163,
+              "line": 190,
               "deprecated": false
             },
             {
@@ -1011,7 +1743,7 @@
               "kind": "method",
               "signature": "(self, image_sources: Union[str, Sequence[str]])",
               "summary": "Add images from a directory path (non-recursive) or list of paths.",
-              "line": 171,
+              "line": 206,
               "deprecated": false
             },
             {
@@ -1020,7 +1752,7 @@
               "kind": "method",
               "signature": "(self, dirs: Sequence[str])",
               "summary": "Add images from multiple directories — flattens to one chunk.",
-              "line": 205,
+              "line": 240,
               "deprecated": false
             },
             {
@@ -1029,7 +1761,7 @@
               "kind": "method",
               "signature": "(self, exported_model_path: Optional[str] = None, decimate_target_faces: int = 0) -> Optional[str]",
               "summary": "PyMeshLab post-export polish on the exported mesh file.",
-              "line": 238,
+              "line": 273,
               "deprecated": false
             },
             {
@@ -1038,25 +1770,25 @@
               "kind": "method",
               "signature": "(self, quality_threshold: float = 0.5)",
               "summary": "Run ``analyzePhotos`` and disable cameras below ``quality_threshold``.",
-              "line": 271,
+              "line": 306,
               "deprecated": false
             },
             {
               "name": "align_photos",
               "qualname": "MetashapeWorkflow.align_photos",
               "kind": "method",
-              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
+              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 40000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "",
-              "line": 314,
+              "line": 359,
               "deprecated": false
             },
             {
               "name": "align_photos_with_retry",
               "qualname": "MetashapeWorkflow.align_photos_with_retry",
               "kind": "method",
-              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
+              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 40000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
               "summary": "Run ``align_photos``;",
-              "line": 389,
+              "line": 441,
               "deprecated": false
             },
             {
@@ -1065,7 +1797,7 @@
               "kind": "method",
               "signature": "(self, uncertainty_threshold: float = 15.0, reprojection_threshold: float = 0.5, projection_accuracy_threshold: float = 3.0)",
               "summary": "Gradual-selection cleanup: iteratively filter tie points by",
-              "line": 437,
+              "line": 489,
               "deprecated": false
             },
             {
@@ -1074,7 +1806,7 @@
               "kind": "method",
               "signature": "(self, translation_threshold: float = 0.02, rotation_threshold_deg: float = 2.0)",
               "summary": "Cluster aligned cameras by pose and disable redundants.",
-              "line": 505,
+              "line": 597,
               "deprecated": false
             },
             {
@@ -1083,7 +1815,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, white_balance: bool = True)",
               "summary": "Run ``chunk.calibrateColors`` to equalize white-balance across",
-              "line": 576,
+              "line": 665,
               "deprecated": false
             },
             {
@@ -1092,7 +1824,7 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 598,
+              "line": 687,
               "deprecated": false
             },
             {
@@ -1101,7 +1833,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'file', template: str = '{filename}_mask.png')",
               "summary": "Import per-camera masks from a directory.",
-              "line": 640,
+              "line": 729,
               "deprecated": false
             },
             {
@@ -1110,7 +1842,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, filter_mode=None)",
               "summary": "",
-              "line": 687,
+              "line": 776,
               "deprecated": false
             },
             {
@@ -1119,7 +1851,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count=None)",
               "summary": "",
-              "line": 708,
+              "line": 810,
               "deprecated": false
             },
             {
@@ -1128,7 +1860,7 @@
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
               "summary": "Mesh cleanup chain: ``removeComponents → closeHoles → smoothModel``.",
-              "line": 784,
+              "line": 888,
               "deprecated": false
             },
             {
@@ -1137,7 +1869,7 @@
               "kind": "method",
               "signature": "(self, target_overlap: int = 9)",
               "summary": "Thin redundant cameras for texture bake while preserving",
-              "line": 830,
+              "line": 934,
               "deprecated": false
             },
             {
@@ -1146,7 +1878,7 @@
               "kind": "method",
               "signature": "(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "",
-              "line": 856,
+              "line": 960,
               "deprecated": false
             },
             {
@@ -1155,7 +1887,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "",
-              "line": 911,
+              "line": 1015,
               "deprecated": false
             },
             {
@@ -1164,7 +1896,7 @@
               "kind": "method",
               "signature": "(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)",
               "summary": "",
-              "line": 924,
+              "line": 1028,
               "deprecated": false
             },
             {
@@ -1173,7 +1905,7 @@
               "kind": "method",
               "signature": "(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]",
               "summary": "Export the aligned chunk as a COLMAP dataset to feed the splat track.",
-              "line": 986,
+              "line": 1090,
               "deprecated": false
             },
             {
@@ -1182,7 +1914,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Write Metashape's processing report PDF + finalize the JSON sidecar.",
-              "line": 1075,
+              "line": 1183,
               "deprecated": false
             },
             {
@@ -1191,7 +1923,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Write the QC JSON sidecar.",
-              "line": 1097,
+              "line": 1205,
               "deprecated": false
             }
           ]
@@ -1213,6 +1945,40 @@
       ]
     },
     {
+      "relpath": "photogrammetry/metashape_workflow/parameters.py",
+      "summary": "Tunable parameters surfaced in the Metashape Workflow panel.",
+      "functions": [
+        {
+          "name": "to_argv",
+          "qualname": "to_argv",
+          "kind": "function",
+          "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
+          "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
+          "line": 202,
+          "deprecated": false
+        },
+        {
+          "name": "referenced_keys",
+          "qualname": "referenced_keys",
+          "kind": "function",
+          "signature": "(source: str = '') -> 'set[str]'",
+          "summary": "Params relevant to the panel's current input — drives row visibility.",
+          "line": 233,
+          "deprecated": false
+        },
+        {
+          "name": "defaults",
+          "qualname": "defaults",
+          "kind": "function",
+          "signature": "() -> 'Dict[str, Any]'",
+          "summary": "Return ``{key: default}`` for every registered parameter.",
+          "line": 250,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
       "relpath": "photogrammetry/metashape_workflow/run_combined.py",
       "summary": "Driver script for multi-session combined runs.",
       "functions": [
@@ -1222,7 +1988,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 65,
+          "line": 91,
           "deprecated": false
         }
       ],
@@ -1230,159 +1996,70 @@
     },
     {
       "relpath": "photogrammetry/metashape_workflow/slots.py",
-      "summary": "",
+      "summary": "Slots for the Metashape Workflow panel.",
       "functions": [],
       "classes": [
         {
           "name": "MetashapeWorkflowSlots",
-          "summary": "Switchboard slots for the Metashape Workflow UI.",
-          "line": 194,
+          "summary": "Switchboard slots wired to ``metashape_workflow.ui``.",
+          "line": 39,
           "bases": [
-            "ptk.LoggingMixin"
+            "FramesSourceMixin",
+            "PhotogrammetryPanelSlots"
           ],
           "members": [
             {
-              "name": "header_init",
-              "qualname": "MetashapeWorkflowSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
+              "name": "params_module",
+              "qualname": "MetashapeWorkflowSlots.params_module",
+              "kind": "property",
+              "signature": "(self)",
               "summary": "",
-              "line": 225,
+              "line": 79,
               "deprecated": false
             },
             {
-              "name": "txt000_init",
-              "qualname": "MetashapeWorkflowSlots.txt000_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Project Directory",
-              "line": 269,
-              "deprecated": false
-            },
-            {
-              "name": "txt000",
-              "qualname": "MetashapeWorkflowSlots.txt000",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
+              "name": "template_dir",
+              "qualname": "MetashapeWorkflowSlots.template_dir",
+              "kind": "property",
+              "signature": "(self) -> Path",
               "summary": "",
-              "line": 293,
+              "line": 83,
               "deprecated": false
             },
             {
-              "name": "txt001_init",
-              "qualname": "MetashapeWorkflowSlots.txt001_init",
+              "name": "make_bridge",
+              "qualname": "MetashapeWorkflowSlots.make_bridge",
               "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Project Name",
-              "line": 296,
-              "deprecated": false
-            },
-            {
-              "name": "txt002_init",
-              "qualname": "MetashapeWorkflowSlots.txt002_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Frames Directory",
-              "line": 307,
-              "deprecated": false
-            },
-            {
-              "name": "txt002",
-              "qualname": "MetashapeWorkflowSlots.txt002",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
+              "signature": "(self) -> MetashapeRunner",
               "summary": "",
-              "line": 336,
+              "line": 87,
               "deprecated": false
             },
             {
-              "name": "cmb000_init",
-              "qualname": "MetashapeWorkflowSlots.cmb000_init",
+              "name": "list_template_modes",
+              "qualname": "MetashapeWorkflowSlots.list_template_modes",
               "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Preset",
-              "line": 341,
-              "deprecated": false
-            },
-            {
-              "name": "btn_stages_init",
-              "qualname": "MetashapeWorkflowSlots.btn_stages_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Pipeline-stages popup — QMenu of checkboxes attached to the button.",
-              "line": 348,
-              "deprecated": false
-            },
-            {
-              "name": "btn_advanced_init",
-              "qualname": "MetashapeWorkflowSlots.btn_advanced_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Advanced-params popup — labeled form inside a QMenu via QWidgetAction.",
-              "line": 370,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "MetashapeWorkflowSlots.b000",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Run Workflow",
-              "line": 416,
-              "deprecated": false
-            },
-            {
-              "name": "cmb003",
-              "qualname": "MetashapeWorkflowSlots.cmb003",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Log level changed",
-              "line": 424,
-              "deprecated": false
-            },
-            {
-              "name": "btn_browse_project",
-              "qualname": "MetashapeWorkflowSlots.btn_browse_project",
-              "kind": "method",
-              "signature": "(self) -> None",
+              "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 429,
+              "line": 90,
               "deprecated": false
             },
             {
-              "name": "btn_explore_project",
-              "qualname": "MetashapeWorkflowSlots.btn_explore_project",
+              "name": "default_output_dir",
+              "qualname": "MetashapeWorkflowSlots.default_output_dir",
               "kind": "method",
-              "signature": "(self) -> None",
+              "signature": "(self) -> str",
               "summary": "",
-              "line": 437,
+              "line": 93,
               "deprecated": false
             },
             {
-              "name": "btn_browse_frames",
-              "qualname": "MetashapeWorkflowSlots.btn_browse_frames",
+              "name": "help_spec",
+              "qualname": "MetashapeWorkflowSlots.help_spec",
               "kind": "method",
-              "signature": "(self) -> None",
+              "signature": "(self) -> dict",
               "summary": "",
-              "line": 440,
-              "deprecated": false
-            },
-            {
-              "name": "btn_explore_frames",
-              "qualname": "MetashapeWorkflowSlots.btn_explore_frames",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 448,
-              "deprecated": false
-            },
-            {
-              "name": "btn_extract_frames",
-              "qualname": "MetashapeWorkflowSlots.btn_extract_frames",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Extract frames from a video file into the frames directory.",
-              "line": 451,
+              "line": 105,
               "deprecated": false
             }
           ]
@@ -1392,21 +2069,58 @@
     {
       "relpath": "photogrammetry/prep_stages.py",
       "summary": "Shared, SDK-agnostic input-prep stages for the photogrammetry engines.",
-      "functions": [],
+      "functions": [
+        {
+          "name": "image_long_edge",
+          "qualname": "image_long_edge",
+          "kind": "function",
+          "signature": "(image_path: str) -> Optional[int]",
+          "summary": "Long edge (px) of an image, or ``None`` if unreadable.",
+          "line": 28,
+          "deprecated": false
+        },
+        {
+          "name": "extract_videos_to_dir",
+          "qualname": "extract_videos_to_dir",
+          "kind": "function",
+          "signature": "(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]",
+          "summary": "Extract frames from one or more videos into a single ``output_dir``.",
+          "line": 46,
+          "deprecated": false
+        },
+        {
+          "name": "first_image_in_dirs",
+          "qualname": "first_image_in_dirs",
+          "kind": "function",
+          "signature": "(dirs: Sequence[str]) -> Optional[str]",
+          "summary": "First image file (sorted) across ``dirs``, or ``None``.",
+          "line": 103,
+          "deprecated": false
+        },
+        {
+          "name": "derive_texture_size",
+          "qualname": "derive_texture_size",
+          "kind": "function",
+          "signature": "(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int",
+          "summary": "Texture page size from a source image: next power-of-two ≥ its long edge,",
+          "line": 114,
+          "deprecated": false
+        }
+      ],
       "classes": [
         {
           "name": "PrepStagesMixin",
           "summary": "Curate + equalize stages shared by both photogrammetry engines.",
-          "line": 23,
+          "line": 137,
           "bases": [],
           "members": [
             {
               "name": "curate_input_set",
               "qualname": "PrepStagesMixin.curate_input_set",
               "kind": "method",
-              "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 5, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1) -> List[str]",
+              "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 5, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]",
               "summary": "Pre-SfM content + sharpness culling via :class:`pythontk.ImageCurator`.",
-              "line": 26,
+              "line": 140,
               "deprecated": false
             },
             {
@@ -1415,7 +2129,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], hash_thresholds: Sequence[int] = (5, 8, 10, 12, 15), keep_per_cluster: int = 1, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0)",
               "summary": "Dry-run curation QC — report survivor counts per dHash threshold + the",
-              "line": 93,
+              "line": 229,
               "deprecated": false
             },
             {
@@ -1424,7 +2138,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 1.0, reference_strategy: str = 'first') -> List[str]",
               "summary": "Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.",
-              "line": 143,
+              "line": 279,
               "deprecated": false
             }
           ]
@@ -1441,7 +2155,34 @@
           "kind": "function",
           "signature": "(path=None) -> dict",
           "summary": "Resolve the active photogrammetry profile (fully interpolated).",
-          "line": 142,
+          "line": 216,
+          "deprecated": false
+        },
+        {
+          "name": "configured_app_path",
+          "qualname": "configured_app_path",
+          "kind": "function",
+          "signature": "(key: str, path=None) -> Optional[str]",
+          "summary": "Return the profile-configured install path for an engine, or ``None``.",
+          "line": 234,
+          "deprecated": false
+        },
+        {
+          "name": "preset_store",
+          "qualname": "preset_store",
+          "kind": "function",
+          "signature": "(engine: str) -> PresetStore",
+          "summary": "The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)",
+          "line": 257,
+          "deprecated": false
+        },
+        {
+          "name": "get_preset",
+          "qualname": "get_preset",
+          "kind": "function",
+          "signature": "(name: Optional[str], engine: str) -> dict",
+          "summary": "Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).",
+          "line": 278,
           "deprecated": false
         },
         {
@@ -1450,7 +2191,7 @@
           "kind": "function",
           "signature": "(path: Optional[str] = None, force: bool = False) -> str",
           "summary": "Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).",
-          "line": 160,
+          "line": 301,
           "deprecated": false
         },
         {
@@ -1459,7 +2200,7 @@
           "kind": "function",
           "signature": "(input_root: str) -> List[str]",
           "summary": "Return immediate subdirs of ``input_root`` that contain images.",
-          "line": 178,
+          "line": 319,
           "deprecated": false
         }
       ],
@@ -1526,6 +2267,41 @@
       ]
     },
     {
+      "relpath": "photogrammetry/realityscan_workflow/_realityscan_runner.py",
+      "summary": "Local, async runner the RealityCapture panel dispatches to.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "RealityScanRunner",
+          "summary": "Discover RealityScan + asynchronously drive its ``run_combined``.",
+          "line": 23,
+          "bases": [
+            "PyModuleRunner"
+          ],
+          "members": [
+            {
+              "name": "exe",
+              "qualname": "RealityScanRunner.exe",
+              "kind": "property",
+              "signature": "(self) -> Optional[str]",
+              "summary": "",
+              "line": 33,
+              "deprecated": false
+            },
+            {
+              "name": "is_available",
+              "qualname": "RealityScanRunner.is_available",
+              "kind": "method",
+              "signature": "(self) -> bool",
+              "summary": "True when a RealityScan / RealityCapture exe was found.",
+              "line": 36,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "relpath": "photogrammetry/realityscan_workflow/_realityscan_workflow.py",
       "summary": "RealityCapture / RealityScan workflow engine.",
       "functions": [
@@ -1535,7 +2311,7 @@
           "kind": "function",
           "signature": "() -> Optional[str]",
           "summary": "Return the RealityCapture.exe path or None.",
-          "line": 62,
+          "line": 85,
           "deprecated": false
         },
         {
@@ -1544,7 +2320,7 @@
           "kind": "function",
           "signature": "() -> bool",
           "summary": "",
-          "line": 83,
+          "line": 114,
           "deprecated": false
         },
         {
@@ -1553,7 +2329,7 @@
           "kind": "function",
           "signature": "() -> str",
           "summary": "Read RC's FileVersion from Windows binary metadata.",
-          "line": 105,
+          "line": 136,
           "deprecated": false
         },
         {
@@ -1562,7 +2338,7 @@
           "kind": "function",
           "signature": "(directory: str) -> List[str]",
           "summary": "Return absolute paths to all images in ``directory`` (non-recursive).",
-          "line": 117,
+          "line": 148,
           "deprecated": false
         }
       ],
@@ -1570,7 +2346,7 @@
         {
           "name": "RealityCaptureWorkflow",
           "summary": "Wrapper around RealityCapture's CLI for the standard photogrammetry",
-          "line": 131,
+          "line": 162,
           "bases": [
             "PrepStagesMixin"
           ],
@@ -1581,7 +2357,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 219,
+              "line": 273,
               "deprecated": false
             },
             {
@@ -1590,7 +2366,7 @@
               "kind": "method",
               "signature": "(self, label: str = 'New Chunk')",
               "summary": "Start a fresh RC scene.",
-              "line": 432,
+              "line": 559,
               "deprecated": false
             },
             {
@@ -1599,7 +2375,7 @@
               "kind": "method",
               "signature": "(self, image_sources: Union[str, Sequence[str]])",
               "summary": "Add images from a directory (non-recursive) or list of paths.",
-              "line": 450,
+              "line": 577,
               "deprecated": false
             },
             {
@@ -1608,7 +2384,7 @@
               "kind": "method",
               "signature": "(self, dirs: Sequence[str])",
               "summary": "Add images from multiple directories — RC keeps them in one scene.",
-              "line": 483,
+              "line": 616,
               "deprecated": false
             },
             {
@@ -1617,7 +2393,7 @@
               "kind": "method",
               "signature": "(self, quality_threshold: float = 0.5)",
               "summary": "No direct RC equivalent.",
-              "line": 506,
+              "line": 640,
               "deprecated": false
             },
             {
@@ -1626,7 +2402,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "Run RC alignment (SfM).",
-              "line": 520,
+              "line": 654,
               "deprecated": false
             },
             {
@@ -1635,7 +2411,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
               "summary": "Run alignment;",
-              "line": 565,
+              "line": 699,
               "deprecated": false
             },
             {
@@ -1644,7 +2420,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC performs alignment refinement internally during ``-align``;",
-              "line": 607,
+              "line": 741,
               "deprecated": false
             },
             {
@@ -1653,7 +2429,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No direct RC equivalent.",
-              "line": 620,
+              "line": 754,
               "deprecated": false
             },
             {
@@ -1662,7 +2438,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC applies color correction inside ``-calculateTexture`` via",
-              "line": 628,
+              "line": 762,
               "deprecated": false
             },
             {
@@ -1671,7 +2447,7 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 638,
+              "line": 772,
               "deprecated": false
             },
             {
@@ -1680,7 +2456,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'alpha')",
               "summary": "RC accepts per-image masks named ``<image>.png`` next to the",
-              "line": 671,
+              "line": 805,
               "deprecated": false
             },
             {
@@ -1689,7 +2465,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC does not expose depth maps as a separate stage — mesh calc",
-              "line": 685,
+              "line": 819,
               "deprecated": false
             },
             {
@@ -1698,7 +2474,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count: Optional[str] = None)",
               "summary": "Build a polygon mesh.",
-              "line": 696,
+              "line": 830,
               "deprecated": false
             },
             {
@@ -1707,7 +2483,7 @@
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
               "summary": "Mesh cleanup.",
-              "line": 742,
+              "line": 876,
               "deprecated": false
             },
             {
@@ -1716,7 +2492,7 @@
               "kind": "method",
               "signature": "(self, target_face_count: int = 20000000)",
               "summary": "Simplify the densest model to ~``target_face_count`` triangles.",
-              "line": 775,
+              "line": 909,
               "deprecated": false
             },
             {
@@ -1725,7 +2501,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No RC equivalent.",
-              "line": 813,
+              "line": 948,
               "deprecated": false
             },
             {
@@ -1734,7 +2510,7 @@
               "kind": "method",
               "signature": "(self, mesh_path: str)",
               "summary": "Import an external low-poly mesh into the project (Maya-authored",
-              "line": 821,
+              "line": 956,
               "deprecated": false
             },
             {
@@ -1743,7 +2519,7 @@
               "kind": "method",
               "signature": "(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "Unwrap (when no mesh was imported) + bake texture from solved",
-              "line": 841,
+              "line": 976,
               "deprecated": false
             },
             {
@@ -1752,7 +2528,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "RC saves on every CLI call (``-save`` is appended);",
-              "line": 886,
+              "line": 1021,
               "deprecated": false
             },
             {
@@ -1761,7 +2537,7 @@
               "kind": "method",
               "signature": "(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)",
               "summary": "Export the current model.",
-              "line": 895,
+              "line": 1030,
               "deprecated": false
             },
             {
@@ -1770,7 +2546,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Export RC's processing report XML and append to the QC log.",
-              "line": 928,
+              "line": 1063,
               "deprecated": false
             },
             {
@@ -1778,8 +2554,8 @@
               "qualname": "RealityCaptureWorkflow.finalize_run",
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
-              "summary": "Flush the QC JSON sidecar.",
-              "line": 940,
+              "summary": "Flush the QC JSON sidecar + release the transport.",
+              "line": 1091,
               "deprecated": false
             }
           ]
@@ -1787,8 +2563,434 @@
       ]
     },
     {
+      "relpath": "photogrammetry/realityscan_workflow/_rsnode_client.py",
+      "summary": "RSNode REST client — drive a running RealityScan 2.1 over its REST API (headless).",
+      "functions": [
+        {
+          "name": "normalize_commands",
+          "qualname": "normalize_commands",
+          "kind": "function",
+          "signature": "(commands: Sequence[CommandLike]) -> List[Dict[str, Any]]",
+          "summary": "Translate CLI-style command specs into RSNode ``commandCall`` dicts.",
+          "line": 48,
+          "deprecated": false
+        }
+      ],
+      "classes": [
+        {
+          "name": "RsNodeError",
+          "summary": "An RSNode REST call failed (transport error or non-2xx apiError).",
+          "line": 40,
+          "bases": [
+            "RuntimeError"
+          ],
+          "members": []
+        },
+        {
+          "name": "RsNodeClient",
+          "summary": "Minimal stdlib REST client for the RSNode API of a running RealityScan.",
+          "line": 84,
+          "bases": [],
+          "members": [
+            {
+              "name": "connect",
+              "qualname": "RsNodeClient.connect",
+              "kind": "method",
+              "signature": "(self) -> Dict[str, Any]",
+              "summary": "``GET /node/connection`` (localhost) — fetch + store the auth token.",
+              "line": 166,
+              "deprecated": false
+            },
+            {
+              "name": "node_status",
+              "qualname": "RsNodeClient.node_status",
+              "kind": "method",
+              "signature": "(self) -> Dict[str, Any]",
+              "summary": "",
+              "line": 174,
+              "deprecated": false
+            },
+            {
+              "name": "create_session",
+              "qualname": "RsNodeClient.create_session",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "``GET /project/create`` — start a session;",
+              "line": 178,
+              "deprecated": false
+            },
+            {
+              "name": "run_commands",
+              "qualname": "RsNodeClient.run_commands",
+              "kind": "method",
+              "signature": "(self, commands: Sequence[CommandLike]) -> str",
+              "summary": "``POST /project/commandgroup`` — run a CLI command sequence;",
+              "line": 187,
+              "deprecated": false
+            },
+            {
+              "name": "upload_file",
+              "qualname": "RsNodeClient.upload_file",
+              "kind": "method",
+              "signature": "(self, name: str, data: bytes, folder: str = 'data', timeout: Optional[float] = None) -> int",
+              "summary": "``POST /project/upload`` — upload raw *data* into the session folder.",
+              "line": 196,
+              "deprecated": false
+            },
+            {
+              "name": "list_files",
+              "qualname": "RsNodeClient.list_files",
+              "kind": "method",
+              "signature": "(self, folder: str = 'output') -> List[str]",
+              "summary": "``GET /project/list`` — names of files in the session ``output``/``data`` folder.",
+              "line": 224,
+              "deprecated": false
+            },
+            {
+              "name": "download_file",
+              "qualname": "RsNodeClient.download_file",
+              "kind": "method",
+              "signature": "(self, name: str, folder: str = 'output', timeout: Optional[float] = None) -> bytes",
+              "summary": "``GET /project/download`` — fetch raw bytes of session file *name*.",
+              "line": 232,
+              "deprecated": false
+            },
+            {
+              "name": "project_status",
+              "qualname": "RsNodeClient.project_status",
+              "kind": "method",
+              "signature": "(self) -> Dict[str, Any]",
+              "summary": "",
+              "line": 253,
+              "deprecated": false
+            },
+            {
+              "name": "tags",
+              "qualname": "RsNodeClient.tags",
+              "kind": "method",
+              "signature": "(self) -> List[str]",
+              "summary": "",
+              "line": 257,
+              "deprecated": false
+            },
+            {
+              "name": "has_tag",
+              "qualname": "RsNodeClient.has_tag",
+              "kind": "method",
+              "signature": "(self, tag: str) -> bool",
+              "summary": "",
+              "line": 261,
+              "deprecated": false
+            },
+            {
+              "name": "wait_for_tag",
+              "qualname": "RsNodeClient.wait_for_tag",
+              "kind": "method",
+              "signature": "(self, tag: str, *, poll: float = 2.0, timeout: float = 7200.0, sleep=time.sleep, clock=time.monotonic) -> Dict[str, Any]",
+              "summary": "Poll ``/project/status`` until *tag* fires;",
+              "line": 267,
+              "deprecated": false
+            },
+            {
+              "name": "tasks",
+              "qualname": "RsNodeClient.tasks",
+              "kind": "method",
+              "signature": "(self, task_ids: Optional[Union[str, Sequence[str]]] = None) -> List[Dict[str, Any]]",
+              "summary": "``GET /project/tasks`` — task records ``{taskID, state, errorCode, ...}``.",
+              "line": 283,
+              "deprecated": false
+            },
+            {
+              "name": "wait_for_task",
+              "qualname": "RsNodeClient.wait_for_task",
+              "kind": "method",
+              "signature": "(self, task_id: str, *, poll: float = 1.0, timeout: float = 7200.0, sleep=time.sleep, clock=time.monotonic) -> Dict[str, Any]",
+              "summary": "Poll ``/project/tasks`` until *task_id* reaches a terminal state.",
+              "line": 297,
+              "deprecated": false
+            },
+            {
+              "name": "save_project",
+              "qualname": "RsNodeClient.save_project",
+              "kind": "method",
+              "signature": "(self, name: Optional[str] = None) -> None",
+              "summary": "``GET /project/save`` — persist the session project to disk (async).",
+              "line": 321,
+              "deprecated": false
+            },
+            {
+              "name": "open_project",
+              "qualname": "RsNodeClient.open_project",
+              "kind": "method",
+              "signature": "(self, guid: str, name: Optional[str] = None) -> str",
+              "summary": "``GET /project/open`` — open an existing project by guid into a session.",
+              "line": 326,
+              "deprecated": false
+            },
+            {
+              "name": "close_project",
+              "qualname": "RsNodeClient.close_project",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "``GET /project/close`` — close the session's project (teardown).",
+              "line": 343,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/realityscan_workflow/_rsnode_connection.py",
+      "summary": "RSNode-backed connection — drive a running RealityScan 2.1 over REST.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "RsNodeConnection",
+          "summary": "Run RealityScan CLI command tails over the RSNode REST API.",
+          "line": 89,
+          "bases": [],
+          "members": [
+            {
+              "name": "is_available",
+              "qualname": "RsNodeConnection.is_available",
+              "kind": "method",
+              "signature": "(self) -> bool",
+              "summary": "True if a RealityScan RSNode answers the token handshake at *base_url*.",
+              "line": 119,
+              "deprecated": false
+            },
+            {
+              "name": "close",
+              "qualname": "RsNodeConnection.close",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Best-effort teardown of this connection's own RSNode session.",
+              "line": 138,
+              "deprecated": false
+            },
+            {
+              "name": "run",
+              "qualname": "RsNodeConnection.run",
+              "kind": "method",
+              "signature": "(self, commands: Sequence[str], log_path: str, timeout: Optional[float] = None, **_ignored: Any) -> subprocess.CompletedProcess",
+              "summary": "Execute a CLI command tail over REST;",
+              "line": 156,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/realityscan_workflow/launcher.py",
+      "summary": "Application shell for the RealityCapture Workflow UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "RealityScanWorkflowUI",
+          "summary": "",
+          "line": 15,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/realityscan_workflow/parameters.py",
+      "summary": "Tunable parameters surfaced in the RealityCapture Workflow panel.",
+      "functions": [
+        {
+          "name": "to_argv",
+          "qualname": "to_argv",
+          "kind": "function",
+          "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
+          "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
+          "line": 97,
+          "deprecated": false
+        },
+        {
+          "name": "referenced_keys",
+          "qualname": "referenced_keys",
+          "kind": "function",
+          "signature": "(source: str = '') -> 'set[str]'",
+          "summary": "Params relevant to the panel's current input — drives row visibility.",
+          "line": 107,
+          "deprecated": false
+        },
+        {
+          "name": "defaults",
+          "qualname": "defaults",
+          "kind": "function",
+          "signature": "() -> 'Dict[str, Any]'",
+          "summary": "Return ``{key: default}`` for every registered parameter.",
+          "line": 118,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
       "relpath": "photogrammetry/realityscan_workflow/run_combined.py",
       "summary": "Driver script for multi-session combined RealityCapture runs.",
+      "functions": [
+        {
+          "name": "publish_outputs",
+          "qualname": "publish_outputs",
+          "kind": "function",
+          "signature": "(project_dir: str, publish_dir: str)",
+          "summary": "Copy finished deliverables from local scratch to the synced output root.",
+          "line": 77,
+          "deprecated": false
+        },
+        {
+          "name": "main",
+          "qualname": "main",
+          "kind": "function",
+          "signature": "(argv=None) -> int",
+          "summary": "",
+          "line": 117,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
+      "relpath": "photogrammetry/realityscan_workflow/slots.py",
+      "summary": "Slots for the RealityCapture Workflow panel.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "RealityscanWorkflowSlots",
+          "summary": "Switchboard slots wired to ``realityscan_workflow.ui``.",
+          "line": 32,
+          "bases": [
+            "FramesSourceMixin",
+            "PhotogrammetryPanelSlots"
+          ],
+          "members": [
+            {
+              "name": "params_module",
+              "qualname": "RealityscanWorkflowSlots.params_module",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "",
+              "line": 71,
+              "deprecated": false
+            },
+            {
+              "name": "template_dir",
+              "qualname": "RealityscanWorkflowSlots.template_dir",
+              "kind": "property",
+              "signature": "(self) -> Path",
+              "summary": "",
+              "line": 75,
+              "deprecated": false
+            },
+            {
+              "name": "make_bridge",
+              "qualname": "RealityscanWorkflowSlots.make_bridge",
+              "kind": "method",
+              "signature": "(self) -> RealityScanRunner",
+              "summary": "",
+              "line": 78,
+              "deprecated": false
+            },
+            {
+              "name": "list_template_modes",
+              "qualname": "RealityscanWorkflowSlots.list_template_modes",
+              "kind": "method",
+              "signature": "(self) -> List[Tuple[str, str]]",
+              "summary": "",
+              "line": 101,
+              "deprecated": false
+            },
+            {
+              "name": "default_output_dir",
+              "qualname": "RealityscanWorkflowSlots.default_output_dir",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 104,
+              "deprecated": false
+            },
+            {
+              "name": "help_spec",
+              "qualname": "RealityscanWorkflowSlots.help_spec",
+              "kind": "method",
+              "signature": "(self) -> dict",
+              "summary": "",
+              "line": 110,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/sugar_mesh_workflow/_sugar_mesh.py",
+      "summary": "SuGaR mesh-extraction workflow engine.",
+      "functions": [
+        {
+          "name": "find_sugar_dir",
+          "qualname": "find_sugar_dir",
+          "kind": "function",
+          "signature": "() -> Optional[str]",
+          "summary": "Return the SuGaR repo dir or None.",
+          "line": 50,
+          "deprecated": false
+        },
+        {
+          "name": "is_sugar_available",
+          "qualname": "is_sugar_available",
+          "kind": "function",
+          "signature": "() -> bool",
+          "summary": "",
+          "line": 66,
+          "deprecated": false
+        }
+      ],
+      "classes": [
+        {
+          "name": "SugarMeshWorkflow",
+          "summary": "COLMAP dataset → SuGaR refined textured ``.obj`` mesh.",
+          "line": 70,
+          "bases": [],
+          "members": [
+            {
+              "name": "get_sugar_info",
+              "qualname": "SugarMeshWorkflow.get_sugar_info",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 113,
+              "deprecated": false
+            },
+            {
+              "name": "extract_mesh",
+              "qualname": "SugarMeshWorkflow.extract_mesh",
+              "kind": "method",
+              "signature": "(self, colmap_dir: str, regularization: str = 'dn_consistency', high_poly: bool = True, refinement_time: str = 'short', surface_level: float = 0.3, export_obj: bool = True, export_ply: bool = False, use_eval_split: bool = False, gpu: int = 0, white_background: bool = False) -> Optional[str]",
+              "summary": "Run SuGaR's full pipeline on a COLMAP dataset;",
+              "line": 139,
+              "deprecated": false
+            },
+            {
+              "name": "finalize_run",
+              "qualname": "SugarMeshWorkflow.finalize_run",
+              "kind": "method",
+              "signature": "(self, success: bool = True) -> str",
+              "summary": "",
+              "line": 277,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/sugar_mesh_workflow/run_combined.py",
+      "summary": "Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``.obj``.",
       "functions": [
         {
           "name": "main",
@@ -1796,7 +2998,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 66,
+          "line": 37,
           "deprecated": false
         }
       ],
@@ -2574,12 +3776,21 @@
               "deprecated": false
             },
             {
+              "name": "set_mesh_path",
+              "qualname": "SubstanceWorkflowSlots.set_mesh_path",
+              "kind": "method",
+              "signature": "(self, path: str) -> None",
+              "summary": "Pre-fill the mesh field (e.g.",
+              "line": 293,
+              "deprecated": false
+            },
+            {
               "name": "btn_browse_mesh",
               "qualname": "SubstanceWorkflowSlots.btn_browse_mesh",
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 293,
+              "line": 300,
               "deprecated": false
             },
             {
@@ -2588,7 +3799,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 304,
+              "line": 311,
               "deprecated": false
             },
             {
@@ -2597,7 +3808,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 315,
+              "line": 322,
               "deprecated": false
             }
           ]
@@ -2655,6 +3866,80 @@
         }
       ],
       "classes": []
+    },
+    {
+      "relpath": "unity_studio/launcher.py",
+      "summary": "Application shell for the Unity Studio launcher UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "UnityStudioUI",
+          "summary": "",
+          "line": 17,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "unity_studio/slots.py",
+      "summary": "Slots for the standalone Unity Studio launcher panel.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "UnityStudioSlots",
+          "summary": "Switchboard slots wired to ``unity_studio.ui``.",
+          "line": 36,
+          "bases": [],
+          "members": [
+            {
+              "name": "cmb000_init",
+              "qualname": "UnityStudioSlots.cmb000_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the Unity version dropdown (newest first).",
+              "line": 55,
+              "deprecated": false
+            },
+            {
+              "name": "cmb001_init",
+              "qualname": "UnityStudioSlots.cmb001_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the recent-projects dropdown and wire selection.",
+              "line": 73,
+              "deprecated": false
+            },
+            {
+              "name": "b010",
+              "qualname": "UnityStudioSlots.b010",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Browse for an existing Unity project folder.",
+              "line": 79,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "UnityStudioSlots.b000",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Launch the selected Unity Editor on the project.",
+              "line": 88,
+              "deprecated": false
+            },
+            {
+              "name": "b001",
+              "qualname": "UnityStudioSlots.b001",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Create a new Unity project, then load it into the field.",
+              "line": 112,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
     }
   ]
 }

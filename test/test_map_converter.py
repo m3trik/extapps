@@ -19,6 +19,7 @@ from PIL import Image
 
 from pythontk import ImgUtils
 from pythontk.img_utils.map_factory import MapFactory as TextureMapFactory
+from pythontk.img_utils.map_registry import MapRegistry, WF
 
 from extapps.map_converter.slots import MapConverterSlots
 
@@ -33,7 +34,6 @@ except Exception:
 skip_if_no_qt = unittest.skipUnless(
     QT_AVAILABLE, "Qt not available - b012 tests require QInputDialog"
 )
-
 
 class TestMapConverterTextureFactory(unittest.TestCase):
     """Test MapConverter integration with TextureMapFactory."""
@@ -201,7 +201,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
         self.mock_sb.file_dialog.return_value = self.texture_paths[
             :5
         ]  # Subset of textures
-        mock_dialog.return_value = ("Standard PBR (Separate Maps)", True)
+        mock_dialog.return_value = (WF.STD, True)
 
         # Run batch workflow
         self.converter.b012()
@@ -215,10 +215,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
     def test_b012_unity_urp_workflow(self, mock_dialog):
         """Test b012 with Unity URP workflow."""
         self.mock_sb.file_dialog.return_value = self.texture_paths
-        mock_dialog.return_value = (
-            "Unity URP (Packed: Albedo+Alpha, Metallic+Smoothness)",
-            True,
-        )
+        mock_dialog.return_value = (WF.URP, True)
 
         self.converter.b012()
 
@@ -229,7 +226,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
     def test_b012_unity_hdrp_workflow(self, mock_dialog):
         """Test b012 with Unity HDRP workflow (MSAO)."""
         self.mock_sb.file_dialog.return_value = self.texture_paths
-        mock_dialog.return_value = ("Unity HDRP (Mask Map: MSAO)", True)
+        mock_dialog.return_value = (WF.HDRP, True)
 
         self.converter.b012()
 
@@ -240,7 +237,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
     def test_b012_unreal_workflow(self, mock_dialog):
         """Test b012 with Unreal Engine workflow."""
         self.mock_sb.file_dialog.return_value = self.texture_paths
-        mock_dialog.return_value = ("Unreal Engine (BaseColor+Alpha)", True)
+        mock_dialog.return_value = (WF.UE, True)
 
         self.converter.b012()
 
@@ -251,7 +248,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
     def test_b012_gltf_workflow(self, mock_dialog):
         """Test b012 with glTF 2.0 workflow."""
         self.mock_sb.file_dialog.return_value = self.texture_paths
-        mock_dialog.return_value = ("glTF 2.0 (Separate Maps)", True)
+        mock_dialog.return_value = (WF.GLTF, True)
 
         self.converter.b012()
 
@@ -262,7 +259,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
     def test_b012_godot_workflow(self, mock_dialog):
         """Test b012 with Godot workflow."""
         self.mock_sb.file_dialog.return_value = self.texture_paths
-        mock_dialog.return_value = ("Godot (Separate Maps)", True)
+        mock_dialog.return_value = (WF.GODOT, True)
 
         self.converter.b012()
 
@@ -278,7 +275,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
             os.path.join(self.test_files_dir, "material_Diffuse.png"),
         ]
         self.mock_sb.file_dialog.return_value = spec_gloss_textures
-        mock_dialog.return_value = ("Specular/Glossiness Workflow", True)
+        mock_dialog.return_value = (WF.SPEC, True)
 
         self.converter.b012()
 
@@ -341,7 +338,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
         all_textures = self.texture_paths[:3] + set2_textures
 
         self.mock_sb.file_dialog.return_value = all_textures
-        mock_dialog.return_value = ("Standard PBR (Separate Maps)", True)
+        mock_dialog.return_value = (WF.STD, True)
 
         # Should process both sets
         self.converter.b012()
@@ -352,11 +349,82 @@ class TestMapConverterTextureFactory(unittest.TestCase):
     def test_b012_handles_factory_errors(self, mock_dialog, mock_prepare):
         """Test b012 handles TextureMapFactory errors gracefully."""
         self.mock_sb.file_dialog.return_value = self.texture_paths
-        mock_dialog.return_value = ("Standard PBR (Separate Maps)", True)
+        mock_dialog.return_value = (WF.STD, True)
         mock_prepare.side_effect = Exception("Factory processing error")
 
         # Should catch and report error, not crash
         self.converter.b012()
+
+    @skip_if_no_qt
+    @patch("extapps.map_converter.slots.MapFactory.prepare_maps")
+    @patch("qtpy.QtWidgets.QInputDialog.getItem")
+    def test_b012_config_comes_from_registry(self, mock_dialog, mock_prepare):
+        """b012 sources its workflow config from MapRegistry (SSoT), not a private copy.
+
+        Guards against the two tools drifting: the config handed to
+        ``prepare_maps`` must equal ``MapRegistry.resolve_config(name)`` (minus
+        the description, plus the panel's default output format).
+        """
+        self.mock_sb.file_dialog.return_value = self.texture_paths
+        mock_dialog.return_value = (WF.URP, True)
+        mock_prepare.return_value = []
+
+        self.converter.b012()
+
+        mock_prepare.assert_called_once()
+        passed = dict(mock_prepare.call_args.kwargs)
+
+        expected = MapRegistry().resolve_config(WF.URP)
+        expected.pop("description", None)
+        expected.setdefault("output_extension", "png")
+
+        self.assertEqual(passed, expected)
+
+    @skip_if_no_qt
+    @patch("qtpy.QtWidgets.QInputDialog.getItem")
+    def test_b012_offers_registry_workflow_names(self, mock_dialog):
+        """The workflow picker is populated from MapRegistry, so both tools list
+        the same named workflows."""
+        self.mock_sb.file_dialog.return_value = self.texture_paths
+        mock_dialog.return_value = (WF.STD, True)
+
+        self.converter.b012()
+
+        offered = mock_dialog.call_args.args[3]
+        self.assertEqual(
+            sorted(offered), sorted(MapRegistry().get_workflow_presets())
+        )
+
+    @skip_if_no_qt
+    def test_footer_button_no_slot_name_collision(self):
+        """Regression: the 'Use Selection' footer toggle must not be stored under an
+        attribute equal to its objectName.
+
+        Switchboard resolves a widget's slot via ``getattr(slots, objectName)``; an
+        attribute named 'btn_use_selection' returns the (non-callable) button itself
+        and makes wiring its 'clicked' signal fail with 'is not a callable object'.
+        """
+        from qtpy import QtWidgets
+
+        # A QApplication is required to instantiate the real footer button.
+        QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        footer = Mock()
+
+        self.converter.footer_init(footer)
+
+        footer.add_widget.assert_called_once()
+        btn = footer.add_widget.call_args.args[0]
+        self.assertEqual(btn.objectName(), "btn_use_selection")
+
+        # The slot instance must not shadow the objectName with the widget.
+        resolved = getattr(self.converter, btn.objectName(), None)
+        self.assertNotIsInstance(resolved, QtWidgets.QWidget)
+
+        # The toggle is still readable on demand.
+        btn.setChecked(True)
+        self.assertTrue(self.converter._selection_enabled())
+        btn.setChecked(False)
+        self.assertFalse(self.converter._selection_enabled())
 
     # -------------------------------------------------------------------------
     # Integration Tests
@@ -382,11 +450,9 @@ class TestMapConverterTextureFactory(unittest.TestCase):
         self.converter.source_dir = test_dir
         self.assertEqual(self.converter.source_dir, test_dir)
 
-
 # =============================================================================
 # Edge Cases
 # =============================================================================
-
 
 class TestMapConverterEdgeCases(unittest.TestCase):
     """Test edge cases and error handling."""
@@ -424,7 +490,7 @@ class TestMapConverterEdgeCases(unittest.TestCase):
         ]
 
         self.mock_sb.file_dialog.return_value = fake_paths
-        mock_dialog.return_value = ("Standard PBR (Separate Maps)", True)
+        mock_dialog.return_value = (WF.STD, True)
 
         # Should handle gracefully
         self.converter.b012()
@@ -554,7 +620,6 @@ class TestMapConverterEdgeCases(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-
 class TestMapConverterMethods(unittest.TestCase):
     """Tests for MapConverterSlots individual button methods (b004-b010)."""
 
@@ -600,34 +665,6 @@ class TestMapConverterMethods(unittest.TestCase):
             self.converter.b004()
             mock_method.assert_called()
 
-    def test_b005_pack_smoothness(self):
-        """Test b005: Pack Smoothness into Metallic."""
-        metallic = self.create_dummy_image("mat_Metallic.png", "L")
-        smoothness = self.create_dummy_image("mat_Smoothness.png", "L")
-
-        self.mock_sb.file_dialog.return_value = [metallic, smoothness]
-
-        with patch.object(
-            TextureMapFactory,
-            "pack_smoothness_into_metallic",
-            return_value="packed.png",
-        ) as mock_method:
-            self.converter.b005()
-            mock_method.assert_called()
-
-    def test_b006_unpack_metallic_smoothness(self):
-        """Test b006: Unpack MetallicSmoothness."""
-        ms = self.create_dummy_image("mat_MetallicSmoothness.png", "RGBA")
-        self.mock_sb.file_dialog.return_value = [ms]
-
-        with patch.object(
-            TextureMapFactory,
-            "unpack_metallic_smoothness",
-            return_value=("m.png", "s.png"),
-        ) as mock_method:
-            self.converter.b006()
-            mock_method.assert_called()
-
     def test_b007_unpack_specular_gloss(self):
         """Test b007: Unpack SpecularGloss."""
         sg = self.create_dummy_image("mat_SpecularGloss.png", "RGBA")
@@ -637,66 +674,6 @@ class TestMapConverterMethods(unittest.TestCase):
             TextureMapFactory, "unpack_specular_gloss", return_value=("s.png", "g.png")
         ) as mock_method:
             self.converter.b007()
-            mock_method.assert_called()
-
-    def test_b008_pack_msao(self):
-        """Test b008: Pack MSAO."""
-        metallic = self.create_dummy_image("mat_Metallic.png", "L")
-        ao = self.create_dummy_image("mat_AO.png", "L")
-        smoothness = self.create_dummy_image("mat_Smoothness.png", "L")
-
-        self.mock_sb.file_dialog.return_value = [metallic, ao, smoothness]
-        self.mock_widget.option_box.menu.cmb_msao_layout.currentData.return_value = (
-            "rgba"
-        )
-
-        with patch.object(
-            TextureMapFactory, "pack_msao_texture", return_value="packed.png"
-        ) as mock_method:
-            self.converter.b008(self.mock_widget)
-            mock_method.assert_called()
-
-    def test_b009_unpack_msao(self):
-        """Test b009: Unpack MSAO."""
-        msao = self.create_dummy_image("mat_MSAO.png", "RGBA")
-        self.mock_sb.file_dialog.return_value = [msao]
-        self.mock_widget.option_box.menu.cmb_msao_unpack_layout.currentData.return_value = (
-            ""
-        )
-
-        with patch.object(
-            TextureMapFactory,
-            "unpack_msao_texture",
-            return_value=("m.png", "a.png", "s.png"),
-        ) as mock_method:
-            self.converter.b009(self.mock_widget)
-            mock_method.assert_called()
-
-    def test_b015_pack_orm(self):
-        """Test b015: Pack ORM."""
-        ao = self.create_dummy_image("mat_AO.png", "L")
-        roughness = self.create_dummy_image("mat_Roughness.png", "L")
-        metallic = self.create_dummy_image("mat_Metallic.png", "L")
-
-        self.mock_sb.file_dialog.return_value = [ao, roughness, metallic]
-
-        with patch.object(
-            TextureMapFactory, "pack_orm_texture", return_value="packed.png"
-        ) as mock_method:
-            self.converter.b015()
-            mock_method.assert_called()
-
-    def test_b016_unpack_orm(self):
-        """Test b016: Unpack ORM."""
-        orm = self.create_dummy_image("mat_ORM.png", "RGB")
-        self.mock_sb.file_dialog.return_value = [orm]
-
-        with patch.object(
-            TextureMapFactory,
-            "unpack_orm_texture",
-            return_value=("a.png", "r.png", "m.png"),
-        ) as mock_method:
-            self.converter.b016()
             mock_method.assert_called()
 
     def test_b010_convert_smoothness_roughness(self):
@@ -739,7 +716,6 @@ class TestMapConverterMethods(unittest.TestCase):
         ) as mock_method:
             self.converter.tb003(self.mock_widget)
             mock_method.assert_called()
-
 
 class TestMapConverterIntegration(unittest.TestCase):
     """
@@ -797,55 +773,6 @@ class TestMapConverterIntegration(unittest.TestCase):
             alpha = img.split()[3]
             self.assertEqual(alpha.getpixel((0, 0)), 128)
 
-    def test_b005_pack_smoothness_real(self):
-        """Integration: Pack Smoothness into Metallic (Real File I/O)."""
-        metallic_path = self.create_test_image("mat_Metallic.png", "L", 255)
-        smoothness_path = self.create_test_image("mat_Smoothness.png", "L", 100)
-
-        self.mock_sb.file_dialog.return_value = [metallic_path, smoothness_path]
-
-        self.converter.b005()
-
-        expected_output = os.path.join(
-            self.test_files_dir, "mat_MetallicSmoothness.png"
-        )
-        self.assertTrue(os.path.exists(expected_output))
-
-        with Image.open(expected_output) as img:
-            self.assertEqual(img.mode, "RGBA")
-            # Metallic in RGB (255), Smoothness in A (100)
-            r, g, b, a = img.split()
-            self.assertEqual(r.getpixel((0, 0)), 255)
-            self.assertEqual(a.getpixel((0, 0)), 100)
-
-    def test_b008_pack_msao_real(self):
-        """Integration: Pack MSAO (Real File I/O)."""
-        metallic_path = self.create_test_image("mat_Metallic.png", "L", 200)
-        ao_path = self.create_test_image("mat_AO.png", "L", 150)
-        smoothness_path = self.create_test_image("mat_Smoothness.png", "L", 100)
-
-        self.mock_sb.file_dialog.return_value = [
-            metallic_path,
-            ao_path,
-            smoothness_path,
-        ]
-        self.mock_widget.option_box.menu.cmb_msao_layout.currentData.return_value = (
-            "rgba"
-        )
-
-        self.converter.b008(self.mock_widget)
-
-        expected_output = os.path.join(self.test_files_dir, "mat_MSAO.png")
-        self.assertTrue(os.path.exists(expected_output))
-
-        with Image.open(expected_output) as img:
-            self.assertEqual(img.mode, "RGBA")
-            r, g, b, a = img.split()
-            self.assertEqual(r.getpixel((0, 0)), 200)  # Metallic
-            self.assertEqual(g.getpixel((0, 0)), 150)  # AO
-            self.assertEqual(b.getpixel((0, 0)), 0)  # Detail (Default)
-            self.assertEqual(a.getpixel((0, 0)), 100)  # Smoothness
-
     def test_b010_convert_smoothness_roughness_real(self):
         """Integration: Convert Smoothness to Roughness (Real File I/O)."""
         smoothness_path = self.create_test_image("mat_Smoothness.png", "L", 100)
@@ -881,6 +808,122 @@ class TestMapConverterIntegration(unittest.TestCase):
             # Exact values depend on filter implementation, but should be close to blue
             r, g, b = img.getpixel((32, 32))
             self.assertTrue(b > r and b > g)
+
+class TestMapConverterFlipChannels(unittest.TestCase):
+    """Tests for the Flip Channels tool (tb002) — invert / swizzle / constant-fill."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.test_dir = tempfile.mkdtemp(prefix="map_converter_flip_")
+        cls.test_files_dir = os.path.join(cls.test_dir, "textures")
+        os.makedirs(cls.test_files_dir, exist_ok=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.test_dir):
+            shutil.rmtree(cls.test_dir)
+
+    def setUp(self):
+        # MagicMock so ``with sb.progress(...) as update:`` works out of the box.
+        self.mock_sb = MagicMock()
+        self.mock_sb.file_dialog = Mock(return_value=None)
+        self.converter = MapConverterSlots(self.mock_sb)
+
+    def create_test_image(self, name, mode="RGB", color=128):
+        path = os.path.join(self.test_files_dir, name)
+        ImgUtils.save_image(ImgUtils.create_image(mode, (64, 64), color), path)
+        return path
+
+    def _widget(self, r="R", g="G", b="B", a="A", suffix=""):
+        """Build a mock toolbutton whose option menu returns the given tokens."""
+        widget = MagicMock()
+        menu = widget.option_box.menu
+        menu.cmb_r.currentData.return_value = r
+        menu.cmb_g.currentData.return_value = g
+        menu.cmb_b.currentData.return_value = b
+        menu.cmb_a.currentData.return_value = a
+        menu.txt_suffix.text.return_value = suffix
+        return widget
+
+    def test_tb002_init_identity_defaults(self):
+        """The option menu builds 4 source combos + a suffix field, defaulting to identity."""
+        widget = MagicMock()
+        self.converter.tb002_init(widget)
+
+        added = [c.args[0] for c in widget.option_box.menu.add.call_args_list]
+        self.assertEqual(added.count("QComboBox"), 4)
+        self.assertEqual(added.count("QLineEdit"), 1)
+
+        for idx, ch in enumerate("rgba"):
+            combo = getattr(widget.option_box.menu, f"cmb_{ch}")
+            combo.setCurrentIndex.assert_called_once_with(idx)
+
+    def test_tb002_invert_channel_with_suffix(self):
+        """An inverted source ('-G') inverts that output channel; suffix saves a copy."""
+        path = self.create_test_image("flip_N.png", "RGB", (10, 200, 30))
+        self.mock_sb.file_dialog.return_value = [path]
+
+        self.converter.tb002(self._widget(g="-G", suffix="_flip"))
+
+        out = os.path.join(self.test_files_dir, "flip_N_flip.png")
+        self.assertTrue(os.path.exists(out))
+        with Image.open(out) as img:
+            self.assertEqual(img.getpixel((0, 0))[:3], (10, 55, 30))  # 255-200
+
+    def test_tb002_swap_channels_overwrite(self):
+        """Swizzling R↔B swaps those channels; empty suffix overwrites in place."""
+        path = self.create_test_image("flip_Swap.png", "RGB", (10, 20, 30))
+        self.mock_sb.file_dialog.return_value = [path]
+
+        self.converter.tb002(self._widget(r="B", b="R"))
+
+        with Image.open(path) as img:
+            self.assertEqual(img.getpixel((0, 0))[:3], (30, 20, 10))
+
+    def test_tb002_constant_alpha_fill(self):
+        """A '1' source writes a constant-white channel (e.g. force opaque alpha)."""
+        path = self.create_test_image("flip_RGBA.png", "RGBA", (10, 20, 30, 40))
+        self.mock_sb.file_dialog.return_value = [path]
+
+        self.converter.tb002(self._widget(a="1", suffix="_op"))
+
+        out = os.path.join(self.test_files_dir, "flip_RGBA_op.png")
+        with Image.open(out) as img:
+            self.assertEqual(img.mode, "RGBA")
+            self.assertEqual(img.getpixel((0, 0)), (10, 20, 30, 255))
+
+    def test_tb002_identity_no_suffix_is_noop(self):
+        """All-identity sources with no suffix short-circuits — no file is touched."""
+        path = self.create_test_image("flip_Identity.png", "RGB", (10, 20, 30))
+        self.mock_sb.file_dialog.return_value = [path]
+
+        with patch.object(self.converter, "_flip_one") as mock_flip:
+            self.converter.tb002(self._widget())
+            mock_flip.assert_not_called()
+
+    def test_tb002_add_alpha_to_rgb(self):
+        """Pointing the A slot at a real source promotes an RGB map to RGBA."""
+        path = self.create_test_image("flip_AddA.png", "RGB", (10, 20, 30))
+        self.mock_sb.file_dialog.return_value = [path]
+
+        self.converter.tb002(self._widget(a="R", suffix="_rgba"))
+
+        out = os.path.join(self.test_files_dir, "flip_AddA_rgba.png")
+        with Image.open(out) as img:
+            self.assertEqual(img.mode, "RGBA")
+            self.assertEqual(img.getpixel((0, 0)), (10, 20, 30, 10))  # A ← R
+
+    def test_tb002_invert_grayscale_stays_grayscale(self):
+        """A pure invert preserves a grayscale map's mode (no RGB promotion)."""
+        path = self.create_test_image("flip_Gray.png", "L", 100)
+        self.mock_sb.file_dialog.return_value = [path]
+
+        self.converter.tb002(self._widget(r="-R", suffix="_inv"))
+
+        out = os.path.join(self.test_files_dir, "flip_Gray_inv.png")
+        with Image.open(out) as img:
+            self.assertEqual(img.mode, "L")
+            self.assertEqual(img.getpixel((0, 0)), 155)  # 255-100
 
 
 if __name__ == "__main__":

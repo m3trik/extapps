@@ -27,7 +27,6 @@ from uitk.bridge import BridgeSlotsBase
 from extapps.marmoset_workflow._marmoset_engine import (
     MarmosetEngine,
     SEND_TO,
-    ROUNDTRIP,
     _TEMPLATE_DIR,
     list_template_modes as _engine_list_template_modes,
 )
@@ -57,6 +56,24 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
     # The set-up-a-project templates run interactively (send_to); there's no
     # user-facing artifact dir to require -- the rendered script is a throwaway.
     REQUIRE_OUTPUT_DIR = False
+
+    # Uses the base's default header menu (Open Templates / Refresh / Clear
+    # Log); only the help differs, so it's declared as data.
+    HELP_SPEC = {
+        "title": "Marmoset Workflow",
+        "body": "Launch Marmoset Toolbag and set up a project from a "
+        "model file on disk. No DCC required.",
+        "steps": [
+            "Pick a <b>Model File</b> (FBX / OBJ / USD / glTF).",
+            "Choose a <b>Template</b> (import or lookdev).",
+            "Tweak the exposed parameters (sky, framing).",
+            "Click <b>Set Up in Marmoset</b>.",
+        ],
+        "notes": [
+            "Gaussian-splat PLYs are not meshes and won't render "
+            "in Toolbag -- use a dedicated 3DGS viewer for those.",
+        ],
+    }
 
     def __init__(self, switchboard, **kwargs):
         self._initial_model: str = kwargs.get("model_path", "") or ""
@@ -161,59 +178,18 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
             return ""
         return self._model_edit.text().strip()
 
+    def set_model_path(self, path: str) -> None:
+        """Pre-fill the Model File field (e.g. a host exported the current selection to it).
+
+        Public hand-off point for hosts that drive this panel — the Blender Marmoset *bridge*
+        exports the selection to FBX and calls this before showing the panel."""
+        self._initial_model = path or ""
+        if self._model_edit is not None:
+            self._model_edit.setText(self._initial_model)
+
     # ------------------------------------------------------------------
     # Header menu
     # ------------------------------------------------------------------
-
-    def header_init(self, widget) -> None:
-        """Configure the header menu with utilities + help text."""
-        widget.menu.add("Separator", setTitle="Utilities")
-        widget.menu.add(
-            "QPushButton",
-            setText="Open Templates Folder",
-            setObjectName="btn_open_templates",
-            setToolTip="Reveal the bundled Toolbag template folder in Explorer.",
-        )
-        widget.menu.btn_open_templates.clicked.connect(self.open_templates_folder)
-
-        widget.menu.add(
-            "QPushButton",
-            setText="Refresh Templates",
-            setObjectName="btn_refresh_templates",
-            setToolTip="Re-scan the templates folder and rebuild the template combo.",
-        )
-        widget.menu.btn_refresh_templates.clicked.connect(self.refresh_templates)
-
-        widget.menu.add(
-            "QPushButton",
-            setText="Clear Log",
-            setObjectName="btn_clear_log",
-            setToolTip="Clear the log panel below.",
-        )
-        widget.menu.btn_clear_log.clicked.connect(self.clear_log)
-
-        try:
-            from uitk.widgets.mixins.tooltip_mixin import fmt
-
-            widget.set_help_text(
-                fmt(
-                    title="Marmoset Workflow",
-                    body="Launch Marmoset Toolbag and set up a project from a "
-                    "model file on disk. No DCC required.",
-                    steps=[
-                        "Pick a <b>Model File</b> (FBX / OBJ / USD / glTF).",
-                        "Choose a <b>Template</b> (import or lookdev).",
-                        "Tweak the exposed parameters (sky, framing).",
-                        "Click <b>Set Up in Marmoset</b>.",
-                    ],
-                    notes=[
-                        "Gaussian-splat PLYs are not meshes and won't render "
-                        "in Toolbag -- use a dedicated 3DGS viewer for those.",
-                    ],
-                )
-            )
-        except Exception:  # noqa: BLE001
-            pass
 
     # ------------------------------------------------------------------
     # b000 -- the send action

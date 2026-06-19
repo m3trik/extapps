@@ -13,7 +13,7 @@ and an async ``b000`` that streams a long bake into the log pane. That common
   attrs (engine label, preset scope, output-dir copy) and supplies the engine
   hooks: :meth:`make_bridge`, :attr:`params_module`, :meth:`default_output_dir`,
   :meth:`list_template_modes`, :meth:`_build_source_rows` +
-  :meth:`_resolve_input_argv` (its input row), :meth:`_help_spec`, and optionally
+  :meth:`_resolve_input_argv` (its input row), :meth:`help_spec`, and optionally
   :meth:`_mode_argv` (extra ``--stop-after`` / ``--publish`` flags).
 * :class:`FramesSourceMixin` — the frames/video "Source" row + single browser
   shared by the two photogrammetry (image-in) panels (Metashape, RealityCapture).
@@ -87,9 +87,22 @@ class PhotogrammetryPanelSlots(BridgeSlotsBase):
         Default: none."""
         return []
 
-    def _help_spec(self) -> dict:
-        """``{title, body, steps, notes}`` for the header help (subclass)."""
-        return {}
+    def header_menu_items(self):
+        """Process-runner header menu: Cancel Run / Open Output Folder / Clear
+        Log (the script-template bridges' base default is Open/Refresh
+        Templates). Built dynamically so the tooltips carry the engine label
+        and the output-folder description."""
+        return (
+            (
+                "Cancel Run", "btn_cancel_run",
+                f"Kill the in-flight {self.ENGINE_LABEL} process.", "cancel_run",
+            ),
+            (
+                "Open Output Folder", "btn_open_output",
+                self.OUTPUT_FOLDER_TOOLTIP, "open_output_folder",
+            ),
+            ("Clear Log", "btn_clear_log", "Clear the log panel below.", "clear_log"),
+        )
 
     def make_preset_store(self):
         """Semantic-preset mode: the engine-scoped store the headless runner uses
@@ -217,35 +230,6 @@ class PhotogrammetryPanelSlots(BridgeSlotsBase):
     def _log_extra_availability(self) -> None:
         """Hook: log engine-specific readiness detail after the exe line (e.g. a
         plugin / running-app / sign-in requirement). Default: none."""
-
-    # ------------------------------------------------------------------ header menu
-    def header_init(self, widget) -> None:
-        widget.menu.add("Separator", setTitle="Utilities")
-        widget.menu.add(
-            "QPushButton", setText="Cancel Run", setObjectName="btn_cancel_run",
-            setToolTip=f"Kill the in-flight {self.ENGINE_LABEL} process.",
-        )
-        widget.menu.btn_cancel_run.clicked.connect(self.cancel_run)
-        widget.menu.add(
-            "QPushButton", setText="Open Output Folder",
-            setObjectName="btn_open_output",
-            setToolTip=self.OUTPUT_FOLDER_TOOLTIP,
-        )
-        widget.menu.btn_open_output.clicked.connect(self.open_output_folder)
-        widget.menu.add(
-            "QPushButton", setText="Clear Log", setObjectName="btn_clear_log",
-            setToolTip="Clear the log panel below.",
-        )
-        widget.menu.btn_clear_log.clicked.connect(self.clear_log)
-
-        spec = self._help_spec()
-        if spec:
-            try:
-                from uitk.widgets.mixins.tooltip_mixin import fmt
-
-                widget.set_help_text(fmt(**spec))
-            except Exception:  # noqa: BLE001
-                pass
 
     def cancel_run(self) -> None:
         if self.bridge.is_running():

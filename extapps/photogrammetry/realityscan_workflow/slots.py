@@ -107,7 +107,7 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
         except Exception:  # noqa: BLE001
             return ""
 
-    def _help_spec(self) -> dict:
+    def help_spec(self) -> dict:
         return dict(
             title="RealityCapture Workflow",
             body="Drive RealityScan / RealityCapture photogrammetry headless from "

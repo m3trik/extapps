@@ -102,7 +102,7 @@ class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
             return ["--stop-after", pair[1]]
         return []
 
-    def _help_spec(self) -> dict:
+    def help_spec(self) -> dict:
         return dict(
             title="Metashape Workflow",
             body="Drive Agisoft Metashape photogrammetry headless from the local "

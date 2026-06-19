@@ -15,7 +15,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-dependencies = ["pythontk", "uitk", "qtpy"]
+dependencies = ["pythontk", "uitk", "qtpy", "unitytk"]
 
 [project.urls]
 Homepage = "https://github.com/m3trik/extapps"
@@ -35,6 +35,7 @@ map_converter = "extapps.map_converter:MapConverterUI"
 map_packer = "extapps.map_packer:MapPackerUI"
 mesh_convert = "extapps.mesh_convert:MeshConvertUI"
 marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI"
+unity_studio = "extapps.unity_studio:UnityStudioUI"
 
 [tool.setuptools.dynamic]
 version = {attr = "extapps.__version__"}

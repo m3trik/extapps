@@ -3,7 +3,7 @@
 """Application shell for the Map Compositor UI.
 
 The engine lives in :mod:`pythontk.img_utils.map_compositor` and the
-slot bindings in :mod:`extapps.map_compositor.slots`; this module only
+slot bindings in :mod:`extapps.texture_maps.compositor.slots`; this module only
 assembles the Switchboard-driven UI and provides the script entry point.
 """
 
@@ -15,19 +15,19 @@ from uitk import configure_high_dpi
 configure_high_dpi()
 
 
-class MapCompositorUI:
+class CompositorUI:
     def __new__(cls, *args, **kwargs):
         from uitk import Switchboard
         from extapps import __version__
-        from extapps.map_compositor.slots import MapCompositorSlots
+        from extapps.texture_maps.compositor.slots import CompositorSlots
 
         sb = Switchboard(
             *args,
-            ui_source="./map_compositor.ui",
-            slot_source=MapCompositorSlots,
+            ui_source="./compositor.ui",
+            slot_source=CompositorSlots,
             **kwargs,
         )
-        ui = sb.loaded_ui.map_compositor
+        ui = sb.loaded_ui.compositor
 
         ui.set_attributes(WA_TranslucentBackground=True)
         # Use the uitk Header in place of the native OS frame so the
@@ -50,5 +50,5 @@ class MapCompositorUI:
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    ui = MapCompositorUI()
+    ui = CompositorUI()
     ui.show(pos="screen", app_exec=True)

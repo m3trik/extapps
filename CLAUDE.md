@@ -51,7 +51,7 @@ so they stay import-safe outside Painter), `env_utils/` (`PainterConnection`,
 Direct launch:
 
 ```powershell
-python -c "from extapps.map_compositor import MapCompositorUI; MapCompositorUI().show(pos='screen', app_exec=True)"
+python -c "from extapps.texture_maps.compositor import CompositorUI; CompositorUI().show(pos='screen', app_exec=True)"
 python -c "from extapps.substance_workflow import SubstanceWorkflowUI; SubstanceWorkflowUI().show(pos='screen', app_exec=True)"
 ```
 

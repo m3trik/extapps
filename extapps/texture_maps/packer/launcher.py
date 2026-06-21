@@ -3,7 +3,7 @@
 """Application shell for the Map Packer UI.
 
 Engine logic lives in :class:`pythontk.ImgUtils` / :class:`pythontk.MapFactory`
-and slot bindings in :mod:`extapps.map_packer.slots`; this module only
+and slot bindings in :mod:`extapps.texture_maps.packer.slots`; this module only
 assembles the Switchboard-driven UI and provides the script entry point.
 """
 from uitk import configure_high_dpi
@@ -14,13 +14,13 @@ from uitk import configure_high_dpi
 configure_high_dpi()
 
 
-class MapPackerUI:
+class PackerUI:
     def __new__(cls):
         from uitk import Switchboard
-        from extapps.map_packer.slots import MapPackerSlots
+        from extapps.texture_maps.packer.slots import PackerSlots
 
-        sb = Switchboard(ui_source="map_packer.ui", slot_source=MapPackerSlots)
-        ui = sb.loaded_ui.map_packer
+        sb = Switchboard(ui_source="packer.ui", slot_source=PackerSlots)
+        ui = sb.loaded_ui.packer
         ui.set_attributes(WA_TranslucentBackground=True)
         ui.set_flags(FramelessWindowHint=True)
         ui.style.set(theme="dark", style_class="translucentBgWithBorder")
@@ -31,4 +31,4 @@ class MapPackerUI:
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    MapPackerUI().show(pos="screen", app_exec=True)
+    PackerUI().show(pos="screen", app_exec=True)

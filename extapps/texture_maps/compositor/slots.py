@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""UI slot bindings for the map_compositor window.
+"""UI slot bindings for the compositor window.
 
 Slots own the UI state and compose a :class:`MapCompositor` engine.
 Engine status messages flow through ``self.engine.logger`` (a LoggingMixin
@@ -48,7 +48,7 @@ def _build_intro() -> str:
     )
 
 
-class MapCompositorSlots:
+class CompositorSlots:
     """UI slot handler. Composes a :class:`MapCompositor` via ``self.engine``."""
 
     msg_intro = _build_intro()
@@ -68,9 +68,21 @@ class MapCompositorSlots:
 
     def __init__(self, switchboard) -> None:
         self.sb = switchboard
-        self.ui = self.sb.loaded_ui.map_compositor
+        self.ui = self.sb.loaded_ui.compositor
 
+        # The engine is widget-free and the *_init hooks read it during
+        # registration, so it must exist now.
         self.engine = MapCompositor(progress_callback=self._on_progress)
+
+        # The switchboard can build this slots instance before the child
+        # widgets are registered onto self.ui — even eagerly during Switchboard
+        # construction (slot_source=). Touching widgets here would raise and
+        # leave ``ui.slots = None``. Defer the widget wiring (log pane, intro,
+        # footer button) until the UI is registered.
+        self.ui.run_when_ready(self._initialize_ui)
+
+    def _initialize_ui(self) -> None:
+        """Wire the widgets that span the whole UI, once it is registered."""
         logger = self.engine.logger
         # Class-level logger — sweep stale widget handlers from prior sessions.
         for h in list(logger.handlers):
@@ -84,9 +96,6 @@ class MapCompositorSlots:
         handler.setLevel(logging.INFO)
         handler.setFormatter(LevelAwareFormatter(logger=logger, strip_html=False))
         logger.addHandler(handler)
-
-        self.default_toolTip_txt000 = self.ui.txt000.toolTip()
-        self.default_toolTip_txt001 = self.ui.txt001.toolTip()
 
         self.ui.txt003.setText(self.msg_intro)
         self.ui.footer.setDefaultStatusText("Ready.")
@@ -399,9 +408,12 @@ class MapCompositorSlots:
 
     def txt000_init(self, widget):
         """Init Source — a directory of maps, or specific image files."""
+        # Capture the .ui-defined tooltip from the widget itself (was read in
+        # __init__, but that runs before this widget is registered).
+        self.default_toolTip_txt000 = widget.toolTip()
         self._recent_input_dirs = self._bind_recent_values(
             widget,
-            "map_compositor_input_dirs",
+            "compositor_input_dirs",
             "prev_input_dirs",
             auto_record=True,
         )
@@ -421,9 +433,10 @@ class MapCompositorSlots:
 
     def txt001_init(self, widget):
         """Init Destination Directory"""
+        self.default_toolTip_txt001 = widget.toolTip()
         self._recent_output_dirs = self._bind_recent_values(
             widget,
-            "map_compositor_output_dirs",
+            "compositor_output_dirs",
             "prev_output_dirs",
             auto_record=True,
         )
@@ -443,7 +456,7 @@ class MapCompositorSlots:
         """Init Map Name"""
         self._recent_map_names = self._bind_recent_values(
             widget,
-            "map_compositor_map_names",
+            "compositor_map_names",
             "prev_map_names",
             auto_record=True,
         )

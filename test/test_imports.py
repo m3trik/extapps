@@ -12,12 +12,12 @@ import pytest
 
 
 TOOLS = [
-    "extapps.map_compositor",
+    "extapps.texture_maps.compositor",
     "extapps.photogrammetry.metashape_workflow",
     "extapps.substance_workflow",
     "extapps.marmoset_workflow",
-    "extapps.map_converter",
-    "extapps.map_packer",
+    "extapps.texture_maps.converter",
+    "extapps.texture_maps.packer",
     "extapps.mesh_convert",
 ]
 

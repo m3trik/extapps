@@ -7,16 +7,16 @@ holds only the Switchboard panel and launcher.
 """
 from pythontk.core_utils.module_resolver import bootstrap_package
 
-__package__ = "extapps.map_compositor"
+__package__ = "extapps.texture_maps.compositor"
 
 
 DEFAULT_INCLUDE = {
-    "launcher": ["MapCompositorUI"],
-    "slots": ["MapCompositorSlots"],
+    "launcher": ["CompositorUI"],
+    "slots": ["CompositorSlots"],
 }
 
 
 bootstrap_package(globals(), include=DEFAULT_INCLUDE)
 
 
-__all__ = ["MapCompositorUI", "MapCompositorSlots"]
+__all__ = ["CompositorUI", "CompositorSlots"]

@@ -1,19 +1,19 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Map Converter UI — slot file for ``map_converter.ui``.
+"""Map Converter UI — slot file for ``converter.ui``.
 
 Bundles texture-map conversion, channel packing, PBR-workflow prep, and bulk
 optimization into a single Switchboard panel. The heavy lifting lives in
 ``MapFactory`` / ``ImgUtils`` (in pythontk) — this module is the UI wiring only.
 
-This module exposes :class:`MapConverterSlots` — the Switchboard slot class.
+This module exposes :class:`ConverterSlots` — the Switchboard slot class.
 Method names map to widget ``objectName`` in the .ui file: ``tb*`` =
 toolbutton (has an options menu populated by the matching ``*_init`` hook),
 ``b*`` = plain button. Host integrations can inject a ``texture_provider``
 callable to read the DCC selection.
 
-The standalone launcher :class:`MapConverterUI` lives in the sibling
-:mod:`extapps.map_converter.launcher` module.
+The standalone launcher :class:`ConverterUI` lives in the sibling
+:mod:`extapps.texture_maps.converter.launcher` module.
 """
 import os
 import tempfile
@@ -28,8 +28,8 @@ from pythontk.img_utils.map_registry import MapRegistry
 from pythontk.img_utils.map_optimizer import MapOptimizer
 from pythontk.file_utils._file_utils import FileUtils
 
-class MapConverterSlots(ImgUtils):
-    """Switchboard slots for ``map_converter.ui``.
+class ConverterSlots(ImgUtils):
+    """Switchboard slots for ``converter.ui``.
 
     Slot methods are bound to widgets by name. The ``Use Selection`` footer
     toggle (installed by :meth:`footer_init`) routes every tool through
@@ -41,7 +41,7 @@ class MapConverterSlots(ImgUtils):
         super().__init__()
 
         self.sb = switchboard
-        self.ui = self.sb.loaded_ui.map_converter
+        self.ui = self.sb.loaded_ui.converter
 
         self._source_dir = kwargs.get("source_dir", "")
         self._texture_provider = kwargs.get("texture_provider", None)

@@ -6,7 +6,7 @@ from pythontk.img_utils.map_factory import MapFactory
 from pythontk.file_utils._file_utils import FileUtils
 
 
-class MapPackerSlots(ImgUtils):
+class PackerSlots(ImgUtils):
     channels = ["R", "G", "B", "A"]
     grayscale_types = [
         "None",
@@ -22,7 +22,7 @@ class MapPackerSlots(ImgUtils):
     ]
     output_formats = ["PNG", "TGA", "JPG", "BMP", "TIFF", "EXR"]
 
-    PRESET_DIR = "extapps/map_packer"
+    PRESET_DIR = "extapps/texture_maps/packer"
 
     # Built-in presets defined using human-readable names.
     # Resolved to combo indices at seed time via grayscale_types/output_formats.
@@ -65,13 +65,18 @@ class MapPackerSlots(ImgUtils):
         super().__init__()
 
         self.sb = switchboard
-        self.ui = self.sb.loaded_ui.map_packer
+        self.ui = self.sb.loaded_ui.packer
 
         self._source_dir = kwargs.get("source_dir", "")
 
-        self._init_ui_comboboxes()
-        self._set_channel_label_colors()
-        self.ui.b001.setEnabled(False)  # Disable the open output dir button
+        # The switchboard can build this slots instance mid-load — even eagerly
+        # during Switchboard construction (slot_source=) — *before* the child
+        # widgets are registered onto self.ui. Touching any widget here would
+        # raise and leave ``ui.slots = None`` (e.g. tentacle's materials b008
+        # then crashes on ``ui.slots.source_dir``). Per-widget setup lives in
+        # the ``*_init`` methods; cross-widget wiring that needs the whole UI
+        # (presets, label colors, mode sync) runs once the UI is registered.
+        self.ui.run_when_ready(self._initialize_ui)
 
     def _set_channel_label_colors(self):
         """Set background color for each channel label."""
@@ -88,19 +93,66 @@ class MapPackerSlots(ImgUtils):
                     f"background-color: {channel_colors[c]}; color: white; border-radius: 3px;"
                 )
 
-    def _init_ui_comboboxes(self):
-        """Initialize channel and format comboboxes and connect format change signal."""
-        for c in self.channels:
-            cmb = getattr(self.ui, f"cmb{c}")
-            cmb.clear()
-            cmb.addItems(self.grayscale_types)
-            cmb.restore_state = True  # <-- Enable state restore
+    def _initialize_ui(self):
+        """Cross-widget wiring, deferred until the whole UI is registered.
 
-        self.ui.cmbFormat.clear()
-        self.ui.cmbFormat.addItems(self.output_formats)
-        self.ui.cmbFormat.restore_state = True  # <-- Enable state restore
-        self.ui.cmbFormat.currentTextChanged.connect(self._on_format_changed)
-        self._on_format_changed(self.ui.cmbFormat.currentText())
+        Runs once after ``register_children`` (via ``on_first_show``), so every
+        channel combo, the header menu, and the action buttons exist. Per-combo
+        population/restore already ran in the ``*_init`` methods, so this only
+        does the wiring that spans multiple widgets.
+        """
+        self._set_channel_label_colors()
+        self.ui.b001.setEnabled(False)  # the open-output-dir button starts disabled
+        self._setup_presets()
+        # Sync the action-button text / option enablement to the restored mode.
+        self._on_mode_changed(self.ui.header.menu.cmb_mode.currentText())
+
+    def _setup_presets(self):
+        """Register the channel/format/suffix widgets with the header preset menu."""
+        presets = self.ui.header.menu.presets
+        presets.preset_dir = self.PRESET_DIR
+        # Seed built-in presets BEFORE setup so the combo is populated on first launch.
+        self._seed_builtin_presets(presets)
+        presets.setup(
+            preset_dir=self.PRESET_DIR,
+            widgets=[
+                self.ui.cmbR,
+                self.ui.cmbG,
+                self.ui.cmbB,
+                self.ui.cmbA,
+                self.ui.cmbFormat,
+                self.ui.txtSuffix,
+            ],
+        )
+
+    def _init_channel_combo(self, widget):
+        """Populate a channel combo with the grayscale map types.
+
+        Runs inside the per-widget ``*_init`` (so during ``register_children``,
+        before state restore) — the selection then persists across sessions.
+        """
+        widget.clear()
+        widget.addItems(self.grayscale_types)
+        widget.restore_state = True
+
+    def cmbR_init(self, widget):
+        self._init_channel_combo(widget)
+
+    def cmbG_init(self, widget):
+        self._init_channel_combo(widget)
+
+    def cmbB_init(self, widget):
+        self._init_channel_combo(widget)
+
+    def cmbA_init(self, widget):
+        self._init_channel_combo(widget)
+
+    def cmbFormat_init(self, widget):
+        """Populate the output-format combo and react to format changes."""
+        widget.clear()
+        widget.addItems(self.output_formats)
+        widget.restore_state = True
+        widget.currentTextChanged.connect(self._on_format_changed)
 
     def _on_format_changed(self, fmt: str):
         """Disable alpha combobox for formats without alpha support."""
@@ -110,10 +162,12 @@ class MapPackerSlots(ImgUtils):
             self.ui.cmbA.setCurrentIndex(self.ui.cmbA.findText("None"))
 
     def header_init(self, widget):
-        """Configure the header menu: Pack/Unpack mode + presets.
+        """Build the header menu's Pack/Unpack mode toggle.
 
         The channel layout (R/G/B/A → map type) is direction-agnostic, so a
-        single set of presets serves both packing and unpacking. The Mode
+        single set of presets serves both packing and unpacking; those presets
+        reference the channel combos, which register *after* the header, so they
+        are wired in :meth:`_setup_presets` once the whole UI exists. The Mode
         toggle decides the direction (see :meth:`_on_mode_changed`).
         """
         widget.menu.setTitle("Map Packer Options")
@@ -130,24 +184,6 @@ class MapPackerSlots(ImgUtils):
         )
         cmb_mode.restore_state = True
         cmb_mode.currentTextChanged.connect(self._on_mode_changed)
-
-        presets = widget.menu.presets
-        presets.preset_dir = self.PRESET_DIR
-        # Seed built-in presets BEFORE setup so the combo is populated on first launch.
-        self._seed_builtin_presets(presets)
-        presets.setup(
-            preset_dir=self.PRESET_DIR,
-            widgets=[
-                self.ui.cmbR,
-                self.ui.cmbG,
-                self.ui.cmbB,
-                self.ui.cmbA,
-                self.ui.cmbFormat,
-                self.ui.txtSuffix,
-            ],
-        )
-        # Sync the button text / option enablement to the (restored) mode.
-        self._on_mode_changed(cmb_mode.currentText())
 
     def _unpack_mode(self) -> bool:
         """True when the header Mode toggle is set to Unpack.

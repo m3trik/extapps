@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'map_packer.ui'
+## Form generated from reading UI file 'packer.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
@@ -30,7 +30,7 @@ class Ui_QtUi(object):
         if not QtUi.objectName():
             QtUi.setObjectName(u"QtUi")
         QtUi.setEnabled(True)
-        QtUi.resize(200, 299)
+        QtUi.resize(200, 296)
         QtUi.setTabShape(QTabWidget.Triangular)
         QtUi.setDockNestingEnabled(True)
         QtUi.setDockOptions(QMainWindow.AllowNestedDocks|QMainWindow.AllowTabbedDocks|QMainWindow.AnimatedDocks|QMainWindow.ForceTabbedDocks)
@@ -176,8 +176,17 @@ class Ui_QtUi(object):
         self.main_layout.addWidget(self.groupBox)
 
         self.verticalLayout_3 = QVBoxLayout()
-        self.verticalLayout_3.setSpacing(0)
+        self.verticalLayout_3.setSpacing(3)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.verticalLayout_3.setContentsMargins(1, 1, 1, 1)
+        self.b000 = QPushButton(self.central_widget)
+        self.b000.setObjectName(u"b000")
+        self.b000.setEnabled(True)
+        self.b000.setMinimumSize(QSize(0, 30))
+        self.b000.setMaximumSize(QSize(16777215, 19))
+
+        self.verticalLayout_3.addWidget(self.b000)
+
         self.b001 = QPushButton(self.central_widget)
         self.b001.setObjectName(u"b001")
         self.b001.setEnabled(False)
@@ -187,14 +196,6 @@ class Ui_QtUi(object):
         self.b001.setMaximumSize(QSize(16777215, 19))
 
         self.verticalLayout_3.addWidget(self.b001)
-
-        self.b000 = QPushButton(self.central_widget)
-        self.b000.setObjectName(u"b000")
-        self.b000.setEnabled(True)
-        self.b000.setMinimumSize(QSize(0, 30))
-        self.b000.setMaximumSize(QSize(16777215, 19))
-
-        self.verticalLayout_3.addWidget(self.b000)
 
 
         self.main_layout.addLayout(self.verticalLayout_3)
@@ -248,13 +249,13 @@ class Ui_QtUi(object):
 #endif // QT_CONFIG(tooltip)
         self.txtSuffix.setPlaceholderText(QCoreApplication.translate("QtUi", u"Suffix:", None))
 #if QT_CONFIG(tooltip)
-        self.b001.setToolTip(QCoreApplication.translate("QtUi", u"Choose the maps to pack and perform the operation.", None))
-#endif // QT_CONFIG(tooltip)
-        self.b001.setText(QCoreApplication.translate("QtUi", u"Open Output Dir", None))
-#if QT_CONFIG(tooltip)
         self.b000.setToolTip(QCoreApplication.translate("QtUi", u"Choose the maps to pack and perform the operation.", None))
 #endif // QT_CONFIG(tooltip)
         self.b000.setText(QCoreApplication.translate("QtUi", u"Pack", None))
+#if QT_CONFIG(tooltip)
+        self.b001.setToolTip(QCoreApplication.translate("QtUi", u"Choose the maps to pack and perform the operation.", None))
+#endif // QT_CONFIG(tooltip)
+        self.b001.setText(QCoreApplication.translate("QtUi", u"Open Output Dir", None))
         pass
     # retranslateUi
 

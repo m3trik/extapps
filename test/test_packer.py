@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-"""Tests for MapPackerSlots channel packing.
+"""Tests for PackerSlots channel packing.
 
 Regression guard for the conversion branch of ``_pack_set``: when a
 requested channel map is absent but derivable from another present map
@@ -19,7 +19,7 @@ import unittest
 
 from pythontk import ImgUtils
 
-from extapps.map_packer.slots import MapPackerSlots
+from extapps.texture_maps.packer.slots import PackerSlots
 
 
 class TestMapPackerConversion(unittest.TestCase):
@@ -27,7 +27,7 @@ class TestMapPackerConversion(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="map_packer_test_")
+        cls.test_dir = tempfile.mkdtemp(prefix="packer_test_")
         # Only a Roughness map is present; Smoothness must be derived from it.
         cls.roughness = os.path.join(cls.test_dir, "mat_Roughness.png")
         ImgUtils.save_image(
@@ -41,7 +41,7 @@ class TestMapPackerConversion(unittest.TestCase):
 
     @staticmethod
     def _bare_slots():
-        return MapPackerSlots.__new__(MapPackerSlots)
+        return PackerSlots.__new__(PackerSlots)
 
     def test_pack_set_converts_missing_channel(self):
         """Smoothness absent → converted from Roughness, packed, file written."""
@@ -83,7 +83,7 @@ class TestMapPackerUnpack(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="map_packer_unpack_")
+        cls.test_dir = tempfile.mkdtemp(prefix="packer_unpack_")
         # An RGB packed map (no alpha), distinct per channel so outputs differ.
         cls.packed = os.path.join(cls.test_dir, "mat_ORM.png")
         ImgUtils.save_image(
@@ -97,7 +97,7 @@ class TestMapPackerUnpack(unittest.TestCase):
 
     @staticmethod
     def _bare_slots():
-        return MapPackerSlots.__new__(MapPackerSlots)
+        return PackerSlots.__new__(PackerSlots)
 
     def test_unpack_one_extracts_assigned_channels(self):
         """Each non-None channel → a per-channel map named by its map type;
@@ -132,7 +132,7 @@ class TestMapPackerPresets(unittest.TestCase):
     """Built-in presets cover the standard grayscale channel layouts."""
 
     def test_grayscale_pack_presets_present(self):
-        names = list(MapPackerSlots.BUILTIN_PRESETS)
+        names = list(PackerSlots.BUILTIN_PRESETS)
         for expected in (
             "ORM (Unreal, glTF)",
             "MRAO (Metallic, Roughness, AO)",
@@ -142,7 +142,7 @@ class TestMapPackerPresets(unittest.TestCase):
             self.assertIn(expected, names)
 
     def test_mrao_preset_layout(self):
-        mrao = MapPackerSlots.BUILTIN_PRESETS["MRAO (Metallic, Roughness, AO)"]
+        mrao = PackerSlots.BUILTIN_PRESETS["MRAO (Metallic, Roughness, AO)"]
         self.assertEqual(
             (mrao["R"], mrao["G"], mrao["B"], mrao["A"]),
             ("Metallic", "Roughness", "Ambient_Occlusion", "None"),

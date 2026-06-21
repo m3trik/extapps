@@ -1,423 +1,8 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-06-19",
+  "generated_at": "2026-06-20",
   "modules": [
-    {
-      "relpath": "map_compositor/launcher.py",
-      "summary": "Application shell for the Map Compositor UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MapCompositorUI",
-          "summary": "",
-          "line": 18,
-          "bases": [],
-          "members": []
-        }
-      ]
-    },
-    {
-      "relpath": "map_compositor/slots.py",
-      "summary": "UI slot bindings for the map_compositor window.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MapCompositorSlots",
-          "summary": "UI slot handler.",
-          "line": 51,
-          "bases": [],
-          "members": [
-            {
-              "name": "removeNormalMap",
-              "qualname": "MapCompositorSlots.removeNormalMap",
-              "kind": "property",
-              "signature": "(self) -> bool",
-              "summary": "",
-              "line": 108,
-              "deprecated": false
-            },
-            {
-              "name": "removeNormalMap",
-              "qualname": "MapCompositorSlots.removeNormalMap",
-              "kind": "method",
-              "signature": "(self, value: bool) -> None",
-              "summary": "",
-              "line": 112,
-              "deprecated": false
-            },
-            {
-              "name": "input_dir",
-              "qualname": "MapCompositorSlots.input_dir",
-              "kind": "property",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 117,
-              "deprecated": false
-            },
-            {
-              "name": "output_dir",
-              "qualname": "MapCompositorSlots.output_dir",
-              "kind": "property",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 121,
-              "deprecated": false
-            },
-            {
-              "name": "map_name",
-              "qualname": "MapCompositorSlots.map_name",
-              "kind": "property",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 125,
-              "deprecated": false
-            },
-            {
-              "name": "header_init",
-              "qualname": "MapCompositorSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the header menu with global options.",
-              "line": 321,
-              "deprecated": false
-            },
-            {
-              "name": "txt000_init",
-              "qualname": "MapCompositorSlots.txt000_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 400,
-              "deprecated": false
-            },
-            {
-              "name": "txt001_init",
-              "qualname": "MapCompositorSlots.txt001_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Init Destination Directory",
-              "line": 422,
-              "deprecated": false
-            },
-            {
-              "name": "txt002_init",
-              "qualname": "MapCompositorSlots.txt002_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Init Map Name",
-              "line": 442,
-              "deprecated": false
-            },
-            {
-              "name": "b002",
-              "qualname": "MapCompositorSlots.b002",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Combine Maps",
-              "line": 452,
-              "deprecated": false
-            },
-            {
-              "name": "process",
-              "qualname": "MapCompositorSlots.process",
-              "kind": "method",
-              "signature": "(self, images, source_dir, output_dir, map_name=None)",
-              "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 462,
-              "deprecated": false
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "relpath": "map_converter/launcher.py",
-      "summary": "Application shell for the Map Converter UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MapConverterUI",
-          "summary": "Standalone launcher.",
-          "line": 18,
-          "bases": [],
-          "members": []
-        }
-      ]
-    },
-    {
-      "relpath": "map_converter/slots.py",
-      "summary": "Map Converter UI — slot file for ``map_converter.ui``.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MapConverterSlots",
-          "summary": "Switchboard slots for ``map_converter.ui``.",
-          "line": 31,
-          "bases": [
-            "ImgUtils"
-          ],
-          "members": [
-            {
-              "name": "source_dir",
-              "qualname": "MapConverterSlots.source_dir",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "Get the starting directory for file dialogs.",
-              "line": 50,
-              "deprecated": false
-            },
-            {
-              "name": "source_dir",
-              "qualname": "MapConverterSlots.source_dir",
-              "kind": "method",
-              "signature": "(self, value)",
-              "summary": "Set the starting directory for file dialogs.",
-              "line": 55,
-              "deprecated": false
-            },
-            {
-              "name": "texture_provider",
-              "qualname": "MapConverterSlots.texture_provider",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "Callable returning a list of texture paths from the host DCC selection.",
-              "line": 60,
-              "deprecated": false
-            },
-            {
-              "name": "texture_provider",
-              "qualname": "MapConverterSlots.texture_provider",
-              "kind": "method",
-              "signature": "(self, fn)",
-              "summary": "",
-              "line": 71,
-              "deprecated": false
-            },
-            {
-              "name": "footer_init",
-              "qualname": "MapConverterSlots.footer_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Add the global Use-Selection toggle to the footer.",
-              "line": 74,
-              "deprecated": false
-            },
-            {
-              "name": "tb000_init",
-              "qualname": "MapConverterSlots.tb000_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the Optimize toolbutton's option menu (format, clamp, modifier).",
-              "line": 153,
-              "deprecated": false
-            },
-            {
-              "name": "tb000",
-              "qualname": "MapConverterSlots.tb000",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Optimize a texture map(s)",
-              "line": 222,
-              "deprecated": false
-            },
-            {
-              "name": "tb001_init",
-              "qualname": "MapConverterSlots.tb001_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "",
-              "line": 349,
-              "deprecated": false
-            },
-            {
-              "name": "tb001",
-              "qualname": "MapConverterSlots.tb001",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 359,
-              "deprecated": false
-            },
-            {
-              "name": "tb003_init",
-              "qualname": "MapConverterSlots.tb003_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 415,
-              "deprecated": false
-            },
-            {
-              "name": "tb003",
-              "qualname": "MapConverterSlots.tb003",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 441,
-              "deprecated": false
-            },
-            {
-              "name": "tb002_init",
-              "qualname": "MapConverterSlots.tb002_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
-              "line": 497,
-              "deprecated": false
-            },
-            {
-              "name": "tb002",
-              "qualname": "MapConverterSlots.tb002",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
-              "line": 526,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "MapConverterSlots.b000",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert DirectX to OpenGL",
-              "line": 601,
-              "deprecated": false
-            },
-            {
-              "name": "b001",
-              "qualname": "MapConverterSlots.b001",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert OpenGL to DirectX",
-              "line": 618,
-              "deprecated": false
-            },
-            {
-              "name": "b004",
-              "qualname": "MapConverterSlots.b004",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 635,
-              "deprecated": false
-            },
-            {
-              "name": "b007",
-              "qualname": "MapConverterSlots.b007",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 678,
-              "deprecated": false
-            },
-            {
-              "name": "b010",
-              "qualname": "MapConverterSlots.b010",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 705,
-              "deprecated": false
-            },
-            {
-              "name": "b011",
-              "qualname": "MapConverterSlots.b011",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 731,
-              "deprecated": false
-            },
-            {
-              "name": "b012",
-              "qualname": "MapConverterSlots.b012",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
-              "line": 757,
-              "deprecated": false
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "relpath": "map_packer/launcher.py",
-      "summary": "Application shell for the Map Packer UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MapPackerUI",
-          "summary": "",
-          "line": 17,
-          "bases": [],
-          "members": []
-        }
-      ]
-    },
-    {
-      "relpath": "map_packer/slots.py",
-      "summary": "",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MapPackerSlots",
-          "summary": "",
-          "line": 9,
-          "bases": [
-            "ImgUtils"
-          ],
-          "members": [
-            {
-              "name": "header_init",
-              "qualname": "MapPackerSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Configure the header menu: Pack/Unpack mode + presets.",
-              "line": 112,
-              "deprecated": false
-            },
-            {
-              "name": "source_dir",
-              "qualname": "MapPackerSlots.source_dir",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 208,
-              "deprecated": false
-            },
-            {
-              "name": "source_dir",
-              "qualname": "MapPackerSlots.source_dir",
-              "kind": "method",
-              "signature": "(self, value)",
-              "summary": "",
-              "line": 212,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "MapPackerSlots.b000",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 235,
-              "deprecated": false
-            },
-            {
-              "name": "b001",
-              "qualname": "MapPackerSlots.b001",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Open the last output directory in the system file explorer.",
-              "line": 411,
-              "deprecated": false
-            }
-          ]
-        }
-      ]
-    },
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
       "summary": "Drive Marmoset Toolbag from the outside -- launch + templated automation.",
@@ -680,7 +265,7 @@
         {
           "name": "MarmosetWorkflowSlots",
           "summary": "Switchboard slots wired to ``marmoset_workflow.ui``.",
-          "line": 47,
+          "line": 46,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -691,7 +276,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 90,
+              "line": 89,
               "deprecated": false
             },
             {
@@ -700,7 +285,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 94,
+              "line": 93,
               "deprecated": false
             },
             {
@@ -709,7 +294,7 @@
               "kind": "method",
               "signature": "(self) -> MarmosetEngine",
               "summary": "",
-              "line": 97,
+              "line": 96,
               "deprecated": false
             },
             {
@@ -718,7 +303,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Engine templates filtered to the 'set up a project' subset.",
-              "line": 100,
+              "line": 99,
               "deprecated": false
             },
             {
@@ -727,7 +312,7 @@
               "kind": "method",
               "signature": "(self, pairs: List[Tuple[str, str]]) -> int",
               "summary": "Prefer 'lookdev (send_to)', else first entry.",
-              "line": 107,
+              "line": 106,
               "deprecated": false
             },
             {
@@ -736,7 +321,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 177,
+              "line": 176,
               "deprecated": false
             },
             {
@@ -745,7 +330,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (e.g.",
-              "line": 182,
+              "line": 181,
               "deprecated": false
             },
             {
@@ -754,7 +339,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Set up the picked model in Toolbag using the chosen template + mode.",
-              "line": 199,
+              "line": 198,
               "deprecated": false
             }
           ]
@@ -3868,12 +3453,351 @@
       "classes": []
     },
     {
-      "relpath": "unity_studio/launcher.py",
-      "summary": "Application shell for the Unity Studio launcher UI.",
+      "relpath": "texture_maps/compositor/launcher.py",
+      "summary": "Application shell for the Map Compositor UI.",
       "functions": [],
       "classes": [
         {
-          "name": "UnityStudioUI",
+          "name": "MapCompositorUI",
+          "summary": "",
+          "line": 18,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "texture_maps/compositor/slots.py",
+      "summary": "UI slot bindings for the compositor window.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "CompositorSlots",
+          "summary": "UI slot handler.",
+          "line": 51,
+          "bases": [],
+          "members": [
+            {
+              "name": "removeNormalMap",
+              "qualname": "CompositorSlots.removeNormalMap",
+              "kind": "property",
+              "signature": "(self) -> bool",
+              "summary": "",
+              "line": 121,
+              "deprecated": false
+            },
+            {
+              "name": "removeNormalMap",
+              "qualname": "CompositorSlots.removeNormalMap",
+              "kind": "method",
+              "signature": "(self, value: bool) -> None",
+              "summary": "",
+              "line": 125,
+              "deprecated": false
+            },
+            {
+              "name": "input_dir",
+              "qualname": "CompositorSlots.input_dir",
+              "kind": "property",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 130,
+              "deprecated": false
+            },
+            {
+              "name": "output_dir",
+              "qualname": "CompositorSlots.output_dir",
+              "kind": "property",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 134,
+              "deprecated": false
+            },
+            {
+              "name": "map_name",
+              "qualname": "CompositorSlots.map_name",
+              "kind": "property",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 138,
+              "deprecated": false
+            },
+            {
+              "name": "header_init",
+              "qualname": "CompositorSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the header menu with global options.",
+              "line": 334,
+              "deprecated": false
+            },
+            {
+              "name": "txt000_init",
+              "qualname": "CompositorSlots.txt000_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Init Source — a directory of maps, or specific image files.",
+              "line": 413,
+              "deprecated": false
+            },
+            {
+              "name": "txt001_init",
+              "qualname": "CompositorSlots.txt001_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Init Destination Directory",
+              "line": 438,
+              "deprecated": false
+            },
+            {
+              "name": "txt002_init",
+              "qualname": "CompositorSlots.txt002_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Init Map Name",
+              "line": 459,
+              "deprecated": false
+            },
+            {
+              "name": "b002",
+              "qualname": "CompositorSlots.b002",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Combine Maps",
+              "line": 469,
+              "deprecated": false
+            },
+            {
+              "name": "process",
+              "qualname": "CompositorSlots.process",
+              "kind": "method",
+              "signature": "(self, images, source_dir, output_dir, map_name=None)",
+              "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
+              "line": 479,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "texture_maps/converter/launcher.py",
+      "summary": "Application shell for the Map Converter UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapConverterUI",
+          "summary": "Standalone launcher.",
+          "line": 18,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "texture_maps/converter/slots.py",
+      "summary": "Map Converter UI — slot file for ``converter.ui``.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ConverterSlots",
+          "summary": "Switchboard slots for ``converter.ui``.",
+          "line": 31,
+          "bases": [
+            "ImgUtils"
+          ],
+          "members": [
+            {
+              "name": "source_dir",
+              "qualname": "ConverterSlots.source_dir",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "Get the starting directory for file dialogs.",
+              "line": 50,
+              "deprecated": false
+            },
+            {
+              "name": "source_dir",
+              "qualname": "ConverterSlots.source_dir",
+              "kind": "method",
+              "signature": "(self, value)",
+              "summary": "Set the starting directory for file dialogs.",
+              "line": 55,
+              "deprecated": false
+            },
+            {
+              "name": "texture_provider",
+              "qualname": "ConverterSlots.texture_provider",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "Callable returning a list of texture paths from the host DCC selection.",
+              "line": 60,
+              "deprecated": false
+            },
+            {
+              "name": "texture_provider",
+              "qualname": "ConverterSlots.texture_provider",
+              "kind": "method",
+              "signature": "(self, fn)",
+              "summary": "",
+              "line": 71,
+              "deprecated": false
+            },
+            {
+              "name": "footer_init",
+              "qualname": "ConverterSlots.footer_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Add the global Use-Selection toggle to the footer.",
+              "line": 74,
+              "deprecated": false
+            },
+            {
+              "name": "tb000_init",
+              "qualname": "ConverterSlots.tb000_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the Optimize toolbutton's option menu (format, clamp, modifier).",
+              "line": 153,
+              "deprecated": false
+            },
+            {
+              "name": "tb000",
+              "qualname": "ConverterSlots.tb000",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Optimize a texture map(s)",
+              "line": 222,
+              "deprecated": false
+            },
+            {
+              "name": "tb001_init",
+              "qualname": "ConverterSlots.tb001_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "",
+              "line": 349,
+              "deprecated": false
+            },
+            {
+              "name": "tb001",
+              "qualname": "ConverterSlots.tb001",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
+              "line": 359,
+              "deprecated": false
+            },
+            {
+              "name": "tb003_init",
+              "qualname": "ConverterSlots.tb003_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
+              "line": 415,
+              "deprecated": false
+            },
+            {
+              "name": "tb003",
+              "qualname": "ConverterSlots.tb003",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Bump/Height to Normal converter (single entry point with options).",
+              "line": 441,
+              "deprecated": false
+            },
+            {
+              "name": "tb002_init",
+              "qualname": "ConverterSlots.tb002_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
+              "line": 497,
+              "deprecated": false
+            },
+            {
+              "name": "tb002",
+              "qualname": "ConverterSlots.tb002",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
+              "line": 526,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "ConverterSlots.b000",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert DirectX to OpenGL",
+              "line": 601,
+              "deprecated": false
+            },
+            {
+              "name": "b001",
+              "qualname": "ConverterSlots.b001",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert OpenGL to DirectX",
+              "line": 618,
+              "deprecated": false
+            },
+            {
+              "name": "b004",
+              "qualname": "ConverterSlots.b004",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Batch pack Transparency into Albedo across texture sets.",
+              "line": 635,
+              "deprecated": false
+            },
+            {
+              "name": "b007",
+              "qualname": "ConverterSlots.b007",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
+              "line": 678,
+              "deprecated": false
+            },
+            {
+              "name": "b010",
+              "qualname": "ConverterSlots.b010",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert Smoothness maps to Roughness maps.",
+              "line": 705,
+              "deprecated": false
+            },
+            {
+              "name": "b011",
+              "qualname": "ConverterSlots.b011",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Convert Roughness maps to Smoothness maps.",
+              "line": 731,
+              "deprecated": false
+            },
+            {
+              "name": "b012",
+              "qualname": "ConverterSlots.b012",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
+              "line": 757,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "texture_maps/packer/launcher.py",
+      "summary": "Application shell for the Map Packer UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MapPackerUI",
           "summary": "",
           "line": 17,
           "bases": [],
@@ -3882,19 +3806,140 @@
       ]
     },
     {
-      "relpath": "unity_studio/slots.py",
-      "summary": "Slots for the standalone Unity Studio launcher panel.",
+      "relpath": "texture_maps/packer/slots.py",
+      "summary": "",
       "functions": [],
       "classes": [
         {
-          "name": "UnityStudioSlots",
-          "summary": "Switchboard slots wired to ``unity_studio.ui``.",
+          "name": "PackerSlots",
+          "summary": "",
+          "line": 9,
+          "bases": [
+            "ImgUtils"
+          ],
+          "members": [
+            {
+              "name": "cmbR_init",
+              "qualname": "PackerSlots.cmbR_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "",
+              "line": 142,
+              "deprecated": false
+            },
+            {
+              "name": "cmbG_init",
+              "qualname": "PackerSlots.cmbG_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "",
+              "line": 145,
+              "deprecated": false
+            },
+            {
+              "name": "cmbB_init",
+              "qualname": "PackerSlots.cmbB_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "",
+              "line": 148,
+              "deprecated": false
+            },
+            {
+              "name": "cmbA_init",
+              "qualname": "PackerSlots.cmbA_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "",
+              "line": 151,
+              "deprecated": false
+            },
+            {
+              "name": "cmbFormat_init",
+              "qualname": "PackerSlots.cmbFormat_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Populate the output-format combo and react to format changes.",
+              "line": 154,
+              "deprecated": false
+            },
+            {
+              "name": "header_init",
+              "qualname": "PackerSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Build the header menu's Pack/Unpack mode toggle.",
+              "line": 168,
+              "deprecated": false
+            },
+            {
+              "name": "source_dir",
+              "qualname": "PackerSlots.source_dir",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "",
+              "line": 248,
+              "deprecated": false
+            },
+            {
+              "name": "source_dir",
+              "qualname": "PackerSlots.source_dir",
+              "kind": "method",
+              "signature": "(self, value)",
+              "summary": "",
+              "line": 252,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "PackerSlots.b000",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Run the configured channel operation: Pack (default) or Unpack.",
+              "line": 275,
+              "deprecated": false
+            },
+            {
+              "name": "b001",
+              "qualname": "PackerSlots.b001",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "Open the last output directory in the system file explorer.",
+              "line": 451,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "relpath": "unity_workflow/launcher.py",
+      "summary": "Application shell for the Unity Workflow launcher UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "UnityWorkflowUI",
+          "summary": "",
+          "line": 17,
+          "bases": [],
+          "members": []
+        }
+      ]
+    },
+    {
+      "relpath": "unity_workflow/slots.py",
+      "summary": "Slots for the standalone Unity Workflow launcher panel.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "UnityWorkflowSlots",
+          "summary": "Switchboard slots wired to ``unity_workflow.ui``.",
           "line": 36,
           "bases": [],
           "members": [
             {
               "name": "cmb000_init",
-              "qualname": "UnityStudioSlots.cmb000_init",
+              "qualname": "UnityWorkflowSlots.cmb000_init",
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Unity version dropdown (newest first).",
@@ -3903,7 +3948,7 @@
             },
             {
               "name": "cmb001_init",
-              "qualname": "UnityStudioSlots.cmb001_init",
+              "qualname": "UnityWorkflowSlots.cmb001_init",
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the recent-projects dropdown and wire selection.",
@@ -3912,7 +3957,7 @@
             },
             {
               "name": "b010",
-              "qualname": "UnityStudioSlots.b010",
+              "qualname": "UnityWorkflowSlots.b010",
               "kind": "method",
               "signature": "(self)",
               "summary": "Browse for an existing Unity project folder.",
@@ -3921,7 +3966,7 @@
             },
             {
               "name": "b000",
-              "qualname": "UnityStudioSlots.b000",
+              "qualname": "UnityWorkflowSlots.b000",
               "kind": "method",
               "signature": "(self)",
               "summary": "Launch the selected Unity Editor on the project.",
@@ -3930,7 +3975,7 @@
             },
             {
               "name": "b001",
-              "qualname": "UnityStudioSlots.b001",
+              "qualname": "UnityWorkflowSlots.b001",
               "kind": "method",
               "signature": "(self)",
               "summary": "Create a new Unity project, then load it into the field.",

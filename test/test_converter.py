@@ -21,7 +21,7 @@ from pythontk import ImgUtils
 from pythontk.img_utils.map_factory import MapFactory as TextureMapFactory
 from pythontk.img_utils.map_registry import MapRegistry, WF
 
-from extapps.map_converter.slots import MapConverterSlots
+from extapps.texture_maps.converter.slots import ConverterSlots
 
 # Check if Qt (PySide6/PyQt) is available via qtpy (for b012 tests)
 try:
@@ -42,7 +42,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
     def setUpClass(cls):
         """Set up test fixtures once for all tests."""
         # Create temporary directory for test outputs
-        cls.test_dir = tempfile.mkdtemp(prefix="map_converter_test_")
+        cls.test_dir = tempfile.mkdtemp(prefix="converter_test_")
         cls.test_files_dir = os.path.join(cls.test_dir, "textures")
         os.makedirs(cls.test_files_dir, exist_ok=True)
 
@@ -93,8 +93,8 @@ class TestMapConverterTextureFactory(unittest.TestCase):
         self.mock_sb = Mock()
         self.mock_sb.file_dialog = Mock(return_value=None)
 
-        # Create MapConverterSlots instance
-        self.converter = MapConverterSlots(self.mock_sb)
+        # Create ConverterSlots instance
+        self.converter = ConverterSlots(self.mock_sb)
 
         # Mock UI components
         self.mock_widget = Mock()
@@ -184,7 +184,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
 
         # Mock MapFactory to raise exception
         with patch(
-            "extapps.map_converter.slots.MapFactory.prepare_maps",
+            "extapps.texture_maps.converter.slots.MapFactory.prepare_maps",
             side_effect=Exception("Factory error"),
         ):
             # Should fall back to legacy method without crashing
@@ -356,7 +356,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
         self.converter.b012()
 
     @skip_if_no_qt
-    @patch("extapps.map_converter.slots.MapFactory.prepare_maps")
+    @patch("extapps.texture_maps.converter.slots.MapFactory.prepare_maps")
     @patch("qtpy.QtWidgets.QInputDialog.getItem")
     def test_b012_config_comes_from_registry(self, mock_dialog, mock_prepare):
         """b012 sources its workflow config from MapRegistry (SSoT), not a private copy.
@@ -438,7 +438,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
         self.assertTrue(hasattr(MapFactory, "prepare_maps"))
 
     def test_converter_has_all_methods(self):
-        """Test that MapConverterSlots has all expected methods."""
+        """Test that ConverterSlots has all expected methods."""
         self.assertTrue(hasattr(self.converter, "tb001"))
         self.assertTrue(hasattr(self.converter, "b012"))
         self.assertTrue(callable(self.converter.tb001))
@@ -460,7 +460,7 @@ class TestMapConverterEdgeCases(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.mock_sb = Mock()
-        self.converter = MapConverterSlots(self.mock_sb)
+        self.converter = ConverterSlots(self.mock_sb)
         self.mock_widget = Mock()
 
     def test_tb001_with_corrupted_texture(self):
@@ -621,11 +621,11 @@ class TestMapConverterEdgeCases(unittest.TestCase):
             shutil.rmtree(temp_dir)
 
 class TestMapConverterMethods(unittest.TestCase):
-    """Tests for MapConverterSlots individual button methods (b004-b010)."""
+    """Tests for ConverterSlots individual button methods (b004-b010)."""
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="map_converter_methods_")
+        cls.test_dir = tempfile.mkdtemp(prefix="converter_methods_")
         cls.test_files_dir = os.path.join(cls.test_dir, "textures")
         os.makedirs(cls.test_files_dir, exist_ok=True)
 
@@ -637,7 +637,7 @@ class TestMapConverterMethods(unittest.TestCase):
     def setUp(self):
         self.mock_sb = Mock()
         self.mock_sb.file_dialog = Mock(return_value=None)
-        self.converter = MapConverterSlots(self.mock_sb)
+        self.converter = ConverterSlots(self.mock_sb)
 
         # Mock UI
         self.mock_widget = Mock()
@@ -719,13 +719,13 @@ class TestMapConverterMethods(unittest.TestCase):
 
 class TestMapConverterIntegration(unittest.TestCase):
     """
-    Integration tests for MapConverterSlots running against the real TextureMapFactory.
+    Integration tests for ConverterSlots running against the real TextureMapFactory.
     No mocks on the factory methods to ensure true end-to-end validity.
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="map_converter_integration_")
+        cls.test_dir = tempfile.mkdtemp(prefix="converter_integration_")
         cls.test_files_dir = os.path.join(cls.test_dir, "textures")
         os.makedirs(cls.test_files_dir, exist_ok=True)
 
@@ -737,7 +737,7 @@ class TestMapConverterIntegration(unittest.TestCase):
     def setUp(self):
         self.mock_sb = Mock()
         self.mock_sb.file_dialog = Mock(return_value=None)
-        self.converter = MapConverterSlots(self.mock_sb)
+        self.converter = ConverterSlots(self.mock_sb)
 
         # Mock UI (needed for parameter retrieval)
         self.mock_widget = Mock()
@@ -814,7 +814,7 @@ class TestMapConverterFlipChannels(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="map_converter_flip_")
+        cls.test_dir = tempfile.mkdtemp(prefix="converter_flip_")
         cls.test_files_dir = os.path.join(cls.test_dir, "textures")
         os.makedirs(cls.test_files_dir, exist_ok=True)
 
@@ -827,7 +827,7 @@ class TestMapConverterFlipChannels(unittest.TestCase):
         # MagicMock so ``with sb.progress(...) as update:`` works out of the box.
         self.mock_sb = MagicMock()
         self.mock_sb.file_dialog = Mock(return_value=None)
-        self.converter = MapConverterSlots(self.mock_sb)
+        self.converter = ConverterSlots(self.mock_sb)
 
     def create_test_image(self, name, mode="RGB", color=128):
         path = os.path.join(self.test_files_dir, name)

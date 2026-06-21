@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>200</width>
-    <height>299</height>
+    <height>296</height>
    </rect>
   </property>
   <property name="tabShape">
@@ -409,8 +409,45 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <property name="spacing">
-         <number>0</number>
+         <number>3</number>
         </property>
+        <property name="leftMargin">
+         <number>1</number>
+        </property>
+        <property name="topMargin">
+         <number>1</number>
+        </property>
+        <property name="rightMargin">
+         <number>1</number>
+        </property>
+        <property name="bottomMargin">
+         <number>1</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="b000">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>19</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Choose the maps to pack and perform the operation.</string>
+          </property>
+          <property name="text">
+           <string>Pack</string>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QPushButton" name="b001">
           <property name="enabled">
@@ -439,31 +476,6 @@
           </property>
           <property name="text">
            <string>Open Output Dir</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="b000">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>30</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>16777215</width>
-            <height>19</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Choose the maps to pack and perform the operation.</string>
-          </property>
-          <property name="text">
-           <string>Pack</string>
           </property>
          </widget>
         </item>

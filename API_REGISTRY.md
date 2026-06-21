@@ -2,16 +2,10 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-06-19_
+_Generated: 2026-06-20_
 
 ## Index
 
-- [`map_compositor/launcher.py`](#map_compositor--launcher) — Application shell for the Map Compositor UI.
-- [`map_compositor/slots.py`](#map_compositor--slots) — UI slot bindings for the map_compositor window.
-- [`map_converter/launcher.py`](#map_converter--launcher) — Application shell for the Map Converter UI.
-- [`map_converter/slots.py`](#map_converter--slots) — Map Converter UI — slot file for ``map_converter.ui``.
-- [`map_packer/launcher.py`](#map_packer--launcher) — Application shell for the Map Packer UI.
-- [`map_packer/slots.py`](#map_packer--slots)
 - [`marmoset_workflow/_marmoset_engine.py`](#marmoset_workflow--_marmoset_engine) — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - [`marmoset_workflow/_toolbag_helpers.py`](#marmoset_workflow--_toolbag_helpers) — Shared helpers for Marmoset Toolbag template scripts.
 - [`marmoset_workflow/launcher.py`](#marmoset_workflow--launcher) — Application shell for the Marmoset Workflow UI.
@@ -70,86 +64,16 @@ _Generated: 2026-06-19_
 - [`substance_workflow/resource_utils.py`](#substance_workflow--resource_utils) — Shelf / resource operations — query and import shelf assets.
 - [`substance_workflow/slots.py`](#substance_workflow--slots) — Switchboard slots for the Substance Workflow UI.
 - [`substance_workflow/texture_set_utils.py`](#substance_workflow--texture_set_utils) — Texture set operations — list, resolution, channel inventory.
-- [`unity_studio/launcher.py`](#unity_studio--launcher) — Application shell for the Unity Studio launcher UI.
-- [`unity_studio/slots.py`](#unity_studio--slots) — Slots for the standalone Unity Studio launcher panel.
+- [`texture_maps/compositor/launcher.py`](#texture_maps--compositor--launcher) — Application shell for the Map Compositor UI.
+- [`texture_maps/compositor/slots.py`](#texture_maps--compositor--slots) — UI slot bindings for the compositor window.
+- [`texture_maps/converter/launcher.py`](#texture_maps--converter--launcher) — Application shell for the Map Converter UI.
+- [`texture_maps/converter/slots.py`](#texture_maps--converter--slots) — Map Converter UI — slot file for ``converter.ui``.
+- [`texture_maps/packer/launcher.py`](#texture_maps--packer--launcher) — Application shell for the Map Packer UI.
+- [`texture_maps/packer/slots.py`](#texture_maps--packer--slots)
+- [`unity_workflow/launcher.py`](#unity_workflow--launcher) — Application shell for the Unity Workflow launcher UI.
+- [`unity_workflow/slots.py`](#unity_workflow--slots) — Slots for the standalone Unity Workflow launcher panel.
 
 ---
-
-<a id="map_compositor--launcher"></a>
-### `map_compositor/launcher.py`
-
-Application shell for the Map Compositor UI.
-
-- **[`class MapCompositorUI`](extapps/extapps/map_compositor/launcher.py#L18)**
-
-<a id="map_compositor--slots"></a>
-### `map_compositor/slots.py`
-
-UI slot bindings for the map_compositor window.
-
-- **[`class MapCompositorSlots`](extapps/extapps/map_compositor/slots.py#L51)** — UI slot handler.
-  - `MapCompositorSlots.removeNormalMap(self) -> bool` *(property)*
-  - `MapCompositorSlots.removeNormalMap(self, value: bool) -> None`
-  - `MapCompositorSlots.input_dir(self) -> str` *(property)*
-  - `MapCompositorSlots.output_dir(self) -> str` *(property)*
-  - `MapCompositorSlots.map_name(self) -> str` *(property)*
-  - `MapCompositorSlots.header_init(self, widget)` — Populate the header menu with global options.
-  - `MapCompositorSlots.txt000_init(self, widget)` — Init Source — a directory of maps, or specific image files.
-  - `MapCompositorSlots.txt001_init(self, widget)` — Init Destination Directory
-  - `MapCompositorSlots.txt002_init(self, widget)` — Init Map Name
-  - `MapCompositorSlots.b002(self)` — Combine Maps
-  - `MapCompositorSlots.process(self, images, source_dir, output_dir, map_name=None)` — Validate dirs, prepare sorted-image groups, and drive the engine.
-
-<a id="map_converter--launcher"></a>
-### `map_converter/launcher.py`
-
-Application shell for the Map Converter UI.
-
-- **[`class MapConverterUI`](extapps/extapps/map_converter/launcher.py#L18)** — Standalone launcher.
-
-<a id="map_converter--slots"></a>
-### `map_converter/slots.py`
-
-Map Converter UI — slot file for ``map_converter.ui``.
-
-- **[`class MapConverterSlots(ImgUtils)`](extapps/extapps/map_converter/slots.py#L31)** — Switchboard slots for ``map_converter.ui``.
-  - `MapConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
-  - `MapConverterSlots.source_dir(self, value)` — Set the starting directory for file dialogs.
-  - `MapConverterSlots.texture_provider(self)` *(property)* — Callable returning a list of texture paths from the host DCC selection.
-  - `MapConverterSlots.texture_provider(self, fn)`
-  - `MapConverterSlots.footer_init(self, widget)` — Add the global Use-Selection toggle to the footer.
-  - `MapConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu (format, clamp, modifier).
-  - `MapConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
-  - `MapConverterSlots.tb001_init(self, widget)`
-  - `MapConverterSlots.tb001(self, widget)` — Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.
-  - `MapConverterSlots.tb003_init(self, widget)` — Initialize a 'Bump to Normal' toolbutton with options.
-  - `MapConverterSlots.tb003(self, widget)` — Bump/Height to Normal converter (single entry point with options).
-  - `MapConverterSlots.tb002_init(self, widget)` — Populate the Flip Channels option menu (per-channel source + suffix).
-  - `MapConverterSlots.tb002(self, widget)` — Flip/swizzle texture channels (per-channel invert, swap, or constant fill).
-  - `MapConverterSlots.b000(self)` — Convert DirectX to OpenGL
-  - `MapConverterSlots.b001(self)` — Convert OpenGL to DirectX
-  - `MapConverterSlots.b004(self)` — Batch pack Transparency into Albedo across texture sets.
-  - `MapConverterSlots.b007(self)` — Unpack Specular and Gloss maps from SpecularGloss textures.
-  - `MapConverterSlots.b010(self)` — Convert Smoothness maps to Roughness maps.
-  - `MapConverterSlots.b011(self)` — Convert Roughness maps to Smoothness maps.
-  - `MapConverterSlots.b012(self)` — Batch-prepare textures for a target PBR workflow using MapFactory.
-
-<a id="map_packer--launcher"></a>
-### `map_packer/launcher.py`
-
-Application shell for the Map Packer UI.
-
-- **[`class MapPackerUI`](extapps/extapps/map_packer/launcher.py#L17)**
-
-<a id="map_packer--slots"></a>
-### `map_packer/slots.py`
-
-- **[`class MapPackerSlots(ImgUtils)`](extapps/extapps/map_packer/slots.py#L9)**
-  - `MapPackerSlots.header_init(self, widget)` — Configure the header menu: Pack/Unpack mode + presets.
-  - `MapPackerSlots.source_dir(self)` *(property)*
-  - `MapPackerSlots.source_dir(self, value)`
-  - `MapPackerSlots.b000(self)` — Run the configured channel operation: Pack (default) or Unpack.
-  - `MapPackerSlots.b001(self)` — Open the last output directory in the system file explorer.
 
 <a id="marmoset_workflow--_marmoset_engine"></a>
 ### `marmoset_workflow/_marmoset_engine.py`
@@ -205,7 +129,7 @@ Tunable parameters surfaced in the Marmoset Workflow panel.
 
 Slots for the standalone Marmoset Workflow panel.
 
-- **[`class MarmosetWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/marmoset_workflow/slots.py#L47)** — Switchboard slots wired to ``marmoset_workflow.ui``.
+- **[`class MarmosetWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/marmoset_workflow/slots.py#L46)** — Switchboard slots wired to ``marmoset_workflow.ui``.
   - `MarmosetWorkflowSlots.params_module(self)` *(property)*
   - `MarmosetWorkflowSlots.template_dir(self) -> Path` *(property)*
   - `MarmosetWorkflowSlots.make_bridge(self) -> MarmosetEngine`
@@ -833,21 +757,102 @@ Texture set operations — list, resolution, channel inventory.
 - [`channels(name: str) -> List[str]`](extapps/extapps/substance_workflow/texture_set_utils.py#L27) — Return the channel identifiers active on the named texture set.
 - [`add_channel(name: str, channel: str, fmt: str = 'sRGB8') -> None`](extapps/extapps/substance_workflow/texture_set_utils.py#L33) — Add a channel to the texture set (``BaseColor``, ``Roughness``, ...).
 
-<a id="unity_studio--launcher"></a>
-### `unity_studio/launcher.py`
+<a id="texture_maps--compositor--launcher"></a>
+### `texture_maps/compositor/launcher.py`
 
-Application shell for the Unity Studio launcher UI.
+Application shell for the Map Compositor UI.
 
-- **[`class UnityStudioUI`](extapps/extapps/unity_studio/launcher.py#L17)**
+- **[`class MapCompositorUI`](extapps/extapps/texture_maps/compositor/launcher.py#L18)**
 
-<a id="unity_studio--slots"></a>
-### `unity_studio/slots.py`
+<a id="texture_maps--compositor--slots"></a>
+### `texture_maps/compositor/slots.py`
 
-Slots for the standalone Unity Studio launcher panel.
+UI slot bindings for the compositor window.
 
-- **[`class UnityStudioSlots`](extapps/extapps/unity_studio/slots.py#L36)** — Switchboard slots wired to ``unity_studio.ui``.
-  - `UnityStudioSlots.cmb000_init(self, widget)` — Populate the Unity version dropdown (newest first).
-  - `UnityStudioSlots.cmb001_init(self, widget)` — Populate the recent-projects dropdown and wire selection.
-  - `UnityStudioSlots.b010(self)` — Browse for an existing Unity project folder.
-  - `UnityStudioSlots.b000(self)` — Launch the selected Unity Editor on the project.
-  - `UnityStudioSlots.b001(self)` — Create a new Unity project, then load it into the field.
+- **[`class CompositorSlots`](extapps/extapps/texture_maps/compositor/slots.py#L51)** — UI slot handler.
+  - `CompositorSlots.removeNormalMap(self) -> bool` *(property)*
+  - `CompositorSlots.removeNormalMap(self, value: bool) -> None`
+  - `CompositorSlots.input_dir(self) -> str` *(property)*
+  - `CompositorSlots.output_dir(self) -> str` *(property)*
+  - `CompositorSlots.map_name(self) -> str` *(property)*
+  - `CompositorSlots.header_init(self, widget)` — Populate the header menu with global options.
+  - `CompositorSlots.txt000_init(self, widget)` — Init Source — a directory of maps, or specific image files.
+  - `CompositorSlots.txt001_init(self, widget)` — Init Destination Directory
+  - `CompositorSlots.txt002_init(self, widget)` — Init Map Name
+  - `CompositorSlots.b002(self)` — Combine Maps
+  - `CompositorSlots.process(self, images, source_dir, output_dir, map_name=None)` — Validate dirs, prepare sorted-image groups, and drive the engine.
+
+<a id="texture_maps--converter--launcher"></a>
+### `texture_maps/converter/launcher.py`
+
+Application shell for the Map Converter UI.
+
+- **[`class MapConverterUI`](extapps/extapps/texture_maps/converter/launcher.py#L18)** — Standalone launcher.
+
+<a id="texture_maps--converter--slots"></a>
+### `texture_maps/converter/slots.py`
+
+Map Converter UI — slot file for ``converter.ui``.
+
+- **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L31)** — Switchboard slots for ``converter.ui``.
+  - `ConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
+  - `ConverterSlots.source_dir(self, value)` — Set the starting directory for file dialogs.
+  - `ConverterSlots.texture_provider(self)` *(property)* — Callable returning a list of texture paths from the host DCC selection.
+  - `ConverterSlots.texture_provider(self, fn)`
+  - `ConverterSlots.footer_init(self, widget)` — Add the global Use-Selection toggle to the footer.
+  - `ConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu (format, clamp, modifier).
+  - `ConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
+  - `ConverterSlots.tb001_init(self, widget)`
+  - `ConverterSlots.tb001(self, widget)` — Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.
+  - `ConverterSlots.tb003_init(self, widget)` — Initialize a 'Bump to Normal' toolbutton with options.
+  - `ConverterSlots.tb003(self, widget)` — Bump/Height to Normal converter (single entry point with options).
+  - `ConverterSlots.tb002_init(self, widget)` — Populate the Flip Channels option menu (per-channel source + suffix).
+  - `ConverterSlots.tb002(self, widget)` — Flip/swizzle texture channels (per-channel invert, swap, or constant fill).
+  - `ConverterSlots.b000(self)` — Convert DirectX to OpenGL
+  - `ConverterSlots.b001(self)` — Convert OpenGL to DirectX
+  - `ConverterSlots.b004(self)` — Batch pack Transparency into Albedo across texture sets.
+  - `ConverterSlots.b007(self)` — Unpack Specular and Gloss maps from SpecularGloss textures.
+  - `ConverterSlots.b010(self)` — Convert Smoothness maps to Roughness maps.
+  - `ConverterSlots.b011(self)` — Convert Roughness maps to Smoothness maps.
+  - `ConverterSlots.b012(self)` — Batch-prepare textures for a target PBR workflow using MapFactory.
+
+<a id="texture_maps--packer--launcher"></a>
+### `texture_maps/packer/launcher.py`
+
+Application shell for the Map Packer UI.
+
+- **[`class MapPackerUI`](extapps/extapps/texture_maps/packer/launcher.py#L17)**
+
+<a id="texture_maps--packer--slots"></a>
+### `texture_maps/packer/slots.py`
+
+- **[`class PackerSlots(ImgUtils)`](extapps/extapps/texture_maps/packer/slots.py#L9)**
+  - `PackerSlots.cmbR_init(self, widget)`
+  - `PackerSlots.cmbG_init(self, widget)`
+  - `PackerSlots.cmbB_init(self, widget)`
+  - `PackerSlots.cmbA_init(self, widget)`
+  - `PackerSlots.cmbFormat_init(self, widget)` — Populate the output-format combo and react to format changes.
+  - `PackerSlots.header_init(self, widget)` — Build the header menu's Pack/Unpack mode toggle.
+  - `PackerSlots.source_dir(self)` *(property)*
+  - `PackerSlots.source_dir(self, value)`
+  - `PackerSlots.b000(self)` — Run the configured channel operation: Pack (default) or Unpack.
+  - `PackerSlots.b001(self)` — Open the last output directory in the system file explorer.
+
+<a id="unity_workflow--launcher"></a>
+### `unity_workflow/launcher.py`
+
+Application shell for the Unity Workflow launcher UI.
+
+- **[`class UnityWorkflowUI`](extapps/extapps/unity_workflow/launcher.py#L17)**
+
+<a id="unity_workflow--slots"></a>
+### `unity_workflow/slots.py`
+
+Slots for the standalone Unity Workflow launcher panel.
+
+- **[`class UnityWorkflowSlots`](extapps/extapps/unity_workflow/slots.py#L36)** — Switchboard slots wired to ``unity_workflow.ui``.
+  - `UnityWorkflowSlots.cmb000_init(self, widget)` — Populate the Unity version dropdown (newest first).
+  - `UnityWorkflowSlots.cmb001_init(self, widget)` — Populate the recent-projects dropdown and wire selection.
+  - `UnityWorkflowSlots.b010(self)` — Browse for an existing Unity project folder.
+  - `UnityWorkflowSlots.b000(self)` — Launch the selected Unity Editor on the project.
+  - `UnityWorkflowSlots.b001(self)` — Create a new Unity project, then load it into the field.

@@ -10,12 +10,12 @@ Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 
 DEFAULT_INCLUDE = {
-    "map_compositor.launcher": ["MapCompositorUI"],
-    "map_compositor.slots": ["MapCompositorSlots"],
+    "texture_maps.compositor.launcher": ["CompositorUI"],
+    "texture_maps.compositor.slots": ["CompositorSlots"],
     "photogrammetry.metashape_workflow.launcher": ["MetashapeWorkflowUI"],
     "photogrammetry.metashape_workflow.slots": ["MetashapeWorkflowSlots"],
     "photogrammetry.metashape_workflow._metashape_workflow": [
@@ -30,10 +30,10 @@ DEFAULT_INCLUDE = {
     "substance_workflow.env_utils.painter_connection": ["PainterConnection"],
     "substance_workflow.env_utils.painter_finder": ["PainterFinder"],
     "substance_workflow.job": ["Call", "Job", "Result", "run_batch"],
-    "map_converter.launcher": ["MapConverterUI"],
-    "map_converter.slots": ["MapConverterSlots"],
-    "map_packer.launcher": ["MapPackerUI"],
-    "map_packer.slots": ["MapPackerSlots"],
+    "texture_maps.converter.launcher": ["ConverterUI"],
+    "texture_maps.converter.slots": ["ConverterSlots"],
+    "texture_maps.packer.launcher": ["PackerUI"],
+    "texture_maps.packer.slots": ["PackerSlots"],
     "mesh_convert.launcher": ["MeshConvertUI"],
     "mesh_convert.slots": ["MeshConvertSlots"],
     "marmoset_workflow.launcher": ["MarmosetWorkflowUI"],
@@ -45,8 +45,8 @@ bootstrap_package(globals(), include=DEFAULT_INCLUDE)
 
 
 __all__ = [
-    "MapCompositorUI",
-    "MapCompositorSlots",
+    "CompositorUI",
+    "CompositorSlots",
     "MetashapeWorkflowUI",
     "MetashapeWorkflowSlots",
     "MetashapeWorkflow",
@@ -62,10 +62,10 @@ __all__ = [
     "Job",
     "Result",
     "run_batch",
-    "MapConverterUI",
-    "MapConverterSlots",
-    "MapPackerUI",
-    "MapPackerSlots",
+    "ConverterUI",
+    "ConverterSlots",
+    "PackerUI",
+    "PackerSlots",
     "MeshConvertUI",
     "MeshConvertSlots",
     "MarmosetWorkflowUI",

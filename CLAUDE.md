@@ -4,6 +4,16 @@
 
 **Nav**: [← root](../CLAUDE.md) · **Deps**: [pythontk](../pythontk/CLAUDE.md) · [uitk](../uitk/CLAUDE.md) · **Used by**: [tentacle](../tentacle/CLAUDE.md) (via ExternalAppHandler discovery)
 
+## API surface
+
+**Before adding a helper, check the registry** (navigation rules: [root](../CLAUDE.md)):
+
+- [`API_INDEX.md`](API_INDEX.md) (compact — read first) · [`API_REGISTRY.md`](API_REGISTRY.md) (grep, don't Read whole) · [`API_CHANGES.md`](API_CHANGES.md)
+- Upstream: [pythontk](../pythontk/API_INDEX.md) · [uitk](../uitk/API_INDEX.md)
+- Cross-package shadows: [`m3trik/docs/API_SHADOWS.md`](../m3trik/docs/API_SHADOWS.md)
+
+This is the package-level public API. `substance_workflow`'s internal `registry.py` op registry (below) is a separate thing.
+
 ## Scope
 
 Tools that belong here:

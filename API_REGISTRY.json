@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-06-20",
+  "generated_at": "2026-06-22",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
@@ -3458,7 +3458,7 @@
       "functions": [],
       "classes": [
         {
-          "name": "MapCompositorUI",
+          "name": "CompositorUI",
           "summary": "",
           "line": 18,
           "bases": [],
@@ -3483,7 +3483,7 @@
               "kind": "property",
               "signature": "(self) -> bool",
               "summary": "",
-              "line": 121,
+              "line": 117,
               "deprecated": false
             },
             {
@@ -3492,7 +3492,7 @@
               "kind": "method",
               "signature": "(self, value: bool) -> None",
               "summary": "",
-              "line": 125,
+              "line": 121,
               "deprecated": false
             },
             {
@@ -3501,7 +3501,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 130,
+              "line": 126,
               "deprecated": false
             },
             {
@@ -3510,7 +3510,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 134,
+              "line": 130,
               "deprecated": false
             },
             {
@@ -3519,7 +3519,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 138,
+              "line": 134,
               "deprecated": false
             },
             {
@@ -3528,7 +3528,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the header menu with global options.",
-              "line": 334,
+              "line": 330,
               "deprecated": false
             },
             {
@@ -3537,7 +3537,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 413,
+              "line": 409,
               "deprecated": false
             },
             {
@@ -3546,7 +3546,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Destination Directory",
-              "line": 438,
+              "line": 434,
               "deprecated": false
             },
             {
@@ -3555,7 +3555,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Map Name",
-              "line": 459,
+              "line": 455,
               "deprecated": false
             },
             {
@@ -3564,7 +3564,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 469,
+              "line": 465,
               "deprecated": false
             },
             {
@@ -3573,7 +3573,7 @@
               "kind": "method",
               "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 479,
+              "line": 475,
               "deprecated": false
             }
           ]
@@ -3586,7 +3586,7 @@
       "functions": [],
       "classes": [
         {
-          "name": "MapConverterUI",
+          "name": "ConverterUI",
           "summary": "Standalone launcher.",
           "line": 18,
           "bases": [],
@@ -3797,7 +3797,7 @@
       "functions": [],
       "classes": [
         {
-          "name": "MapPackerUI",
+          "name": "PackerUI",
           "summary": "",
           "line": 17,
           "bases": [],
@@ -3824,7 +3824,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 142,
+              "line": 138,
               "deprecated": false
             },
             {
@@ -3833,7 +3833,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 145,
+              "line": 141,
               "deprecated": false
             },
             {
@@ -3842,7 +3842,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 148,
+              "line": 144,
               "deprecated": false
             },
             {
@@ -3851,7 +3851,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 151,
+              "line": 147,
               "deprecated": false
             },
             {
@@ -3860,7 +3860,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the output-format combo and react to format changes.",
-              "line": 154,
+              "line": 150,
               "deprecated": false
             },
             {
@@ -3869,7 +3869,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Build the header menu's Pack/Unpack mode toggle.",
-              "line": 168,
+              "line": 164,
               "deprecated": false
             },
             {
@@ -3878,7 +3878,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 248,
+              "line": 244,
               "deprecated": false
             },
             {
@@ -3887,7 +3887,7 @@
               "kind": "method",
               "signature": "(self, value)",
               "summary": "",
-              "line": 252,
+              "line": 248,
               "deprecated": false
             },
             {
@@ -3896,7 +3896,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 275,
+              "line": 271,
               "deprecated": false
             },
             {
@@ -3905,7 +3905,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 451,
+              "line": 447,
               "deprecated": false
             }
           ]
@@ -3927,59 +3927,113 @@
       ]
     },
     {
+      "relpath": "unity_workflow/parameters.py",
+      "summary": "User-tunable parameters for the standalone Unity Workflow panel.",
+      "functions": [
+        {
+          "name": "referenced_keys",
+          "qualname": "referenced_keys",
+          "kind": "function",
+          "signature": "(script_text: str) -> 'set[str]'",
+          "summary": "Registered keys present in *script_text* (delegates to uitk.bridge).",
+          "line": 91,
+          "deprecated": false
+        },
+        {
+          "name": "defaults",
+          "qualname": "defaults",
+          "kind": "function",
+          "signature": "() -> 'dict[str, Any]'",
+          "summary": "Return ``{key: default}`` for every registered parameter.",
+          "line": 96,
+          "deprecated": false
+        },
+        {
+          "name": "render_context",
+          "qualname": "render_context",
+          "kind": "function",
+          "signature": "(values: 'dict[str, Any]') -> 'dict[str, str]'",
+          "summary": "Format *values* for substitution (kept for API parity;",
+          "line": 101,
+          "deprecated": false
+        }
+      ],
+      "classes": []
+    },
+    {
       "relpath": "unity_workflow/slots.py",
-      "summary": "Slots for the standalone Unity Workflow launcher panel.",
+      "summary": "Slots for the standalone Unity Workflow panel.",
       "functions": [],
       "classes": [
         {
           "name": "UnityWorkflowSlots",
-          "summary": "Switchboard slots wired to ``unity_workflow.ui``.",
-          "line": 36,
-          "bases": [],
+          "summary": "Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.",
+          "line": 47,
+          "bases": [
+            "BridgeSlotsBase"
+          ],
           "members": [
             {
-              "name": "cmb000_init",
-              "qualname": "UnityWorkflowSlots.cmb000_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the Unity version dropdown (newest first).",
-              "line": 55,
-              "deprecated": false
-            },
-            {
-              "name": "cmb001_init",
-              "qualname": "UnityWorkflowSlots.cmb001_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the recent-projects dropdown and wire selection.",
-              "line": 73,
-              "deprecated": false
-            },
-            {
-              "name": "b010",
-              "qualname": "UnityWorkflowSlots.b010",
-              "kind": "method",
+              "name": "params_module",
+              "qualname": "UnityWorkflowSlots.params_module",
+              "kind": "property",
               "signature": "(self)",
-              "summary": "Browse for an existing Unity project folder.",
-              "line": 79,
+              "summary": "",
+              "line": 118,
+              "deprecated": false
+            },
+            {
+              "name": "template_dir",
+              "qualname": "UnityWorkflowSlots.template_dir",
+              "kind": "property",
+              "signature": "(self) -> Path",
+              "summary": "",
+              "line": 122,
+              "deprecated": false
+            },
+            {
+              "name": "make_bridge",
+              "qualname": "UnityWorkflowSlots.make_bridge",
+              "kind": "method",
+              "signature": "(self) -> FileToUnityBridge",
+              "summary": "",
+              "line": 127,
+              "deprecated": false
+            },
+            {
+              "name": "list_template_modes",
+              "qualname": "UnityWorkflowSlots.list_template_modes",
+              "kind": "method",
+              "signature": "(self) -> List[Tuple[str, str]]",
+              "summary": "",
+              "line": 130,
+              "deprecated": false
+            },
+            {
+              "name": "resolved_model_path",
+              "qualname": "UnityWorkflowSlots.resolved_model_path",
+              "kind": "method",
+              "signature": "(self) -> str",
+              "summary": "",
+              "line": 245,
+              "deprecated": false
+            },
+            {
+              "name": "set_model_path",
+              "qualname": "UnityWorkflowSlots.set_model_path",
+              "kind": "method",
+              "signature": "(self, path: str) -> None",
+              "summary": "Pre-fill the Model File field (public hand-off point for hosts).",
+              "line": 250,
               "deprecated": false
             },
             {
               "name": "b000",
               "qualname": "UnityWorkflowSlots.b000",
               "kind": "method",
-              "signature": "(self)",
-              "summary": "Launch the selected Unity Editor on the project.",
-              "line": 88,
-              "deprecated": false
-            },
-            {
-              "name": "b001",
-              "qualname": "UnityWorkflowSlots.b001",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Create a new Unity project, then load it into the field.",
-              "line": 112,
+              "signature": "(self) -> None",
+              "summary": "Copy the picked model into the Unity project (+ optional Editor launch).",
+              "line": 335,
               "deprecated": false
             }
           ]

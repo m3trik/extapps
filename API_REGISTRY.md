@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-06-20_
+_Generated: 2026-06-22_
 
 ## Index
 
@@ -71,7 +71,8 @@ _Generated: 2026-06-20_
 - [`texture_maps/packer/launcher.py`](#texture_maps--packer--launcher) — Application shell for the Map Packer UI.
 - [`texture_maps/packer/slots.py`](#texture_maps--packer--slots)
 - [`unity_workflow/launcher.py`](#unity_workflow--launcher) — Application shell for the Unity Workflow launcher UI.
-- [`unity_workflow/slots.py`](#unity_workflow--slots) — Slots for the standalone Unity Workflow launcher panel.
+- [`unity_workflow/parameters.py`](#unity_workflow--parameters) — User-tunable parameters for the standalone Unity Workflow panel.
+- [`unity_workflow/slots.py`](#unity_workflow--slots) — Slots for the standalone Unity Workflow panel.
 
 ---
 
@@ -762,7 +763,7 @@ Texture set operations — list, resolution, channel inventory.
 
 Application shell for the Map Compositor UI.
 
-- **[`class MapCompositorUI`](extapps/extapps/texture_maps/compositor/launcher.py#L18)**
+- **[`class CompositorUI`](extapps/extapps/texture_maps/compositor/launcher.py#L18)**
 
 <a id="texture_maps--compositor--slots"></a>
 ### `texture_maps/compositor/slots.py`
@@ -787,7 +788,7 @@ UI slot bindings for the compositor window.
 
 Application shell for the Map Converter UI.
 
-- **[`class MapConverterUI`](extapps/extapps/texture_maps/converter/launcher.py#L18)** — Standalone launcher.
+- **[`class ConverterUI`](extapps/extapps/texture_maps/converter/launcher.py#L18)** — Standalone launcher.
 
 <a id="texture_maps--converter--slots"></a>
 ### `texture_maps/converter/slots.py`
@@ -821,7 +822,7 @@ Map Converter UI — slot file for ``converter.ui``.
 
 Application shell for the Map Packer UI.
 
-- **[`class MapPackerUI`](extapps/extapps/texture_maps/packer/launcher.py#L17)**
+- **[`class PackerUI`](extapps/extapps/texture_maps/packer/launcher.py#L17)**
 
 <a id="texture_maps--packer--slots"></a>
 ### `texture_maps/packer/slots.py`
@@ -845,14 +846,25 @@ Application shell for the Unity Workflow launcher UI.
 
 - **[`class UnityWorkflowUI`](extapps/extapps/unity_workflow/launcher.py#L17)**
 
+<a id="unity_workflow--parameters"></a>
+### `unity_workflow/parameters.py`
+
+User-tunable parameters for the standalone Unity Workflow panel.
+
+- [`referenced_keys(script_text: str) -> 'set[str]'`](extapps/extapps/unity_workflow/parameters.py#L91) — Registered keys present in *script_text* (delegates to uitk.bridge).
+- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/unity_workflow/parameters.py#L96) — Return ``{key: default}`` for every registered parameter.
+- [`render_context(values: 'dict[str, Any]') -> 'dict[str, str]'`](extapps/extapps/unity_workflow/parameters.py#L101) — Format *values* for substitution (kept for API parity;
+
 <a id="unity_workflow--slots"></a>
 ### `unity_workflow/slots.py`
 
-Slots for the standalone Unity Workflow launcher panel.
+Slots for the standalone Unity Workflow panel.
 
-- **[`class UnityWorkflowSlots`](extapps/extapps/unity_workflow/slots.py#L36)** — Switchboard slots wired to ``unity_workflow.ui``.
-  - `UnityWorkflowSlots.cmb000_init(self, widget)` — Populate the Unity version dropdown (newest first).
-  - `UnityWorkflowSlots.cmb001_init(self, widget)` — Populate the recent-projects dropdown and wire selection.
-  - `UnityWorkflowSlots.b010(self)` — Browse for an existing Unity project folder.
-  - `UnityWorkflowSlots.b000(self)` — Launch the selected Unity Editor on the project.
-  - `UnityWorkflowSlots.b001(self)` — Create a new Unity project, then load it into the field.
+- **[`class UnityWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/unity_workflow/slots.py#L47)** — Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
+  - `UnityWorkflowSlots.params_module(self)` *(property)*
+  - `UnityWorkflowSlots.template_dir(self) -> Path` *(property)*
+  - `UnityWorkflowSlots.make_bridge(self) -> FileToUnityBridge`
+  - `UnityWorkflowSlots.list_template_modes(self) -> List[Tuple[str, str]]`
+  - `UnityWorkflowSlots.resolved_model_path(self) -> str`
+  - `UnityWorkflowSlots.set_model_path(self, path: str) -> None` — Pre-fill the Model File field (public hand-off point for hosts).
+  - `UnityWorkflowSlots.b000(self) -> None` — Copy the picked model into the Unity project (+ optional Editor launch).

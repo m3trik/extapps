@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-06-22_
+_Generated: 2026-06-25_
 
 ## Index
 
@@ -770,10 +770,7 @@ Application shell for the Map Compositor UI.
 
 UI slot bindings for the compositor window.
 
-- **[`class CompositorSlots`](extapps/extapps/texture_maps/compositor/slots.py#L51)** — UI slot handler.
-  - `CompositorSlots.removeNormalMap(self) -> bool` *(property)*
-  - `CompositorSlots.removeNormalMap(self, value: bool) -> None`
-  - `CompositorSlots.input_dir(self) -> str` *(property)*
+- **[`class CompositorSlots`](extapps/extapps/texture_maps/compositor/slots.py#L97)** — UI slot handler.
   - `CompositorSlots.output_dir(self) -> str` *(property)*
   - `CompositorSlots.map_name(self) -> str` *(property)*
   - `CompositorSlots.header_init(self, widget)` — Populate the header menu with global options.

@@ -16,7 +16,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QMainWindow,
-    QSizePolicy, QTabWidget, QTextEdit, QVBoxLayout,
+    QSizePolicy, QTabWidget, QTextBrowser, QVBoxLayout,
     QWidget)
 
 from uitk.widgets.footer import Footer
@@ -80,7 +80,7 @@ class Ui_QtUi(object):
 
         self.main_layout.addLayout(self.gridLayout)
 
-        self.txt003 = QTextEdit(self.central_widget)
+        self.txt003 = QTextBrowser(self.central_widget)
         self.txt003.setObjectName(u"txt003")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -117,7 +117,7 @@ class Ui_QtUi(object):
         QtUi.setWindowTitle(QCoreApplication.translate("QtUi", u"Map Compositor", None))
         self.header.setText(QCoreApplication.translate("QtUi", u"MAP COMPOSITOR", None))
 #if QT_CONFIG(tooltip)
-        self.txt000.setToolTip(QCoreApplication.translate("QtUi", u"Set the source of maps to combine \u2014 a directory, or specific image files (use the image-files browse button).", None))
+        self.txt000.setToolTip(QCoreApplication.translate("QtUi", u"Source maps to combine \u2014 a folder of texture maps, or specific image files.", None))
 #endif // QT_CONFIG(tooltip)
         self.txt000.setPlaceholderText(QCoreApplication.translate("QtUi", u"<Source Directory or Images>", None))
 #if QT_CONFIG(tooltip)

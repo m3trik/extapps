@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
-_Generated: 2026-06-22_
+_Generated: 2026-06-25_
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - `list_templates() -> List[Path]`
@@ -310,7 +310,7 @@ _Generated: 2026-06-22_
 
 ### `texture_maps/compositor/slots.py` — UI slot bindings for the compositor window.
 - `class CompositorSlots`
-  - methods: removeNormalMap, removeNormalMap, input_dir, output_dir, map_name, header_init, txt000_init, txt001_init, txt002_init, b002, process
+  - methods: output_dir, map_name, header_init, txt000_init, txt001_init, txt002_init, b002, process
 
 ### `texture_maps/converter/launcher.py` — Application shell for the Map Converter UI.
 - `class ConverterUI`

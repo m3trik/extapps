@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-06-22",
+  "generated_at": "2026-06-25",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
@@ -3474,43 +3474,16 @@
         {
           "name": "CompositorSlots",
           "summary": "UI slot handler.",
-          "line": 51,
+          "line": 97,
           "bases": [],
           "members": [
-            {
-              "name": "removeNormalMap",
-              "qualname": "CompositorSlots.removeNormalMap",
-              "kind": "property",
-              "signature": "(self) -> bool",
-              "summary": "",
-              "line": 117,
-              "deprecated": false
-            },
-            {
-              "name": "removeNormalMap",
-              "qualname": "CompositorSlots.removeNormalMap",
-              "kind": "method",
-              "signature": "(self, value: bool) -> None",
-              "summary": "",
-              "line": 121,
-              "deprecated": false
-            },
-            {
-              "name": "input_dir",
-              "qualname": "CompositorSlots.input_dir",
-              "kind": "property",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 126,
-              "deprecated": false
-            },
             {
               "name": "output_dir",
               "qualname": "CompositorSlots.output_dir",
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 130,
+              "line": 173,
               "deprecated": false
             },
             {
@@ -3519,7 +3492,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 134,
+              "line": 177,
               "deprecated": false
             },
             {
@@ -3528,7 +3501,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the header menu with global options.",
-              "line": 330,
+              "line": 497,
               "deprecated": false
             },
             {
@@ -3537,7 +3510,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 409,
+              "line": 576,
               "deprecated": false
             },
             {
@@ -3546,7 +3519,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Destination Directory",
-              "line": 434,
+              "line": 605,
               "deprecated": false
             },
             {
@@ -3555,7 +3528,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Map Name",
-              "line": 455,
+              "line": 632,
               "deprecated": false
             },
             {
@@ -3564,7 +3537,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 465,
+              "line": 643,
               "deprecated": false
             },
             {
@@ -3573,7 +3546,7 @@
               "kind": "method",
               "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 475,
+              "line": 653,
               "deprecated": false
             }
           ]

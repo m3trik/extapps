@@ -101,7 +101,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Set the source of maps to combine — a directory, or specific image files (use the image-files browse button).</string>
+           <string>Source maps to combine — a folder of texture maps, or specific image files.</string>
           </property>
           <property name="placeholderText">
            <string>&lt;Source Directory or Images&gt;</string>
@@ -158,7 +158,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QTextEdit" name="txt003">
+       <widget class="QTextBrowser" name="txt003">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>

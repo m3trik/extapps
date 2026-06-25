@@ -1,5 +1,8 @@
 # extapps — API Changes
 
-_Diff vs prior baseline. Generated 2026-06-22._
+_Diff vs prior baseline. Generated 2026-06-25._
 
-No public API changes since last refresh.
+## Removed (2)
+
+- `texture_maps/compositor/slots.py::CompositorSlots.input_dir` — was `(self) -> str`
+- `texture_maps/compositor/slots.py::CompositorSlots.removeNormalMap` — was `(self, value: bool) -> None`

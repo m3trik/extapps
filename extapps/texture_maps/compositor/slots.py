@@ -17,6 +17,7 @@ import pythontk as ptk
 from pythontk.core_utils.logging_mixin import LevelAwareFormatter
 from qtpy.QtWidgets import QPushButton
 from uitk.widgets.textEditLogHandler import TextEditLogHandler
+from uitk.widgets.mixins.tooltip_mixin import fmt, hl
 
 from pythontk import BatchResult, MapCompositor, NormalOutputMode
 
@@ -48,10 +49,58 @@ def _build_intro() -> str:
     )
 
 
+def _build_source_tooltip() -> str:
+    """Rich-text tooltip for the source field's resting (empty) state.
+
+    Built with uitk's :func:`fmt`/:func:`hl` so the colors match the rest of
+    the ecosystem's tooltips. Shown while the field is empty; once a valid
+    source is entered the validator swaps in :meth:`_source_valid_tooltip`.
+    """
+    return fmt(
+        title="Source maps to combine",
+        body="A folder of texture maps, or specific image files.",
+        bullets=[
+            f"{hl('Add files…')} — pick one or more image files.",
+            f"{hl('Choose folder…')} — use every image in a folder.",
+            "Or type / paste a folder path directly.",
+            "Recent sources are in the option box (clock icon).",
+        ],
+        notes=[
+            "Maps are matched by filename suffix — e.g. "
+            "<i>_BaseColor</i>, <i>_Normal</i>, <i>_Roughness</i>."
+        ],
+    )
+
+
+def _build_dest_tooltip() -> str:
+    """Rich-text tooltip for the destination-directory field."""
+    return fmt(
+        title="Destination directory",
+        body="The folder where your combined maps are written.",
+        bullets=[
+            f"{hl('Choose folder…')} — pick the output folder.",
+            "Or type / paste a folder path directly.",
+            "Recent destinations are in the option box (clock icon).",
+        ],
+    )
+
+
+def _build_mapname_tooltip() -> str:
+    """Rich-text tooltip for the map-name (filename prefix) field."""
+    return fmt(
+        title="Map name prefix",
+        body="Optional filename prefix for the combined maps.",
+        notes=["Leave empty to use the source folder's name."],
+    )
+
+
 class CompositorSlots:
     """UI slot handler. Composes a :class:`MapCompositor` via ``self.engine``."""
 
     msg_intro = _build_intro()
+    tip_source = _build_source_tooltip()
+    tip_dest = _build_dest_tooltip()
+    tip_mapname = _build_mapname_tooltip()
 
     # (display label, NormalOutputMode) — order shown in the header combo.
     NORMAL_MODE_CHOICES = (
@@ -97,6 +146,12 @@ class CompositorSlots:
         handler.setFormatter(LevelAwareFormatter(logger=logger, strip_html=False))
         logger.addHandler(handler)
 
+        # txt003 is a QTextBrowser; TextEditLogHandler already turned its
+        # openLinks/openExternalLinks off, so every anchor (the intro's docs
+        # link, the completion output-dir link) routes through anchorClicked.
+        if hasattr(self.ui.txt003, "anchorClicked"):
+            self.ui.txt003.anchorClicked.connect(self._on_log_link_clicked)
+
         self.ui.txt003.setText(self.msg_intro)
         self.ui.footer.setDefaultStatusText("Ready.")
 
@@ -112,20 +167,8 @@ class CompositorSlots:
             self.combine_btn, side="right", background=True, rounded=False
         )
 
-    # --- engine pass-through (back-compat with previous public API) ---
-    @property
-    def removeNormalMap(self) -> bool:
-        return self.engine.remove_normal_map
-
-    @removeNormalMap.setter
-    def removeNormalMap(self, value: bool) -> None:
-        self.engine.remove_normal_map = value
-
-    # --- input/output text-field properties ---
-    @property
-    def input_dir(self) -> str:
-        return self.ui.txt000.text()
-
+    # --- output/name text-field properties ---
+    # (the source field is read via _resolve_source, not a property)
     @property
     def output_dir(self) -> str:
         return self.ui.txt001.text()
@@ -162,67 +205,88 @@ class CompositorSlots:
     def _bind_dir_actions(
         self,
         widget,
-        browse_title: str,
         *,
-        browse_files_title: Optional[str] = None,
+        recent_attr: str,
+        folder_title: str,
+        folder_tooltip: str,
+        files_title: Optional[str] = None,
     ):
-        """Attach Open (reveal-in-explorer) and browse buttons to a path field.
+        """Build the field's option-box dropdown menu of path actions.
 
-        Always adds an Open button plus a browse-for-directory button. When
-        *browse_files_title* is given, also adds a browse-for-image-files
-        button so the field can hold an explicit set of source images
-        (``os.pathsep``-joined) instead of a single directory.
+        Groups the field's path actions under a single option-box dropdown:
 
-        Returns the Open ActionOption so the caller can toggle its enabled
-        state from the text-change handler.
+        * **Choose folder…** (both fields) — a directory dialog. The chosen
+          folder becomes the field value (plain directory mode).
+        * **Add files…** (source field only, when *files_title* is given) —
+          a multi-select image-file dialog, so the source can be a whole
+          folder *or* a hand-picked set of files. A folder path typed,
+          pasted, or recalled is also accepted (the validator and
+          :meth:`_resolve_source` both understand a bare directory).
+        * **Open this location** — reveal the field's directory in the OS
+          file explorer. Kept **last** so the two "set the value" actions
+          read first and the reveal sits at the bottom.
+
+        *recent_attr* names the ``RecentValuesOption`` attribute the folder
+        dialog records into. Returns the *Open this location* button so the
+        caller can toggle its enabled state from the text-change handler.
         """
-        from uitk.widgets.optionBox.options.action import ActionOption
-        from uitk.widgets.optionBox.options.browse import BrowseOption
-
-        open_opt = ActionOption(
-            wrapped_widget=widget,
-            callback=lambda: self._open_dir(self._field_dir(widget.text())),
-            icon="open_external",
-            tooltip="Open this location in the file explorer.",
+        # One-shot action menu — suppress the settings-form chrome (apply /
+        # restore-defaults footer, title header) so it reads as a plain
+        # action list rather than an options panel.
+        widget.option_box.enable_menu(
+            add_apply_button=False,
+            add_defaults_button=False,
+            add_header=False,
         )
-        widget.option_box.add_option(open_opt)
+        menu = widget.option_box.menu
 
-        if browse_files_title:
-            files_opt = ActionOption(
-                wrapped_widget=widget,
-                callback=lambda: self._browse_source_files(
-                    widget, browse_files_title
-                ),
-                icon="image",
-                tooltip="Browse for individual image files.",
-                settings_key=False,
+        if files_title:
+            add_btn = menu.add(
+                "QPushButton",
+                setText="Add files…",
+                setToolTip="Browse for specific source image files.",
             )
-            widget.option_box.add_option(files_opt)
+            add_btn.clicked.connect(
+                lambda: self._browse_source_files(widget, files_title)
+            )
 
-        browse_opt = BrowseOption(
-            wrapped_widget=widget,
-            mode="directory",
-            title=browse_title,
-            start_dir=lambda: self._field_dir(widget.text()),
-            tooltip="Browse for a directory.",
+        folder_btn = menu.add(
+            "QPushButton",
+            setText="Choose folder…",
+            setToolTip=folder_tooltip,
         )
-        widget.option_box.add_option(browse_opt)
+        folder_btn.clicked.connect(
+            lambda: self._browse_directory(
+                widget, folder_title, recent_attr=recent_attr
+            )
+        )
 
-        return open_opt
+        open_btn = menu.add(
+            "QPushButton",
+            setText="Open this location",
+            setToolTip="Open this location in the file explorer.",
+        )
+        open_btn.clicked.connect(
+            lambda: self._open_dir(self._field_dir(widget.value()))
+        )
+
+        return open_btn
 
     def _browse_source_files(self, widget, title: str) -> None:
         """Open a multi-select image dialog and store the joined paths.
 
-        Selected files are written back to *widget* as an ``os.pathsep``-
-        joined string (the representation :meth:`_resolve_source` and the
-        source validator both understand) and recorded to the field's
-        recent-values history.
+        The field carries the full ``os.pathsep``-joined paths as its *data*
+        (the representation :meth:`_resolve_source` and the source validator
+        understand) while *displaying* a compact one-name-per-texture-set
+        label (see :meth:`_source_display`). The data-aware recent-values
+        history keeps both, so a restored entry shows the friendly label and
+        still resolves to the real files.
         """
         file_types = [f"*.{ext}" for ext in ptk.ImgUtils.readable]
         paths = self.sb.file_dialog(
             file_types=file_types,
             title=title,
-            start_dir=self._field_dir(widget.text()) or os.path.expanduser("~"),
+            start_dir=self._field_dir(widget.value()) or os.path.expanduser("~"),
             filter_description="Images",
             allow_multiple=True,
         )
@@ -230,10 +294,49 @@ class CompositorSlots:
             return
         if isinstance(paths, str):
             paths = [paths]
-        widget.setText(os.pathsep.join(paths))
+        widget.set_value(os.pathsep.join(paths), display=self._source_display(paths))
         recent = getattr(self, "_recent_input_dirs", None)
         if recent is not None:
-            recent.record(widget.text())
+            recent.record()  # data-aware: captures the display + the real paths
+
+    @staticmethod
+    def _source_display(paths) -> str:
+        """A compact label for a multi-file source: one name per texture set.
+
+        Groups the selected files into texture sets by base name (stripping
+        map-type suffixes) and joins the set names, so a 12-file, 3-set
+        selection reads ``brick, metal, wood`` rather than a wall of paths.
+        Falls back to deduped file stems if set grouping yields nothing.
+        """
+        paths = list(paths)
+        try:
+            names = [n for n in ptk.MapFactory.group_textures_by_set(paths) if n]
+        except Exception:
+            names = []
+        if not names:
+            names = sorted(
+                {os.path.splitext(os.path.basename(p))[0] for p in paths if p}
+            )
+        return ", ".join(names)
+
+    def _browse_directory(self, widget, title: str, *, recent_attr: str) -> None:
+        """Open a directory dialog and store the chosen folder as the value.
+
+        Writes the folder via ``set_value`` (no display), which clears any
+        prior file-selection payload so the field drops back to plain
+        directory mode, then records it to the *recent_attr* history
+        (programmatic edits don't trip the ``auto_record`` commit hook).
+        """
+        from qtpy.QtWidgets import QFileDialog
+
+        start = self._field_dir(widget.value()) or os.path.expanduser("~")
+        path = QFileDialog.getExistingDirectory(widget.window(), title, start)
+        if not path:
+            return
+        widget.set_value(path)
+        recent = getattr(self, recent_attr, None)
+        if recent is not None:
+            recent.record()
 
     @staticmethod
     def _source_parts(text: str) -> list:
@@ -285,6 +388,44 @@ class CompositorSlots:
             return True
         return all(ptk.is_valid(p, "file") for p in parts)
 
+    @classmethod
+    def _source_valid_tooltip(cls, text: str) -> str:
+        """Readable rich-text tooltip for a *valid* source field.
+
+        Directory mode shows the folder path as-is. An explicit image-file
+        selection renders as a header (file + texture-set counts) followed by
+        one indented line per texture set — its name, member count and the map
+        basenames — rather than the raw ``os.pathsep``-joined paths the field
+        actually stores. Qt auto-detects the rich text and word-wraps it.
+        """
+        files = cls._split_source(text)
+        if not files:  # directory mode
+            return text
+
+        try:
+            sets = ptk.MapFactory.group_textures_by_set(files)
+        except Exception:
+            sets = {}
+        if not sets:  # ungroupable — flat basename list
+            sets = {"": files}
+
+        n_files, n_sets = len(files), len(sets)
+        f_plural = "" if n_files == 1 else "s"
+        s_plural = "" if n_sets == 1 else "s"
+        muted = "color:#9a9a9a"
+        lines = [
+            f"{hl(f'{n_files} image file{f_plural}')} "
+            f'<span style="{muted}">in {n_sets} texture set{s_plural}</span>'
+        ]
+        for set_name, members in sets.items():
+            basenames = ", ".join(os.path.basename(f) for f in members)
+            label = f"<b>{set_name}</b> " if set_name else ""
+            lines.append(
+                f"&nbsp;&nbsp;{label}"
+                f'<span style="{muted}">({len(members)})</span>&nbsp; {basenames}'
+            )
+        return "<br>".join(lines)
+
     def _resolve_source(self):
         """Resolve the source field into ``(images, source_dir)``.
 
@@ -292,7 +433,9 @@ class CompositorSlots:
         list of image files. Returns the ``{path: image}`` mapping the engine
         expects plus a representative directory used for naming/validation.
         """
-        text = self.input_dir
+        # The field carries the real paths as its data payload (set by
+        # _browse_source_files); value() returns that, or the typed text.
+        text = self.ui.txt000.value()
         if not text:
             return {}, ""
         files = self._split_source(text)
@@ -311,9 +454,33 @@ class CompositorSlots:
         except (FileNotFoundError, TypeError):
             pass
 
-    def _on_dir_validated(self, ok: bool, text: str, open_opt):
-        """Toggle the Open button in response to validated dir text."""
-        open_opt.widget.setEnabled(bool(text and ok))
+    def _on_log_link_clicked(self, url) -> None:
+        """Route clickable links in the log panel.
+
+        ``action://open?path=…`` reveals a file/folder in the OS file
+        explorer (used by the completion message's output-dir link);
+        ``http(s)`` links open in the default browser (the intro's docs
+        link). The QTextBrowser has openLinks disabled, so every anchor
+        is delivered here rather than navigated internally.
+        """
+        try:
+            scheme = url.scheme()
+            if scheme == "action" and url.host() == "open":
+                from urllib.parse import parse_qs
+
+                path = parse_qs(url.query()).get("path", [""])[0]
+                if path:
+                    self._open_dir(path)
+            elif scheme in ("http", "https"):
+                from qtpy.QtGui import QDesktopServices
+
+                QDesktopServices.openUrl(url)
+        except Exception:  # pragma: no cover - defensive
+            pass
+
+    def _on_dir_validated(self, ok: bool, text: str, open_btn):
+        """Enable the menu's *Open this location* item only for a valid path."""
+        open_btn.setEnabled(bool(text and ok))
 
     def _on_progress(self, percent: float) -> None:
         """Engine→UI progress bar bridge (routes through the footer).
@@ -408,8 +575,9 @@ class CompositorSlots:
 
     def txt000_init(self, widget):
         """Init Source — a directory of maps, or specific image files."""
-        # Capture the .ui-defined tooltip from the widget itself (was read in
-        # __init__, but that runs before this widget is registered).
+        # Install the formatted resting-state tooltip (overrides the plain
+        # .ui fallback), then capture it for the validator's empty state.
+        widget.setToolTip(self.tip_source)
         self.default_toolTip_txt000 = widget.toolTip()
         self._recent_input_dirs = self._bind_recent_values(
             widget,
@@ -419,12 +587,15 @@ class CompositorSlots:
         )
         self._open_input_dir = self._bind_dir_actions(
             widget,
-            browse_title="Select a directory containing image files.",
-            browse_files_title="Select source image files.",
+            recent_attr="_recent_input_dirs",
+            folder_title="Select a source folder of texture maps.",
+            folder_tooltip="Browse for a source folder of texture maps.",
+            files_title="Select source image files.",
         )
         widget.set_validator(
             self._validate_source,
             invalid_tooltip="Not a valid directory or image-file selection",
+            valid_tooltip=self._source_valid_tooltip,
             empty_tooltip=self.default_toolTip_txt000,
         )
         widget.validated.connect(
@@ -433,6 +604,9 @@ class CompositorSlots:
 
     def txt001_init(self, widget):
         """Init Destination Directory"""
+        # Install the formatted resting tooltip before capturing it as the
+        # validator's empty-state tooltip (overrides the plain .ui fallback).
+        widget.setToolTip(self.tip_dest)
         self.default_toolTip_txt001 = widget.toolTip()
         self._recent_output_dirs = self._bind_recent_values(
             widget,
@@ -441,7 +615,10 @@ class CompositorSlots:
             auto_record=True,
         )
         self._open_output_dir = self._bind_dir_actions(
-            widget, browse_title="Select an output directory."
+            widget,
+            recent_attr="_recent_output_dirs",
+            folder_title="Select an output folder.",
+            folder_tooltip="Browse for an output folder.",
         )
         widget.set_validator(
             "dir",
@@ -454,6 +631,7 @@ class CompositorSlots:
 
     def txt002_init(self, widget):
         """Init Map Name"""
+        widget.setToolTip(self.tip_mapname)
         self._recent_map_names = self._bind_recent_values(
             widget,
             "compositor_map_names",
@@ -580,4 +758,9 @@ class CompositorSlots:
             )
         else:
             self.engine.logger.success("COMPLETED.")
+            # Clickable link (LoggingMixin.log_link) so the user can jump
+            # straight to the results; routed to the explorer by
+            # _on_log_link_clicked.
+            link = self.engine.logger.log_link(output_dir, "open", path=output_dir)
+            self.engine.logger.info(f"Wrote {total_maps} map(s) to {link}")
             self.ui.footer.finish_progress(f"Wrote {total_maps} map(s) to {output_dir}")

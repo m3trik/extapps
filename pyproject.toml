@@ -25,16 +25,23 @@ Repository = "https://github.com/m3trik/extapps"
 # ExternalAppHandler discovers and registers them with hosts (tentacle,
 # mayatk, etc.) — no host-side knowledge required. Group ``.in_process``
 # declares the preferred launch mode (parented under the host's Qt loop).
+#
+# Bracketed extras are entry-point tags read by ExternalAppHandler:
+#   * plain tokens  -> semantic browser-filter tags.
+#   * ``hide_<host>`` -> a host-visibility gate. A host whose switchboard
+#     ``context_tags`` contains <host> won't *list* the app (it stays
+#     launchable by name). Substance/Marmoset are gated out of Maya, which
+#     ships native bridges (mayatk.mat_utils) and surfaces those instead.
 [project.entry-points."uitk.external_apps.in_process"]
 compositor = "extapps.texture_maps.compositor:CompositorUI"
 metashape_workflow = "extapps.photogrammetry.metashape_workflow:MetashapeWorkflowUI"
 realityscan_workflow = "extapps.photogrammetry.realityscan_workflow:RealityScanWorkflowUI"
 gaussian_splat_workflow = "extapps.photogrammetry.gaussian_splat_workflow:GaussianSplatWorkflowUI"
-substance_workflow = "extapps.substance_workflow:SubstanceWorkflowUI"
+substance_workflow = "extapps.substance_workflow:SubstanceWorkflowUI [hide_maya]"
 converter = "extapps.texture_maps.converter:ConverterUI"
 packer = "extapps.texture_maps.packer:PackerUI"
 mesh_convert = "extapps.mesh_convert:MeshConvertUI"
-marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI"
+marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI [hide_maya]"
 unity_workflow = "extapps.unity_workflow:UnityWorkflowUI"
 
 [tool.setuptools.dynamic]

@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-06-27",
+  "generated_at": "2026-07-07",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
@@ -52,15 +52,6 @@
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve the Toolbag executable path.",
               "line": 122,
-              "deprecated": false
-            },
-            {
-              "name": "toolbag_path",
-              "qualname": "MarmosetEngine.toolbag_path",
-              "kind": "method",
-              "signature": "(self, value: Optional[str]) -> None",
-              "summary": "",
-              "line": 141,
               "deprecated": false
             },
             {
@@ -492,30 +483,12 @@
               "deprecated": false
             },
             {
-              "name": "source_dir",
-              "qualname": "MeshConvertSlots.source_dir",
-              "kind": "method",
-              "signature": "(self, value: str) -> None",
-              "summary": "",
-              "line": 37,
-              "deprecated": false
-            },
-            {
               "name": "fbx_provider",
               "qualname": "MeshConvertSlots.fbx_provider",
               "kind": "property",
               "signature": "(self) -> Optional[Callable[[], Iterable[str]]]",
               "summary": "Callable returning FBX paths from the host DCC selection.",
               "line": 41,
-              "deprecated": false
-            },
-            {
-              "name": "fbx_provider",
-              "qualname": "MeshConvertSlots.fbx_provider",
-              "kind": "method",
-              "signature": "(self, fn: Optional[Callable[[], Iterable[str]]]) -> None",
-              "summary": "",
-              "line": 51,
               "deprecated": false
             },
             {
@@ -3590,30 +3563,12 @@
               "deprecated": false
             },
             {
-              "name": "source_dir",
-              "qualname": "ConverterSlots.source_dir",
-              "kind": "method",
-              "signature": "(self, value)",
-              "summary": "Set the starting directory for file dialogs.",
-              "line": 55,
-              "deprecated": false
-            },
-            {
               "name": "texture_provider",
               "qualname": "ConverterSlots.texture_provider",
               "kind": "property",
               "signature": "(self)",
               "summary": "Callable returning a list of texture paths from the host DCC selection.",
               "line": 60,
-              "deprecated": false
-            },
-            {
-              "name": "texture_provider",
-              "qualname": "ConverterSlots.texture_provider",
-              "kind": "method",
-              "signature": "(self, fn)",
-              "summary": "",
-              "line": 71,
               "deprecated": false
             },
             {
@@ -3852,15 +3807,6 @@
               "signature": "(self)",
               "summary": "",
               "line": 244,
-              "deprecated": false
-            },
-            {
-              "name": "source_dir",
-              "qualname": "PackerSlots.source_dir",
-              "kind": "method",
-              "signature": "(self, value)",
-              "summary": "",
-              "line": 248,
               "deprecated": false
             },
             {

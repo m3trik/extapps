@@ -2,14 +2,14 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
-_Generated: 2026-06-27_
+_Generated: 2026-07-07_
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - `list_templates() -> List[Path]`
 - `template_modes(template_path: Path) -> Tuple[str, ...]`
 - `list_template_modes() -> List[Tuple[str, str]]`
 - `class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`
-  - methods: toolbag_path, toolbag_path, toolbag_log_path, preflight, deliver, send, render_template
+  - methods: toolbag_path, toolbag_log_path, preflight, deliver, send, render_template
 
 ### `marmoset_workflow/_toolbag_helpers.py` — Shared helpers for Marmoset Toolbag template scripts.
 - `derive_per_run_log_path(manifest_path)`
@@ -57,7 +57,7 @@ _Generated: 2026-06-27_
 
 ### `mesh_convert/slots.py`
 - `class MeshConvertSlots(MeshConvert)`
-  - methods: source_dir, source_dir, fbx_provider, fbx_provider, header_init, tb000_init, tb000
+  - methods: source_dir, fbx_provider, header_init, tb000_init, tb000
 
 ### `photogrammetry/_panel_slots.py` — Shared scaffolding for the photogrammetry workflow panels.
 - `class PhotogrammetryPanelSlots(BridgeSlotsBase)`
@@ -317,14 +317,14 @@ _Generated: 2026-06-27_
 
 ### `texture_maps/converter/slots.py` — Map Converter UI — slot file for ``converter.ui``.
 - `class ConverterSlots(ImgUtils)`
-  - methods: source_dir, source_dir, texture_provider, texture_provider, footer_init, tb000_init, tb000, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
+  - methods: source_dir, texture_provider, footer_init, tb000_init, tb000, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
 
 ### `texture_maps/packer/launcher.py` — Application shell for the Map Packer UI.
 - `class PackerUI`
 
 ### `texture_maps/packer/slots.py`
 - `class PackerSlots(ImgUtils)`
-  - methods: cmbR_init, cmbG_init, cmbB_init, cmbA_init, cmbFormat_init, header_init, source_dir, source_dir, b000, b001
+  - methods: cmbR_init, cmbG_init, cmbB_init, cmbA_init, cmbFormat_init, header_init, source_dir, b000, b001
 
 ### `unity_workflow/launcher.py` — Application shell for the Unity Workflow launcher UI.
 - `class UnityWorkflowUI`

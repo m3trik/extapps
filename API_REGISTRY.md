@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-06-27_
+_Generated: 2026-07-07_
 
 ## Index
 
@@ -86,7 +86,6 @@ Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - [`list_template_modes() -> List[Tuple[str, str]]`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L73) — Return ``[(stem, mode), ...]`` for every (template, mode) pairing.
 - **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L83)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
   - `MarmosetEngine.toolbag_path(self) -> Optional[str]` *(property)* — Resolve the Toolbag executable path.
-  - `MarmosetEngine.toolbag_path(self, value: Optional[str]) -> None`
   - `MarmosetEngine.toolbag_log_path(self) -> Optional[str]` *(property)* — Resolve Toolbag's application log file (script prints + tracebacks).
   - `MarmosetEngine.preflight(self, bridge, request) -> bool` — Validate the (template, mode) before the bridge produces its payload.
   - `MarmosetEngine.deliver(self, bridge, payload, request) -> Optional[Dict[str, Any]]` — Hand the produced model + manifests to Toolbag via :meth:`send`.
@@ -185,9 +184,7 @@ Application shell for the Mesh Convert UI.
 
 - **[`class MeshConvertSlots(MeshConvert)`](extapps/extapps/mesh_convert/slots.py#L13)** — Switchboard slots for the Mesh Converter UI.
   - `MeshConvertSlots.source_dir(self) -> str` *(property)* — Starting directory for the FBX file dialog.
-  - `MeshConvertSlots.source_dir(self, value: str) -> None`
   - `MeshConvertSlots.fbx_provider(self) -> Optional[Callable[[], Iterable[str]]]` *(property)* — Callable returning FBX paths from the host DCC selection.
-  - `MeshConvertSlots.fbx_provider(self, fn: Optional[Callable[[], Iterable[str]]]) -> None`
   - `MeshConvertSlots.header_init(self, widget) -> None` — Add the From-FBX-references toggle to the header menu.
   - `MeshConvertSlots.tb000_init(self, widget) -> None` — Set up the FBX -> GLB tool button option box.
   - `MeshConvertSlots.tb000(self, widget) -> None` — Convert the selected FBX file(s) to GLB beside their source.
@@ -794,9 +791,7 @@ Map Converter UI — slot file for ``converter.ui``.
 
 - **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L31)** — Switchboard slots for ``converter.ui``.
   - `ConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
-  - `ConverterSlots.source_dir(self, value)` — Set the starting directory for file dialogs.
   - `ConverterSlots.texture_provider(self)` *(property)* — Callable returning a list of texture paths from the host DCC selection.
-  - `ConverterSlots.texture_provider(self, fn)`
   - `ConverterSlots.footer_init(self, widget)` — Add the global Use-Selection toggle to the footer.
   - `ConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu (format, clamp, modifier).
   - `ConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
@@ -832,7 +827,6 @@ Application shell for the Map Packer UI.
   - `PackerSlots.cmbFormat_init(self, widget)` — Populate the output-format combo and react to format changes.
   - `PackerSlots.header_init(self, widget)` — Build the header menu's Pack/Unpack mode toggle.
   - `PackerSlots.source_dir(self)` *(property)*
-  - `PackerSlots.source_dir(self, value)`
   - `PackerSlots.b000(self)` — Run the configured channel operation: Pack (default) or Unpack.
   - `PackerSlots.b001(self)` — Open the last output directory in the system file explorer.
 

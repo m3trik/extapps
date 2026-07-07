@@ -102,7 +102,7 @@ The pre-SfM culling + exposure-matching knobs are exposed in the panel and overr
 
 ## `specular_metal` preset — what it sets and why
 
-Shipped at [`presets/specular_metal.json`](presets/specular_metal.json). Every key is
+Shipped at [`presets/metashape/specular_metal.json`](presets/metashape/specular_metal.json). Every key is
 consumed by the **Metashape** runner; RealityScan can't reach these from its CLI (set
 the equivalents in its GUI — see below).
 

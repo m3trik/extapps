@@ -548,17 +548,6 @@ class TestMapConverterEdgeCases(unittest.TestCase):
                 self.converter.tb001(self.mock_widget)
 
                 # Verify workflow_config was passed correctly
-                if not mock_prepare.called:
-                    print(
-                        f"DEBUG: mock_prepare not called. file_dialog called: {self.mock_sb.file_dialog.called}"
-                    )
-                    if self.mock_sb.file_dialog.called:
-                        print(
-                            f"DEBUG: file_dialog return: {self.mock_sb.file_dialog.return_value}"
-                        )
-                    else:
-                        print("DEBUG: file_dialog NOT called")
-
                 self.assertTrue(mock_prepare.called)
                 call_args = mock_prepare.call_args
                 # workflow_config is now passed as kwargs

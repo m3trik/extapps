@@ -249,13 +249,23 @@ class PackerSlots(ImgUtils):
         self._source_dir = value
 
     def _select_textures(self, title):
-        """Open the texture file dialog seeded from the current source dir."""
-        return self.sb.file_dialog(
+        """Open the texture file dialog seeded from the current source dir.
+
+        On selection, re-seed ``source_dir`` from the chosen files so the next
+        dialog reopens where the user last browsed. Without this the dialog
+        stays pinned to the stale seed dir even after the user changes folders
+        (``_finish_batch`` only updates it, to the output dir, on success).
+        Mirrors :class:`ConverterSlots`, which re-seeds after every selection.
+        """
+        file_paths = self.sb.file_dialog(
             file_types=[f"*.{ext}" for ext in self.texture_file_types],
             title=title,
             start_dir=self.source_dir,
             allow_multiple=True,
         )
+        if file_paths:
+            self.source_dir = FileUtils.format_path(file_paths[0], "path")
+        return file_paths
 
     def _finish_batch(self, success, file_paths):
         """Post-batch bookkeeping shared by pack/unpack: on success, point the

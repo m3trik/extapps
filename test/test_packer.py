@@ -128,6 +128,46 @@ class TestMapPackerUnpack(unittest.TestCase):
         self.assertFalse(result)
 
 
+class TestMapPackerSelectRemembersDir(unittest.TestCase):
+    """``_select_textures`` re-seeds ``source_dir`` from the picked files.
+
+    Regression: the packer only rewrote ``source_dir`` in ``_finish_batch``
+    (to the *output* dir, on success), so after the user browsed to a new
+    folder the next dialog reopened at the stale seed dir. The sibling
+    ``ConverterSlots`` re-seeds after every selection; the packer must too.
+    """
+
+    class _FakeSwitchboard:
+        def __init__(self, returns):
+            self._returns = returns
+            self.start_dir = None
+
+        def file_dialog(self, *, file_types, title, start_dir, allow_multiple):
+            self.start_dir = start_dir
+            return self._returns
+
+    @classmethod
+    def _bare_slots(cls, returns):
+        inst = PackerSlots.__new__(PackerSlots)
+        inst._source_dir = "O:/seed/dir"
+        inst.sb = cls._FakeSwitchboard(returns)
+        return inst
+
+    def test_selection_updates_source_dir(self):
+        picked = ["O:/new/folder/mat_Roughness.png"]
+        inst = self._bare_slots(picked)
+        result = inst._select_textures("pick")
+        self.assertEqual(result, picked)
+        # Dialog opened at the old seed; source_dir now points at the pick.
+        self.assertEqual(inst.sb.start_dir, "O:/seed/dir")
+        self.assertEqual(inst.source_dir.replace("\\", "/"), "O:/new/folder")
+
+    def test_cancel_leaves_source_dir_unchanged(self):
+        inst = self._bare_slots([])
+        inst._select_textures("pick")
+        self.assertEqual(inst.source_dir, "O:/seed/dir")
+
+
 class TestMapPackerPresets(unittest.TestCase):
     """Built-in presets cover the standard grayscale channel layouts."""
 

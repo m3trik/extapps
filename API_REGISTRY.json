@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-07-07",
+  "generated_at": "2026-07-09",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
@@ -3815,7 +3815,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 271,
+              "line": 281,
               "deprecated": false
             },
             {
@@ -3824,7 +3824,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 447,
+              "line": 457,
               "deprecated": false
             }
           ]

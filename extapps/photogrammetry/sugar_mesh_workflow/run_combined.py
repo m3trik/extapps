@@ -31,7 +31,7 @@ import os
 import sys
 
 from ._sugar_mesh import SugarMeshWorkflow
-from ..profile import get_preset, get_profile, init_user_profile
+from ..profile import QUALITY_TIERS, get_preset, get_profile, init_user_profile
 
 
 def main(argv=None) -> int:
@@ -50,7 +50,7 @@ def main(argv=None) -> int:
     pre.add_argument("--init-profile", action="store_true",
                      help="Write an editable example profile to the user-config "
                           "location (or --profile path) and exit.")
-    pre.add_argument("--quality", choices=("draft", "balanced", "max"), default=None,
+    pre.add_argument("--quality", choices=QUALITY_TIERS, default=None,
                      help="Quality preset (profile default if omitted): draft / "
                           "balanced / max → SuGaR refinement time short/medium/long; "
                           "explicit --sugar-refinement-time wins.")
@@ -78,6 +78,12 @@ def main(argv=None) -> int:
     # Quality preset -> SuGaR refinement time (short/medium/long = 2k/7k/15k iters).
     # A --preset's refinement_time overrides the quality-derived value.
     quality = preargs.quality or prof.get("quality", "balanced")
+    if quality not in QUALITY_TIERS:
+        # argparse validates only CLI-passed values — a typo'd profile quality
+        # would otherwise KeyError.
+        print(f"error: unknown quality {quality!r} (from profile); expected "
+              f"one of {list(QUALITY_TIERS)}.", file=sys.stderr)
+        return 2
     refinement_time = {"draft": "short", "balanced": "medium", "max": "long"}[quality]
     refinement_time = preset.get("refinement_time", refinement_time)
 

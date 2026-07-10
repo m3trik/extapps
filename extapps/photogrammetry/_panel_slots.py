@@ -110,6 +110,42 @@ class PhotogrammetryPanelSlots(BridgeSlotsBase):
         another engine's list)."""
         return preset_store(self.PRESET_ENGINE)
 
+    def _apply_param_dict(self, data) -> int:
+        """Apply a preset as **defaults + overlay**, exactly like the CLI.
+
+        The base class overlays onto *current widget state*, which persists
+        across sessions — so knobs a previously applied preset set (masking,
+        preselection, smoothing…) ride along invisibly into every later run
+        under a different preset ("preset residue"). Resetting the keys the
+        preset does NOT name to their registry defaults first makes a preset
+        mean the same thing in the panel as ``run_combined --preset``.
+
+        Keys the preset names but this panel doesn't surface are logged (not
+        silently dropped): e.g. RealityScan's ``specular_metal`` carries
+        ``mask_background``, which RC's panel has no widget for — the user
+        must act on it in the GUI, so they need to see it.
+        """
+        for key, spec in self.params_module.PARAMS.items():
+            if key in data or key not in self._param_widgets:
+                continue
+            try:
+                self._write_param(key, spec.default)
+            except Exception:  # noqa: BLE001 - one bad handler can't abort the reset
+                continue
+        ignored = sorted(
+            k for k in data
+            if k not in self._param_widgets and not str(k).startswith("_")
+        )
+        if ignored:
+            try:
+                self.bridge.logger.warning(
+                    "preset keys with no widget on this panel (NOT applied - "
+                    "handle them per TUNING.md): " + ", ".join(ignored)
+                )
+            except Exception:  # noqa: BLE001
+                pass
+        return super()._apply_param_dict(data)
+
     # ------------------------------------------------------------------ template combo
     @staticmethod
     def _format_combo_label(template: str, mode: str) -> str:
@@ -409,12 +445,24 @@ class FramesSourceMixin:
 
         from .prep_stages import extract_videos_to_dir
 
+        # Honor the panel's Video Window knob (shared pre-processing spec);
+        # fall back to the extractor default when the widget is absent (Brush
+        # panel has no pre-processing section).
+        window_sec = 1.0
+        try:
+            val = self._read_param("video_window_sec")
+            if val:
+                window_sec = max(0.1, float(val))
+        except Exception:  # noqa: BLE001 - a bad widget value can't block extraction
+            pass
+
         try:
             self.bridge.logger.info(
-                f"Extracting frames from {len(videos)} video(s) → '{out_dir}'"
+                f"Extracting frames from {len(videos)} video(s) → '{out_dir}' "
+                f"(window {window_sec:g}s)"
             )
             frames = extract_videos_to_dir(
-                videos, out_dir, log=self.bridge.logger.info
+                videos, out_dir, window_sec=window_sec, log=self.bridge.logger.info
             )
             self.bridge.logger.info(
                 f"Extracted {len(frames)} frame(s) total." if frames

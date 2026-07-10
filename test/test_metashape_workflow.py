@@ -102,7 +102,8 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
         self.assertTrue(rows["face_count"].isHidden())
         self.assertTrue(rows["texture_size"].isHidden())
         self.assertTrue(rows["skip_refine"].isHidden())
-        self.assertTrue(rows["skip_dedupe"].isHidden())
+        self.assertTrue(rows["dedupe_cameras"].isHidden())
+        self.assertTrue(rows["calibrate_colors"].isHidden())
         self.assertFalse(rows["align_downscale"].isHidden())  # align stage param
         self.assertFalse(rows["skip_curate"].isHidden())      # pre-align param
 
@@ -234,7 +235,8 @@ class TestParametersReferencedKeys(unittest.TestCase):
         P = self._P()
         keys = P.referenced_keys("align")
         for hidden in ("depth_downscale", "depth_filter", "face_count",
-                       "texture_size", "skip_dedupe", "skip_refine",
+                       "texture_size", "dedupe_cameras", "skip_refine",
+                       "calibrate_colors",
                        # mesh cleanup is a post-build stage -> full pipeline only
                        "min_component_size", "smooth_strength", "close_holes"):
             self.assertNotIn(hidden, keys, f"{hidden} should not apply in align-only")
@@ -278,7 +280,9 @@ class TestParametersReferencedKeys(unittest.TestCase):
 
     def test_alignment_and_cleanup_values_render_to_cli_flags(self) -> None:
         """The newly-exposed Metashape levers map to their run_combined flags:
-        value flags always emit; generic_preselection is a store-true."""
+        value flags always emit; generic_preselection is a BooleanOptionalAction
+        pair (--flag / --no-flag), so unchecking it can override the on-by-default
+        runner baseline."""
         P = self._P()
         argv = P.to_argv({
             "triage_quality": 0.3,
@@ -296,10 +300,11 @@ class TestParametersReferencedKeys(unittest.TestCase):
         self.assertEqual(argv[argv.index("--smooth-strength") + 1], "1")
         self.assertEqual(argv[argv.index("--close-holes") + 1], "10")
         self.assertIn("--generic-preselection", argv)
-        # store-true: omitted when falsey
-        self.assertNotIn(
-            "--generic-preselection", P.to_argv({"generic_preselection": False})
-        )
+        # bool flag: falsey emits the explicit --no- form (the runner default is
+        # ON, so omission could never turn it off)
+        off = P.to_argv({"generic_preselection": False})
+        self.assertNotIn("--generic-preselection", off)
+        self.assertIn("--no-generic-preselection", off)
 
     def test_preprocessing_section_leads_param_order(self) -> None:
         """Input pre-processing runs first in the pipeline, so it leads the
@@ -909,10 +914,16 @@ class TestRunCombinedStopAfter(unittest.TestCase):
         for downstream in ("refine_alignment", "depth", "model", "texture", "export"):
             self.assertNotIn(downstream, stages,
                              f"--stop-after align should not run '{downstream}'")
-        # _stop_after must still persist + report (the report PDF is the point).
-        self.assertIn("save", stages)
+        # _stop_after must still report (the report PDF is the point) — but a
+        # .psx is only persisted when --save-project asked for one.
+        self.assertNotIn("save", stages)
         self.assertIn("report", stages)
         self.assertTrue(data["success"])
+
+    def test_stop_after_saves_only_with_save_project(self) -> None:
+        rc, data = self._run("--stop-after", "align", "--save-project")
+        self.assertEqual(rc, 0)
+        self.assertIn("save", data["stages"].keys())
 
     def test_stop_after_refine_runs_refine_but_no_mesh(self) -> None:
         rc, data = self._run("--stop-after", "refine")
@@ -923,7 +934,7 @@ class TestRunCombinedStopAfter(unittest.TestCase):
         for downstream in ("depth", "model", "texture", "export"):
             self.assertNotIn(downstream, stages,
                              f"--stop-after refine should not run '{downstream}'")
-        self.assertIn("save", stages)
+        self.assertNotIn("save", stages)
         self.assertIn("report", stages)
 
 
@@ -987,6 +998,22 @@ class TestRunCombinedAlignmentLevers(unittest.TestCase):
         sidecar = os.path.join(self.out_root, "lv", "lv_qc.json")
         with open(sidecar, "r", encoding="utf-8") as f:
             return rc, json.load(f)
+
+    def test_typoed_preset_gate_mode_rejected(self) -> None:
+        """gate_mode fails fast like quality — a preset that meant 'halt'
+        must not silently lose its hard stop to a typo (exit 2, no run)."""
+        import extapps.photogrammetry.profile as pp
+        from extapps.photogrammetry.metashape_workflow import run_combined
+
+        store = pp.preset_store("metashape")
+        store.save("t_badg", {"gate_mode": "Halt"})
+        self.addCleanup(lambda: getattr(store, "delete", lambda n: None)("t_badg"))
+        rc = run_combined.main([
+            "--frames-dir", self.frames,
+            "--output-root", self.out_root, "--name", "lv",
+            "--skip-curate", "--skip-equalize", "--preset", "t_badg",
+        ])
+        self.assertEqual(rc, 2)
 
     def test_match_levers_reach_align_stage(self) -> None:
         rc, data = self._run(
@@ -1200,6 +1227,163 @@ class TestRunCombinedVideo(unittest.TestCase):
                 "--video", vid, "--output-root", self.out_root, "--name", "z",
             ])
         self.assertEqual(rc, 1)
+
+
+class TestExtractVideosPurgesStaleFrames(unittest.TestCase):
+    """extract_videos_to_dir keys frames to their SOURCE FILE (stem + path
+    digest) and purges exactly that clip's previous frames on re-extraction —
+    otherwise re-runs feed alignment the union of every extraction ever made,
+    while same-named clips from different folders must NOT clobber each other
+    (the panel's Source browser extracts each pick in a separate call)."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.mkdtemp(prefix="mw_purge_")
+        self.out = os.path.join(self.tmp, "frames")
+        os.makedirs(self.out)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    @staticmethod
+    def _fake_extractor(index):
+        """FrameExtractor stand-in writing the REAL naming shape
+        ({prefix}_{idx:06d}.jpg) with a fixed winning frame index."""
+        class FakeExtractor:
+            def extract_frames_sharpest(self, video_path, output_folder,
+                                        window_sec, quality, prefix):
+                path = os.path.join(output_folder, f"{prefix}_{index:06d}.jpg")
+                open(path, "w").close()
+                return [path]
+        return FakeExtractor
+
+    def _extract(self, videos, index, logs):
+        from unittest import mock as umock
+        import pythontk
+        from extapps.photogrammetry.prep_stages import extract_videos_to_dir
+        with umock.patch.object(pythontk, "FrameExtractor",
+                                self._fake_extractor(index)):
+            return extract_videos_to_dir(videos, self.out, log=logs.append)
+
+    def test_reextraction_purges_only_this_clips_frames(self) -> None:
+        vid = os.path.join(self.tmp, "clip.mp4")
+        open(vid, "w").close()
+        foreign = os.path.join(self.out, "reference_photo.jpg")
+        open(foreign, "w").close()
+        # Pre-digest-scheme leftover ({ii}_{stem}_NNNNNN.jpg) — an upgrade
+        # re-extraction must purge it too, or it rides along forever.
+        legacy = os.path.join(self.out, "00_clip_000042.jpg")
+        open(legacy, "w").close()
+
+        logs: list = []
+        first = self._extract([vid], 123, logs)
+        self.assertFalse(os.path.exists(legacy),
+                         "old-scheme frame of this clip must be purged")
+        second = self._extract([vid], 456, logs)  # window changed -> new index
+        self.assertFalse(os.path.exists(first[0]),
+                         "previous extraction's frame must be purged")
+        self.assertTrue(os.path.exists(second[0]))
+        self.assertTrue(os.path.exists(foreign),
+                        "non-extraction files are not ours to delete")
+        joined = " ".join(logs)
+        self.assertIn("purged", joined)
+        self.assertIn("WARNING", joined)
+
+    def test_same_stem_different_folders_do_not_clobber(self) -> None:
+        dir_a = os.path.join(self.tmp, "capA")
+        dir_b = os.path.join(self.tmp, "capB")
+        for d in (dir_a, dir_b):
+            os.makedirs(d)
+            open(os.path.join(d, "clip.mp4"), "w").close()
+        logs: list = []
+        # Two separate calls, like two panel browses (indices restart each call).
+        a = self._extract([os.path.join(dir_a, "clip.mp4")], 1, logs)
+        b = self._extract([os.path.join(dir_b, "clip.mp4")], 2, logs)
+        self.assertTrue(os.path.exists(a[0]),
+                        "capA frames deleted by capB's same-stem extraction")
+        self.assertTrue(os.path.exists(b[0]))
+        self.assertNotEqual(os.path.basename(a[0]), os.path.basename(b[0]))
+
+    def test_stem_extension_sibling_not_purged(self) -> None:
+        """'clip' must not purge 'clip_final' frames (prefix-shape match)."""
+        v1 = os.path.join(self.tmp, "clip.mp4")
+        v2 = os.path.join(self.tmp, "clip_final.mp4")
+        for v in (v1, v2):
+            open(v, "w").close()
+        logs: list = []
+        final = self._extract([v2], 5, logs)
+        self._extract([v1], 9, logs)
+        self.assertTrue(os.path.exists(final[0]),
+                        "sibling clip's frames were wrongly purged")
+
+
+class TestStopAfterStillExportsColmap(unittest.TestCase):
+    """--export-colmap must produce the splat dataset on --stop-after runs —
+    align-only + dataset is the natural cheap invocation and used to exit
+    without exporting."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.mkdtemp(prefix="mw_colmap_")
+        self.frames = os.path.join(self.tmp, "frames")
+        os.makedirs(self.frames)
+        open(os.path.join(self.frames, "a.jpg"), "w").close()
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_stop_after_align_exports_colmap(self) -> None:
+        from extapps.photogrammetry.metashape_workflow import run_combined
+        rc = run_combined.main([
+            "--name", "cm", "--frames-dir", self.frames,
+            "--output-root", os.path.join(self.tmp, "out"),
+            "--skip-curate", "--skip-equalize",
+            "--stop-after", "align",
+            "--export-colmap", os.path.join(self.tmp, "colmap"),
+        ])
+        self.assertEqual(rc, 0)
+        sidecar = os.path.join(self.tmp, "out", "cm", "cm_qc.json")
+        with open(sidecar, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.assertIn("export_colmap", data["stages"])
+
+
+class TestPanelPresetResetsUnnamedKeys(unittest.TestCase):
+    """Panel presets apply as defaults + overlay (CLI semantics): keys a
+    preset does not name reset to registry defaults instead of keeping
+    session-persisted leftovers from a previously applied preset."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = _ensure_app()
+
+    def setUp(self) -> None:
+        from extapps.photogrammetry import metashape_workflow as m
+        self.ui = m.MetashapeWorkflowUI()
+        self.slots = self.ui.sb.get_slots_instance(self.ui)
+
+    def tearDown(self) -> None:
+        self.ui.deleteLater()
+        self.app.processEvents()
+
+    def test_unnamed_keys_reset_to_defaults(self) -> None:
+        from extapps.photogrammetry.metashape_workflow import parameters as P
+        # Simulate residue from an earlier preset/session.
+        self.slots._write_param("smooth_strength", 3)
+        self.slots._write_param("depth_filter", "aggressive")
+        # Apply a preset that names neither key.
+        self.slots._apply_param_dict({"align_downscale": 4})
+        self.assertEqual(self.slots._read_param("align_downscale"), 4)
+        self.assertEqual(self.slots._read_param("smooth_strength"),
+                         P.PARAMS["smooth_strength"].default)
+        self.assertEqual(self.slots._read_param("depth_filter"),
+                         P.PARAMS["depth_filter"].default)
+
+    def test_widgetless_preset_keys_are_logged(self) -> None:
+        from unittest import mock as umock
+        with umock.patch.object(self.slots.bridge.logger, "warning") as warn:
+            self.slots._apply_param_dict({"align_downscale": 2,
+                                          "no_such_key": True})
+        self.assertTrue(warn.called)
+        self.assertIn("no_such_key", str(warn.call_args))
 
 
 if __name__ == "__main__":

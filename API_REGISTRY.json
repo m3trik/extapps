@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-07-09",
+  "generated_at": "2026-07-10",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
@@ -559,7 +559,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 213,
+              "line": 249,
               "deprecated": false
             },
             {
@@ -568,7 +568,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 234,
+              "line": 270,
               "deprecated": false
             },
             {
@@ -577,7 +577,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Reveal the output folder.",
-              "line": 248,
+              "line": 284,
               "deprecated": false
             },
             {
@@ -586,7 +586,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run Workflow.",
-              "line": 256,
+              "line": 292,
               "deprecated": false
             }
           ]
@@ -594,7 +594,7 @@
         {
           "name": "FramesSourceMixin",
           "summary": "A single 'Source' row + browser for image-in panels (Metashape, RC).",
-          "line": 332,
+          "line": 368,
           "bases": [],
           "members": [
             {
@@ -603,7 +603,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 364,
+              "line": 400,
               "deprecated": false
             }
           ]
@@ -689,9 +689,9 @@
           "name": "render_flag_argv",
           "qualname": "render_flag_argv",
           "kind": "function",
-          "signature": "(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'",
+          "signature": "(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'",
           "summary": "Render *values* into CLI flags — the shared loop behind every engine's",
-          "line": 129,
+          "line": 151,
           "deprecated": false
         },
         {
@@ -700,7 +700,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render the input pre-processing CLI flags from collected *values*.",
-          "line": 158,
+          "line": 188,
           "deprecated": false
         }
       ],
@@ -788,7 +788,7 @@
           "kind": "function",
           "signature": "() -> bool",
           "summary": "",
-          "line": 87,
+          "line": 89,
           "deprecated": false
         },
         {
@@ -797,7 +797,7 @@
           "kind": "function",
           "signature": "(progress_callback: Optional[Callable[[int, int], None]] = None) -> str",
           "summary": "Download + install Brush via :class:`pythontk.AppInstaller`;",
-          "line": 115,
+          "line": 117,
           "deprecated": false
         },
         {
@@ -806,7 +806,7 @@
           "kind": "function",
           "signature": "(ply_path: str) -> Optional[int]",
           "summary": "Gaussian count from a splat ``.ply`` header (``element vertex N``).",
-          "line": 138,
+          "line": 140,
           "deprecated": false
         }
       ],
@@ -814,7 +814,7 @@
         {
           "name": "GaussianSplatWorkflow",
           "summary": "Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``.",
-          "line": 153,
+          "line": 155,
           "bases": [],
           "members": [
             {
@@ -823,7 +823,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 186,
+              "line": 188,
               "deprecated": false
             },
             {
@@ -832,7 +832,7 @@
               "kind": "method",
               "signature": "(self, colmap_dir: str, total_steps: int = 30000, max_resolution: int = 1920, max_splats: int = 10000000, sh_degree: int = 3, growth_grad_threshold: Optional[float] = None, growth_select_fraction: Optional[float] = None, export_path: Optional[str] = None, export_name: Optional[str] = None, export_every: Optional[int] = None, eval_split_every: Optional[int] = None, eval_every: Optional[int] = None, eval_save_to_disk: bool = False) -> Optional[str]",
               "summary": "Train a splat from a COLMAP dataset;",
-              "line": 228,
+              "line": 230,
               "deprecated": false
             },
             {
@@ -841,7 +841,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "",
-              "line": 303,
+              "line": 331,
               "deprecated": false
             }
           ]
@@ -1264,7 +1264,7 @@
           "kind": "function",
           "signature": "(directory: str) -> List[str]",
           "summary": "Return absolute paths to all images in `directory` (non-recursive).",
-          "line": 1216,
+          "line": 1364,
           "deprecated": false
         }
       ],
@@ -1335,7 +1335,7 @@
               "name": "align_photos",
               "qualname": "MetashapeWorkflow.align_photos",
               "kind": "method",
-              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 40000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
+              "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "",
               "line": 359,
               "deprecated": false
@@ -1344,9 +1344,9 @@
               "name": "align_photos_with_retry",
               "qualname": "MetashapeWorkflow.align_photos_with_retry",
               "kind": "method",
-              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 40000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
+              "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0, filter_mask: bool = False)",
               "summary": "Run ``align_photos``;",
-              "line": 441,
+              "line": 448,
               "deprecated": false
             },
             {
@@ -1355,7 +1355,7 @@
               "kind": "method",
               "signature": "(self, uncertainty_threshold: float = 15.0, reprojection_threshold: float = 0.5, projection_accuracy_threshold: float = 3.0)",
               "summary": "Gradual-selection cleanup: iteratively filter tie points by",
-              "line": 489,
+              "line": 517,
               "deprecated": false
             },
             {
@@ -1364,7 +1364,7 @@
               "kind": "method",
               "signature": "(self, translation_threshold: float = 0.02, rotation_threshold_deg: float = 2.0)",
               "summary": "Cluster aligned cameras by pose and disable redundants.",
-              "line": 597,
+              "line": 625,
               "deprecated": false
             },
             {
@@ -1373,7 +1373,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, white_balance: bool = True)",
               "summary": "Run ``chunk.calibrateColors`` to equalize white-balance across",
-              "line": 665,
+              "line": 701,
               "deprecated": false
             },
             {
@@ -1382,7 +1382,16 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 687,
+              "line": 723,
+              "deprecated": false
+            },
+            {
+              "name": "generate_masks_native",
+              "qualname": "MetashapeWorkflow.generate_masks_native",
+              "kind": "method",
+              "signature": "(self, tolerance: int = 10) -> bool",
+              "summary": "Background-mask every camera with Metashape's built-in AI masking",
+              "line": 765,
               "deprecated": false
             },
             {
@@ -1391,7 +1400,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'file', template: str = '{filename}_mask.png')",
               "summary": "Import per-camera masks from a directory.",
-              "line": 729,
+              "line": 827,
               "deprecated": false
             },
             {
@@ -1400,7 +1409,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, filter_mode=None)",
               "summary": "",
-              "line": 776,
+              "line": 916,
               "deprecated": false
             },
             {
@@ -1409,7 +1418,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count=None)",
               "summary": "",
-              "line": 810,
+              "line": 950,
               "deprecated": false
             },
             {
@@ -1418,7 +1427,7 @@
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
               "summary": "Mesh cleanup chain: ``removeComponents → closeHoles → smoothModel``.",
-              "line": 888,
+              "line": 1028,
               "deprecated": false
             },
             {
@@ -1427,16 +1436,16 @@
               "kind": "method",
               "signature": "(self, target_overlap: int = 9)",
               "summary": "Thin redundant cameras for texture bake while preserving",
-              "line": 934,
+              "line": 1074,
               "deprecated": false
             },
             {
               "name": "build_texture",
               "qualname": "MetashapeWorkflow.build_texture",
               "kind": "method",
-              "signature": "(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
+              "signature": "(self, texture_size: int = 8192, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "",
-              "line": 960,
+              "line": 1100,
               "deprecated": false
             },
             {
@@ -1445,7 +1454,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "",
-              "line": 1015,
+              "line": 1158,
               "deprecated": false
             },
             {
@@ -1454,7 +1463,7 @@
               "kind": "method",
               "signature": "(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)",
               "summary": "",
-              "line": 1028,
+              "line": 1171,
               "deprecated": false
             },
             {
@@ -1463,7 +1472,7 @@
               "kind": "method",
               "signature": "(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]",
               "summary": "Export the aligned chunk as a COLMAP dataset to feed the splat track.",
-              "line": 1090,
+              "line": 1233,
               "deprecated": false
             },
             {
@@ -1472,7 +1481,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Write Metashape's processing report PDF + finalize the JSON sidecar.",
-              "line": 1183,
+              "line": 1331,
               "deprecated": false
             },
             {
@@ -1481,7 +1490,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Write the QC JSON sidecar.",
-              "line": 1205,
+              "line": 1353,
               "deprecated": false
             }
           ]
@@ -1512,7 +1521,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-          "line": 202,
+          "line": 228,
           "deprecated": false
         },
         {
@@ -1521,7 +1530,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 233,
+          "line": 261,
           "deprecated": false
         },
         {
@@ -1530,7 +1539,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 250,
+          "line": 278,
           "deprecated": false
         }
       ],
@@ -1546,7 +1555,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 91,
+          "line": 98,
           "deprecated": false
         }
       ],
@@ -1652,7 +1661,7 @@
           "kind": "function",
           "signature": "(dirs: Sequence[str]) -> Optional[str]",
           "summary": "First image file (sorted) across ``dirs``, or ``None``.",
-          "line": 103,
+          "line": 156,
           "deprecated": false
         },
         {
@@ -1661,7 +1670,7 @@
           "kind": "function",
           "signature": "(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int",
           "summary": "Texture page size from a source image: next power-of-two ≥ its long edge,",
-          "line": 114,
+          "line": 167,
           "deprecated": false
         }
       ],
@@ -1669,16 +1678,16 @@
         {
           "name": "PrepStagesMixin",
           "summary": "Curate + equalize stages shared by both photogrammetry engines.",
-          "line": 137,
+          "line": 190,
           "bases": [],
           "members": [
             {
               "name": "curate_input_set",
               "qualname": "PrepStagesMixin.curate_input_set",
               "kind": "method",
-              "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 5, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]",
+              "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 0, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]",
               "summary": "Pre-SfM content + sharpness culling via :class:`pythontk.ImageCurator`.",
-              "line": 140,
+              "line": 193,
               "deprecated": false
             },
             {
@@ -1687,16 +1696,16 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], hash_thresholds: Sequence[int] = (5, 8, 10, 12, 15), keep_per_cluster: int = 1, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0)",
               "summary": "Dry-run curation QC — report survivor counts per dHash threshold + the",
-              "line": 229,
+              "line": 289,
               "deprecated": false
             },
             {
               "name": "equalize_exposures",
               "qualname": "PrepStagesMixin.equalize_exposures",
               "kind": "method",
-              "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 1.0, reference_strategy: str = 'first') -> List[str]",
+              "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 0.5, reference_strategy: str = 'median') -> List[str]",
               "summary": "Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.",
-              "line": 279,
+              "line": 339,
               "deprecated": false
             }
           ]
@@ -1713,7 +1722,7 @@
           "kind": "function",
           "signature": "(path=None) -> dict",
           "summary": "Resolve the active photogrammetry profile (fully interpolated).",
-          "line": 216,
+          "line": 239,
           "deprecated": false
         },
         {
@@ -1722,7 +1731,7 @@
           "kind": "function",
           "signature": "(key: str, path=None) -> Optional[str]",
           "summary": "Return the profile-configured install path for an engine, or ``None``.",
-          "line": 234,
+          "line": 257,
           "deprecated": false
         },
         {
@@ -1731,7 +1740,7 @@
           "kind": "function",
           "signature": "(engine: str) -> PresetStore",
           "summary": "The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)",
-          "line": 257,
+          "line": 280,
           "deprecated": false
         },
         {
@@ -1740,7 +1749,7 @@
           "kind": "function",
           "signature": "(name: Optional[str], engine: str) -> dict",
           "summary": "Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).",
-          "line": 278,
+          "line": 301,
           "deprecated": false
         },
         {
@@ -1749,7 +1758,7 @@
           "kind": "function",
           "signature": "(path: Optional[str] = None, force: bool = False) -> str",
           "summary": "Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).",
-          "line": 301,
+          "line": 324,
           "deprecated": false
         },
         {
@@ -1758,7 +1767,7 @@
           "kind": "function",
           "signature": "(input_root: str) -> List[str]",
           "summary": "Return immediate subdirs of ``input_root`` that contain images.",
-          "line": 319,
+          "line": 342,
           "deprecated": false
         }
       ],
@@ -1958,7 +1967,7 @@
               "name": "align_photos",
               "qualname": "RealityCaptureWorkflow.align_photos",
               "kind": "method",
-              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
+              "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "Run RC alignment (SfM).",
               "line": 654,
               "deprecated": false
@@ -1967,9 +1976,9 @@
               "name": "align_photos_with_retry",
               "qualname": "RealityCaptureWorkflow.align_photos_with_retry",
               "kind": "method",
-              "signature": "(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
+              "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
               "summary": "Run alignment;",
-              "line": 699,
+              "line": 705,
               "deprecated": false
             },
             {
@@ -1978,7 +1987,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC performs alignment refinement internally during ``-align``;",
-              "line": 741,
+              "line": 751,
               "deprecated": false
             },
             {
@@ -1987,7 +1996,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No direct RC equivalent.",
-              "line": 754,
+              "line": 764,
               "deprecated": false
             },
             {
@@ -1996,7 +2005,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC applies color correction inside ``-calculateTexture`` via",
-              "line": 762,
+              "line": 772,
               "deprecated": false
             },
             {
@@ -2005,7 +2014,7 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 772,
+              "line": 782,
               "deprecated": false
             },
             {
@@ -2014,7 +2023,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'alpha')",
               "summary": "RC accepts per-image masks named ``<image>.png`` next to the",
-              "line": 805,
+              "line": 815,
               "deprecated": false
             },
             {
@@ -2023,7 +2032,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC does not expose depth maps as a separate stage — mesh calc",
-              "line": 819,
+              "line": 829,
               "deprecated": false
             },
             {
@@ -2032,7 +2041,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count: Optional[str] = None)",
               "summary": "Build a polygon mesh.",
-              "line": 830,
+              "line": 840,
               "deprecated": false
             },
             {
@@ -2040,8 +2049,8 @@
               "qualname": "RealityCaptureWorkflow.clean_mesh",
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
-              "summary": "Mesh cleanup.",
-              "line": 876,
+              "summary": "Mesh cleanup via ``-setMinComponentSize N`` + ``-cleanModel``.",
+              "line": 886,
               "deprecated": false
             },
             {
@@ -2050,7 +2059,7 @@
               "kind": "method",
               "signature": "(self, target_face_count: int = 20000000)",
               "summary": "Simplify the densest model to ~``target_face_count`` triangles.",
-              "line": 909,
+              "line": 928,
               "deprecated": false
             },
             {
@@ -2059,7 +2068,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No RC equivalent.",
-              "line": 948,
+              "line": 967,
               "deprecated": false
             },
             {
@@ -2068,7 +2077,7 @@
               "kind": "method",
               "signature": "(self, mesh_path: str)",
               "summary": "Import an external low-poly mesh into the project (Maya-authored",
-              "line": 956,
+              "line": 975,
               "deprecated": false
             },
             {
@@ -2077,7 +2086,7 @@
               "kind": "method",
               "signature": "(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "Unwrap (when no mesh was imported) + bake texture from solved",
-              "line": 976,
+              "line": 995,
               "deprecated": false
             },
             {
@@ -2086,7 +2095,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "RC saves on every CLI call (``-save`` is appended);",
-              "line": 1021,
+              "line": 1040,
               "deprecated": false
             },
             {
@@ -2095,7 +2104,7 @@
               "kind": "method",
               "signature": "(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)",
               "summary": "Export the current model.",
-              "line": 1030,
+              "line": 1049,
               "deprecated": false
             },
             {
@@ -2104,7 +2113,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Export RC's processing report XML and append to the QC log.",
-              "line": 1063,
+              "line": 1090,
               "deprecated": false
             },
             {
@@ -2113,7 +2122,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Flush the QC JSON sidecar + release the transport.",
-              "line": 1091,
+              "line": 1118,
               "deprecated": false
             }
           ]
@@ -2364,7 +2373,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-          "line": 97,
+          "line": 100,
           "deprecated": false
         },
         {
@@ -2373,7 +2382,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 107,
+          "line": 110,
           "deprecated": false
         },
         {
@@ -2382,7 +2391,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 118,
+          "line": 121,
           "deprecated": false
         }
       ],
@@ -2398,7 +2407,7 @@
           "kind": "function",
           "signature": "(project_dir: str, publish_dir: str)",
           "summary": "Copy finished deliverables from local scratch to the synced output root.",
-          "line": 77,
+          "line": 85,
           "deprecated": false
         },
         {
@@ -2407,7 +2416,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 117,
+          "line": 130,
           "deprecated": false
         }
       ],
@@ -2528,7 +2537,7 @@
               "name": "extract_mesh",
               "qualname": "SugarMeshWorkflow.extract_mesh",
               "kind": "method",
-              "signature": "(self, colmap_dir: str, regularization: str = 'dn_consistency', high_poly: bool = True, refinement_time: str = 'short', surface_level: float = 0.3, export_obj: bool = True, export_ply: bool = False, use_eval_split: bool = False, gpu: int = 0, white_background: bool = False) -> Optional[str]",
+              "signature": "(self, colmap_dir: str, regularization: str = 'dn_consistency', high_poly: bool = True, refinement_time: str = 'medium', surface_level: float = 0.3, export_obj: bool = True, export_ply: bool = False, use_eval_split: bool = False, gpu: int = 0, white_background: bool = False) -> Optional[str]",
               "summary": "Run SuGaR's full pipeline on a COLMAP dataset;",
               "line": 139,
               "deprecated": false
@@ -2539,7 +2548,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "",
-              "line": 277,
+              "line": 279,
               "deprecated": false
             }
           ]
@@ -2701,7 +2710,7 @@
               "qualname": "PainterConnection.get_available_port",
               "kind": "staticmethod",
               "signature": "(start_port: int = 5050, max_check: int = 100) -> int",
-              "summary": "Return the lowest unused TCP port in the requested range on localhost.",
+              "summary": "Return the lowest TCP port a NEW bridge server could bind on localhost.",
               "line": 106,
               "deprecated": false
             },
@@ -2711,7 +2720,7 @@
               "kind": "method",
               "signature": "(self, force_new_instance: bool = True, gui: bool = False, port: int = 5050, app_path: Optional[str] = None, launch_args: Optional[List[str]] = None, timeout: float = 180.0) -> bool",
               "summary": "Launch a fresh Painter and connect over the bridge HTTP server.",
-              "line": 117,
+              "line": 124,
               "deprecated": false
             },
             {
@@ -2720,7 +2729,7 @@
               "kind": "method",
               "signature": "(self, op: str, timeout: float = 60.0, **kwargs: Any) -> Any",
               "summary": "Call a registered op over the bridge and return its value.",
-              "line": 189,
+              "line": 196,
               "deprecated": false
             },
             {
@@ -2729,7 +2738,7 @@
               "kind": "method",
               "signature": "(self, op: str = '') -> dict",
               "summary": "Fetch the registry's signature description for agent self-discovery.",
-              "line": 212,
+              "line": 219,
               "deprecated": false
             },
             {
@@ -2738,7 +2747,7 @@
               "kind": "method",
               "signature": "(self, force: bool = False) -> None",
               "summary": "Close the bridge and terminate the Painter process we launched.",
-              "line": 227,
+              "line": 234,
               "deprecated": false
             }
           ]

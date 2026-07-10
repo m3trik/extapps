@@ -141,7 +141,7 @@ class SugarMeshWorkflow:
         colmap_dir: str,
         regularization: str = "dn_consistency",
         high_poly: bool = True,
-        refinement_time: str = "short",
+        refinement_time: str = "medium",
         surface_level: float = 0.3,
         export_obj: bool = True,
         export_ply: bool = False,
@@ -159,7 +159,9 @@ class SugarMeshWorkflow:
 
         ``regularization`` is one of ``sdf`` / ``density`` / ``dn_consistency``
         (the last is SuGaR's recommended best-mesh option). ``refinement_time``
-        is ``short`` / ``medium`` / ``long`` (2k / 7k / 15k refinement iters).
+        is ``short`` / ``medium`` / ``long`` (2k / 7k / 15k refinement iters);
+        the default matches the runner's ``balanced`` tier (``medium``) so a
+        direct engine call and a no-flag runner call produce the same mesh.
         Outputs land under ``<sugar_dir>/output/`` (cwd-relative); the textured
         mesh is written below ``output/refined_mesh/<scene>/``.
         """

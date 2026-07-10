@@ -1,5 +1,5 @@
 {
-    "_comment": "Highest quality - full-resolution alignment + depth (Ultra), a high-density mesh, a denser tie cloud (raised keypoint/tiepoint limits for robust alignment), auto texture (derived from source, capped 8192). Slow and memory-heavy. Best on well-textured, matte subjects. On specular / low-texture surfaces prefer 'specular_metal' instead: full-res depth (ds=1) over-fits the specular noise and warps geometry there, and that preset adds generic_preselection which this one leaves off (well-textured captures align without it).",
+    "_comment": "Highest quality - full-resolution alignment + depth (Ultra), a high-density mesh, a denser tie cloud (raised tiepoint limit for robust alignment), auto texture (derived from source, capped 8192). Slow and memory-heavy. Best on well-textured, matte subjects. On specular / low-texture surfaces prefer 'specular_metal' instead: full-res depth (ds=1) over-fits the specular noise and warps geometry there.",
     "quality": "max",
     "align_downscale": 1,
     "depth_downscale": 1,

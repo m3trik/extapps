@@ -58,12 +58,12 @@ the app and persist.
 | Lever | Effect on noise | Metashape | RealityScan |
 |:--|:--|:--|:--|
 | **Capture: cut the specularity** (cross-polarized flash, polarizer, matte dulling spray, diffuse/overcast lighting) | Removes the root cause — the only true fix for shiny metal | capture-time | capture-time |
-| **Subject masking** (exclude background) | Kills background floaters; sharpens silhouettes | `--use-masks` (rembg → importMasks) | GUI masks / `_mask` images; runner import **not wired** |
+| **Subject masking** (exclude background) | Kills background floaters; sharpens silhouettes — and (since 2026-07) the masks also gate feature *matching* (`filter_mask`), not just depth | `--use-masks`: Metashape 2.2+ built-in AI masking (needs its model — run Generate Masks (AI) once in the GUI to download it), else rembg `_mask` files → `generateMasks` import (Metashape 2.x removed `importMasks`) | GUI masks / `_mask` images; runner import **not wired** |
 | **Tight reconstruction region** (crop the bbox to the subject) | Removes *all* out-of-region floaters — huge | set in GUI | set in GUI (Reconstruction Region box) |
 | **Depth-map filtering strength** | Smooths noisy per-pixel depth before meshing | `--depth-filter moderate` | GUI: Reconstruction Settings → *Filtering strength* = **High** |
 | **Image / depth downscale** | Higher downscale = smoother, less noisy (less detail). On specular metal **don't go to ds=1/Ultra — it over-fits the noise and *warps* geometry**; ds=2 is the sweet spot. | `--align-downscale`, `--depth-downscale` | GUI: *Image downscale factor* (depth) |
-| **Alignment matching** (generic preselection + keypoint/tiepoint limits) | The lever that actually *aligns* featureless / specular subjects: generic preselection pairs images without camera coords, and a raised tiepoint limit builds a denser, more robust sparse cloud. | `--generic-preselection`, `--keypoint-limit`, `--tiepoint-limit` | GUI: Alignment Settings only (CLI ignores them) |
-| **Triage** (disable low-quality cameras pre-align) | Drops blurry/noisy frames by Metashape's own `Image/quality` score before matching — the highest-leverage cull for messy input. | `--triage-quality` (`0` disables) | folded into RC alignment |
+| **Alignment matching** (generic preselection + keypoint/tiepoint limits) | The lever that actually *aligns* featureless / specular subjects: generic preselection pairs images without camera coords, and a raised tiepoint limit builds a denser, more robust sparse cloud. Baseline: generic preselection **on** (Metashape's own default), keypoint `60000` (the verified value). | `--generic-preselection` / `--no-generic-preselection`, `--keypoint-limit`, `--tiepoint-limit` | GUI: Alignment Settings only (CLI ignores them) |
+| **Triage** (disable low-quality cameras pre-align) | Drops blurry/noisy frames by Metashape's own `Image/quality` score before matching — a strong cull for genuinely messy input, but the score correlates with *texture*, so it wholesale-disables good frames of low-texture/specular subjects. **Opt-in** (`0` = off, the default); `0.5` is the usual value when you do want it. | `--triage-quality` | folded into RC alignment |
 | **Min component size** (drop small disconnected islands) | Strips speckle islands — but it does **not** fix depth-level noise (warping/ghosting) and cranking it deletes real detail, so it's a last touch, not the lever. | `--clean-min-component` → `removeComponents` | `--clean-min-component` → `-setMinComponentSize` |
 | **Mesh smoothing** (light Laplacian denoise) | A single pass denoises specular geometry without melting detail (high values do melt it). | `--smooth-strength` | not on CLI |
 | **Exposure equalization** | Reduces ghosting from per-frame exposure drift | `equalize` prep stage (on by default) | same prep stage |
@@ -80,7 +80,7 @@ noisy depth just produces a higher-resolution mess.
 | Preset | For | Sets |
 |:--|:--|:--|
 | `preview` | A fast, low-quality pass to check coverage / alignment before a full bake (pair with the panel's **Align only** run mode). | `quality=draft`, align/depth downscale `4`, `face_count=low`, `texture_size=2048`. |
-| `high` | Highest quality on well-textured, matte subjects. Slow + memory-heavy. | `quality=max`, align/depth downscale `1` (Ultra), `face_count=high`, `texture_size=auto`, plus a denser tie cloud (`keypoint_limit=60000`, `tiepoint_limit=20000`). **Not** for specular/low-texture — use `specular_metal` (ds=1 over-fits there); `high` leaves `generic_preselection` off since well-textured captures align without it. |
+| `high` | Highest quality on well-textured, matte subjects. Slow + memory-heavy. | `quality=max`, align/depth downscale `1` (Ultra), `face_count=high`, `texture_size=auto`, plus a denser tie cloud (`keypoint_limit=60000`, `tiepoint_limit=20000`). **Not** for specular/low-texture — use `specular_metal` (ds=1 over-fits there). |
 | `specular_metal` | Reflective / low-texture surfaces (machinery, fabrication bays). | See the table below. |
 
 The `quality` tier is what the RealityScan CLI reaches (`preview`/`normal`/`high`); the explicit downscale/filter/face/texture keys, the alignment-matching levers (`generic_preselection`/`keypoint_limit`/`tiepoint_limit`/`triage_quality`), and the mesh-cleanup levers (`min_component_size`/`smooth_strength`/`close_holes`) are what the Metashape runner and the panel widgets apply. All of these keys, plus the input pre-processing knobs below, are editable per-run in the Metashape panel and savable as a user preset.
@@ -89,16 +89,34 @@ There is no `default` preset: the balanced baseline *is* no preset (`--preset de
 
 ### Input image pre-processing (preset-controllable)
 
-The pre-SfM culling + exposure-matching knobs are exposed in the panel and overridable by a preset (profile is the fallback, explicit CLI flags still win):
+The pre-SfM culling + exposure-matching knobs are exposed in the panel and overridable by a preset in **both** engines' runners (profile is the fallback, explicit CLI flags still win):
 
 | Key | Flag | Effect |
 |:--|:--|:--|
-| `curate_hash_threshold` | `--curate-hash-threshold` | dHash near-duplicate clustering distance. `0` = keep all (blur culling only — right for continuous video); raising it strips small-baseline overlap and can fragment alignment. |
-| `curate_sharpness_percentile` | `--curate-sharpness-percentile` | Drop frames below this percentile of the set's own sharpness (self-calibrating). `0` disables. |
-| `curate_min_sharpness_frac` | `--curate-min-sharpness-frac` | Also drop frames below this fraction of the survivor-median sharpness. `0` disables. |
+| `curate_hash_threshold` | `--curate-hash-threshold` | dHash near-duplicate clustering distance. **Default `0` = keep all** (blur culling only — right for continuous video, the primary ingest path); raising it strips small-baseline overlap and can fragment alignment. |
+| `curate_sharpness_percentile` | `--curate-sharpness-percentile` | Drop frames below this percentile of the set's own sharpness. **Default `0` = off** — a percentile cut always removes that share of the set, even when every frame is sharp (video frames are already sharpest-per-window at extraction). |
+| `curate_min_sharpness_frac` | `--curate-min-sharpness-frac` | Drop frames below this fraction of the survivor-median sharpness — the guard that actually targets *broken* (catastrophically defocused) frames. Default `0.15`; `0` disables. |
 | `keep_per_cluster` | `--keep-per-cluster` | Keep top-K sharpest per near-duplicate cluster. |
-| `equalize_strength` | `--equalize-strength` | Cross-capture exposure-match blend `0-1` (only with 2+ captures). |
+| `equalize_strength` | `--equalize-strength` | Cross-capture exposure-match blend `0-1` (only with 2+ captures; one transform **per capture**, so intra-capture lighting variation survives). |
 | `equalize_reference` | `--equalize-reference` | Equalization target distribution (`first`/`median`/`global`). |
+| `video_window_sec` | `--video-window-sec` (Metashape `--video` path; panel Source browser reads the widget) | Sharpest-frame extraction window. `1.0` (~1 fps) suits a slow orbit; drop to `0.25–0.5` on fast handheld moves. Re-extraction purges the clip's previous frames first, so stale frames can't accumulate across runs. |
+
+**The no-preset baseline is deliberately non-destructive.** Frames reach the
+engine as-shot except for the median-fraction blur guard and (multi-capture
+only) gentle per-capture equalization. Dedup, the percentile cull, triage,
+camera pose-dedupe, and Metashape `calibrateColors` are all **opt-in** — every
+one of them deletes or mutates input, and the verified data (below) shows even
+a 2.3% over-cull cost ~10 points of alignment coverage. Turn levers on
+per-run/per-preset when a capture needs them, not by default.
+
+**Metashape-hosted runs can't run the prep stages at all.** The panel and
+`MetashapeConnection` drive `run_combined` *inside* `metashape.exe`, whose
+bundled Python (3.9) has **no cv2/PIL** — curation and equalization skip with
+a loud warning and `fallback: cv2_missing` in the QC sidecar (verified live on
+2.2.0). When you actually want culling/equalization for a Metashape run,
+pre-process the frames dir under a Python with opencv (the panel venv) and
+feed the processed dir as the source. RealityScan/Brush runs execute in the
+venv, so their prep stages run for real.
 
 ## `specular_metal` preset — what it sets and why
 
@@ -141,7 +159,7 @@ runner / RSNode as usual:
 2. **Reconstruction Settings → Filtering strength = High** (or *Ultra* if detail allows). Default *Medium* leaves specular speckle.
 3. **Image downscale factor** — try `2` for depth on noisy specular before `1`.
 4. **Masks** — paint/import per-image masks (background = excluded). RealityScan reads `<image>_mask.png` beside the source images; the runner's `import_masks` is currently a stub — wiring + verifying it on a live run is the open follow-up.
-5. As a last cosmetic touch only, `--clean-min-component N` strips residual speckle islands (not a substitute for the GUI dials above).
+5. As a last cosmetic touch only, `--clean-min-component N` strips residual speckle islands (not a substitute for the GUI dials above). **Unverified semantics**: the runner feeds `-setMinComponentSize` a triangle floor, but historic RealityCapture CLI docs describe that command as the minimal *camera count per alignment component* — A/B it on a live RC before leaning on it (open follow-up, like the mask import).
 
 The runner records the requested texture size and notes these GUI-only levers in the
 QC sidecar, but does **not** apply them — they are not CLI-addressable.

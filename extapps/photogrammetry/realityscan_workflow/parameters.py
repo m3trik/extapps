@@ -22,6 +22,7 @@ from typing import Any, Dict, List
 
 from uitk.bridge import AttributeSpec, defaults as _defaults
 
+from ..profile import QUALITY_TIERS
 from .._shared_params import (
     PREPROCESSING_PARAMS,
     preprocessing_argv,
@@ -37,7 +38,9 @@ PARAMS: "Dict[str, AttributeSpec]" = dict(PREPROCESSING_PARAMS)
 PARAMS.update({
     "quality": AttributeSpec(
         key="quality", label="Quality", kind="choice",
-        default="balanced", choices=["draft", "balanced", "max"],
+        # SSoT: profile.QUALITY_TIERS — a hardcoded copy here could drift
+        # from the four runners that were already converted to it.
+        default="balanced", choices=list(QUALITY_TIERS),
         tooltip="Reconstruction quality → RC's mesh preset (draft=preview / "
                 "balanced=normal / max=high). Maps to --quality.",
     ),

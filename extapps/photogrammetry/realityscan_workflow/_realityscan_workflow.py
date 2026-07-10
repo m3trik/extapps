@@ -654,18 +654,20 @@ class RealityCaptureWorkflow(PrepStagesMixin):
     def align_photos(
         self,
         downscale: int = 2,
-        generic_preselection: bool = False,
+        generic_preselection: bool = True,
         reference_preselection: bool = True,
-        keypoint_limit: int = 100000,
+        keypoint_limit: int = 60000,
         tiepoint_limit: int = 10000,
         filter_mask: bool = False,
     ):
         """Run RC alignment (SfM).
 
-        Most Metashape-style align knobs (keypoint/tiepoint limits, preselection
-        modes) don't map to RC's CLI flags — RC tunes these via per-app settings.
-        Parameters are accepted for API parity and logged for diagnostics, but
-        only ``filter_mask`` is currently honored.
+        NONE of these parameters reach RealityScan — the CLI has no alignment
+        tuning flags (RC tunes via per-app/per-project settings), so the stage
+        issues a bare ``-align``. The parameters exist for API parity with
+        :meth:`MetashapeWorkflow.align_photos` (same signature/defaults) and
+        are recorded in the QC sidecar for diagnostics only; ``filter_mask``
+        included (mask import itself is not wired — see :meth:`import_masks`).
         """
         self._notify("align_photos", 0.0)
         with self.qc.stage("align") as st:
@@ -680,6 +682,10 @@ class RealityCaptureWorkflow(PrepStagesMixin):
                 return
             self._run_rc("-align", label="align")
             metrics = self._alignment_metrics()
+            # Cache for align_photos_with_retry: _alignment_metrics costs a
+            # full RC -exportReport invocation, so the threshold check reuses
+            # this measurement instead of re-running it.
+            self._last_align_metrics = metrics
             st.update(metrics)
             if metrics["aligned_count"] == 0:
                 raise RuntimeError(
@@ -699,9 +705,9 @@ class RealityCaptureWorkflow(PrepStagesMixin):
     def align_photos_with_retry(
         self,
         downscale: int = 2,
-        generic_preselection: bool = False,
+        generic_preselection: bool = True,
         reference_preselection: bool = True,
-        keypoint_limit: int = 100000,
+        keypoint_limit: int = 60000,
         tiepoint_limit: int = 10000,
         min_aligned_pct: float = 50.0,
     ):
@@ -723,7 +729,11 @@ class RealityCaptureWorkflow(PrepStagesMixin):
         )
         if self.mock_mode:
             return
-        metrics = self._alignment_metrics()
+        # Reuse align_photos' measurement — _alignment_metrics costs a full
+        # RC -exportReport invocation per call.
+        metrics = getattr(self, "_last_align_metrics", None)
+        if metrics is None:
+            metrics = self._alignment_metrics()
         pct = metrics.get("aligned_pct")
         if pct is None:
             self.qc.warn(
@@ -879,9 +889,18 @@ class RealityCaptureWorkflow(PrepStagesMixin):
         close_holes_level: int = 30,
         smooth_strength: int = 0,
     ):
-        """Mesh cleanup. RC supports component filtering and hole-fill via
-        ``-cleanModel``. ``smooth_strength`` has no RC CLI equivalent and
-        is ignored.
+        """Mesh cleanup via ``-setMinComponentSize N`` + ``-cleanModel``.
+
+        Only ``remove_components_face_threshold`` reaches RC.
+        ``close_holes_level`` and ``smooth_strength`` have no RC CLI
+        equivalent — both are accepted for API parity with
+        :meth:`MetashapeWorkflow.clean_mesh`, QC-logged, and ignored.
+
+        UNVERIFIED semantics note: this code treats ``-setMinComponentSize``
+        as a mesh-island *triangle* floor; historic RealityCapture CLI docs
+        describe it as the minimal *camera count per alignment component*.
+        Verify against a live RC A/B before leaning on this stage for
+        floater cleanup (see TUNING.md).
         """
         self._notify("clean_mesh", 0.0)
         with self.qc.stage("clean_mesh") as st:
@@ -1039,7 +1058,15 @@ class RealityCaptureWorkflow(PrepStagesMixin):
         save_cameras: bool = False,
         overwrite: bool = True,
     ):
-        """Export the current model. Defaults to OBJ with diffuse texture."""
+        """Export the current model. Defaults to OBJ with diffuse texture.
+
+        Only ``export_format`` (the output extension) reaches RC — the
+        command is a bare ``-exportSelectedModel <path>``, so ``binary`` /
+        ``precision`` / ``texture_format`` / ``save_*`` / ``overwrite`` are
+        parity-only (Metashape honors them; RC uses its GUI-persisted export
+        settings). Configure RC's export settings once in the app if the
+        defaults are wrong.
+        """
         self._notify("export_model", 0.0)
         with self.qc.stage("export") as st:
             fmt = (export_format or "obj").lower()

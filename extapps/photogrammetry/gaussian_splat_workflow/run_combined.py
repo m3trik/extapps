@@ -40,7 +40,7 @@ from pathlib import Path
 
 from ._gaussian_splat_workflow import GaussianSplatWorkflow
 from ._splat_publish import SplatPublishWorkflow
-from ..profile import get_preset, get_profile, init_user_profile
+from ..profile import QUALITY_TIERS, get_preset, get_profile, init_user_profile
 
 
 def main(argv=None) -> int:
@@ -59,7 +59,7 @@ def main(argv=None) -> int:
     pre.add_argument("--init-profile", action="store_true",
                      help="Write an editable example profile to the user-config "
                           "location (or --profile path) and exit.")
-    pre.add_argument("--quality", choices=("draft", "balanced", "max"), default=None,
+    pre.add_argument("--quality", choices=QUALITY_TIERS, default=None,
                      help="Quality preset (profile default if omitted) → Brush "
                           "total-steps: draft 7k / balanced 30k / max 50k. More "
                           "steps is a VRAM-free quality lever on an 8-10 GB card. "
@@ -88,9 +88,26 @@ def main(argv=None) -> int:
               f"(explicit flags still override).")
     # Quality preset -> Brush training steps. More steps costs time, not VRAM,
     # so 'max' trains longer (50k) for higher fidelity on a VRAM-capped GPU.
-    # A --preset's total_steps overrides the quality-derived value.
+    # Precedence: explicit --total-steps > --preset total_steps > explicit
+    # --quality tier > profile gsplat.total_steps > profile-quality tier.
     quality = preargs.quality or prof.get("quality", "balanced")
+    if quality not in QUALITY_TIERS:
+        # argparse validates only CLI-passed values — a typo'd profile quality
+        # would otherwise KeyError.
+        print(f"error: unknown quality {quality!r} (from profile); expected "
+              f"one of {list(QUALITY_TIERS)}.", file=sys.stderr)
+        return 2
     brush_steps = {"draft": 7000, "balanced": 30000, "max": 50000}[quality]
+    if preargs.quality is None:
+        # No explicit --quality: a USER-SET gsplat.total_steps wins over the
+        # tier table. The packaged default ships None ("derive from tier") —
+        # keying on mere presence made the profile-quality tier unreachable
+        # (get_profile deep-merges the packaged block, so the key always
+        # exists; a profile with only {"quality": "draft"} silently trained
+        # the balanced 30k instead of 7k).
+        profile_steps = gs_cfg.get("total_steps")
+        if profile_steps is not None:
+            brush_steps = int(profile_steps)
     brush_steps = preset.get("total_steps", brush_steps)
 
     p = argparse.ArgumentParser(description=__doc__, parents=[pre])
@@ -137,7 +154,9 @@ def main(argv=None) -> int:
                    help="Publish an existing splat .ply (pair with --skip-brush). "
                         "Defaults to the freshly trained Brush .ply when omitted.")
     p.add_argument("--publish-targets",
-                   default=",".join(publish_cfg.get("targets", ["unity", "web"])),
+                   default=preset.get(
+                       "publish_targets",
+                       ",".join(publish_cfg.get("targets", ["unity", "web"]))),
                    help="Comma-separated engine targets: unity,web (default both).")
     p.add_argument("--rotate", default=publish_cfg.get("rotate"),
                    help="Fix the up-axis: XYZ euler degrees applied before crop so "
@@ -145,11 +164,13 @@ def main(argv=None) -> int:
                         "eyeball it in SuperSplat then set profile publish.rotate. "
                         "Use '=' for negative angles: --rotate=-90,0,0. "
                         "Common: 180,0,0 or 90,0,0.")
-    p.add_argument("--no-filter-floaters", dest="filter_floaters",
-                   action="store_false",
-                   help="Keep isolated 'floater' gaussians (cleanup removes them "
-                        "by default — the top VRAM-free quality lever for an env).")
-    p.set_defaults(filter_floaters=publish_cfg.get("filter_floaters", True))
+    p.add_argument("--filter-floaters", action=argparse.BooleanOptionalAction,
+                   default=bool(publish_cfg.get("filter_floaters", True)),
+                   help="Remove isolated 'floater' gaussians during cleanup - "
+                        "the top VRAM-free quality lever for an env. On by "
+                        "default; --no-filter-floaters keeps them (and, unlike "
+                        "the old negative-only flag, --filter-floaters can "
+                        "re-enable over a profile that turned it off).")
     p.add_argument("--min-opacity", type=float,
                    default=publish_cfg.get("min_opacity"),
                    help="Cull gaussians below this raw opacity (e.g. 0.1). Off by default.")
@@ -163,14 +184,21 @@ def main(argv=None) -> int:
     p.add_argument("--decimate", default=None,
                    help="Thin the splat to N gaussians or N%% (e.g. 2000000 or 50%%).")
     p.add_argument("--web-format", choices=("sog", "compressed-ply"),
-                   default=publish_cfg.get("web_format", "sog"),
+                   default=(preset.get("web_format")
+                            if preset.get("web_format") in ("sog", "compressed-ply")
+                            else publish_cfg.get("web_format", "sog")),
                    help="Browser data format (default sog).")
     p.add_argument("--spz-version", type=int, choices=(3, 4),
-                   default=publish_cfg.get("spz_version", 4),
+                   default=(int(preset["spz_version"])
+                            if str(preset.get("spz_version")) in ("3", "4")
+                            else publish_cfg.get("spz_version", 4)),
                    help="SPZ format version for the Unity .spz (default 4).")
-    p.add_argument("--no-viewer", dest="with_viewer", action="store_false",
-                   help="Skip the self-contained .html web viewer.")
-    p.set_defaults(with_viewer=publish_cfg.get("with_viewer", True))
+    p.add_argument("--viewer", dest="with_viewer",
+                   action=argparse.BooleanOptionalAction,
+                   default=bool(publish_cfg.get("with_viewer", True)),
+                   help="Emit the self-contained .html web viewer (on by "
+                        "default; --no-viewer skips it, --viewer re-enables "
+                        "over a profile that turned it off).")
     p.add_argument("--preview", action="store_true",
                    help="After publishing, open the generated .html viewer in your "
                         "default browser (needs the 'web' target; skipped in --mock).")
@@ -224,6 +252,18 @@ def main(argv=None) -> int:
                     eval_every=args.eval_every,
                     eval_save_to_disk=args.eval_save_to_disk,
                 )
+                if ply is None and not gs.mock_mode:
+                    # Brush exited 0 but the expected .ply isn't on disk (e.g.
+                    # export step-naming mismatch). Reporting success here made
+                    # the run look healthy while delivering nothing.
+                    gs.finalize_run(success=False)
+                    print(
+                        "error: Brush finished but the expected splat .ply was "
+                        "not found - failing the run (a later --publish would "
+                        "only mislead with '--publish needs a splat').",
+                        file=sys.stderr,
+                    )
+                    return 1
                 gs.finalize_run(success=True)
                 print(f"Splat: {ply}")
             except Exception:

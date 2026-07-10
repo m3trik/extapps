@@ -53,6 +53,12 @@ PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
 # source of truth for the photogrammetry I/O layer.
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp")
 
+# Reconstruction quality tiers, mapped per-engine by the runners. Single
+# source of truth for the tier names: the runners use it for their --quality
+# choices AND for validating preset/profile-supplied values (argparse only
+# validates CLI-passed values, not defaults).
+QUALITY_TIERS = ("draft", "balanced", "max")
+
 # --- schema SSoT --------------------------------------------------------------
 # Derived roots (interpolate ``{graphics_root}`` / ``{scratch_root}``) and the
 # prep/splat tuning are defined exactly once here; both the packaged default and
@@ -86,10 +92,19 @@ _TUNING = {
         "brush_exe": "",
         "sugar_dir": "",
     },
+    # Curation baseline is deliberately conservative — the primary ingest path
+    # is continuous video (already thinned to sharpest-per-window at
+    # extraction), where dHash dedup strips the small-baseline overlap SfM
+    # triangulates from and a percentile blur cut ALWAYS deletes that share of
+    # the set even when every frame is sharp (TUNING.md: a 2.3% over-cull cost
+    # ~10 points of alignment coverage on the verified hard set). Only the
+    # median-fraction guard stays on: it removes catastrophically defocused
+    # frames without touching healthy ones. Raise hash_threshold/percentile
+    # per-run (panel / preset / flags) for redundant static photo sets.
     "curate": {
-        "hash_threshold": 5,
+        "hash_threshold": 0,
         "sharpness_floor": 0.0,
-        "sharpness_percentile": 10,
+        "sharpness_percentile": 0,
         "min_sharpness_fraction_of_median": 0.15,
         "keep_per_cluster": 1,
     },
@@ -120,13 +135,21 @@ _TUNING = {
     },
     "gsplat": {
         "max_resolution": 1920,
-        "total_steps": 30000,
+        # None = derive Brush training steps from the quality tier (profile
+        # "quality" / --quality: draft 7k / balanced 30k / max 50k). Set a
+        # number to pin the step count regardless of tier. Shipping a number
+        # here would shadow the tier for EVERY profile (get_profile
+        # deep-merges this block, so the key is always present).
+        "total_steps": None,
         "max_splats": 10_000_000,
         "sh_degree": 3,
-        # COLMAP-export camera cap fed to the splat track. SuGaR's bundled
-        # vanilla-3DGS stalls on an 8 GB GPU past a few hundred views, so the
-        # default Metashape --export-colmap strides down to this many.
-        "colmap_max_cameras": 350,
+        # COLMAP-export camera cap (Metashape --export-colmap). 0 = export the
+        # FULL aligned set — Brush handles it and camera coverage is a primary
+        # splat-quality lever, so capping by default silently degraded every
+        # splat. Set (or pass --colmap-max-cameras) ~300-400 ONLY when the
+        # dataset feeds SuGaR: its bundled vanilla-3DGS stalls on an 8 GB GPU
+        # past a few hundred views.
+        "colmap_max_cameras": 0,
     },
     "sugar": {
         "regularization": "dn_consistency",  # sdf | density | dn_consistency

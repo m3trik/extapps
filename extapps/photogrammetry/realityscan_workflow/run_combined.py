@@ -16,8 +16,9 @@ to the synced comparison dir afterwards.
 
 Discovers immediate subdirectories of ``--input-root`` as source captures,
 optionally curates (dHash + sharpness) and equalizes exposures across them,
-then runs the full RC pipeline into ``--output-root/<name>/``: align → high
-model → clean → simplify (to fit the UV budget) → unwrap + texture → export.
+then runs the full RC pipeline into ``--output-root/<name>/``: align → model
+at the ``--quality`` tier (draft/balanced/max → RC preview/normal/high) →
+clean → simplify (to fit the UV budget) → unwrap + texture → export.
 
 Mirrors :mod:`extapps.photogrammetry.metashape_workflow.run_combined` so the two engines
 take identical CLI shape — easier to A/B compare.
@@ -53,6 +54,7 @@ if __package__ in (None, ""):
     )
     from extapps.photogrammetry.profile import (
         IMAGE_EXTS,
+        QUALITY_TIERS,
         discover_source_dirs,
         get_preset,
         get_profile,
@@ -66,6 +68,7 @@ else:
     from ._realityscan_workflow import RealityCaptureWorkflow
     from ..profile import (
         IMAGE_EXTS,
+        QUALITY_TIERS,
         discover_source_dirs,
         get_preset,
         get_profile,
@@ -74,15 +77,23 @@ else:
     from ..prep_stages import derive_texture_size, first_image_in_dirs
 
 
+# Intermediate working dirs the prep stages write inside the project dir —
+# multi-GB frame copies, not deliverables. Never published to the synced root.
+_PUBLISH_EXCLUDE_DIRS = frozenset({"curated", "equalized", "logs", "masks"})
+
+
 def publish_outputs(project_dir: str, publish_dir: str):
     """Copy finished deliverables from local scratch to the synced output root.
 
     RC must work in local scratch (cloud-sync fights its live multi-GB project
     I/O), so the static post-run deliverables are published separately. Copies
-    everything in ``project_dir`` EXCEPT the ``.rsproj`` (RC working state, not a
-    deliverable). Returns the item count copied, or ``None`` when the source and
-    destination resolve to the same directory (nothing to do). Best-effort: a
-    copy error is reported but doesn't fail the run (the scratch copy survives).
+    everything in ``project_dir`` EXCEPT the ``.rsproj`` (RC working state, not
+    a deliverable) and the prep-stage intermediates (``curated/`` /
+    ``equalized/`` frame copies, ``masks/``, ``logs/`` — publishing those
+    pushed multi-GB image trees into the cloud-sync root). Returns the item
+    count copied, or ``None`` when the source and destination resolve to the
+    same directory (nothing to do). Best-effort: a copy error is reported but
+    doesn't fail the run (the scratch copy survives).
     """
     import shutil
 
@@ -102,6 +113,8 @@ def publish_outputs(project_dir: str, publish_dir: str):
         if entry.lower().endswith(".rsproj"):
             continue
         src = os.path.join(project_dir, entry)
+        if entry.lower() in _PUBLISH_EXCLUDE_DIRS and os.path.isdir(src):
+            continue
         dst = os.path.join(publish_dir, entry)
         try:
             if os.path.isdir(src):
@@ -137,6 +150,11 @@ def main(argv=None) -> int:
                           "specular_metal). Lays a difficult environment's tuned "
                           "knobs over the defaults below; explicit flags still "
                           "win. Omit for plain defaults. See TUNING.md.")
+    pre.add_argument("--quality", choices=QUALITY_TIERS, default=None,
+                     help="Reconstruction quality preset (profile/--preset "
+                          "default if omitted): draft / balanced / max. Maps to "
+                          "RC's mesh preset (preview / normal / high). Ignored "
+                          "with --blockout.")
     preargs, _ = pre.parse_known_args(argv)
     if preargs.init_profile:
         ready = init_user_profile(preargs.profile)
@@ -187,13 +205,20 @@ def main(argv=None) -> int:
         help="Optional path to a low-poly mesh; when given, build_model is "
              "skipped and the texture bakes onto the imported mesh.",
     )
-    p.add_argument(
-        "--quality", default=preset.get("quality", prof.get("quality", "balanced")),
-        choices=("draft", "balanced", "max"),
-        help="Reconstruction quality preset (profile/--preset default if "
-             "omitted): draft / balanced / max. Maps to RC's mesh preset "
-             "(preview / normal / high). Ignored with --blockout.",
+    _quality_default = (
+        preargs.quality or preset.get("quality") or prof.get("quality", "balanced")
     )
+    if _quality_default not in QUALITY_TIERS:
+        # argparse validates only CLI-passed values, not defaults; fail fast
+        # instead of KeyErroring at build_model hours into the run. A valid
+        # explicit --quality (pre-parsed above, mirroring the Metashape
+        # runner) rescues a typo'd preset/profile value — flags still win.
+        print(f"error: unknown quality {_quality_default!r} (from preset/"
+              f"profile); expected draft/balanced/max.", file=sys.stderr)
+        return 2
+    # --quality itself is declared on the pre-parser (parents=[pre]) with
+    # default None; install the resolved preset/profile default here.
+    p.set_defaults(quality=_quality_default)
     p.add_argument(
         "--simplify", type=int,
         default=preset.get("simplify_target", rec.get("simplify_target", 20_000_000)),
@@ -212,52 +237,80 @@ def main(argv=None) -> int:
              "low-texture captures. Default from the profile's "
              "reconstruct.min_component_size (or --preset). 0 disables.",
     )
-    p.add_argument("--skip-curate", action="store_true",
+    # Panel-saved presets snapshot every widget, including the stage toggles —
+    # honor them so a preset replayed via --preset reproduces the panel run
+    # (preprocess_input=False is the panel's master off-switch for both).
+    _preset_prep_off = not preset.get("preprocess_input", True)
+    p.add_argument("--skip-curate", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("skip_curate", False)
+                                or _preset_prep_off),
                    help="Skip pre-RC dHash + sharpness curation.")
     p.add_argument("--curate-preview", action="store_true",
                    help="Dry-run: report curation survivor counts per dHash "
                         "threshold + the sharpness distribution, then exit (no "
                         "reconstruction). Use to tune --curate-hash-threshold on "
                         "a real set before a long run.")
-    p.add_argument("--skip-equalize", action="store_true",
+    p.add_argument("--skip-equalize", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("skip_equalize", False)
+                                or _preset_prep_off),
                    help="Skip cross-session exposure equalization.")
     p.add_argument("--curate-hash-threshold", type=int,
-                   default=cur.get("hash_threshold", 5),
+                   default=preset.get("curate_hash_threshold",
+                                      cur.get("hash_threshold", 0)),
                    help="dHash Hamming distance for content-dedup clustering. "
-                        "5/64 = near-identical only. WARNING: raising it (10-15) "
-                        "strips the small-baseline overlap SfM triangulates from "
-                        "and fragments alignment on hard / single-pass captures. "
-                        "Use 0 for continuous video walkthroughs (no dedup; blur "
-                        "culling still applies).")
+                        "Default 0 = no dedup (blur culling still applies) - the "
+                        "right default for continuous video / single-pass "
+                        "captures, whose near-identical frames carry the "
+                        "small-baseline overlap SfM triangulates from. 5 = "
+                        "near-identical only; raise past that only for redundant "
+                        "static photo sets. Kept identical to the Metashape "
+                        "runner so both engines receive the same prepped input.")
     p.add_argument("--curate-sharpness-floor", type=float,
                    default=cur.get("sharpness_floor", 0.0),
                    help="Reject any frame whose Laplacian variance is below this "
                         "absolute value (scene-dependent; prefer the percentile).")
     p.add_argument("--curate-sharpness-percentile", type=float,
-                   default=cur.get("sharpness_percentile", 10.0),
-                   help="Self-calibrating blur cutoff: drop frames below this "
-                        "percentile of the set's own sharpness distribution. "
-                        "10 ≈ blurriest tenth. Set 0 to disable.")
+                   default=preset.get("curate_sharpness_percentile",
+                                      cur.get("sharpness_percentile", 0.0)),
+                   help="Relative blur cutoff: drop frames below this percentile "
+                        "of the set's own sharpness distribution. Default 0 = "
+                        "off - a percentile cut ALWAYS removes that share of the "
+                        "set, even when every frame is sharp; the "
+                        "median-fraction guard below handles genuinely defocused "
+                        "frames.")
     p.add_argument("--curate-min-sharpness-frac", type=float,
-                   default=cur.get("min_sharpness_fraction_of_median", 0.15),
+                   default=preset.get("curate_min_sharpness_frac",
+                                      cur.get("min_sharpness_fraction_of_median", 0.15)),
                    help="Median-relative blur guard: also drop frames below this "
                         "fraction of the survivor-median sharpness. Catches "
                         "catastrophically defocused frames the percentile misses. "
                         "Set 0 to disable.")
     p.add_argument("--keep-per-cluster", type=int,
-                   default=cur.get("keep_per_cluster", 1),
+                   default=preset.get("keep_per_cluster",
+                                      cur.get("keep_per_cluster", 1)),
                    help="Keep top-K sharpest per dHash cluster.")
     p.add_argument("--equalize-strength", type=float,
-                   default=eq.get("strength", 0.5),
+                   default=preset.get("equalize_strength", eq.get("strength", 0.5)),
                    help="Exposure-match blend 0–1. <1 preserves each frame's "
                         "local contrast (RC re-balances during texturing). "
                         "1.0 = full Reinhard match.")
     p.add_argument("--equalize-reference", choices=("first", "median", "global"),
-                   default=eq.get("reference", "median"),
+                   default=preset.get("equalize_reference",
+                                      eq.get("reference", "median")),
                    help="Target distribution for equalization. 'median' avoids "
                         "letting the first capture's color cast dominate.")
-    p.add_argument("--gate-mode", choices=("warn", "halt"), default="warn")
-    p.add_argument("--save-project", action="store_true",
+    _gate_default = preset.get("gate_mode", "warn")
+    if _gate_default not in ("warn", "halt"):
+        # argparse validates only CLI-passed values, not defaults. Fail fast
+        # (like quality) instead of silently coercing to "warn" — a preset
+        # that meant "halt" must not lose its hard stop to a typo.
+        print(f"error: unknown gate_mode {_gate_default!r} (from preset); "
+              f"expected warn/halt.", file=sys.stderr)
+        return 2
+    p.add_argument("--gate-mode", choices=("warn", "halt"),
+                   default=_gate_default)
+    p.add_argument("--save-project", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("save_project", False)),
                    help="Keep a reopenable RC project (.rsproj) so a later run "
                         "can reopen it and re-run only some stages. RC always "
                         "writes its project during the run (state persistence), "
@@ -265,7 +318,7 @@ def main(argv=None) -> int:
                         "export, leaving only the deliverables. Note: via --rsnode "
                         "the project lives in the node session and is never "
                         "downloaded, so reopening requires a local run (--rsnode off).")
-    p.add_argument("--texture-size", default="auto",
+    p.add_argument("--texture-size", default=preset.get("texture_size", "auto"),
                    help="'auto' (default) derives from source long edge (capped "
                         "8192). NOTE: RC's bake size is GUI/settings-controlled, "
                         "not CLI — this is RECORDED in QC but not applied; set it "
@@ -345,6 +398,11 @@ def main(argv=None) -> int:
     if args.curate_preview:
         rc.preview_curation(
             sources,
+            # Sweep the standard thresholds plus the user's own value (and 0,
+            # the no-dedup baseline) so the preview answers the question they
+            # are actually tuning.
+            hash_thresholds=sorted({0, 5, 8, 10, 12, 15,
+                                    args.curate_hash_threshold}),
             sharpness_floor_percentile=(
                 args.curate_sharpness_percentile
                 if args.curate_sharpness_percentile > 0 else None
@@ -352,6 +410,7 @@ def main(argv=None) -> int:
             min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
             keep_per_cluster=args.keep_per_cluster,
         )
+        rc.finalize_run(success=True)  # flush the preview stage to the sidecar
         return 0
 
     try:

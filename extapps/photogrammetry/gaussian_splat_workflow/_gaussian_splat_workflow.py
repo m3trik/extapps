@@ -73,7 +73,9 @@ def find_brush_exe() -> Optional[str]:
     configured = configured_app_path("brush_exe")
     if configured and os.path.isfile(configured):
         return configured
-    on_path = shutil.which("brush_app.exe") or shutil.which("brush")
+    # Probe the shipped binary name first; brush_app.exe is a legacy name kept
+    # as a fallback for old manual installs.
+    on_path = shutil.which("brush") or shutil.which("brush_app.exe")
     if on_path:
         return on_path
     try:
@@ -261,6 +263,19 @@ class GaussianSplatWorkflow:
             st["sh_degree"] = sh_degree
             if not os.path.isdir(colmap_dir):
                 raise ValueError(f"COLMAP dataset not found: {colmap_dir}")
+            if not self.mock_mode:
+                # Validate the dataset shape up front (mirrors the SuGaR
+                # track) — a wrong dir otherwise fails minutes later inside
+                # Brush with an opaque loader error.
+                missing = [
+                    d for d in ("images", os.path.join("sparse", "0"))
+                    if not os.path.isdir(os.path.join(colmap_dir, d))
+                ]
+                if missing:
+                    raise ValueError(
+                        f"Not a COLMAP dataset (missing {', '.join(missing)}): "
+                        f"{colmap_dir}"
+                    )
 
             args = [
                 colmap_dir,
@@ -292,6 +307,19 @@ class GaussianSplatWorkflow:
             if self.mock_mode:
                 print(f"[mock] train -> {final_ply}")
                 return final_ply
+            if not os.path.isfile(final_ply):
+                # Brush names exports by its own step counter, which can
+                # differ from total_steps (padding / 0-index). Fall back to
+                # the newest matching export instead of reporting nothing.
+                import glob
+                pattern = os.path.join(
+                    export_path, export_name.replace("{iter}", "*")
+                )
+                candidates = [p for p in glob.glob(pattern) if os.path.isfile(p)]
+                if candidates:
+                    final_ply = max(candidates, key=os.path.getmtime)
+                    st["export_ply"] = final_ply
+                    print(f"(export name differed; using {final_ply})")
             count = read_splat_count(final_ply)
             st["gaussian_count"] = count
             if count:

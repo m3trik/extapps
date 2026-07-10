@@ -57,8 +57,10 @@ def extract_videos_to_dir(
     source) — the right default for handheld clips, where fixed-step sampling
     wastes frames when the camera is still and starves overlap when it moves
     (see :meth:`pythontk.FrameExtractor.extract_frames_sharpest`). Each video's
-    frames get a distinct filename prefix so several clips share one frames dir
-    without colliding.
+    frames are prefixed with its stem + a digest of its absolute path, so
+    several clips share one frames dir without colliding — including
+    same-named clips from different folders picked in separate browses — and
+    re-extracting a clip replaces exactly its own previous frames.
 
     Returns every written frame path (empty when OpenCV is unavailable — the
     caller decides how to surface that; e.g. the headless runner errors and the
@@ -70,6 +72,9 @@ def extract_videos_to_dir(
     extraction itself only runs where cv2 is present (the UI process / a normal
     Python ``run_combined --video``).
     """
+    import hashlib
+    import re
+
     from pythontk import FrameExtractor
 
     os.makedirs(output_dir, exist_ok=True)
@@ -78,8 +83,42 @@ def extract_videos_to_dir(
     total = len(videos)
     for i, video in enumerate(videos):
         stem = os.path.splitext(os.path.basename(video))[0]
-        # Index-prefix guarantees uniqueness even if two clips share a stem.
-        prefix = f"{i:02d}_" + "".join(c if c.isalnum() else "_" for c in stem)
+        # The prefix keys frames to their SOURCE FILE: sanitized stem plus a
+        # short digest of the absolute path. A positional index can't do this
+        # job — the panel's Source browser restarts numbering every pick, so
+        # same-named clips from different folders collided (and the purge
+        # below would delete the other clip's frames), while re-picking the
+        # same clip under a different index orphaned its old frames.
+        norm = os.path.normcase(os.path.abspath(video))
+        digest = hashlib.md5(norm.encode("utf-8")).hexdigest()[:8]
+        safe_stem = "".join(c if c.isalnum() else "_" for c in stem)
+        prefix = f"{safe_stem}_{digest}"
+        # Purge this clip's frames from any previous extraction FIRST: the
+        # filenames encode the winning frame index, which changes with
+        # window_sec / source edits, so without the purge the dir becomes the
+        # union of every extraction ever run — and downstream alignment
+        # silently ingests stale frames the current settings would not have
+        # picked (quality then degrades run over run with no code change).
+        # Exact-shape match ({prefix}_NNNNNN.jpg, the FrameExtractor naming):
+        # a bare startswith(prefix) would also purge a *different* clip whose
+        # stem merely extends this one (clip vs clip_final). The legacy
+        # alternative catches this clip's frames from the pre-digest scheme
+        # ({ii}_{stem}_NNNNNN.jpg) so an upgrade re-extraction can't leave
+        # them behind to be silently co-ingested.
+        frame_re = re.compile(
+            "(?:" + re.escape(prefix)
+            + r"|\d{2}_" + re.escape(safe_stem)
+            + r")_\d{6}\.(jpg|jpeg)$",
+            re.IGNORECASE,
+        )
+        stale = [f for f in os.listdir(output_dir) if frame_re.match(f)]
+        for f in stale:
+            try:
+                os.remove(os.path.join(output_dir, f))
+            except OSError:
+                pass
+        if stale and log:
+            log(f"  purged {len(stale)} stale frame(s) from a previous extraction")
         if log:
             log(f"[video {i + 1}/{total}] {os.path.basename(video)} …")
         try:
@@ -97,6 +136,20 @@ def extract_videos_to_dir(
         if log:
             log(f"  {len(frames)} frame(s)")
         written.extend(frames)
+    # Frames in the dir that this run did not write (a different clip list /
+    # foreign files) still reach the engine via add_images — surface them.
+    if written and log:
+        written_names = {os.path.basename(p) for p in written}
+        foreign = [
+            f for f in os.listdir(output_dir)
+            if f.lower().endswith(IMAGE_EXTS) and f not in written_names
+        ]
+        if foreign:
+            log(
+                f"  WARNING: {len(foreign)} other image(s) already in "
+                f"'{output_dir}' will also be ingested (e.g. "
+                f"'{foreign[0]}'). Clear the folder if they're stale."
+            )
     return written
 
 
@@ -141,7 +194,7 @@ class PrepStagesMixin:
         self,
         source_dirs: Sequence[str],
         output_root: Optional[str] = None,
-        hash_threshold: int = 5,
+        hash_threshold: int = 0,
         sharpness_floor: float = 0.0,
         sharpness_floor_percentile: Optional[float] = None,
         min_sharpness_fraction_of_median: float = 0.0,
@@ -187,7 +240,14 @@ class PrepStagesMixin:
                 return list(source_dirs)
             curator = ImageCurator()
             if not curator.is_available():
-                self.qc.warn("cv2 not installed; curation skipped.")
+                self.qc.warn(
+                    "cv2 not available in this interpreter - INPUT CURATION "
+                    "DID NOT RUN (frames pass through as-is). Metashape's "
+                    "bundled Python has no cv2, so runs driven via "
+                    "'metashape.exe -r' always take this path; to actually "
+                    "curate, pre-process the frames dir under a Python with "
+                    "opencv (e.g. the panel venv) first."
+                )
                 st["fallback"] = "cv2_missing"
                 return list(source_dirs)
             before = sum(
@@ -281,8 +341,8 @@ class PrepStagesMixin:
         source_dirs: Sequence[str],
         output_root: Optional[str] = None,
         reference_dir: Optional[str] = None,
-        strength: float = 1.0,
-        reference_strategy: str = "first",
+        strength: float = 0.5,
+        reference_strategy: str = "median",
     ) -> List[str]:
         """Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.
 
@@ -308,7 +368,14 @@ class PrepStagesMixin:
                 return list(source_dirs)
             eq = ExposureEqualizer()
             if not eq.is_available():
-                self.qc.warn("cv2 not installed; exposures unchanged.")
+                self.qc.warn(
+                    "cv2 not available in this interpreter - EXPOSURE "
+                    "EQUALIZATION DID NOT RUN (frames pass through as-is; "
+                    "always the case under 'metashape.exe -r', whose bundled "
+                    "Python has no cv2). Equalize the capture dirs under a "
+                    "Python with opencv first if cross-capture matching is "
+                    "needed."
+                )
                 st["fallback"] = "cv2_missing"
                 return list(source_dirs)
             out_dirs = eq.equalize_directories(
@@ -319,5 +386,14 @@ class PrepStagesMixin:
                 reference_strategy=reference_strategy,
             )
             st["output_dirs"] = out_dirs
+            fallbacks = getattr(eq, "last_fallback_count", 0)
+            st["exif_fallback_count"] = fallbacks
+            if fallbacks:
+                self.qc.warn(
+                    f"{fallbacks} equalized frame(s) lost EXIF (PIL save "
+                    f"failed; cv2 fallback) - SfM loses focal-length priors "
+                    f"and portrait frames may load sideways. Fix PIL before "
+                    f"trusting this run."
+                )
             print(f"Equalized {len(source_dirs)} dirs -> {output_root}")
             return out_dirs or list(source_dirs)

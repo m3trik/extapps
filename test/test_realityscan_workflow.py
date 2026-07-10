@@ -204,11 +204,20 @@ class PublishOutputsTest(unittest.TestCase):
                     "logs/align.log", "reports/final.xml"):
             with open(os.path.join(proj, rel), "w") as fh:
                 fh.write("x")
+        # Prep-stage intermediates in the project dir must NOT publish:
+        # curated/equalized are multi-GB frame copies, logs are droppings.
+        os.makedirs(os.path.join(proj, "curated", "camA_curated"))
+        os.makedirs(os.path.join(proj, "equalized", "camA_eq"))
+        with open(os.path.join(proj, "curated", "camA_curated", "f.jpg"), "w") as fh:
+            fh.write("x")
         pub = os.path.join(self.tmp, "synced", "welding")
         n = self.publish_outputs(proj, pub)
-        self.assertEqual(n, 6)  # everything but the .rsproj
+        self.assertEqual(n, 5)  # everything but .rsproj + logs/curated/equalized
+        self.assertFalse(os.path.exists(os.path.join(pub, "curated")))
+        self.assertFalse(os.path.exists(os.path.join(pub, "equalized")))
+        self.assertFalse(os.path.exists(os.path.join(pub, "logs")))
         for rel in ("welding.obj", "welding.mtl", "welding_u1_v1_diffuse.png",
-                    "welding_qc.json", "logs/align.log", "reports/final.xml"):
+                    "welding_qc.json", "reports/final.xml"):
             self.assertTrue(os.path.isfile(os.path.join(pub, rel)), rel)
         # the RC working project is NOT published
         self.assertFalse(os.path.isfile(os.path.join(pub, "welding.rsproj")))
@@ -435,6 +444,25 @@ class PresetRunOverlayTest(unittest.TestCase):
             "--name", "t", "--input-root", self.inroot, "--output-root", self.out,
             "--mock", "--rsnode", "off", "--preset", "nope",
         ])
+        self.assertEqual(code, 2)
+
+    def test_typoed_preset_quality_rejected(self):
+        self._save_user_preset("t_badq", {"quality": "Draft "})
+        code, _ = self._run("--preset", "t_badq")
+        self.assertEqual(code, 2)
+
+    def test_explicit_quality_rescues_typoed_preset_quality(self):
+        """A valid explicit --quality wins over a typo'd preset value instead
+        of exit 2 (mirrors the Metashape runner's pre-parse rescue)."""
+        self._save_user_preset("t_badq", {"quality": "Draft "})
+        code, _ = self._run("--preset", "t_badq", "--quality", "max")
+        self.assertEqual(code, 0)
+
+    def test_typoed_preset_gate_mode_rejected(self):
+        """gate_mode fails fast like quality — a preset that meant 'halt'
+        must not silently lose its hard stop to a typo."""
+        self._save_user_preset("t_badg", {"gate_mode": "Halt"})
+        code, _ = self._run("--preset", "t_badg")
         self.assertEqual(code, 2)
 
 

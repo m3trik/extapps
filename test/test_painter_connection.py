@@ -103,23 +103,39 @@ class TestBuildPainterEnv(SubstanceWorkflowTestCase):
 
 
 class TestGetAvailablePort(SubstanceWorkflowTestCase):
+    """Bind-probed (2026-07-10): the question is "can a NEW bridge server bind
+    this port", not "is something listening" — a hung process's bound-but-not-
+    listening socket must read as taken (see NetUtils.is_port_bindable)."""
 
-    def test_returns_first_free_port(self) -> None:
-        with patch.object(NetUtils, "is_port_open") as mock_open:
-            mock_open.side_effect = lambda h, p, timeout=0.3: p == 5050
+    def test_returns_first_bindable_port(self) -> None:
+        with patch.object(NetUtils, "is_port_bindable") as mock_bind:
+            mock_bind.side_effect = lambda p, host="127.0.0.1": p != 5050
             port = PainterConnection.get_available_port(start_port=5050, max_check=10)
         self.assertEqual(port, 5051)
 
     def test_raises_when_no_port_free(self) -> None:
-        with patch.object(NetUtils, "is_port_open", return_value=True):
+        with patch.object(NetUtils, "is_port_bindable", return_value=False):
             with self.assertRaises(RuntimeError):
                 PainterConnection.get_available_port(start_port=5050, max_check=3)
 
     def test_uses_pythontk_netutils(self) -> None:
         """Verifies the refactor away from raw socket — pythontk integration."""
-        with patch.object(NetUtils, "is_port_open", return_value=False) as mock_open:
+        with patch.object(NetUtils, "is_port_bindable", return_value=True) as mock_bind:
             PainterConnection.get_available_port(start_port=5050, max_check=1)
-        mock_open.assert_called_once_with("localhost", 5050, timeout=0.3)
+        mock_bind.assert_called_once_with(5050)
+
+    def test_zombie_bind_is_skipped(self) -> None:
+        """Regression: a real bound-but-not-listening socket must be skipped."""
+        import socket
+
+        squatter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        squatter.bind(("127.0.0.1", 0))  # bound, never listen()s
+        squatted = squatter.getsockname()[1]
+        try:
+            picked = PainterConnection.get_available_port(start_port=squatted)
+            self.assertNotEqual(picked, squatted)
+        finally:
+            squatter.close()
 
 
 class TestLaunchPainter(SubstanceWorkflowTestCase):

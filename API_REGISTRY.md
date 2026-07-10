@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-07-09_
+_Generated: 2026-07-10_
 
 ## Index
 
@@ -201,7 +201,7 @@ Shared scaffolding for the photogrammetry workflow panels.
   - `PhotogrammetryPanelSlots.cancel_run(self) -> None`
   - `PhotogrammetryPanelSlots.open_output_folder(self) -> None` — Reveal the output folder.
   - `PhotogrammetryPanelSlots.b000(self) -> None` — Run Workflow.
-- **[`class FramesSourceMixin`](extapps/extapps/photogrammetry/_panel_slots.py#L332)** — A single 'Source' row + browser for image-in panels (Metashape, RC).
+- **[`class FramesSourceMixin`](extapps/extapps/photogrammetry/_panel_slots.py#L368)** — A single 'Source' row + browser for image-in panels (Metashape, RC).
   - `FramesSourceMixin.resolved_frames_dir(self) -> str`
 
 <a id="photogrammetry--_process_runner"></a>
@@ -222,8 +222,8 @@ Async, log-streaming process runner shared by the photogrammetry panels.
 
 Input pre-processing parameter specs shared by the image-in engines.
 
-- [`render_flag_argv(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'`](extapps/extapps/photogrammetry/_shared_params.py#L129) — Render *values* into CLI flags — the shared loop behind every engine's
-- [`preprocessing_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/_shared_params.py#L158) — Render the input pre-processing CLI flags from collected *values*.
+- [`render_flag_argv(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'`](extapps/extapps/photogrammetry/_shared_params.py#L151) — Render *values* into CLI flags — the shared loop behind every engine's
+- [`preprocessing_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/_shared_params.py#L188) — Render the input pre-processing CLI flags from collected *values*.
 
 <a id="photogrammetry--gaussian_splat_workflow--_gaussian_splat_runner"></a>
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py`
@@ -243,10 +243,10 @@ Local, async runner the Brush (gaussian-splat) panel dispatches to.
 Brush gaussian-splat workflow engine.
 
 - [`find_brush_exe() -> Optional[str]`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L57) — Return the Brush executable path or None.
-- [`is_brush_available() -> bool`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L87)
-- [`install_brush(progress_callback: Optional[Callable[[int, int], None]] = None) -> str`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L115) — Download + install Brush via :class:`pythontk.AppInstaller`;
-- [`read_splat_count(ply_path: str) -> Optional[int]`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L138) — Gaussian count from a splat ``.ply`` header (``element vertex N``).
-- **[`class GaussianSplatWorkflow`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L153)** — Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``.
+- [`is_brush_available() -> bool`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L89)
+- [`install_brush(progress_callback: Optional[Callable[[int, int], None]] = None) -> str`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L117) — Download + install Brush via :class:`pythontk.AppInstaller`;
+- [`read_splat_count(ply_path: str) -> Optional[int]`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L140) — Gaussian count from a splat ``.ply`` header (``element vertex N``).
+- **[`class GaussianSplatWorkflow`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L155)** — Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``.
   - `GaussianSplatWorkflow.get_brush_info(self) -> str`
   - `GaussianSplatWorkflow.train(self, colmap_dir: str, total_steps: int = 30000, max_resolution: int = 1920, max_splats: int = 10000000, sh_degree: int = 3, growth_grad_threshold: Optional[float] = None, growth_select_fraction: Optional[float] = None, export_path: Optional[str] = None, export_name: Optional[str] = None, export_every: Optional[int] = None, eval_split_every: Optional[int] = None, eval_every: Optional[int] = None, eval_save_to_disk: bool = False) -> Optional[str]` — Train a splat from a COLMAP dataset;
   - `GaussianSplatWorkflow.finalize_run(self, success: bool = True) -> str`
@@ -341,7 +341,7 @@ Local, async runner the Metashape panel dispatches to.
 - [`is_metashape_available() -> bool`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L38) — True if the Metashape Python module imported successfully.
 - [`is_license_valid() -> bool`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L43) — True if a valid Metashape license is reachable.
 - [`get_metashape_version() -> str`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L53)
-- [`get_image_filepaths(directory: str) -> List[str]`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L1216) — Return absolute paths to all images in `directory` (non-recursive).
+- [`get_image_filepaths(directory: str) -> List[str]`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L1364) — Return absolute paths to all images in `directory` (non-recursive).
 - **[`class MetashapeWorkflow(PrepStagesMixin)`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L62)** — Wrapper around Agisoft Metashape's Python API for the standard
   - `MetashapeWorkflow.get_license_info(self) -> str`
   - `MetashapeWorkflow.create_chunk(self, label: str = 'New Chunk')`
@@ -349,18 +349,19 @@ Local, async runner the Metashape panel dispatches to.
   - `MetashapeWorkflow.add_image_dirs(self, dirs: Sequence[str])` — Add images from multiple directories — flattens to one chunk.
   - `MetashapeWorkflow.clean_mesh_advanced(self, exported_model_path: Optional[str] = None, decimate_target_faces: int = 0) -> Optional[str]` — PyMeshLab post-export polish on the exported mesh file.
   - `MetashapeWorkflow.triage_images(self, quality_threshold: float = 0.5)` — Run ``analyzePhotos`` and disable cameras below ``quality_threshold``.
-  - `MetashapeWorkflow.align_photos(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 40000, tiepoint_limit: int = 10000, filter_mask: bool = False)`
-  - `MetashapeWorkflow.align_photos_with_retry(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 40000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)` — Run ``align_photos``;
+  - `MetashapeWorkflow.align_photos(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)`
+  - `MetashapeWorkflow.align_photos_with_retry(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0, filter_mask: bool = False)` — Run ``align_photos``;
   - `MetashapeWorkflow.refine_alignment(self, uncertainty_threshold: float = 15.0, reprojection_threshold: float = 0.5, projection_accuracy_threshold: float = 3.0)` — Gradual-selection cleanup: iteratively filter tie points by
   - `MetashapeWorkflow.dedupe_cameras_by_pose(self, translation_threshold: float = 0.02, rotation_threshold_deg: float = 2.0)` — Cluster aligned cameras by pose and disable redundants.
   - `MetashapeWorkflow.calibrate_colors(self, source_data=None, white_balance: bool = True)` — Run ``chunk.calibrateColors`` to equalize white-balance across
   - `MetashapeWorkflow.generate_masks(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]` — Run rembg on ``source_dir`` → write per-image alpha masks.
+  - `MetashapeWorkflow.generate_masks_native(self, tolerance: int = 10) -> bool` — Background-mask every camera with Metashape's built-in AI masking
   - `MetashapeWorkflow.import_masks(self, masks_dir: str, mask_source: str = 'file', template: str = '{filename}_mask.png')` — Import per-camera masks from a directory.
   - `MetashapeWorkflow.generate_depth_maps(self, downscale: int = 2, filter_mode=None)`
   - `MetashapeWorkflow.build_model(self, source_data=None, surface_type=None, interpolation=None, face_count=None)`
   - `MetashapeWorkflow.clean_mesh(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)` — Mesh cleanup chain: ``removeComponents → closeHoles → smoothModel``.
   - `MetashapeWorkflow.reduce_overlap(self, target_overlap: int = 9)` — Thin redundant cameras for texture bake while preserving
-  - `MetashapeWorkflow.build_texture(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)`
+  - `MetashapeWorkflow.build_texture(self, texture_size: int = 8192, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)`
   - `MetashapeWorkflow.save_project(self)`
   - `MetashapeWorkflow.export_model(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)`
   - `MetashapeWorkflow.export_colmap(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]` — Export the aligned chunk as a COLMAP dataset to feed the splat track.
@@ -379,16 +380,16 @@ Application shell for the Metashape Workflow UI.
 
 Tunable parameters surfaced in the Metashape Workflow panel.
 
-- [`to_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L202) — Render collected param *values* into ``run_combined`` CLI flags (via the
-- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L233) — Params relevant to the panel's current input — drives row visibility.
-- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L250) — Return ``{key: default}`` for every registered parameter.
+- [`to_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L228) — Render collected param *values* into ``run_combined`` CLI flags (via the
+- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L261) — Params relevant to the panel's current input — drives row visibility.
+- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L278) — Return ``{key: default}`` for every registered parameter.
 
 <a id="photogrammetry--metashape_workflow--run_combined"></a>
 ### `photogrammetry/metashape_workflow/run_combined.py`
 
 Driver script for multi-session combined runs.
 
-- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/metashape_workflow/run_combined.py#L91)
+- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/metashape_workflow/run_combined.py#L98)
 
 <a id="photogrammetry--metashape_workflow--slots"></a>
 ### `photogrammetry/metashape_workflow/slots.py`
@@ -410,24 +411,24 @@ Shared, SDK-agnostic input-prep stages for the photogrammetry engines.
 
 - [`image_long_edge(image_path: str) -> Optional[int]`](extapps/extapps/photogrammetry/prep_stages.py#L28) — Long edge (px) of an image, or ``None`` if unreadable.
 - [`extract_videos_to_dir(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]`](extapps/extapps/photogrammetry/prep_stages.py#L46) — Extract frames from one or more videos into a single ``output_dir``.
-- [`first_image_in_dirs(dirs: Sequence[str]) -> Optional[str]`](extapps/extapps/photogrammetry/prep_stages.py#L103) — First image file (sorted) across ``dirs``, or ``None``.
-- [`derive_texture_size(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int`](extapps/extapps/photogrammetry/prep_stages.py#L114) — Texture page size from a source image: next power-of-two ≥ its long edge,
-- **[`class PrepStagesMixin`](extapps/extapps/photogrammetry/prep_stages.py#L137)** — Curate + equalize stages shared by both photogrammetry engines.
-  - `PrepStagesMixin.curate_input_set(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 5, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]` — Pre-SfM content + sharpness culling via :class:`pythontk.ImageCurator`.
+- [`first_image_in_dirs(dirs: Sequence[str]) -> Optional[str]`](extapps/extapps/photogrammetry/prep_stages.py#L156) — First image file (sorted) across ``dirs``, or ``None``.
+- [`derive_texture_size(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int`](extapps/extapps/photogrammetry/prep_stages.py#L167) — Texture page size from a source image: next power-of-two ≥ its long edge,
+- **[`class PrepStagesMixin`](extapps/extapps/photogrammetry/prep_stages.py#L190)** — Curate + equalize stages shared by both photogrammetry engines.
+  - `PrepStagesMixin.curate_input_set(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 0, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]` — Pre-SfM content + sharpness culling via :class:`pythontk.ImageCurator`.
   - `PrepStagesMixin.preview_curation(self, source_dirs: Sequence[str], hash_thresholds: Sequence[int] = (5, 8, 10, 12, 15), keep_per_cluster: int = 1, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0)` — Dry-run curation QC — report survivor counts per dHash threshold + the
-  - `PrepStagesMixin.equalize_exposures(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 1.0, reference_strategy: str = 'first') -> List[str]` — Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.
+  - `PrepStagesMixin.equalize_exposures(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 0.5, reference_strategy: str = 'median') -> List[str]` — Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.
 
 <a id="photogrammetry--profile"></a>
 ### `photogrammetry/profile.py`
 
 Photogrammetry I/O + tuning **profile** — site/personal config kept out of source.
 
-- [`get_profile(path=None) -> dict`](extapps/extapps/photogrammetry/profile.py#L216) — Resolve the active photogrammetry profile (fully interpolated).
-- [`configured_app_path(key: str, path=None) -> Optional[str]`](extapps/extapps/photogrammetry/profile.py#L234) — Return the profile-configured install path for an engine, or ``None``.
-- [`preset_store(engine: str) -> PresetStore`](extapps/extapps/photogrammetry/profile.py#L257) — The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)
-- [`get_preset(name: Optional[str], engine: str) -> dict`](extapps/extapps/photogrammetry/profile.py#L278) — Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).
-- [`init_user_profile(path: Optional[str] = None, force: bool = False) -> str`](extapps/extapps/photogrammetry/profile.py#L301) — Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).
-- [`discover_source_dirs(input_root: str) -> List[str]`](extapps/extapps/photogrammetry/profile.py#L319) — Return immediate subdirs of ``input_root`` that contain images.
+- [`get_profile(path=None) -> dict`](extapps/extapps/photogrammetry/profile.py#L239) — Resolve the active photogrammetry profile (fully interpolated).
+- [`configured_app_path(key: str, path=None) -> Optional[str]`](extapps/extapps/photogrammetry/profile.py#L257) — Return the profile-configured install path for an engine, or ``None``.
+- [`preset_store(engine: str) -> PresetStore`](extapps/extapps/photogrammetry/profile.py#L280) — The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)
+- [`get_preset(name: Optional[str], engine: str) -> dict`](extapps/extapps/photogrammetry/profile.py#L301) — Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).
+- [`init_user_profile(path: Optional[str] = None, force: bool = False) -> str`](extapps/extapps/photogrammetry/profile.py#L324) — Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).
+- [`discover_source_dirs(input_root: str) -> List[str]`](extapps/extapps/photogrammetry/profile.py#L342) — Return immediate subdirs of ``input_root`` that contain images.
 
 <a id="photogrammetry--realityscan_workflow--_realityscan_connection"></a>
 ### `photogrammetry/realityscan_workflow/_realityscan_connection.py`
@@ -465,8 +466,8 @@ RealityCapture / RealityScan workflow engine.
   - `RealityCaptureWorkflow.add_images(self, image_sources: Union[str, Sequence[str]])` — Add images from a directory (non-recursive) or list of paths.
   - `RealityCaptureWorkflow.add_image_dirs(self, dirs: Sequence[str])` — Add images from multiple directories — RC keeps them in one scene.
   - `RealityCaptureWorkflow.triage_images(self, quality_threshold: float = 0.5)` — No direct RC equivalent.
-  - `RealityCaptureWorkflow.align_photos(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, filter_mask: bool = False)` — Run RC alignment (SfM).
-  - `RealityCaptureWorkflow.align_photos_with_retry(self, downscale: int = 2, generic_preselection: bool = False, reference_preselection: bool = True, keypoint_limit: int = 100000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)` — Run alignment;
+  - `RealityCaptureWorkflow.align_photos(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)` — Run RC alignment (SfM).
+  - `RealityCaptureWorkflow.align_photos_with_retry(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)` — Run alignment;
   - `RealityCaptureWorkflow.refine_alignment(self, *args, **kwargs)` — RC performs alignment refinement internally during ``-align``;
   - `RealityCaptureWorkflow.dedupe_cameras_by_pose(self, *args, **kwargs)` — No direct RC equivalent.
   - `RealityCaptureWorkflow.calibrate_colors(self, *args, **kwargs)` — RC applies color correction inside ``-calculateTexture`` via
@@ -474,7 +475,7 @@ RealityCapture / RealityScan workflow engine.
   - `RealityCaptureWorkflow.import_masks(self, masks_dir: str, mask_source: str = 'alpha')` — RC accepts per-image masks named ``<image>.png`` next to the
   - `RealityCaptureWorkflow.generate_depth_maps(self, *args, **kwargs)` — RC does not expose depth maps as a separate stage — mesh calc
   - `RealityCaptureWorkflow.build_model(self, source_data=None, surface_type=None, interpolation=None, face_count: Optional[str] = None)` — Build a polygon mesh.
-  - `RealityCaptureWorkflow.clean_mesh(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)` — Mesh cleanup.
+  - `RealityCaptureWorkflow.clean_mesh(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)` — Mesh cleanup via ``-setMinComponentSize N`` + ``-cleanModel``.
   - `RealityCaptureWorkflow.simplify_model(self, target_face_count: int = 20000000)` — Simplify the densest model to ~``target_face_count`` triangles.
   - `RealityCaptureWorkflow.reduce_overlap(self, *args, **kwargs)` — No RC equivalent.
   - `RealityCaptureWorkflow.import_model(self, mesh_path: str)` — Import an external low-poly mesh into the project (Maya-authored
@@ -531,17 +532,17 @@ Application shell for the RealityCapture Workflow UI.
 
 Tunable parameters surfaced in the RealityCapture Workflow panel.
 
-- [`to_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L97) — Render collected param *values* into ``run_combined`` CLI flags (via the
-- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L107) — Params relevant to the panel's current input — drives row visibility.
-- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L118) — Return ``{key: default}`` for every registered parameter.
+- [`to_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L100) — Render collected param *values* into ``run_combined`` CLI flags (via the
+- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L110) — Params relevant to the panel's current input — drives row visibility.
+- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L121) — Return ``{key: default}`` for every registered parameter.
 
 <a id="photogrammetry--realityscan_workflow--run_combined"></a>
 ### `photogrammetry/realityscan_workflow/run_combined.py`
 
 Driver script for multi-session combined RealityCapture runs.
 
-- [`publish_outputs(project_dir: str, publish_dir: str)`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L77) — Copy finished deliverables from local scratch to the synced output root.
-- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L117)
+- [`publish_outputs(project_dir: str, publish_dir: str)`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L85) — Copy finished deliverables from local scratch to the synced output root.
+- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L130)
 
 <a id="photogrammetry--realityscan_workflow--slots"></a>
 ### `photogrammetry/realityscan_workflow/slots.py`
@@ -565,7 +566,7 @@ SuGaR mesh-extraction workflow engine.
 - [`is_sugar_available() -> bool`](extapps/extapps/photogrammetry/sugar_mesh_workflow/_sugar_mesh.py#L66)
 - **[`class SugarMeshWorkflow`](extapps/extapps/photogrammetry/sugar_mesh_workflow/_sugar_mesh.py#L70)** — COLMAP dataset → SuGaR refined textured ``.obj`` mesh.
   - `SugarMeshWorkflow.get_sugar_info(self) -> str`
-  - `SugarMeshWorkflow.extract_mesh(self, colmap_dir: str, regularization: str = 'dn_consistency', high_poly: bool = True, refinement_time: str = 'short', surface_level: float = 0.3, export_obj: bool = True, export_ply: bool = False, use_eval_split: bool = False, gpu: int = 0, white_background: bool = False) -> Optional[str]` — Run SuGaR's full pipeline on a COLMAP dataset;
+  - `SugarMeshWorkflow.extract_mesh(self, colmap_dir: str, regularization: str = 'dn_consistency', high_poly: bool = True, refinement_time: str = 'medium', surface_level: float = 0.3, export_obj: bool = True, export_ply: bool = False, use_eval_split: bool = False, gpu: int = 0, white_background: bool = False) -> Optional[str]` — Run SuGaR's full pipeline on a COLMAP dataset;
   - `SugarMeshWorkflow.finalize_run(self, success: bool = True) -> str`
 
 <a id="photogrammetry--sugar_mesh_workflow--run_combined"></a>
@@ -605,7 +606,7 @@ Painter Connection Module.
 - [`launch_painter(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen`](extapps/extapps/substance_workflow/env_utils/painter_connection.py#L65) — Spawn a detached Painter process via ``pythontk.AppLauncher``.
 - **[`class PainterConnection`](extapps/extapps/substance_workflow/env_utils/painter_connection.py#L86)** — Live JSON-RPC connection to a Substance 3D Painter session.
   - `PainterConnection.get_instance(cls) -> 'PainterConnection'` *(class)*
-  - `PainterConnection.get_available_port(start_port: int = 5050, max_check: int = 100) -> int` *(static)* — Return the lowest unused TCP port in the requested range on localhost.
+  - `PainterConnection.get_available_port(start_port: int = 5050, max_check: int = 100) -> int` *(static)* — Return the lowest TCP port a NEW bridge server could bind on localhost.
   - `PainterConnection.connect(self, force_new_instance: bool = True, gui: bool = False, port: int = 5050, app_path: Optional[str] = None, launch_args: Optional[List[str]] = None, timeout: float = 180.0) -> bool` — Launch a fresh Painter and connect over the bridge HTTP server.
   - `PainterConnection.invoke(self, op: str, timeout: float = 60.0, **kwargs: Any) -> Any` — Call a registered op over the bridge and return its value.
   - `PainterConnection.describe(self, op: str = '') -> dict` — Fetch the registry's signature description for agent self-discovery.

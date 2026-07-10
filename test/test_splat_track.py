@@ -96,6 +96,44 @@ class GsplatPresetOverlayTest(unittest.TestCase):
         ])
         self.assertEqual(rc, 2)
 
+    def _run_with_profile(self, profile_dict, extra_argv=()):
+        import extapps.photogrammetry.profile as pp
+
+        prof_path = os.path.join(self.tmp, "profile.json")
+        with open(prof_path, "w", encoding="utf-8") as fh:
+            json.dump(profile_dict, fh)
+        captured = {}
+
+        def spy(self, **kw):
+            captured.update(kw)
+            return os.path.join(self.project_path, "t_1.ply")
+
+        with mock.patch.dict(os.environ, {pp.PROFILE_ENV: prof_path}):
+            with mock.patch.object(GaussianSplatWorkflow, "train", spy):
+                rc = gsplat_run.main([
+                    "--colmap-dir", self.colmap, "--name", "t",
+                    "--output-root", os.path.join(self.tmp, "out"),
+                    "--mock", *extra_argv,
+                ])
+        return rc, captured
+
+    def test_profile_quality_tier_reaches_brush_steps(self):
+        """A profile setting ONLY the tier trains that tier's steps — the
+        packaged gsplat block must not shadow it (regression: total_steps
+        shipped as a number, so the deep-merged key always existed and the
+        documented tier lever silently trained balanced 30k)."""
+        rc, captured = self._run_with_profile({"quality": "draft"})
+        self.assertEqual(rc, 0)
+        self.assertEqual(captured["total_steps"], 7000)
+
+    def test_profile_total_steps_pins_over_tier(self):
+        """An explicit user gsplat.total_steps still beats the tier table."""
+        rc, captured = self._run_with_profile(
+            {"quality": "draft", "gsplat": {"total_steps": 11111}}
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(captured["total_steps"], 11111)
+
 
 class ColmapExportTest(unittest.TestCase):
     def setUp(self):

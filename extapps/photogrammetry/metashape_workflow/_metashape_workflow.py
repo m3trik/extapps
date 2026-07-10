@@ -359,12 +359,18 @@ class MetashapeWorkflow(PrepStagesMixin):
     def align_photos(
         self,
         downscale: int = 2,
-        generic_preselection: bool = False,
+        generic_preselection: bool = True,
         reference_preselection: bool = True,
-        keypoint_limit: int = 40000,
+        keypoint_limit: int = 60000,
         tiepoint_limit: int = 10000,
         filter_mask: bool = False,
     ):
+        # Baselines follow the verified-good recipe (TUNING.md), not Metashape's
+        # stock minimums: generic_preselection matches the SDK/GUI default (True
+        # — the lever that fully aligns featureless/specular captures), and
+        # keypoint 60000 is the value verified on the hard 812-frame set (the
+        # pre-2026-06 pipeline ran 100000; stock 40000 measurably under-aligns
+        # low-texture subjects).
         self._notify("align_photos", 0.0)
         self._require_chunk()
         with self.qc.stage("align") as st:
@@ -374,6 +380,7 @@ class MetashapeWorkflow(PrepStagesMixin):
             st["generic_preselection"] = generic_preselection
             st["keypoint_limit"] = keypoint_limit
             st["tiepoint_limit"] = tiepoint_limit
+            st["filter_mask"] = filter_mask
             if self.mock_mode:
                 print(f"[mock] align_photos(downscale={downscale})")
                 return
@@ -441,15 +448,26 @@ class MetashapeWorkflow(PrepStagesMixin):
     def align_photos_with_retry(
         self,
         downscale: int = 2,
-        generic_preselection: bool = False,
+        generic_preselection: bool = True,
         reference_preselection: bool = True,
-        keypoint_limit: int = 40000,
+        keypoint_limit: int = 60000,
         tiepoint_limit: int = 10000,
         min_aligned_pct: float = 50.0,
+        filter_mask: bool = False,
     ):
         """Run ``align_photos``; if the result fails ``min_aligned_pct``,
-        retry once at higher quality (downscale halved to floor of 1,
-        generic_preselection on, doubled keypoint+tiepoint limits).
+        retry once with the verified rescue levers: generic preselection on
+        and doubled keypoint+tiepoint limits, at the **same** downscale.
+
+        The retry deliberately does not drop to full-res matching: on the
+        specular/low-texture captures where alignment actually fails,
+        full-res (ds=1) measurably *over-fits* the specular noise and
+        aligned worse than ds=2 (TUNING.md — 73.8% vs 90.4%); the levers
+        that recovered a full solution were generic preselection + raised
+        limits. The retry result replaces the first pass in-place, so the
+        QC ``align_retry`` stage records both percentages — if the retry
+        came out worse, re-run (alignment on hard sets is
+        non-deterministic) rather than trusting the last solve.
         """
         self.align_photos(
             downscale=downscale,
@@ -457,6 +475,7 @@ class MetashapeWorkflow(PrepStagesMixin):
             reference_preselection=reference_preselection,
             keypoint_limit=keypoint_limit,
             tiepoint_limit=tiepoint_limit,
+            filter_mask=filter_mask,
         )
         if self.mock_mode:
             return
@@ -465,26 +484,35 @@ class MetashapeWorkflow(PrepStagesMixin):
         if metrics["aligned_pct"] >= min_aligned_pct:
             return
 
-        retry_downscale = max(1, downscale // 2)
         print(
             f"Align retry: {metrics['aligned_pct']:.1f}% < {min_aligned_pct}% - "
-            f"retrying at downscale={retry_downscale}, generic_preselection=True, "
-            f"keypoint_limit={keypoint_limit * 2}."
+            f"retrying at downscale={downscale}, generic_preselection=True, "
+            f"keypoint_limit={keypoint_limit * 2}, tiepoint_limit={tiepoint_limit * 2}."
         )
         with self.qc.stage("align_retry") as st:
             st["reason"] = (
                 f"first-pass aligned_pct {metrics['aligned_pct']:.1f}% "
                 f"< {min_aligned_pct}%"
             )
+            st["first_pass_aligned_pct"] = metrics["aligned_pct"]
             self.chunk.matchPhotos(
-                downscale=retry_downscale,
+                downscale=downscale,
                 generic_preselection=True,
                 reference_preselection=reference_preselection,
                 keypoint_limit=keypoint_limit * 2,
                 tiepoint_limit=tiepoint_limit * 2,
+                filter_mask=filter_mask,
             )
             self.chunk.alignCameras()
-            st.update(self._alignment_metrics())
+            retry_metrics = self._alignment_metrics()
+            st.update(retry_metrics)
+            if retry_metrics["aligned_pct"] < metrics["aligned_pct"]:
+                self.qc.warn(
+                    f"align retry regressed: {metrics['aligned_pct']:.1f}% -> "
+                    f"{retry_metrics['aligned_pct']:.1f}% aligned. The retry "
+                    f"solve replaced the first pass; alignment on hard sets is "
+                    f"non-deterministic - re-run rather than shipping this solve."
+                )
 
     def refine_alignment(
         self,
@@ -606,6 +634,14 @@ class MetashapeWorkflow(PrepStagesMixin):
         the one with higher image quality is kept. Speeds up dense /
         texture stages on noisy video where adjacent frames don't add
         SfM signal.
+
+        CAVEAT — ``translation_threshold`` is in **chunk units**, and an
+        unreferenced SfM solve's scale is arbitrary (it varies run to run),
+        so the same 0.02 can cull nothing on one solve and real coverage on
+        the next. Disabled cameras are excluded from depth mapping, not just
+        texture. That's why the runner treats this stage as opt-in
+        (``--dedupe-cameras``): only enable it on captures with genuinely
+        redundant static footage, and check the QC ``disabled`` count.
         """
         self._notify("dedupe_cameras_by_pose", 0.0)
         self._require_chunk()
@@ -726,6 +762,68 @@ class MetashapeWorkflow(PrepStagesMixin):
             print(f"Generated {len(written)} masks -> {masks_dir}")
             return masks_dir if written else None
 
+    def generate_masks_native(self, tolerance: int = 10) -> bool:
+        """Background-mask every camera with Metashape's built-in AI masking
+        (``generateMasks(masking_mode=MaskingModeAI)``, 2.2+).
+
+        This is the preferred masking path when available: it runs entirely
+        inside the SDK, so it works in the production headless context
+        (``metashape.exe -r``) where the rembg file pipeline cannot —
+        Metashape's bundled Python has no rembg/PIL/cv2. It does require the
+        AI masking **neural model**, which Metashape downloads on first GUI
+        use; on a machine that has never run AI masking interactively the
+        call fails (verified live on 2.2.0: "Can't open file" while
+        "Creating model from config") and this method degrades gracefully.
+        Returns True when masks were generated (mock mode included); False
+        when the SDK predates ``MaskingModeAI`` or the model is absent — the
+        caller then falls back to :meth:`generate_masks` +
+        :meth:`import_masks` (file-based; verified live: 20/20 masks paired
+        via the path template on 2.2.0).
+        """
+        self._notify("generate_masks_native", 0.0)
+        self._require_chunk()
+        with self.qc.stage("masks_native") as st:
+            st["backend"] = "MaskingModeAI"
+            st["tolerance"] = tolerance
+            if self.mock_mode:
+                print("[mock] generate_masks_native()")
+                return True
+            mode = getattr(
+                getattr(_Metashape, "MaskingMode", None), "MaskingModeAI", None
+            )
+            if mode is None:
+                self.qc.warn(
+                    "This Metashape has no MaskingModeAI (needs 2.2+); "
+                    "use the file-based mask pipeline instead."
+                )
+                st["fallback"] = "no_MaskingModeAI"
+                return False
+            try:
+                # path='' — the default ('{filename}_mask.png') is a FILE
+                # template, and in AI mode 2.2.0 misreads it as the neural
+                # model config path ("Can't open file: {filename}_mask.png",
+                # verified live).
+                self.chunk.generateMasks(
+                    path="",
+                    masking_mode=mode,
+                    mask_operation=_Metashape.MaskOperation.MaskOperationReplacement,
+                    tolerance=tolerance,
+                )
+            except Exception as e:  # noqa: BLE001 — masking must not kill a run
+                self.qc.warn(
+                    f"native AI masking failed ({e}). Metashape downloads its "
+                    f"AI masking model on first GUI use - run Generate Masks "
+                    f"(AI) once in the GUI on this machine, or use the "
+                    f"file-based pipeline (rembg masks + import_masks)."
+                )
+                st["fallback"] = f"generateMasks_failed: {e}"
+                return False
+            applied = sum(1 for c in self.chunk.cameras if c.mask is not None)
+            st["applied"] = applied
+            print(f"AI masks generated: {applied}/{len(self.chunk.cameras)} cameras.")
+        self._checkpoint("masks_native")
+        return True
+
     def import_masks(
         self,
         masks_dir: str,
@@ -741,6 +839,11 @@ class MetashapeWorkflow(PrepStagesMixin):
         ``mask_source`` is one of ``"file"`` (separate mask file — the
         common rembg case), ``"alpha"`` (alpha channel of the source),
         or ``"background"`` (Metashape's auto-background).
+
+        Metashape 2.x removed ``importMasks`` (and the ``MaskSource`` enum);
+        file/alpha/background import is now ``generateMasks`` with the
+        matching ``MaskingMode`` and ``path`` as the directory-qualified
+        filename template (verified live on 2.2.0).
         """
         self._notify("import_masks", 0.0)
         self._require_chunk()
@@ -756,18 +859,55 @@ class MetashapeWorkflow(PrepStagesMixin):
                 return
             if not os.path.isdir(masks_dir):
                 raise ValueError(f"Masks directory not found: {masks_dir}")
-            sources = {
-                "alpha":      _Metashape.MaskSource.MaskSourceAlpha,
-                "file":       _Metashape.MaskSource.MaskSourceFile,
-                "background": _Metashape.MaskSource.MaskSourceBackground,
+            modes = {
+                "alpha":      _Metashape.MaskingMode.MaskingModeAlpha,
+                "file":       _Metashape.MaskingMode.MaskingModeFile,
+                "background": _Metashape.MaskingMode.MaskingModeBackground,
             }
-            src = sources.get(mask_source.lower())
-            if src is None:
+            mode = modes.get(mask_source.lower())
+            if mode is None:
                 raise ValueError(
                     f"Unsupported mask_source: {mask_source}. "
-                    f"Supported: {list(sources)}"
+                    f"Supported: {list(modes)}"
                 )
-            self.chunk.importMasks(path=masks_dir, source=src, template=template)
+            kwargs = dict(
+                path=os.path.join(masks_dir, template),
+                masking_mode=mode,
+                mask_operation=_Metashape.MaskOperation.MaskOperationReplacement,
+            )
+            # MaskOperationReplacement over ALL cameras could clear masks a
+            # previous per-source dir's call just applied (multi-capture
+            # --input-root runs call this once per dir) — scope the call to
+            # the cameras whose mask file actually lives in THIS dir when the
+            # template lets us resolve it.
+            run_call = True
+            if mode == _Metashape.MaskingMode.MaskingModeFile and (
+                "{filename}" in template
+            ):
+                matched = []
+                for cam in self.chunk.cameras:
+                    photo_path = getattr(
+                        getattr(cam, "photo", None), "path", None
+                    )
+                    if not photo_path:
+                        continue
+                    stem = os.path.splitext(os.path.basename(photo_path))[0]
+                    candidate = template.replace("{filename}", stem)
+                    if "{" not in candidate and os.path.isfile(
+                        os.path.join(masks_dir, candidate)
+                    ):
+                        matched.append(cam)
+                st["matched"] = len(matched)
+                if matched:
+                    kwargs["cameras"] = matched
+                else:
+                    print(
+                        f"No mask files in {masks_dir} match this chunk's "
+                        f"cameras; skipping (masks from other dirs kept)."
+                    )
+                    run_call = False
+            if run_call:
+                self.chunk.generateMasks(**kwargs)
             applied = sum(1 for c in self.chunk.cameras if c.mask is not None)
             st["applied"] = applied
             print(f"Masks imported: {applied}/{len(self.chunk.cameras)} cameras.")
@@ -959,12 +1099,15 @@ class MetashapeWorkflow(PrepStagesMixin):
 
     def build_texture(
         self,
-        texture_size: int = 4096,
+        texture_size: int = 8192,
         texture_type=None,
         blending_mode=None,
         mapping_mode=None,
         ghosting_filter: bool = True,
     ):
+        # 8192 matches the documented pipeline default (the runner's
+        # ``--texture-size auto`` fallback and derive_texture_size cap); the
+        # old 4096 only ever bit direct engine callers.
         self._notify("build_texture", 0.0)
         self._require_chunk()
         with self.qc.stage("texture") as st:
@@ -1141,15 +1284,20 @@ class MetashapeWorkflow(PrepStagesMixin):
 
             export_cameras = aligned
             if max_cameras and len(aligned) > max_cameras:
-                # Ceil division so the stride actually brings the count to/under
-                # the cap, then hard-truncate. Floor division was a bug: 487 cams
-                # with a 300 cap gave stride 1 (487//300) -> no reduction, so the
-                # whole set reached the splat trainers and bogged the 8 GB GPU.
-                stride = max(1, -(-len(aligned) // max_cameras))
-                export_cameras = aligned[::stride][:max_cameras]
+                # Even index selection to *exactly* the cap. A ceil-stride
+                # slice under-shoots badly (812 cams, cap 350 -> stride 3 ->
+                # 271 exported, ~23% below the budget the trainer could use);
+                # picking round(i * N / cap) indices spends the whole cap
+                # while staying evenly spread over the capture.
+                n = len(aligned)
+                indices = sorted({
+                    min(n - 1, int(round(i * n / float(max_cameras))))
+                    for i in range(max_cameras)
+                })
+                export_cameras = [aligned[i] for i in indices]
                 print(
-                    f"COLMAP export: striding {len(aligned)} aligned cameras by "
-                    f"{stride} -> {len(export_cameras)} (cap {max_cameras})."
+                    f"COLMAP export: evenly sampling {len(aligned)} aligned "
+                    f"cameras -> {len(export_cameras)} (cap {max_cameras})."
                 )
             st["exported_cameras"] = len(export_cameras)
 

@@ -52,6 +52,7 @@ if __package__ in (None, ""):
     )
     from extapps.photogrammetry.profile import (
         IMAGE_EXTS,
+        QUALITY_TIERS,
         discover_source_dirs,
         get_preset,
         get_profile,
@@ -66,6 +67,7 @@ else:
     from ._metashape_workflow import MetashapeWorkflow
     from ..profile import (
         IMAGE_EXTS,
+        QUALITY_TIERS,
         discover_source_dirs,
         get_preset,
         get_profile,
@@ -79,9 +81,14 @@ else:
 
 
 def _stop_after(label, mp) -> int:
-    """Finish an ``--stop-after`` run: persist the project, emit the QC sidecar
-    + processing-report PDF, and finalize. Returns the process exit code (0)."""
-    mp.save_project()
+    """Finish an ``--stop-after`` run: emit the QC sidecar + processing-report
+    PDF and finalize. The project is persisted only when ``--save-project`` was
+    given — the "no .psx unless asked" contract holds for stop-after runs too
+    (and a late first save is the documented empty-``.files`` trap)."""
+    if mp.save_project_enabled:
+        mp.save_project()
+    else:
+        print("(no .psx kept - pass --save-project to keep a reopenable project)")
     mp.export_qc()  # Metashape report PDF: sparse cloud, cameras, overlap, reproj.
     sidecar = mp.finalize_run(success=True)
     print(f"\nStopped after '{label}' (--stop-after). QC sidecar: {sidecar}")
@@ -106,7 +113,7 @@ def main(argv=None) -> int:
     pre.add_argument("--init-profile", action="store_true",
                      help="Write an editable example profile to the user-config "
                           "location (or --profile path) and exit.")
-    pre.add_argument("--quality", choices=("draft", "balanced", "max"), default=None,
+    pre.add_argument("--quality", choices=QUALITY_TIERS, default=None,
                      help="Reconstruction quality preset (profile default if "
                           "omitted): draft (fast) / balanced / max (highest). Sets "
                           "align+depth downscale and mesh density; explicit "
@@ -139,11 +146,18 @@ def main(argv=None) -> int:
     # A --preset may override any of these specific knobs (it wins over --quality's
     # derived value but loses to an explicit per-knob flag).
     quality = preargs.quality or preset.get("quality") or prof.get("quality", "balanced")
-    qp = {
+    if quality not in QUALITY_TIERS:
+        # argparse validates only CLI-passed values — a typo'd quality in a
+        # preset/profile would otherwise KeyError.
+        print(f"error: unknown quality {quality!r} (from preset/profile); "
+              f"expected one of {list(QUALITY_TIERS)}.", file=sys.stderr)
+        return 2
+    _tier_knobs = {
         "draft":    {"align": 4, "depth": 4, "faces": "low"},
         "balanced": {"align": 2, "depth": 2, "faces": "medium"},
         "max":      {"align": 1, "depth": 1, "faces": "high"},
-    }[quality]
+    }
+    qp = _tier_knobs[quality]
     qp = {
         "align": preset.get("align_downscale", qp["align"]),
         "depth": preset.get("depth_downscale", qp["depth"]),
@@ -169,18 +183,35 @@ def main(argv=None) -> int:
                         "and pass --frames-dir.")
     p.add_argument("--output-root", default=prof["metashape_output_root"])
     p.add_argument("--name", default="combined", help="Project basename.")
-    p.add_argument("--skip-curate", action="store_true",
+    # Panel-saved presets snapshot every widget, including the stage toggles —
+    # honor them here so a preset replayed via --preset reproduces the panel
+    # run (preprocess_input=False is the panel's master off-switch: it skips
+    # both prep stages wholesale).
+    _preset_prep_off = not preset.get("preprocess_input", True)
+    p.add_argument("--skip-curate", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("skip_curate", False)
+                                or _preset_prep_off),
                    help="Skip pre-Metashape dHash + sharpness curation.")
     p.add_argument("--curate-preview", action="store_true",
                    help="Dry-run: report curation survivor counts per dHash "
                         "threshold + the sharpness distribution, then exit (no "
                         "reconstruction). Use to tune --curate-hash-threshold on "
                         "a real set before a long run.")
-    p.add_argument("--skip-equalize", action="store_true",
+    p.add_argument("--skip-equalize", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("skip_equalize", False)
+                                or _preset_prep_off),
                    help="Skip cross-session exposure equalization.")
-    p.add_argument("--skip-dedupe", action="store_true",
-                   help="Skip post-align camera-pose deduplication.")
-    p.add_argument("--skip-refine", action="store_true",
+    p.add_argument("--dedupe-cameras", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("dedupe_cameras", False)),
+                   help="Disable near-duplicate camera poses after alignment "
+                        "(keeps the sharper of each pair). OPT-IN: the distance "
+                        "threshold is in arbitrary chunk units, so the cull is "
+                        "scale-dependent and varies run to run - and disabled "
+                        "cameras are excluded from depth mapping, not just "
+                        "texturing. Enable only on captures with genuinely "
+                        "redundant static footage.")
+    p.add_argument("--skip-refine", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("skip_refine", False)),
                    help="Skip gradual-selection alignment refinement. Refinement "
                         "is self-guarded (won't decimate sparse clouds), but this "
                         "lets you bypass it entirely.")
@@ -193,31 +224,41 @@ def main(argv=None) -> int:
                         "quality shows up, and an align-only run is minutes vs the "
                         "multi-hour full bake. 'align' = before refinement; "
                         "'refine' = after.")
-    p.add_argument("--use-masks", action="store_true",
+    p.add_argument("--use-masks", action=argparse.BooleanOptionalAction,
                    default=bool(preset.get("mask_background", False)),
-                   help="Run rembg + importMasks before alignment (needs rembg "
-                        "installed). A --preset with mask_background set turns this "
-                        "on by default.")
+                   help="Mask the background before alignment — Metashape "
+                        "2.2's native AI masking when available, else rembg + "
+                        "generateMasks (needs rembg installed) — and apply the "
+                        "masks at feature matching (filter_mask) so background "
+                        "features can't drive the solve. A --preset with "
+                        "mask_background set turns this on by default; "
+                        "--no-use-masks overrides it back off.")
     p.add_argument("--curate-hash-threshold", type=int,
                    default=preset.get("curate_hash_threshold",
-                                      cur.get("hash_threshold", 5)),
+                                      cur.get("hash_threshold", 0)),
                    help="dHash Hamming distance for content-dedup clustering. "
-                        "Lower = more conservative. 5/64 = near-identical only. "
-                        "WARNING: raising it strips the small-baseline overlap SfM "
-                        "triangulates from and fragments alignment on hard / "
-                        "single-pass captures. Use 0 for continuous video "
-                        "walkthroughs (no dedup; blur culling still applies).")
+                        "Default 0 = no dedup (blur culling still applies) - the "
+                        "right default for the primary ingest path (continuous "
+                        "video / single-pass captures), where near-identical "
+                        "frames carry exactly the small-baseline overlap SfM "
+                        "triangulates from. 5 = near-identical only; raise past "
+                        "that only for redundant static photo sets, and check "
+                        "the QC over-curation warning.")
     p.add_argument("--curate-sharpness-floor", type=float,
                    default=cur.get("sharpness_floor", 0.0),
                    help="Reject any frame whose Laplacian variance is below this "
                         "absolute floor (scene-dependent; prefer the percentile).")
     p.add_argument("--curate-sharpness-percentile", type=float,
                    default=preset.get("curate_sharpness_percentile",
-                                      cur.get("sharpness_percentile", 10.0)),
-                   help="Self-calibrating blur cutoff: drop frames below this "
-                        "percentile of the set's own sharpness distribution. "
-                        "Set 0 to disable. Kept identical to the RC runner so "
-                        "both engines receive the same prepped input.")
+                                      cur.get("sharpness_percentile", 0.0)),
+                   help="Relative blur cutoff: drop frames below this percentile "
+                        "of the set's own sharpness distribution. Default 0 = "
+                        "off - a percentile cut ALWAYS removes that share of the "
+                        "set, even when every frame is sharp (video frames are "
+                        "already sharpest-per-window at extraction); the "
+                        "median-fraction guard below handles genuinely defocused "
+                        "frames. Kept identical to the RC runner so both engines "
+                        "receive the same prepped input.")
     p.add_argument("--curate-min-sharpness-frac", type=float,
                    default=preset.get("curate_min_sharpness_frac",
                                       cur.get("min_sharpness_fraction_of_median", 0.15)),
@@ -237,8 +278,18 @@ def main(argv=None) -> int:
                    default=preset.get("equalize_reference", eq.get("reference", "median")),
                    help="Target distribution for equalization. 'median' avoids "
                         "letting the first capture's color cast dominate.")
-    p.add_argument("--gate-mode", choices=("warn", "halt"), default="warn")
-    p.add_argument("--save-project", action="store_true",
+    _gate_default = preset.get("gate_mode", "warn")
+    if _gate_default not in ("warn", "halt"):
+        # argparse validates only CLI-passed values, not defaults. Fail fast
+        # (like quality) instead of silently coercing to "warn" — a preset
+        # that meant "halt" must not lose its hard stop to a typo.
+        print(f"error: unknown gate_mode {_gate_default!r} (from preset); "
+              f"expected warn/halt.", file=sys.stderr)
+        return 2
+    p.add_argument("--gate-mode", choices=("warn", "halt"),
+                   default=_gate_default)
+    p.add_argument("--save-project", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("save_project", False)),
                    help="Save a reopenable Metashape project (.psx + full .files: "
                         "sparse cloud, depth maps, model, texture) so a later run "
                         "can reopen it and re-run only the stages you want (e.g. "
@@ -270,22 +321,28 @@ def main(argv=None) -> int:
              "detail so this avoids upscaling noise. Pass an int to force a size.",
     )
     p.add_argument("--triage-quality", type=float,
-                   default=preset.get("triage_quality", 0.5),
+                   default=preset.get("triage_quality", 0.0),
                    help="Disable cameras below this Metashape Image/quality score "
-                        "(analyzeImages) before alignment. The highest-leverage "
-                        "cull for blurry / noisy input. 0 disables triage.")
-    p.add_argument("--generic-preselection", action="store_true",
-                   default=bool(preset.get("generic_preselection", False)),
+                        "(analyzeImages) before alignment - a strong cull for "
+                        "genuinely messy input (0.5 is the usual value). OPT-IN "
+                        "(default 0 = off): Image/quality correlates with "
+                        "texture, so on low-texture / specular subjects it "
+                        "disables good frames wholesale, and it stacks on top of "
+                        "the curation stage's blur culling.")
+    p.add_argument("--generic-preselection", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("generic_preselection", True)),
                    help="Fast low-res pairwise image preselection before "
-                        "matching. Turn on for featureless / specular subjects "
-                        "where reference preselection has no camera coords to "
-                        "work from - the key lever to fully align hard captures. "
-                        "A --preset may enable it.")
+                        "matching (Metashape's own default). The key lever to "
+                        "fully align featureless / specular captures, where "
+                        "reference preselection has no camera coords to work "
+                        "from. On by default; --no-generic-preselection turns it "
+                        "off for well-textured, geo-referenced sets.")
     p.add_argument("--keypoint-limit", type=int,
-                   default=preset.get("keypoint_limit", 40000),
+                   default=preset.get("keypoint_limit", 60000),
                    help="matchPhotos keypoint limit (features detected per "
-                        "photo). 40000 = Metashape's standard default; raise it "
-                        "for low-texture / specular surfaces.")
+                        "photo). Default 60000 - the verified robust-alignment "
+                        "value (TUNING.md); Metashape's stock 40000 under-aligns "
+                        "low-texture / specular surfaces.")
     p.add_argument("--tiepoint-limit", type=int,
                    default=preset.get("tiepoint_limit", 10000),
                    help="matchPhotos tiepoint limit (tie points kept per photo; "
@@ -310,6 +367,24 @@ def main(argv=None) -> int:
                    default=preset.get("close_holes", 30),
                    help="Close mesh holes up to this percent of the total mesh "
                         "size (closeHoles). 0 disables.")
+    p.add_argument("--calibrate-colors", action=argparse.BooleanOptionalAction,
+                   default=bool(preset.get("calibrate_colors", False)),
+                   help="Run Metashape's calibrateColors (incl. white balance) "
+                        "before texturing. OPT-IN: with cross-capture exposure "
+                        "equalization already applied to the source frames, this "
+                        "stacks a second color transform into the deliverable "
+                        "albedo. Enable for mixed-lighting captures that skip "
+                        "equalization.")
+    p.add_argument("--video-window-sec", type=float,
+                   # Preset-controllable (TUNING.md lists it; panel-saved
+                   # presets snapshot the widget) — a replayed preset must
+                   # extract at its saved window, not silently at 1.0.
+                   default=float(preset.get("video_window_sec", 1.0)),
+                   help="With --video: extraction window in seconds - one "
+                        "sharpest frame is kept per window. 1.0 (~1 fps) suits a "
+                        "slow orbit; lower it (0.25-0.5) for fast handheld moves "
+                        "so small-baseline overlap isn't starved. Default from "
+                        "--preset when it carries video_window_sec.")
     p.add_argument(
         "--export-colmap", nargs="?", const="__AUTO__", default=None,
         help="Also export a COLMAP dataset (images/ + sparse/0/) for the "
@@ -335,7 +410,9 @@ def main(argv=None) -> int:
         # treat that dir as the single prepared capture.
         frames_dir = os.path.join(args.output_root, args.name, "_extracted_frames")
         print(f"Extracting frames from {len(args.video)} video(s) -> {frames_dir}")
-        frames = extract_videos_to_dir(args.video, frames_dir, log=print)
+        frames = extract_videos_to_dir(
+            args.video, frames_dir, window_sec=args.video_window_sec, log=print
+        )
         if not frames:
             print("error: no frames extracted - OpenCV is unavailable in this "
                   "interpreter (Metashape's bundled Python has no cv2) or the "
@@ -393,6 +470,11 @@ def main(argv=None) -> int:
     if args.curate_preview:
         mp.preview_curation(
             sources,
+            # Sweep the standard thresholds plus the user's own value (and 0,
+            # the no-dedup baseline) so the preview answers the question they
+            # are actually tuning.
+            hash_thresholds=sorted({0, 5, 8, 10, 12, 15,
+                                    args.curate_hash_threshold}),
             sharpness_floor_percentile=(
                 args.curate_sharpness_percentile
                 if args.curate_sharpness_percentile > 0 else None
@@ -400,6 +482,7 @@ def main(argv=None) -> int:
             min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
             keep_per_cluster=args.keep_per_cluster,
         )
+        mp.finalize_run(success=True)  # flush the preview stage to the sidecar
         return 0
 
     try:
@@ -434,41 +517,35 @@ def main(argv=None) -> int:
         mp.add_image_dirs(sources)
 
         if args.use_masks:
-            # Generate masks per source; import them together. Each source
-            # gets its own subdir under <project>/masks/ so filename
-            # collisions across sessions don't clobber each other; we
-            # then importMasks once per directory.
-            masks_root = os.path.join(project_dir, "masks")
-            for i, src in enumerate(sources):
-                per_src = os.path.join(
-                    masks_root, os.path.basename(os.path.normpath(src))
-                )
-                out = mp.generate_masks(source_dir=src, masks_dir=per_src)
-                if out:
-                    mp.import_masks(out)
+            # Primary: Metashape 2.2+'s built-in AI background masking — runs
+            # inside the SDK, so it works in the production headless context
+            # (metashape.exe -r has no rembg/PIL/cv2). Fallback for older
+            # SDKs: rembg file masks per source (needs rembg importable) —
+            # each source gets its own index-prefixed subdir so same-basename
+            # captures can't clobber each other, then a file import per dir.
+            if not mp.generate_masks_native():
+                masks_root = os.path.join(project_dir, "masks")
+                for i, src in enumerate(sources):
+                    per_src = os.path.join(
+                        masks_root,
+                        f"{i:02d}_{os.path.basename(os.path.normpath(src))}",
+                    )
+                    out = mp.generate_masks(source_dir=src, masks_dir=per_src)
+                    if out:
+                        mp.import_masks(out)
 
         if args.triage_quality > 0:
             mp.triage_images(quality_threshold=args.triage_quality)
         else:
             print("[triage] skipped (--triage-quality 0): all cameras kept.")
-        mp.align_photos_with_retry(
-            downscale=args.align_downscale,
-            generic_preselection=args.generic_preselection,
-            keypoint_limit=args.keypoint_limit,
-            tiepoint_limit=args.tiepoint_limit,
-            min_aligned_pct=50.0,
-        )
-        if args.stop_after == "align":
-            return _stop_after("align", mp)
-        if not args.skip_refine:
-            mp.refine_alignment()
-        if args.stop_after == "refine":
-            return _stop_after("refine", mp)
-
-        # COLMAP export for the splat track — right after alignment (poses are
-        # finalized; the mesh stages below don't affect cameras), so the dataset
-        # is ready before the multi-hour depth/model work.
-        if args.export_colmap is not None:
+        def _maybe_export_colmap() -> None:
+            # COLMAP export for the splat track — right after align/refine
+            # (poses are finalized; the mesh stages don't affect cameras), so
+            # the dataset is ready before the multi-hour depth/model work AND
+            # on --stop-after runs (align-only + splat dataset is the natural
+            # cheap invocation; it used to exit without exporting).
+            if args.export_colmap is None:
+                return
             colmap_dir = (
                 args.export_colmap
                 if args.export_colmap != "__AUTO__"
@@ -476,10 +553,34 @@ def main(argv=None) -> int:
             )
             mp.export_colmap(colmap_dir, max_cameras=args.colmap_max_cameras)
 
-        if not args.skip_dedupe:
-            mp.dedupe_cameras_by_pose()
+        mp.align_photos_with_retry(
+            downscale=args.align_downscale,
+            generic_preselection=args.generic_preselection,
+            keypoint_limit=args.keypoint_limit,
+            tiepoint_limit=args.tiepoint_limit,
+            min_aligned_pct=50.0,
+            # Masks must also gate feature *matching*, or background features
+            # still drive the solve and the masks only affect depth maps.
+            filter_mask=args.use_masks,
+        )
+        if args.stop_after == "align":
+            _maybe_export_colmap()
+            return _stop_after("align", mp)
+        if not args.skip_refine:
+            mp.refine_alignment()
+        _maybe_export_colmap()
+        if args.stop_after == "refine":
+            return _stop_after("refine", mp)
 
-        mp.calibrate_colors()
+        if args.dedupe_cameras:
+            mp.dedupe_cameras_by_pose()
+        else:
+            print("[dedupe] skipped (opt-in: --dedupe-cameras).")
+
+        if args.calibrate_colors:
+            mp.calibrate_colors()
+        else:
+            print("[calibrate-colors] skipped (opt-in: --calibrate-colors).")
         mp.generate_depth_maps(
             downscale=args.depth_downscale, filter_mode=args.depth_filter
         )

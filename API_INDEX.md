@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
-_Generated: 2026-07-09_
+_Generated: 2026-07-10_
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - `list_templates() -> List[Path]`
@@ -71,7 +71,7 @@ _Generated: 2026-07-09_
 - `class PyModuleRunner(ProcessRunner)`
 
 ### `photogrammetry/_shared_params.py` — Input pre-processing parameter specs shared by the image-in engines.
-- `render_flag_argv(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'`
+- `render_flag_argv(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'`
 - `preprocessing_argv(values: 'Dict[str, Any]') -> 'List[str]'`
 
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py` — Local, async runner the Brush (gaussian-splat) panel dispatches to.
@@ -126,7 +126,7 @@ _Generated: 2026-07-09_
 - `get_metashape_version() -> str`
 - `get_image_filepaths(directory: str) -> List[str]`
 - `class MetashapeWorkflow(PrepStagesMixin)`
-  - methods: get_license_info, create_chunk, add_images, add_image_dirs, clean_mesh_advanced, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
+  - methods: get_license_info, create_chunk, add_images, add_image_dirs, clean_mesh_advanced, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, generate_masks_native, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
 
 ### `photogrammetry/metashape_workflow/launcher.py` — Application shell for the Metashape Workflow UI.
 - `class MetashapeWorkflowUI`

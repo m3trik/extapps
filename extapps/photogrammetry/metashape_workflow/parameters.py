@@ -74,8 +74,9 @@ PARAMS.update({
     "mask_background": AttributeSpec(
         key="mask_background", label="Mask Background", kind="bool",
         default=False,
-        tooltip="Run rembg + importMasks before alignment (needs rembg). "
-                "Emits --use-masks.",
+        tooltip="Mask the background before alignment: Metashape 2.2's "
+                "native AI masking when available, else rembg (needs rembg "
+                "installed). Emits --use-masks.",
     ),
     "gate_mode": AttributeSpec(
         key="gate_mode", label="Gate Mode", kind="choice",
@@ -94,30 +95,33 @@ PARAMS.update({
     "triage_quality": AttributeSpec(
         key="triage_quality", label="Triage Quality", kind="float",
         section="Alignment",
-        default=0.5, minimum=0.0, maximum=1.0, decimals=2,
+        default=0.0, minimum=0.0, maximum=1.0, decimals=2,
         tooltip="Disable cameras below this Metashape Image/quality score "
-                "(analyzeImages) before alignment - the highest-leverage cull "
-                "for blurry / noisy input. 0 disables triage. Maps to "
+                "(analyzeImages) before alignment. 0 (default) = off: the score "
+                "correlates with texture, so on low-texture / specular subjects "
+                "triage disables good frames wholesale, on top of curation's "
+                "blur culling. Set ~0.5 for genuinely messy input. Maps to "
                 "--triage-quality.",
     ),
     "generic_preselection": AttributeSpec(
         key="generic_preselection", label="Generic Preselection", kind="bool",
         section="Alignment",
-        default=False,
-        tooltip="Fast low-res pairwise image preselection before matching. Turn "
-                "ON for featureless / specular / textureless subjects where "
-                "reference preselection has no camera coords to work from - the "
-                "key lever to fully align hard captures. Emits "
-                "--generic-preselection.",
+        default=True,
+        tooltip="Fast low-res pairwise image preselection before matching "
+                "(Metashape's own default; the key lever to fully align "
+                "featureless / specular captures, where reference preselection "
+                "has no camera coords to work from). Uncheck only for "
+                "well-textured, geo-referenced sets. Emits "
+                "--generic-preselection / --no-generic-preselection.",
     ),
     "keypoint_limit": AttributeSpec(
         key="keypoint_limit", label="Keypoint Limit", kind="int",
         section="Alignment",
-        default=40000, minimum=10000, maximum=400000,
+        default=60000, minimum=10000, maximum=400000,
         tooltip="Max detected feature points per photo (matchPhotos keypoint "
-                "limit). 40000 is Metashape's standard default; raise it for "
-                "low-texture / specular surfaces that yield few features. Maps "
-                "to --keypoint-limit.",
+                "limit). 60000 is the verified robust-alignment baseline "
+                "(TUNING.md); Metashape's stock 40000 under-aligns low-texture "
+                "/ specular surfaces. Maps to --keypoint-limit.",
     ),
     "tiepoint_limit": AttributeSpec(
         key="tiepoint_limit", label="Tiepoint Limit", kind="int",
@@ -128,15 +132,30 @@ PARAMS.update({
                 "alignment on hard sets. Maps to --tiepoint-limit.",
     ),
     # --- Alignment stage toggles (post initial align) -----------------------
-    "skip_dedupe": AttributeSpec(
-        key="skip_dedupe", label="Skip Dedupe", kind="bool", section="Alignment",
+    "dedupe_cameras": AttributeSpec(
+        key="dedupe_cameras", label="Dedupe Cameras", kind="bool",
+        section="Alignment",
         default=False,
-        tooltip="Skip post-align camera-pose deduplication. Emits --skip-dedupe.",
+        tooltip="Disable near-duplicate camera poses after alignment. OPT-IN: "
+                "the distance threshold is in arbitrary chunk units (scale "
+                "varies solve to solve) and disabled cameras are excluded from "
+                "depth mapping - enable only on captures with genuinely "
+                "redundant static footage. Emits --dedupe-cameras.",
     ),
     "skip_refine": AttributeSpec(
         key="skip_refine", label="Skip Refine", kind="bool", section="Alignment",
         default=False,
         tooltip="Skip gradual-selection alignment refinement. Emits --skip-refine.",
+    ),
+    "calibrate_colors": AttributeSpec(
+        key="calibrate_colors", label="Calibrate Colors", kind="bool",
+        section="Mesh Cleanup",
+        default=False,
+        tooltip="Run Metashape's calibrateColors (incl. white balance) before "
+                "texturing. OPT-IN: with exposure equalization already applied "
+                "to the frames this stacks a second color transform into the "
+                "albedo - enable for mixed-lighting captures that skip "
+                "equalization. Emits --calibrate-colors.",
     ),
     # --- Mesh cleanup (post-build) ------------------------------------------
     "min_component_size": AttributeSpec(
@@ -192,10 +211,17 @@ _VALUE_FLAGS: "Dict[str, str]" = {
 # that keeps the preset JSON / widget key independent of the CLI spelling.
 _STORE_TRUE_FLAGS: "Dict[str, str]" = {
     "mask_background": "--use-masks",
-    "generic_preselection": "--generic-preselection",
     "save_project": "--save-project",
-    "skip_dedupe": "--skip-dedupe",
+    "dedupe_cameras": "--dedupe-cameras",
     "skip_refine": "--skip-refine",
+    "calibrate_colors": "--calibrate-colors",
+}
+
+# Bool params whose runner default is ON -> BooleanOptionalAction flags that
+# always emit (--flag / --no-flag), so unchecking the panel box actually turns
+# the stage off (a store_true flag can't override an on-by-default).
+_BOOL_FLAGS: "Dict[str, str]" = {
+    "generic_preselection": "--generic-preselection",
 }
 
 
@@ -203,7 +229,7 @@ def to_argv(values: "Dict[str, Any]") -> "List[str]":
     """Render collected param *values* into ``run_combined`` CLI flags (via the
     shared :func:`render_flag_argv` emit rules), then append the shared input
     pre-processing flags (curate + equalize), which its master toggle gates."""
-    argv = render_flag_argv(values, _VALUE_FLAGS, _STORE_TRUE_FLAGS)
+    argv = render_flag_argv(values, _VALUE_FLAGS, _STORE_TRUE_FLAGS, _BOOL_FLAGS)
     argv += preprocessing_argv(values)
     return argv
 
@@ -227,6 +253,8 @@ _MODE_KEYS: "Dict[str, frozenset]" = {
     "align": _ALIGN_MODE_KEYS,
     "refine": _ALIGN_MODE_KEYS | {"skip_refine"},
     # "" (full pipeline) intentionally absent → every registered param applies.
+    # dedupe_cameras / calibrate_colors are post-align full-pipeline stages, so
+    # like the mesh-cleanup knobs they're absent from the stop-after modes.
 }
 
 

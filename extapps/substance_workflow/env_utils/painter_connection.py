@@ -104,9 +104,16 @@ class PainterConnection:
 
     @staticmethod
     def get_available_port(start_port: int = 5050, max_check: int = 100) -> int:
-        """Return the lowest unused TCP port in the requested range on localhost."""
+        """Return the lowest TCP port a NEW bridge server could bind on localhost.
+
+        Bind-probed, not connect-probed: a hung process can hold a port bound
+        without listening -- a connect check reads that as free, but the
+        bridge launched on it could never bind (it would wait out its whole
+        startup timeout). ``NetUtils.is_port_bindable`` answers the actual
+        question being asked here.
+        """
         for p in range(start_port, start_port + max_check):
-            if not NetUtils.is_port_open("localhost", p, timeout=0.3):
+            if NetUtils.is_port_bindable(p):
                 return p
         raise RuntimeError(
             f"No free port in {start_port}..{start_port + max_check}"

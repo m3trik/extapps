@@ -40,7 +40,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
 
     def test_packaged_default_when_no_profile(self):
         prof = pp.get_profile()
-        self.assertEqual(prof["curate"]["sharpness_percentile"], 10)
+        self.assertEqual(prof["curate"]["sharpness_percentile"], 0)
         self.assertEqual(prof["equalize"]["reference"], "median")
         self.assertEqual(prof["gsplat"]["max_resolution"], 1920)
         # Reconstruction tuning ships with the default. Baseline floor stays at
@@ -67,7 +67,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         path = self._write({"curate": {"hash_threshold": 13}})
         prof = pp.get_profile(path)
         self.assertEqual(prof["curate"]["hash_threshold"], 13)        # overridden
-        self.assertEqual(prof["curate"]["sharpness_percentile"], 10)  # default kept
+        self.assertEqual(prof["curate"]["sharpness_percentile"], 0)  # default kept
         self.assertEqual(prof["equalize"]["reference"], "median")     # default branch kept
 
     def test_env_pointer_resolves(self):
@@ -190,7 +190,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(target))
         with open(target, encoding="utf-8") as fh:
             data = json.load(fh)
-        self.assertEqual(data["curate"]["sharpness_percentile"], 10)
+        self.assertEqual(data["curate"]["sharpness_percentile"], 0)
         # Does NOT overwrite a user-edited profile on a second call.
         data["curate"]["sharpness_percentile"] = 99
         with open(target, "w", encoding="utf-8") as fh:
@@ -201,7 +201,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         # force=True rewrites the template.
         pp.init_user_profile(target, force=True)
         with open(target, encoding="utf-8") as fh:
-            self.assertEqual(json.load(fh)["curate"]["sharpness_percentile"], 10)
+            self.assertEqual(json.load(fh)["curate"]["sharpness_percentile"], 0)
 
     def test_init_user_profile_default_location_under_config_root(self):
         # With no explicit path, it lands under the (temp) user-config root.

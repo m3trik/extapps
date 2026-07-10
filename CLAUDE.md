@@ -75,11 +75,12 @@ new entries surface in the package metadata `ExternalAppHandler` reads.
 & python -m pytest o:\Cloud\Code\_scripts\extapps\test
 ```
 
-`substance_workflow`'s live-Painter integration tests are gated — they launch a
-real Painter, so they stay opt-in:
+Live-DCC integration tests are gated — they launch a real Painter / a real
+(new, never-attached) Metashape, so they stay opt-in:
 
 ```powershell
-$env:SUBSTANCE_WORKFLOW_RUN_INTEGRATION = '1'
+$env:SUBSTANCE_WORKFLOW_RUN_INTEGRATION = '1'   # live Substance Painter tests
+$env:METASHAPE_RUN_INTEGRATION = '1'            # live Metashape pipeline test
 & python -m pytest o:\Cloud\Code\_scripts\extapps\test
 ```
 

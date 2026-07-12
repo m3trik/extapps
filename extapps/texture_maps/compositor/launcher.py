@@ -2,7 +2,7 @@
 # coding=utf-8
 """Application shell for the Map Compositor UI.
 
-The engine lives in :mod:`pythontk.img_utils.map_compositor` and the
+The engine lives in :mod:`pythontk.core_utils.engines.textures.map_compositor` and the
 slot bindings in :mod:`extapps.texture_maps.compositor.slots`; this module only
 assembles the Switchboard-driven UI and provides the script entry point.
 """

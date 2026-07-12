@@ -2,7 +2,7 @@
 # coding=utf-8
 from typing import List, Dict, Optional, Any
 from pythontk.img_utils._img_utils import ImgUtils
-from pythontk.img_utils.map_factory import MapFactory
+from pythontk.core_utils.engines.textures.map_factory import MapFactory
 from pythontk.file_utils._file_utils import FileUtils
 
 

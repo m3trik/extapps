@@ -18,8 +18,8 @@ from pathlib import Path
 from PIL import Image
 
 from pythontk import ImgUtils
-from pythontk.img_utils.map_factory import MapFactory as TextureMapFactory
-from pythontk.img_utils.map_registry import MapRegistry, WF
+from pythontk.core_utils.engines.textures.map_factory import MapFactory as TextureMapFactory
+from pythontk.core_utils.engines.textures.map_registry import MapRegistry, WF
 
 from extapps.texture_maps.converter.slots import ConverterSlots
 
@@ -344,7 +344,7 @@ class TestMapConverterTextureFactory(unittest.TestCase):
         self.converter.b012()
 
     @skip_if_no_qt
-    @patch("pythontk.img_utils.map_factory.MapFactory.prepare_maps")
+    @patch("pythontk.core_utils.engines.textures.map_factory.MapFactory.prepare_maps")
     @patch("qtpy.QtWidgets.QInputDialog.getItem")
     def test_b012_handles_factory_errors(self, mock_dialog, mock_prepare):
         """Test b012 handles TextureMapFactory errors gracefully."""
@@ -541,7 +541,7 @@ class TestMapConverterEdgeCases(unittest.TestCase):
             self.mock_widget.option_box.menu.chk000.isChecked.return_value = False
 
             with patch(
-                "pythontk.img_utils.map_factory.MapFactory.prepare_maps"
+                "pythontk.core_utils.engines.textures.map_factory.MapFactory.prepare_maps"
             ) as mock_prepare:
                 mock_prepare.return_value = [spec_file]
 

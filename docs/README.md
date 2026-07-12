@@ -13,7 +13,7 @@ group. Hosts (tentacle, mayatk, etc.) discover and launch them automatically
 
 | Tool | Purpose | Engine | Docs |
 |---|---|---|---|
-| `compositor` | Multi-layer texture compositing | `pythontk.img_utils.map_compositor` | [→](map_compositor.md) |
+| `compositor` | Multi-layer texture compositing | `pythontk.core_utils.engines.textures.map_compositor` | [→](map_compositor.md) |
 | `photogrammetry` | End-to-end photogrammetry runs — frame extraction/curation → align → mesh → texture, with per-engine presets | bundled runners (Metashape SDK, RealityScan RSNode, gaussian splat) | [Metashape engine →](metashape_workflow.md) · [Tuning →](../extapps/photogrammetry/TUNING.md) |
 | `substance_workflow` | Adobe Substance 3D Painter automation (JSON-RPC bridge) | bundled (SDK-specific) | [→](substance_workflow.md) |
 | `marmoset_workflow` | Marmoset Toolbag automation (RPC bridge + render templates) | bundled `_marmoset_engine` (SDK-specific) | _TBD_ |

@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-07-10",
+  "generated_at": "2026-07-12",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",

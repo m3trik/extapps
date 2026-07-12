@@ -2,7 +2,7 @@
 # coding=utf-8
 """Map Compositor — multi-layer texture compositing tool.
 
-Engine lives in :mod:`pythontk.img_utils.map_compositor`; this package
+Engine lives in :mod:`pythontk.core_utils.engines.textures.map_compositor`; this package
 holds only the Switchboard panel and launcher.
 """
 from pythontk.core_utils.module_resolver import bootstrap_package

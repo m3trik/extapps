@@ -1057,6 +1057,7 @@ class RealityCaptureWorkflow(PrepStagesMixin):
         save_colors: bool = True,
         save_cameras: bool = False,
         overwrite: bool = True,
+        save_usdz: bool = True,
     ):
         """Export the current model. Defaults to OBJ with diffuse texture.
 
@@ -1065,7 +1066,9 @@ class RealityCaptureWorkflow(PrepStagesMixin):
         ``precision`` / ``texture_format`` / ``save_*`` / ``overwrite`` are
         parity-only (Metashape honors them; RC uses its GUI-persisted export
         settings). Configure RC's export settings once in the app if the
-        defaults are wrong.
+        defaults are wrong. ``save_usdz`` (OBJ only) authors an AR-ready
+        ``<name>.usdz`` review sidecar beside the export via
+        ``pythontk.obj_to_usdz`` — best-effort, never fatal.
         """
         self._notify("export_model", 0.0)
         with self.qc.stage("export") as st:
@@ -1086,6 +1089,11 @@ class RealityCaptureWorkflow(PrepStagesMixin):
                 return
             self._run_rc("-exportSelectedModel", export_path, label="export")
             print(f"Exported model: {export_path}")
+
+            # AR/QuickLook review sidecar beside the OBJ — zero-dep pythontk
+            # author; lands in project_path so publish_outputs carries it.
+            if save_usdz and fmt == "obj":
+                st["usdz"] = self._export_usdz_sidecar(export_path)
 
     def export_qc(self):
         """Export RC's processing report XML and append to the QC log."""

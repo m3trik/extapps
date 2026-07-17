@@ -1,13 +1,14 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Shared, SDK-agnostic input-prep stages for the photogrammetry engines.
+"""Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
 
-``curate_input_set`` (dHash + sharpness culling) and ``equalize_exposures``
-(cross-set exposure/WB matching) are identical for RealityCapture and
-Metashape — they only call :mod:`pythontk` primitives plus the engine's QC
-log. Keeping them in one mixin both engines inherit makes the documented
-RC↔Metashape "same public method shape" contract structural (the two cannot
-drift apart again) and unifies their QC payloads.
+``curate_input_set`` (dHash + sharpness culling), ``equalize_exposures``
+(cross-set exposure/WB matching) and the ``_export_usdz_sidecar`` export
+helper are identical for RealityCapture and Metashape — they only call
+:mod:`pythontk` primitives plus the engine's QC log. Keeping them in one
+mixin both engines inherit makes the documented RC↔Metashape "same public
+method shape" contract structural (the two cannot drift apart again) and
+unifies their QC payloads.
 
 Host requirements: ``self.qc`` (a ``pythontk.QcLog``), ``self.project_path``
 (str), and ``self._notify(stage, fraction)``.
@@ -188,7 +189,29 @@ def derive_texture_size(
 
 
 class PrepStagesMixin:
-    """Curate + equalize stages shared by both photogrammetry engines."""
+    """Curate / equalize / export-sidecar stages shared by both photogrammetry engines."""
+
+    @staticmethod
+    def _export_usdz_sidecar(model_path: str):
+        """Author ``<name>.usdz`` beside an exported OBJ (+ its MTL textures).
+
+        The AR/QuickLook review deliverable ``export_model(save_usdz=True)``
+        emits: built by ``pythontk.obj_to_usdz`` (pure Python — parses the
+        OBJ/MTL and packages a spec-compliant USDZ; no DCC, no SDK). Returns
+        the path, or ``None`` on failure (reported, never fatal — a sidecar
+        problem must not fail the export stage).
+        """
+        try:
+            import pythontk as ptk
+
+            usdz = ptk.obj_to_usdz(model_path)
+            print(f"Exported USDZ sidecar: {usdz}")
+            return usdz
+        except Exception as e:
+            import sys
+
+            print(f"[usdz] sidecar skipped: {e}", file=sys.stderr)
+            return None
 
     def curate_input_set(
         self,

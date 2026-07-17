@@ -29,19 +29,24 @@ if _scripts_root not in sys.path:
     sys.path.insert(0, _scripts_root)
 
 
+# Every top-level ``*_utils.py`` op module in ``extapps.substance_workflow``.
+# An op module missing here registers nothing inside Painter;
+# ``test_ops_registration.py`` guards this list against the files on disk.
+OP_MODULES = (
+    "extapps.substance_workflow.project_utils",
+    "extapps.substance_workflow.texture_set_utils",
+    "extapps.substance_workflow.layer_utils",
+    "extapps.substance_workflow.channel_utils",
+    "extapps.substance_workflow.material_utils",
+    "extapps.substance_workflow.bake_utils",
+    "extapps.substance_workflow.export_utils",
+    "extapps.substance_workflow.resource_utils",
+)
+
+
 def _load_ops() -> None:
     """Import op modules so their ``@register`` decorators run."""
-    op_modules = [
-        "extapps.substance_workflow.project_utils",
-        "extapps.substance_workflow.texture_set_utils",
-        "extapps.substance_workflow.layer_utils",
-        "extapps.substance_workflow.channel_utils",
-        "extapps.substance_workflow.material_utils",
-        "extapps.substance_workflow.bake_utils",
-        "extapps.substance_workflow.export_utils",
-        "extapps.substance_workflow.resource_utils",
-    ]
-    for mod in op_modules:
+    for mod in OP_MODULES:
         try:
             __import__(mod)
         except Exception as e:

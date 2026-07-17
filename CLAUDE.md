@@ -49,6 +49,15 @@ extapps/<tool>/
   launcher.py          # <Tool>UI class (Switchboard wiring)
 ```
 
+Tools that share a domain layer group under an umbrella subpackage
+(docstring-only `__init__.py`): `texture_maps/` (compositor / converter /
+packer) and `photogrammetry/` (metashape / realityscan / gaussian_splat +
+the CLI-only, experimental sugar_mesh — sharing `profile` / `prep_stages` /
+`_panel_slots` / `_process_runner` / `_shared_params` and `presets/`).
+Single tools stay flat. The root `extapps/__init__.py` re-exports every
+panel's UI + Slots pair (guarded by `test_imports.py`). `<tool>_ui.py`
+files are uitk load-time compile caches — gitignored, never edited.
+
 `substance_workflow` additionally bundles its Painter engine: `registry.py`
 (`@register` — the SSoT for callable ops; check it before adding a helper),
 `*_utils.py` op modules (lazy-import `substance_painter` inside function bodies

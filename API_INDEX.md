@@ -143,7 +143,7 @@ _Generated: 2026-07-17_
 - `class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`
   - methods: params_module, template_dir, make_bridge, list_template_modes, default_output_dir, help_spec
 
-### `photogrammetry/prep_stages.py` — Shared, SDK-agnostic input-prep stages for the photogrammetry engines.
+### `photogrammetry/prep_stages.py` — Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
 - `image_long_edge(image_path: str) -> Optional[int]`
 - `extract_videos_to_dir(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]`
 - `first_image_in_dirs(dirs: Sequence[str]) -> Optional[str]`

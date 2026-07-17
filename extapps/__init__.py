@@ -25,6 +25,10 @@ DEFAULT_INCLUDE = {
         "is_license_valid",
         "is_metashape_available",
     ],
+    "photogrammetry.realityscan_workflow.launcher": ["RealityScanWorkflowUI"],
+    "photogrammetry.realityscan_workflow.slots": ["RealityscanWorkflowSlots"],
+    "photogrammetry.gaussian_splat_workflow.launcher": ["GaussianSplatWorkflowUI"],
+    "photogrammetry.gaussian_splat_workflow.slots": ["GaussianSplatWorkflowSlots"],
     "substance_workflow.launcher": ["SubstanceWorkflowUI"],
     "substance_workflow.slots": ["SubstanceWorkflowSlots"],
     "substance_workflow.env_utils.painter_connection": ["PainterConnection"],
@@ -38,6 +42,8 @@ DEFAULT_INCLUDE = {
     "mesh_convert.slots": ["MeshConvertSlots"],
     "marmoset_workflow.launcher": ["MarmosetWorkflowUI"],
     "marmoset_workflow.slots": ["MarmosetWorkflowSlots"],
+    "unity_workflow.launcher": ["UnityWorkflowUI"],
+    "unity_workflow.slots": ["UnityWorkflowSlots"],
 }
 
 
@@ -54,6 +60,10 @@ __all__ = [
     "get_metashape_version",
     "is_license_valid",
     "is_metashape_available",
+    "RealityScanWorkflowUI",
+    "RealityscanWorkflowSlots",
+    "GaussianSplatWorkflowUI",
+    "GaussianSplatWorkflowSlots",
     "SubstanceWorkflowUI",
     "SubstanceWorkflowSlots",
     "PainterConnection",
@@ -70,5 +80,7 @@ __all__ = [
     "MeshConvertSlots",
     "MarmosetWorkflowUI",
     "MarmosetWorkflowSlots",
+    "UnityWorkflowUI",
+    "UnityWorkflowSlots",
     "__version__",
 ]

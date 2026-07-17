@@ -35,7 +35,7 @@ _Generated: 2026-07-17_
 - [`photogrammetry/metashape_workflow/parameters.py`](#photogrammetry--metashape_workflow--parameters) — Tunable parameters surfaced in the Metashape Workflow panel.
 - [`photogrammetry/metashape_workflow/run_combined.py`](#photogrammetry--metashape_workflow--run_combined) — Driver script for multi-session combined runs.
 - [`photogrammetry/metashape_workflow/slots.py`](#photogrammetry--metashape_workflow--slots) — Slots for the Metashape Workflow panel.
-- [`photogrammetry/prep_stages.py`](#photogrammetry--prep_stages) — Shared, SDK-agnostic input-prep stages for the photogrammetry engines.
+- [`photogrammetry/prep_stages.py`](#photogrammetry--prep_stages) — Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
 - [`photogrammetry/profile.py`](#photogrammetry--profile) — Photogrammetry I/O + tuning **profile** — site/personal config kept out of source.
 - [`photogrammetry/realityscan_workflow/_realityscan_connection.py`](#photogrammetry--realityscan_workflow--_realityscan_connection) — Launch connection for RealityScan / RealityCapture.
 - [`photogrammetry/realityscan_workflow/_realityscan_runner.py`](#photogrammetry--realityscan_workflow--_realityscan_runner) — Local, async runner the RealityCapture panel dispatches to.
@@ -341,7 +341,7 @@ Local, async runner the Metashape panel dispatches to.
 - [`is_metashape_available() -> bool`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L38) — True if the Metashape Python module imported successfully.
 - [`is_license_valid() -> bool`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L43) — True if a valid Metashape license is reachable.
 - [`get_metashape_version() -> str`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L53)
-- [`get_image_filepaths(directory: str) -> List[str]`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L1364) — Return absolute paths to all images in `directory` (non-recursive).
+- [`get_image_filepaths(directory: str) -> List[str]`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L1372) — Return absolute paths to all images in `directory` (non-recursive).
 - **[`class MetashapeWorkflow(PrepStagesMixin)`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L62)** — Wrapper around Agisoft Metashape's Python API for the standard
   - `MetashapeWorkflow.get_license_info(self) -> str`
   - `MetashapeWorkflow.create_chunk(self, label: str = 'New Chunk')`
@@ -363,7 +363,7 @@ Local, async runner the Metashape panel dispatches to.
   - `MetashapeWorkflow.reduce_overlap(self, target_overlap: int = 9)` — Thin redundant cameras for texture bake while preserving
   - `MetashapeWorkflow.build_texture(self, texture_size: int = 8192, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)`
   - `MetashapeWorkflow.save_project(self)`
-  - `MetashapeWorkflow.export_model(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)`
+  - `MetashapeWorkflow.export_model(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)`
   - `MetashapeWorkflow.export_colmap(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]` — Export the aligned chunk as a COLMAP dataset to feed the splat track.
   - `MetashapeWorkflow.export_qc(self)` — Write Metashape's processing report PDF + finalize the JSON sidecar.
   - `MetashapeWorkflow.finalize_run(self, success: bool = True) -> str` — Write the QC JSON sidecar.
@@ -407,13 +407,13 @@ Slots for the Metashape Workflow panel.
 <a id="photogrammetry--prep_stages"></a>
 ### `photogrammetry/prep_stages.py`
 
-Shared, SDK-agnostic input-prep stages for the photogrammetry engines.
+Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
 
-- [`image_long_edge(image_path: str) -> Optional[int]`](extapps/extapps/photogrammetry/prep_stages.py#L28) — Long edge (px) of an image, or ``None`` if unreadable.
-- [`extract_videos_to_dir(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]`](extapps/extapps/photogrammetry/prep_stages.py#L46) — Extract frames from one or more videos into a single ``output_dir``.
-- [`first_image_in_dirs(dirs: Sequence[str]) -> Optional[str]`](extapps/extapps/photogrammetry/prep_stages.py#L156) — First image file (sorted) across ``dirs``, or ``None``.
-- [`derive_texture_size(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int`](extapps/extapps/photogrammetry/prep_stages.py#L167) — Texture page size from a source image: next power-of-two ≥ its long edge,
-- **[`class PrepStagesMixin`](extapps/extapps/photogrammetry/prep_stages.py#L190)** — Curate + equalize stages shared by both photogrammetry engines.
+- [`image_long_edge(image_path: str) -> Optional[int]`](extapps/extapps/photogrammetry/prep_stages.py#L29) — Long edge (px) of an image, or ``None`` if unreadable.
+- [`extract_videos_to_dir(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]`](extapps/extapps/photogrammetry/prep_stages.py#L47) — Extract frames from one or more videos into a single ``output_dir``.
+- [`first_image_in_dirs(dirs: Sequence[str]) -> Optional[str]`](extapps/extapps/photogrammetry/prep_stages.py#L157) — First image file (sorted) across ``dirs``, or ``None``.
+- [`derive_texture_size(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int`](extapps/extapps/photogrammetry/prep_stages.py#L168) — Texture page size from a source image: next power-of-two ≥ its long edge,
+- **[`class PrepStagesMixin`](extapps/extapps/photogrammetry/prep_stages.py#L191)** — Curate / equalize / export-sidecar stages shared by both photogrammetry engines.
   - `PrepStagesMixin.curate_input_set(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 0, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]` — Pre-SfM content + sharpness culling via :class:`pythontk.ImageCurator`.
   - `PrepStagesMixin.preview_curation(self, source_dirs: Sequence[str], hash_thresholds: Sequence[int] = (5, 8, 10, 12, 15), keep_per_cluster: int = 1, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0)` — Dry-run curation QC — report survivor counts per dHash threshold + the
   - `PrepStagesMixin.equalize_exposures(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 0.5, reference_strategy: str = 'median') -> List[str]` — Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.
@@ -481,7 +481,7 @@ RealityCapture / RealityScan workflow engine.
   - `RealityCaptureWorkflow.import_model(self, mesh_path: str)` — Import an external low-poly mesh into the project (Maya-authored
   - `RealityCaptureWorkflow.build_texture(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)` — Unwrap (when no mesh was imported) + bake texture from solved
   - `RealityCaptureWorkflow.save_project(self)` — RC saves on every CLI call (``-save`` is appended);
-  - `RealityCaptureWorkflow.export_model(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)` — Export the current model.
+  - `RealityCaptureWorkflow.export_model(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)` — Export the current model.
   - `RealityCaptureWorkflow.export_qc(self)` — Export RC's processing report XML and append to the QC log.
   - `RealityCaptureWorkflow.finalize_run(self, success: bool = True) -> str` — Flush the QC JSON sidecar + release the transport.
 
@@ -678,8 +678,8 @@ Smart-material / preset operations — apply shelf materials onto layers.
 
 substance_workflow_bridge — Painter-side Python plugin.
 
-- [`start_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L56) — Painter plugin entry point — start the JSON-RPC bridge server.
-- [`close_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L70) — Painter plugin teardown.
+- [`start_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L61) — Painter plugin entry point — start the JSON-RPC bridge server.
+- [`close_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L75) — Painter plugin teardown.
 
 <a id="substance_workflow--plugins--substance_workflow_bridge--server"></a>
 ### `substance_workflow/plugins/substance_workflow_bridge/server.py`

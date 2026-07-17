@@ -1179,6 +1179,7 @@ class MetashapeWorkflow(PrepStagesMixin):
         save_colors: bool = True,
         save_cameras: bool = False,
         overwrite: bool = True,
+        save_usdz: bool = True,
     ):
         self._notify("export_model", 0.0)
         with self.qc.stage("export") as st:
@@ -1229,6 +1230,13 @@ class MetashapeWorkflow(PrepStagesMixin):
             )
             st["path"] = export_path
             print(f"Exported model: {export_path}")
+
+            # AR/QuickLook review sidecar beside the OBJ — authored zero-dep
+            # by pythontk (no DCC, no extra SDK), so it lands in project_path
+            # and rides the existing publish copy. Best-effort: a sidecar
+            # failure never fails the export stage.
+            if save_usdz and extension == "obj":
+                st["usdz"] = self._export_usdz_sidecar(export_path)
 
     def export_colmap(
         self,

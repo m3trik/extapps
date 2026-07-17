@@ -149,5 +149,24 @@ class TestResourceOps(_OpsContractMixin, SubstanceWorkflowTestCase):
     }
 
 
+class TestBridgeOpModuleList(SubstanceWorkflowTestCase):
+    """The bridge plugin's ``OP_MODULES`` list covers every op module on disk.
+
+    An op module absent from ``OP_MODULES`` imports fine in tests but never
+    loads inside Painter — its ops silently don't exist there.
+    """
+
+    def test_op_modules_match_disk(self) -> None:
+        from extapps.substance_workflow.plugins import substance_workflow_bridge
+
+        pkg_dir = os.path.join(REPO_ROOT, "extapps", "substance_workflow")
+        on_disk = {
+            f"extapps.substance_workflow.{f[:-3]}"
+            for f in os.listdir(pkg_dir)
+            if f.endswith("_utils.py")
+        }
+        self.assertEqual(set(substance_workflow_bridge.OP_MODULES), on_disk)
+
+
 if __name__ == "__main__":
     unittest.main()

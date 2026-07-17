@@ -1264,7 +1264,7 @@
           "kind": "function",
           "signature": "(directory: str) -> List[str]",
           "summary": "Return absolute paths to all images in `directory` (non-recursive).",
-          "line": 1364,
+          "line": 1372,
           "deprecated": false
         }
       ],
@@ -1461,7 +1461,7 @@
               "name": "export_model",
               "qualname": "MetashapeWorkflow.export_model",
               "kind": "method",
-              "signature": "(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)",
+              "signature": "(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)",
               "summary": "",
               "line": 1171,
               "deprecated": false
@@ -1472,7 +1472,7 @@
               "kind": "method",
               "signature": "(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]",
               "summary": "Export the aligned chunk as a COLMAP dataset to feed the splat track.",
-              "line": 1233,
+              "line": 1241,
               "deprecated": false
             },
             {
@@ -1481,7 +1481,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Write Metashape's processing report PDF + finalize the JSON sidecar.",
-              "line": 1331,
+              "line": 1339,
               "deprecated": false
             },
             {
@@ -1490,7 +1490,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Write the QC JSON sidecar.",
-              "line": 1353,
+              "line": 1361,
               "deprecated": false
             }
           ]
@@ -1635,7 +1635,7 @@
     },
     {
       "relpath": "photogrammetry/prep_stages.py",
-      "summary": "Shared, SDK-agnostic input-prep stages for the photogrammetry engines.",
+      "summary": "Shared, SDK-agnostic pipeline stages for the photogrammetry engines.",
       "functions": [
         {
           "name": "image_long_edge",
@@ -1643,7 +1643,7 @@
           "kind": "function",
           "signature": "(image_path: str) -> Optional[int]",
           "summary": "Long edge (px) of an image, or ``None`` if unreadable.",
-          "line": 28,
+          "line": 29,
           "deprecated": false
         },
         {
@@ -1652,7 +1652,7 @@
           "kind": "function",
           "signature": "(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]",
           "summary": "Extract frames from one or more videos into a single ``output_dir``.",
-          "line": 46,
+          "line": 47,
           "deprecated": false
         },
         {
@@ -1661,7 +1661,7 @@
           "kind": "function",
           "signature": "(dirs: Sequence[str]) -> Optional[str]",
           "summary": "First image file (sorted) across ``dirs``, or ``None``.",
-          "line": 156,
+          "line": 157,
           "deprecated": false
         },
         {
@@ -1670,15 +1670,15 @@
           "kind": "function",
           "signature": "(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int",
           "summary": "Texture page size from a source image: next power-of-two ≥ its long edge,",
-          "line": 167,
+          "line": 168,
           "deprecated": false
         }
       ],
       "classes": [
         {
           "name": "PrepStagesMixin",
-          "summary": "Curate + equalize stages shared by both photogrammetry engines.",
-          "line": 190,
+          "summary": "Curate / equalize / export-sidecar stages shared by both photogrammetry engines.",
+          "line": 191,
           "bases": [],
           "members": [
             {
@@ -1687,7 +1687,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 0, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]",
               "summary": "Pre-SfM content + sharpness culling via :class:`pythontk.ImageCurator`.",
-              "line": 193,
+              "line": 216,
               "deprecated": false
             },
             {
@@ -1696,7 +1696,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], hash_thresholds: Sequence[int] = (5, 8, 10, 12, 15), keep_per_cluster: int = 1, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0)",
               "summary": "Dry-run curation QC — report survivor counts per dHash threshold + the",
-              "line": 289,
+              "line": 312,
               "deprecated": false
             },
             {
@@ -1705,7 +1705,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 0.5, reference_strategy: str = 'median') -> List[str]",
               "summary": "Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.",
-              "line": 339,
+              "line": 362,
               "deprecated": false
             }
           ]
@@ -2102,7 +2102,7 @@
               "name": "export_model",
               "qualname": "RealityCaptureWorkflow.export_model",
               "kind": "method",
-              "signature": "(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True)",
+              "signature": "(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)",
               "summary": "Export the current model.",
               "line": 1049,
               "deprecated": false
@@ -2113,7 +2113,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Export RC's processing report XML and append to the QC log.",
-              "line": 1090,
+              "line": 1098,
               "deprecated": false
             },
             {
@@ -2122,7 +2122,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Flush the QC JSON sidecar + release the transport.",
-              "line": 1118,
+              "line": 1126,
               "deprecated": false
             }
           ]
@@ -3025,7 +3025,7 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin entry point — start the JSON-RPC bridge server.",
-          "line": 56,
+          "line": 61,
           "deprecated": false
         },
         {
@@ -3034,7 +3034,7 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin teardown.",
-          "line": 70,
+          "line": 75,
           "deprecated": false
         }
       ],

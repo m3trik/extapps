@@ -47,5 +47,6 @@ sb.handlers.external_app.launch("compositor")
 - `pythontk` — domain logic
 - `uitk` — UI framework
 - `qtpy` — Qt abstraction
+- `unitytk` — Unity project bridge (used by `unity_workflow`)
 
 The `metashape_workflow` tool additionally requires the Agisoft Metashape Python module to be importable (installed alongside Metashape itself). The `substance_workflow` tool requires an Adobe Substance 3D Painter install (auto-detected) to launch sessions.

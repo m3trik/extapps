@@ -68,7 +68,9 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
 
     def test_run_modes_populate_template_combo(self) -> None:
         labels = [self.ui.cmb000.itemText(i) for i in range(self.ui.cmb000.count())]
-        self.assertEqual(labels, ["Full pipeline", "Align only", "Refine only"])
+        self.assertEqual(
+            labels, ["Full pipeline", "Align only", "Refine only", "Prep preview"]
+        )
 
     def test_param_widgets_built_for_every_spec(self) -> None:
         """Each semantic AttributeSpec gets a widget the panel can read/write."""
@@ -111,6 +113,14 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
         cmb.setCurrentIndex(cmb.findText("Refine only"))
         self.assertFalse(rows["skip_refine"].isHidden())
         self.assertTrue(rows["depth_filter"].isHidden())
+
+        # Prep preview (curation dry-run): only the pre-processing knobs apply.
+        cmb.setCurrentIndex(cmb.findText("Prep preview"))
+        self.assertFalse(rows["curate_hash_threshold"].isHidden())
+        self.assertFalse(rows["preprocess_input"].isHidden())
+        self.assertTrue(rows["align_downscale"].isHidden())
+        self.assertTrue(rows["depth_filter"].isHidden())
+        self.assertTrue(rows["min_component_size"].isHidden())
 
         # Back to Full pipeline: everything visible again.
         cmb.setCurrentIndex(cmb.findText("Full pipeline"))
@@ -809,6 +819,15 @@ class TestMetashapePanelDispatch(unittest.TestCase):
         argv = self.captured["argv"]
         self.assertEqual(argv[argv.index("--stop-after") + 1], "align")
 
+    def test_prep_preview_mode_adds_curate_preview(self) -> None:
+        self._set_inputs()
+        idx = self.ui.cmb000.findText("Prep preview")
+        self.ui.cmb000.setCurrentIndex(idx)
+        self.ui.b000.click()
+        argv = self.captured["argv"]
+        self.assertIn("--curate-preview", argv)
+        self.assertNotIn("--stop-after", argv)
+
     def test_missing_frames_dir_does_not_dispatch(self) -> None:
         self.slots._name_edit.setText("proj")
         self.slots._frames_edit.setText(os.path.join(self.tmp, "does_not_exist"))
@@ -871,6 +890,125 @@ class TestMetashapeRunnerCallbacks(unittest.TestCase):
         self.assertTrue(any("process error" in ln for ln in self.lines))
         r._on_finished(0)  # late finished after error -> no second callback
         self.assertEqual(self.codes, [-1])
+
+
+class TestMetashapeRunnerPrepChain(unittest.TestCase):
+    """The two-stage prep chain: pre-processing can never run inside
+    metashape.exe (no cv2 in its bundled Python), so the runner executes
+    ``run_combined --prep-only`` under the panel's Python first and hands the
+    prepared frames to the metashape.exe stage. These tests exercise the mode
+    routing, argv rewrite, sentinel parsing, and the stage-1 → stage-2
+    continuation without spawning real processes."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = _ensure_app()
+
+    def _runner(self):
+        from extapps.photogrammetry._process_runner import ProcessRunner
+        from extapps.photogrammetry.metashape_workflow._metashape_runner import (
+            MetashapeRunner,
+        )
+        r = MetashapeRunner.__new__(MetashapeRunner)  # skip exe discovery
+        ProcessRunner.__init__(r)
+        r._prep_text = ""
+        return r
+
+    # ---------------------------------------------------------- mode routing
+    def test_prep_mode_routing(self) -> None:
+        from extapps.photogrammetry.metashape_workflow._metashape_runner import (
+            MetashapeRunner as R,
+        )
+        # Preview always runs venv-only.
+        self.assertEqual(R._prep_mode(["--curate-preview", "--frames-dir", "x"]),
+                         "preview")
+        # Default panel argv (prep on) chains.
+        self.assertEqual(R._prep_mode(["--frames-dir", "x"]), "chain")
+        # Master pre-processing off + no masks: nothing for a venv stage to do.
+        self.assertIsNone(R._prep_mode(
+            ["--frames-dir", "x", "--skip-curate", "--skip-equalize"]))
+        # ...but masks alone still warrant the venv stage (rembg pre-generation).
+        self.assertEqual(R._prep_mode(
+            ["--frames-dir", "x", "--skip-curate", "--skip-equalize",
+             "--use-masks"]), "chain")
+        # No single --frames-dir source: straight to Metashape (CLI multi-capture).
+        self.assertIsNone(R._prep_mode(["--input-root", "x"]))
+
+    def test_argv_rewrite_points_at_prepped_dir_and_skips_prep(self) -> None:
+        from extapps.photogrammetry.metashape_workflow._metashape_runner import (
+            MetashapeRunner as R,
+        )
+        out = R._argv_with_prepped_source(
+            ["--name", "n", "--frames-dir", "orig", "--gate-mode", "warn"],
+            "prepped",
+        )
+        self.assertEqual(out[out.index("--frames-dir") + 1], "prepped")
+        self.assertIn("--skip-curate", out)
+        self.assertIn("--skip-equalize", out)
+        self.assertIsNone(R._argv_with_prepped_source(["--name", "n"], "p"))
+
+    def test_parse_prep_result_last_wins_and_tolerates_garbage(self) -> None:
+        from extapps.photogrammetry.metashape_workflow._metashape_runner import (
+            MetashapeRunner as R,
+        )
+        from extapps.photogrammetry.metashape_workflow.run_combined import (
+            PREP_RESULT_PREFIX,
+        )
+        text = (
+            "noise\n"
+            f"{PREP_RESULT_PREFIX}{{\"dirs\": [\"a\"], \"masks\": 0}}\n"
+            f"{PREP_RESULT_PREFIX}{{\"dirs\": [\"b\"], \"masks\": 2}}\n"
+        )
+        self.assertEqual(R._parse_prep_result(text)["dirs"], ["b"])
+        self.assertIsNone(R._parse_prep_result(f"{PREP_RESULT_PREFIX}not json"))
+        self.assertIsNone(R._parse_prep_result("no sentinel at all"))
+
+    # ---------------------------------------------------------- continuation
+    def _continuation_case(self, code, prep_text, cancelled=False):
+        r = self._runner()
+        r._prep_text = prep_text
+        r._cancelled = cancelled
+        launched, done_codes, lines = [], [], []
+        r._command = lambda argv: ("metashape.exe", ["-r", "runner", *argv])
+        r._launch = lambda prog, args, cwd=None, extra_env=None: launched.append(
+            (prog, list(args))
+        )
+        argv = ["--name", "n", "--frames-dir", "orig"]
+        cont = r._prep_continuation(argv, lines.append, done_codes.append, None)
+        cont(code)
+        self.app.processEvents()  # flush the deferred stage-2 launch
+        return launched, done_codes, lines
+
+    def test_successful_prep_launches_metashape_on_prepped_dir(self) -> None:
+        from extapps.photogrammetry.metashape_workflow.run_combined import (
+            PREP_RESULT_PREFIX,
+        )
+        prepped = tempfile.mkdtemp(prefix="mw_prepped_")
+        self.addCleanup(shutil.rmtree, prepped, True)
+        text = PREP_RESULT_PREFIX + json.dumps({"dirs": [prepped], "masks": 0})
+        launched, done_codes, _ = self._continuation_case(0, text)
+        self.assertEqual(len(launched), 1)
+        prog, args = launched[0]
+        self.assertEqual(prog, "metashape.exe")
+        self.assertEqual(args[args.index("--frames-dir") + 1], prepped)
+        self.assertIn("--skip-curate", args)
+        self.assertEqual(done_codes, [])  # on_done fires after stage 2, not now
+
+    def test_failed_prep_falls_back_to_original_argv(self) -> None:
+        launched, _codes, lines = self._continuation_case(1, "no sentinel")
+        self.assertEqual(len(launched), 1)
+        _prog, args = launched[0]
+        self.assertEqual(args[args.index("--frames-dir") + 1], "orig")
+        self.assertNotIn("--skip-curate", args)
+        self.assertTrue(any("continuing with the original frames" in ln
+                            for ln in lines))
+
+    def test_cancelled_prep_does_not_launch_metashape(self) -> None:
+        launched, done_codes, _ = self._continuation_case(
+            62097, "", cancelled=True
+        )
+        self.assertEqual(launched, [])
+        self.assertEqual(done_codes, [62097])
 
 
 class TestRunCombinedStopAfter(unittest.TestCase):
@@ -971,6 +1109,179 @@ class TestRunCombinedFramesDir(unittest.TestCase):
             "--output-root", self.out_root, "--name", "fd",
         ])
         self.assertEqual(rc, 1)
+
+
+def _cv2_or_none():
+    try:
+        import cv2  # noqa: F401
+        import numpy  # noqa: F401
+        return cv2
+    except ImportError:
+        return None
+
+
+class TestRunCombinedPrepOnly(unittest.TestCase):
+    """``--prep-only`` is the venv half of the panel's two-stage run: it must
+    run the pre-processing for real (this interpreter has cv2), write its own
+    ``<name>_prep_qc.json`` sidecar (the engine run's sidecar would overwrite a
+    shared one), print the machine-readable ``PREP_RESULT_JSON`` line the
+    runner parses, and never touch any engine stage."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if _cv2_or_none() is None:
+            raise unittest.SkipTest("cv2/numpy not installed")
+
+    def setUp(self) -> None:
+        import numpy as np
+        cv2 = _cv2_or_none()
+        self.tmp = tempfile.mkdtemp(prefix="mw_preponly_")
+        self.frames = os.path.join(self.tmp, "cap")
+        os.makedirs(self.frames)
+        rng = np.random.default_rng(0)
+        for i in range(4):
+            img = (rng.random((120, 160, 3)) * 255).astype("uint8")
+            cv2.imwrite(os.path.join(self.frames, f"{i}.jpg"), img)
+        # One catastrophically defocused frame — the default 0.15×median
+        # sharpness guard (the only destructive baseline stage) must cull it.
+        blur = (rng.random((120, 160, 3)) * 255).astype("uint8")
+        for _ in range(2):
+            blur = cv2.GaussianBlur(blur, (31, 31), 15)
+        cv2.imwrite(os.path.join(self.frames, "blurry.jpg"), blur)
+        self.out_root = os.path.join(self.tmp, "out")
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_prep_only_curates_and_prints_result(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        from extapps.photogrammetry.metashape_workflow import run_combined
+
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = run_combined.main([
+                "--prep-only",
+                "--frames-dir", self.frames,
+                "--output-root", self.out_root, "--name", "po",
+            ])
+        self.assertEqual(rc, 0)
+        out = buf.getvalue()
+
+        # The sentinel line parses and names one existing curated dir.
+        result = None
+        for line in out.splitlines():
+            if line.startswith(run_combined.PREP_RESULT_PREFIX):
+                result = json.loads(line[len(run_combined.PREP_RESULT_PREFIX):])
+        self.assertIsNotNone(result, f"no PREP_RESULT_JSON line in:\n{out}")
+        self.assertEqual(len(result["dirs"]), 1)
+        prepped = result["dirs"][0]
+        self.assertTrue(os.path.isdir(prepped))
+        kept = sorted(os.listdir(prepped))
+        self.assertNotIn("blurry.jpg", kept, "median-frac guard did not cull")
+        self.assertEqual(len(kept), 4)
+
+        # Prep QC goes to its OWN sidecar; no engine sidecar, no engine stages.
+        proj = os.path.join(self.out_root, "po")
+        self.assertTrue(os.path.exists(os.path.join(proj, "po_prep_qc.json")))
+        self.assertFalse(os.path.exists(os.path.join(proj, "po_qc.json")))
+        with open(os.path.join(proj, "po_prep_qc.json"), encoding="utf-8") as f:
+            qc = json.load(f)
+        self.assertIn("curate_input_set", qc["stages"])
+        self.assertNotIn("align", qc["stages"])
+        self.assertTrue(qc["success"])
+
+    def test_curate_preview_writes_prep_sidecar_not_engine_sidecar(self) -> None:
+        """A preview is a prep artifact: its QC must land in
+        ``<name>_prep_qc.json`` — writing ``<name>_qc.json`` would clobber a
+        previous real run's engine sidecar under the same project name."""
+        from extapps.photogrammetry.metashape_workflow import run_combined
+
+        rc = run_combined.main([
+            "--curate-preview",
+            "--frames-dir", self.frames,
+            "--output-root", self.out_root, "--name", "pv",
+        ])
+        self.assertEqual(rc, 0)
+        proj = os.path.join(self.out_root, "pv")
+        self.assertTrue(os.path.exists(os.path.join(proj, "pv_prep_qc.json")))
+        self.assertFalse(os.path.exists(os.path.join(proj, "pv_qc.json")))
+        with open(os.path.join(proj, "pv_prep_qc.json"), encoding="utf-8") as f:
+            qc = json.load(f)
+        self.assertIn("preview_curation", qc["stages"])
+        # The sweep reports survivor counts per threshold, 0 included.
+        rows = qc["stages"]["preview_curation"]["report"]["thresholds"]
+        self.assertIn(0, [r["hash_threshold"] for r in rows])
+
+    def test_prep_only_respects_skip_curate(self) -> None:
+        """With curation skipped (and a single capture, so equalize skips too)
+        the sentinel hands back the ORIGINAL dir — the runner then feeds the
+        as-shot frames to Metashape, not an empty prep artifact."""
+        import io
+        from contextlib import redirect_stdout
+        from extapps.photogrammetry.metashape_workflow import run_combined
+
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = run_combined.main([
+                "--prep-only", "--skip-curate",
+                "--frames-dir", self.frames,
+                "--output-root", self.out_root, "--name", "po2",
+            ])
+        self.assertEqual(rc, 0)
+        result = None
+        for line in buf.getvalue().splitlines():
+            if line.startswith(run_combined.PREP_RESULT_PREFIX):
+                result = json.loads(line[len(run_combined.PREP_RESULT_PREFIX):])
+        self.assertEqual(result["dirs"], [self.frames])
+
+
+class TestRunCombinedPregeneratedMasks(unittest.TestCase):
+    """``--use-masks`` must import pre-generated per-source mask files (written
+    by the panel's venv prep stage or a manual ``--prep-only`` run) instead of
+    re-deriving masks — the only masking path guaranteed to work under
+    ``metashape.exe -r`` (no rembg, and native AI masking needs its model)."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.mkdtemp(prefix="mw_premask_")
+        self.frames = os.path.join(self.tmp, "cap")
+        os.makedirs(self.frames)
+        for name in ("0.jpg", "1.jpg"):
+            open(os.path.join(self.frames, name), "w").close()
+        self.out_root = os.path.join(self.tmp, "out")
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _run(self):
+        from extapps.photogrammetry.metashape_workflow import run_combined
+        rc = run_combined.main([
+            "--frames-dir", self.frames,
+            "--output-root", self.out_root, "--name", "pm",
+            "--skip-curate", "--skip-equalize", "--use-masks",
+            "--stop-after", "align",
+        ])
+        with open(os.path.join(self.out_root, "pm", "pm_qc.json"),
+                  encoding="utf-8") as f:
+            return rc, json.load(f)
+
+    def test_pre_generated_masks_are_imported_not_regenerated(self) -> None:
+        # Same per-source dir naming the prep stage / rembg fallback use.
+        mask_dir = os.path.join(self.out_root, "pm", "masks", "00_cap")
+        os.makedirs(mask_dir)
+        for name in ("0_mask.png", "1_mask.png"):
+            open(os.path.join(mask_dir, name), "w").close()
+        rc, qc = self._run()
+        self.assertEqual(rc, 0)
+        self.assertIn("masks", qc["stages"], "pre-generated masks not imported")
+        self.assertEqual(qc["stages"]["masks"]["masks_dir"], mask_dir)
+        self.assertNotIn("masks_native", qc["stages"],
+                         "native masking ran despite pre-generated file masks")
+
+    def test_without_pregenerated_masks_native_path_runs(self) -> None:
+        rc, qc = self._run()
+        self.assertEqual(rc, 0)
+        self.assertIn("masks_native", qc["stages"])
 
 
 class TestRunCombinedAlignmentLevers(unittest.TestCase):

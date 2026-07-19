@@ -33,6 +33,7 @@ _RUN_MODES: List[Tuple[str, str]] = [
     ("Full pipeline", ""),
     ("Align only", "align"),
     ("Refine only", "refine"),
+    ("Prep preview", PhotogrammetryPanelSlots.PREP_PREVIEW_MODE),
 ]
 
 
@@ -63,6 +64,11 @@ class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
         "align": "Align only: stop after alignment (fast A/B of input prep, "
                  "minutes vs a multi-hour bake).",
         "refine": "Refine only: stop after gradual-selection alignment refinement.",
+        PhotogrammetryPanelSlots.PREP_PREVIEW_MODE:
+            "Prep preview: dry-run the input curation in the panel's Python — "
+            "survivor counts per dedup threshold + the sharpness distribution. "
+            "No Metashape launch, no files written; use it to tune the "
+            "pre-processing knobs before a run.",
     }
 
     REQUIRE_OUTPUT_DIR = True
@@ -100,7 +106,7 @@ class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
         pair = self._selected_template_mode()
         if pair and pair[1] in ("align", "refine"):
             return ["--stop-after", pair[1]]
-        return []
+        return super()._mode_argv()  # base handles the shared prep-preview mode
 
     def help_spec(self) -> dict:
         return dict(

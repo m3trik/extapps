@@ -304,6 +304,55 @@ class TestInvokeRoundTrip(SubstanceWorkflowTestCase):
         self.assertIn("bad op", str(ctx.exception))
 
 
+class TestInvokeConnectionRefused(SubstanceWorkflowTestCase):
+    """Regression: a bridge socket refused mid-session must surface an actionable
+    ConnectionError (matching pythontk.RpcClient semantics), not a raw URLError.
+
+    urllib raises a plain ``URLError`` (not ``HTTPError``) on connection refused,
+    so the old ``except urllib.error.HTTPError`` clause let it leak uncaught.
+    """
+
+    def _connected(self) -> PainterConnection:
+        conn = PainterConnection()
+        conn.host = "localhost"
+        conn.port = 5050
+        conn.is_connected = True
+        return conn
+
+    def test_invoke_reraises_urlerror_as_connectionerror(self) -> None:
+        import urllib.error
+
+        conn = self._connected()
+        with patch(
+            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ):
+            with self.assertRaises(ConnectionError) as ctx:
+                conn.invoke("project.info")
+        self.assertIn("not reachable", str(ctx.exception))
+
+    def test_invoke_reraises_connectionrefusederror(self) -> None:
+        conn = self._connected()
+        with patch(
+            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            side_effect=ConnectionRefusedError(111, "Connection refused"),
+        ):
+            with self.assertRaises(ConnectionError):
+                conn.invoke("project.info")
+
+    def test_describe_reraises_urlerror_as_connectionerror(self) -> None:
+        import urllib.error
+
+        conn = self._connected()
+        with patch(
+            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ):
+            with self.assertRaises(ConnectionError) as ctx:
+                conn.describe()
+        self.assertIn("not reachable", str(ctx.exception))
+
+
 @unittest.skipUnless(
     os.environ.get("SUBSTANCE_WORKFLOW_RUN_INTEGRATION") == "1",
     "Set SUBSTANCE_WORKFLOW_RUN_INTEGRATION=1 to run live Painter integration tests",

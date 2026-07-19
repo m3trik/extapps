@@ -58,7 +58,7 @@ the app and persist.
 | Lever | Effect on noise | Metashape | RealityScan |
 |:--|:--|:--|:--|
 | **Capture: cut the specularity** (cross-polarized flash, polarizer, matte dulling spray, diffuse/overcast lighting) | Removes the root cause — the only true fix for shiny metal | capture-time | capture-time |
-| **Subject masking** (exclude background) | Kills background floaters; sharpens silhouettes — and (since 2026-07) the masks also gate feature *matching* (`filter_mask`), not just depth | `--use-masks`: Metashape 2.2+ built-in AI masking (needs its model — run Generate Masks (AI) once in the GUI to download it), else rembg `_mask` files → `generateMasks` import (Metashape 2.x removed `importMasks`) | GUI masks / `_mask` images; runner import **not wired** |
+| **Subject masking** (exclude background) | Kills background floaters; sharpens silhouettes — and (since 2026-07) the masks also gate feature *matching* (`filter_mask`), not just depth | `--use-masks`: pre-generated rembg `_mask` files imported first (the panel's venv prep stage writes them, so masking works out of the box), else Metashape 2.2+ built-in AI masking (needs its model — run Generate Masks (AI) once in the GUI to download it), else in-process rembg → `generateMasks` import (Metashape 2.x removed `importMasks`) | GUI masks / `_mask` images; runner import **not wired** |
 | **Tight reconstruction region** (crop the bbox to the subject) | Removes *all* out-of-region floaters — huge | set in GUI | set in GUI (Reconstruction Region box) |
 | **Depth-map filtering strength** | Smooths noisy per-pixel depth before meshing | `--depth-filter moderate` | GUI: Reconstruction Settings → *Filtering strength* = **High** |
 | **Image / depth downscale** | Higher downscale = smoother, less noisy (less detail). On specular metal **don't go to ds=1/Ultra — it over-fits the noise and *warps* geometry**; ds=2 is the sweet spot. | `--align-downscale`, `--depth-downscale` | GUI: *Image downscale factor* (depth) |
@@ -109,14 +109,23 @@ one of them deletes or mutates input, and the verified data (below) shows even
 a 2.3% over-cull cost ~10 points of alignment coverage. Turn levers on
 per-run/per-preset when a capture needs them, not by default.
 
-**Metashape-hosted runs can't run the prep stages at all.** The panel and
-`MetashapeConnection` drive `run_combined` *inside* `metashape.exe`, whose
-bundled Python (3.9) has **no cv2/PIL** — curation and equalization skip with
-a loud warning and `fallback: cv2_missing` in the QC sidecar (verified live on
-2.2.0). When you actually want culling/equalization for a Metashape run,
-pre-process the frames dir under a Python with opencv (the panel venv) and
-feed the processed dir as the source. RealityScan/Brush runs execute in the
-venv, so their prep stages run for real.
+**Metashape prep runs venv-side, via a two-stage chain.** `metashape.exe`'s
+bundled Python (3.9) has **no cv2/PIL** — the prep stages can never execute
+inside `metashape.exe -r` (they skip with a loud warning and `fallback:
+cv2_missing` in the QC sidecar; verified live on 2.2.0). So the panel's
+`MetashapeRunner` chains two processes: first `run_combined --prep-only` under
+the **panel's own Python** (curation, equalization, and — with masking on —
+rembg file masks), then `metashape.exe -r` on the prepared frames with
+`--skip-curate --skip-equalize`. Prep QC lands in its own
+`<name>_prep_qc.json` sidecar beside the engine's. Headless, the same split is
+available manually: run `--prep-only` in a venv, then feed the printed dir to
+the Metashape run (that is exactly what the runner automates). Direct
+`MetashapeConnection` scripts still execute entirely inside `metashape.exe`
+and therefore still skip prep. RealityScan/Brush runs execute in the venv, so
+their prep stages run in-process. Both image-in panels also expose the
+curation dry-run as a **Prep preview** run mode (`--curate-preview`): survivor
+counts per dedup threshold + the sharpness distribution, no engine launch, no
+files written.
 
 ## `specular_metal` preset — what it sets and why
 

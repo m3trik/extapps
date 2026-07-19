@@ -21,12 +21,25 @@ importable so the plumbing exercises end-to-end on any environment.
 ``--preset NAME`` lays an opt-in run template (profile ``presets``) over the
 align/depth/filter/masking defaults for difficult captures; see
 ``photogrammetry/TUNING.md``.
+
+``--prep-only`` runs ONLY the input pre-processing (curation, cross-capture
+equalization, optional rembg masks) in the current interpreter and prints the
+prepared dir(s) — the venv-side half of the panel's two-stage run: Metashape's
+bundled Python has no cv2/PIL, so prep can never run inside ``metashape.exe
+-r``; the panel's ``MetashapeRunner`` chains a ``--prep-only`` pass under its
+own Python first and feeds the result to the metashape.exe stage.
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
+
+# Machine-readable result line a ``--prep-only`` run prints last (parsed by the
+# panel's MetashapeRunner to feed the prepared dir into the metashape.exe
+# stage). Kept greppable/stable: ``PREP_RESULT_JSON={"dirs": [...], "masks": N}``.
+PREP_RESULT_PREFIX = "PREP_RESULT_JSON="
 
 if __package__ in (None, ""):
     # Executed directly as a top-level script — e.g. ``metashape.exe -r
@@ -92,6 +105,119 @@ def _stop_after(label, mp) -> int:
     mp.export_qc()  # Metashape report PDF: sparse cloud, cameras, overlap, reproj.
     sidecar = mp.finalize_run(success=True)
     print(f"\nStopped after '{label}' (--stop-after). QC sidecar: {sidecar}")
+    return 0
+
+
+def _mask_dir(masks_root: str, index: int, source_dir: str) -> str:
+    """Per-source mask directory — index-prefixed so same-basename captures
+    can't clobber each other. Single naming source of truth shared by the
+    in-engine rembg fallback, the ``--prep-only`` pre-generation, and the
+    pre-generated-mask import (all three must agree or masks go unfound)."""
+    return os.path.join(
+        masks_root, f"{index:02d}_{os.path.basename(os.path.normpath(source_dir))}"
+    )
+
+
+def _apply_prep_stages(mp, args, sources):
+    """Curate + equalize *sources* per the CLI flags; returns the (possibly
+    replaced) source dirs. Shared by the normal pipeline and ``--prep-only``
+    so the two paths cannot drift. The stages themselves degrade gracefully
+    (cv2 missing → loud warning + pass-through), so this is safe to call in
+    any interpreter."""
+    if not args.skip_curate:
+        sources = mp.curate_input_set(
+            sources,
+            hash_threshold=args.curate_hash_threshold,
+            sharpness_floor=args.curate_sharpness_floor,
+            sharpness_floor_percentile=(
+                args.curate_sharpness_percentile
+                if args.curate_sharpness_percentile > 0 else None
+            ),
+            min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
+            keep_per_cluster=args.keep_per_cluster,
+        )
+
+    if not args.skip_equalize and len(sources) > 1:
+        sources = mp.equalize_exposures(
+            sources,
+            strength=args.equalize_strength,
+            reference_strategy=args.equalize_reference,
+        )
+    elif not args.skip_equalize:
+        print(
+            "[equalize] skipped: single capture - cross-set exposure matching "
+            "needs >=2 captures; re-encoding a lone set only risks SfM feature "
+            "quality for no benefit (Metashape calibrates color internally)."
+        )
+    return sources
+
+
+def _pregenerate_masks(sources, project_dir) -> int:
+    """rembg background masks for every source dir (``--prep-only --use-masks``).
+
+    Written to the same per-source dirs the engine-side rembg fallback uses, so
+    the metashape.exe stage finds and imports them instead of re-deriving —
+    the only way file masks can exist at all in the production context
+    (Metashape's bundled Python has no rembg/PIL). Returns the mask count
+    (0 when rembg is unavailable — the engine stage then falls back to
+    Metashape's native AI masking, which needs its model downloaded)."""
+    try:
+        from pythontk import MaskGenerator
+    except ImportError:
+        print("[prep masks] pythontk MaskGenerator unavailable; skipping.")
+        return 0
+    gen = MaskGenerator()
+    if not gen.is_available():
+        print(
+            "[prep masks] rembg/PIL not installed in this Python - masks left "
+            "to the engine stage (native AI masking, which requires its model; "
+            "`pip install rembg` here to pre-generate file masks instead)."
+        )
+        return 0
+    masks_root = os.path.join(project_dir, "masks")
+    total = 0
+    for i, src in enumerate(sources):
+        per_src = _mask_dir(masks_root, i, src)
+        written = gen.generate_masks(src, per_src)
+        total += len(written)
+        print(f"[prep masks] {len(written)} mask(s) -> {per_src}")
+    return total
+
+
+def _run_prep_only(args, sources, project_dir) -> int:
+    """``--prep-only``: run ONLY the input pre-processing (curation, cross-
+    capture equalization, optional rembg masks) in *this* interpreter, then
+    print the prepared source dir(s) and exit.
+
+    This is how pre-processing actually reaches the production path: the
+    panel's MetashapeRunner executes this under the panel's full Python
+    (cv2/PIL available) before launching ``metashape.exe -r`` — whose bundled
+    Python can never run these stages — and feeds the printed dirs into that
+    second stage with ``--skip-curate --skip-equalize``. Also usable manually:
+    run it in a venv, then pass the printed dir to any later metashape run.
+
+    QC lands in its own ``<name>_prep_qc.json`` sidecar (the engine run's
+    ``<name>_qc.json`` would otherwise overwrite it)."""
+    mp = MetashapeWorkflow(
+        project_path=project_dir,
+        name=f"{args.name}_prep",
+        mock_mode=True,  # prep stages are SDK-free; never touch Metashape here
+        gate_mode=args.gate_mode,
+        checkpoint_each_stage=False,
+        save_project=False,
+    )
+    try:
+        sources = _apply_prep_stages(mp, args, sources)
+        masks = _pregenerate_masks(sources, project_dir) if args.use_masks else 0
+    except Exception as e:
+        print(f"\nPrep failed: {e}", file=sys.stderr)
+        mp.finalize_run(success=False)
+        return 1
+    sidecar = mp.finalize_run(success=True)
+    print(f"\nPrep done. QC sidecar: {sidecar}")
+    for s in sources:
+        print(f"  prepared source: {s}")
+    print(PREP_RESULT_PREFIX + json.dumps({"dirs": list(sources), "masks": masks}))
     return 0
 
 
@@ -196,7 +322,19 @@ def main(argv=None) -> int:
                    help="Dry-run: report curation survivor counts per dHash "
                         "threshold + the sharpness distribution, then exit (no "
                         "reconstruction). Use to tune --curate-hash-threshold on "
-                        "a real set before a long run.")
+                        "a real set before a long run. Needs a Python with "
+                        "opencv (the panel routes this to its own venv).")
+    p.add_argument("--prep-only", action="store_true",
+                   help="Run ONLY the input pre-processing stages (curation, "
+                        "cross-capture equalization, and - with --use-masks - "
+                        "rembg background masks) in THIS interpreter, print the "
+                        "prepared source dir(s) as a PREP_RESULT_JSON line, and "
+                        "exit. Run it under a Python with opencv - the stages "
+                        "can never run inside metashape.exe's bundled Python. "
+                        "The panel's runner invokes this automatically before "
+                        "its metashape.exe stage; manually, feed the printed "
+                        "dir to a later run via --frames-dir with "
+                        "--skip-curate --skip-equalize.")
     p.add_argument("--skip-equalize", action=argparse.BooleanOptionalAction,
                    default=bool(preset.get("skip_equalize", False)
                                 or _preset_prep_off),
@@ -437,6 +575,43 @@ def main(argv=None) -> int:
         count = sum(1 for f in os.listdir(s) if f.lower().endswith(IMAGE_EXTS))
         print(f"  - {s}  ({count} images)")
 
+    if args.prep_only:
+        project_dir = os.path.join(args.output_root, args.name)
+        os.makedirs(project_dir, exist_ok=True)
+        return _run_prep_only(args, sources, project_dir)
+
+    if args.curate_preview:
+        # Dry-run: report-only, no reconstruction — so use a prep-named mock
+        # host. Writing to <name>_qc.json here would clobber a previous real
+        # run's engine sidecar under the same project name; the preview is a
+        # prep artifact and shares the prep sidecar instead.
+        project_dir = os.path.join(args.output_root, args.name)
+        os.makedirs(project_dir, exist_ok=True)
+        pv = MetashapeWorkflow(
+            project_path=project_dir,
+            name=f"{args.name}_prep",
+            mock_mode=True,  # preview needs cv2, never the SDK
+            gate_mode=args.gate_mode,
+            checkpoint_each_stage=False,
+            save_project=False,
+        )
+        pv.preview_curation(
+            sources,
+            # Sweep the standard thresholds plus the user's own value (and 0,
+            # the no-dedup baseline) so the preview answers the question they
+            # are actually tuning.
+            hash_thresholds=sorted({0, 5, 8, 10, 12, 15,
+                                    args.curate_hash_threshold}),
+            sharpness_floor_percentile=(
+                args.curate_sharpness_percentile
+                if args.curate_sharpness_percentile > 0 else None
+            ),
+            min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
+            keep_per_cluster=args.keep_per_cluster,
+        )
+        pv.finalize_run(success=True)  # flush the preview stage to the sidecar
+        return 0
+
     # Resolve texture size (curation/equalize preserve resolution, so derive
     # from the original frames now). cv2/PIL may be absent in Metashape's
     # bundled Python -> derive_texture_size falls back to 8192.
@@ -467,69 +642,36 @@ def main(argv=None) -> int:
             "QC sidecar will still be written; no mesh produced."
         )
 
-    if args.curate_preview:
-        mp.preview_curation(
-            sources,
-            # Sweep the standard thresholds plus the user's own value (and 0,
-            # the no-dedup baseline) so the preview answers the question they
-            # are actually tuning.
-            hash_thresholds=sorted({0, 5, 8, 10, 12, 15,
-                                    args.curate_hash_threshold}),
-            sharpness_floor_percentile=(
-                args.curate_sharpness_percentile
-                if args.curate_sharpness_percentile > 0 else None
-            ),
-            min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
-            keep_per_cluster=args.keep_per_cluster,
-        )
-        mp.finalize_run(success=True)  # flush the preview stage to the sidecar
-        return 0
-
     try:
         mp.create_chunk(f"{args.name} (combined)")
 
-        if not args.skip_curate:
-            sources = mp.curate_input_set(
-                sources,
-                hash_threshold=args.curate_hash_threshold,
-                sharpness_floor=args.curate_sharpness_floor,
-                sharpness_floor_percentile=(
-                    args.curate_sharpness_percentile
-                    if args.curate_sharpness_percentile > 0 else None
-                ),
-                min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
-                keep_per_cluster=args.keep_per_cluster,
-            )
-
-        if not args.skip_equalize and len(sources) > 1:
-            sources = mp.equalize_exposures(
-                sources,
-                strength=args.equalize_strength,
-                reference_strategy=args.equalize_reference,
-            )
-        elif not args.skip_equalize:
-            print(
-                "[equalize] skipped: single capture - cross-set exposure matching "
-                "needs >=2 captures; re-encoding a lone set only risks SfM feature "
-                "quality for no benefit (Metashape calibrates color internally)."
-            )
+        sources = _apply_prep_stages(mp, args, sources)
 
         mp.add_image_dirs(sources)
 
         if args.use_masks:
-            # Primary: Metashape 2.2+'s built-in AI background masking — runs
-            # inside the SDK, so it works in the production headless context
-            # (metashape.exe -r has no rembg/PIL/cv2). Fallback for older
-            # SDKs: rembg file masks per source (needs rembg importable) —
-            # each source gets its own index-prefixed subdir so same-basename
-            # captures can't clobber each other, then a file import per dir.
-            if not mp.generate_masks_native():
-                masks_root = os.path.join(project_dir, "masks")
+            # Pre-generated file masks first: a ``--prep-only`` stage (the
+            # panel's venv prep, or a manual venv run) may already have written
+            # rembg masks into the shared per-source dirs. Importing them is
+            # deterministic and works in every context — including
+            # metashape.exe -r, where neither rembg nor (without its
+            # downloaded model) native AI masking is guaranteed. Otherwise:
+            # Metashape 2.2+'s built-in AI masking (runs inside the SDK), then
+            # the in-process rembg fallback for older SDKs / venv runs.
+            masks_root = os.path.join(project_dir, "masks")
+            pre_generated = [
+                per_src
+                for i, src in enumerate(sources)
+                for per_src in [_mask_dir(masks_root, i, src)]
+                if os.path.isdir(per_src)
+                and any(f.lower().endswith("_mask.png") for f in os.listdir(per_src))
+            ]
+            if pre_generated:
+                for per_src in pre_generated:
+                    mp.import_masks(per_src)
+            elif not mp.generate_masks_native():
                 for i, src in enumerate(sources):
-                    per_src = os.path.join(
-                        masks_root,
-                        f"{i:02d}_{os.path.basename(os.path.normpath(src))}",
-                    )
+                    per_src = _mask_dir(masks_root, i, src)
                     out = mp.generate_masks(source_dir=src, masks_dir=per_src)
                     if out:
                         mp.import_masks(out)

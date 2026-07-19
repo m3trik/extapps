@@ -69,6 +69,78 @@ def _configure_bake_params(ts, bake_resolution: int, ao_kwargs: dict) -> List[st
     return written
 
 
+def _apply_layer_intensity(layer, channel, intensity: float) -> None:
+    """Scale a fill layer's channel contribution via its layer opacity.
+
+    Painter layer opacity is clamped to ``[0.0, 1.0]``, so an ``intensity``
+    above 1.0 saturates at full strength (the sliders allow up to 4.0). An
+    intensity of 1.0 is Painter's default opacity, so it is a no-op we skip —
+    keeping the default bake byte-identical.
+
+    The real API is ``Node.set_opacity(opacity, channel)`` — a method on the
+    layer node (verified against the installed Painter's layerstack module;
+    no release ships a module-level setter). Resolve it defensively and warn,
+    never crash, when the running Painter lacks it.
+    """
+    opacity = min(max(intensity, 0.0), 1.0)
+    if opacity >= 1.0:  # full strength == Painter's default; nothing to change.
+        return
+
+    set_opacity = getattr(layer, "set_opacity", None)
+    if set_opacity is None:
+        logger.warning(
+            "[bake] Layer node has no set_opacity method; intensity %.2f "
+            "could not be applied to '%s'.",
+            intensity,
+            getattr(layer, "uid", layer),
+        )
+        return
+
+    try:
+        set_opacity(opacity, channel)
+    except TypeError:
+        # Older/alternate signature: layer-wide opacity, no per-channel arg.
+        set_opacity(opacity)
+
+
+def _name_node(layer, name: str) -> None:
+    """Name a layer node via ``Node.set_name`` (the real API), warn-don't-crash."""
+    set_name = getattr(layer, "set_name", None)
+    if set_name is None:
+        logger.warning(
+            "[bake] Layer node has no set_name method; '%s' left unnamed.", name
+        )
+        return
+    set_name(name)
+
+
+def _set_blending_mode(layerstack, layer, channel, blend_mode: str) -> None:
+    """Set a layer's blending mode for *channel*.
+
+    Real API: ``Node.set_blending_mode(mode, channel)`` — a method on the
+    layer node (verified against the installed Painter). The old module-level
+    ``layerstack.set_channel_blending_mode`` never existed; it is kept only as
+    a last-resort fallback for hypothetical other builds.
+    """
+    try:
+        mode = getattr(
+            layerstack.BlendingMode, blend_mode, layerstack.BlendingMode.Multiply
+        )
+    except AttributeError:
+        logger.warning("[bake] layerstack.BlendingMode unavailable.")
+        return
+
+    set_bm = getattr(layer, "set_blending_mode", None)
+    if set_bm is not None:
+        set_bm(mode, channel)
+        return
+    legacy = getattr(layerstack, "set_channel_blending_mode", None)
+    if legacy is not None:
+        legacy(layer, channel, mode)
+        return
+    logger.warning("[bake] No blending-mode setter available on this Painter.")
+
+
 def _add_lighting_layer(
     ts,
     layer_name: str,
@@ -88,18 +160,22 @@ def _add_lighting_layer(
 
     stack = textureset.Stack.from_name(_ts_name(ts))
     insert_pos = layerstack.InsertPosition.from_textureset_stack(stack)
-    layer = layerstack.insert_fill(insert_pos, name=layer_name)
+    # Real API: insert_fill(position) takes no name kwarg (verified against
+    # the installed Painter — the old name= call raised TypeError); the node
+    # is named afterwards via Node.set_name.
+    layer = layerstack.insert_fill(insert_pos)
+    _name_node(layer, layer_name)
 
     base_color = textureset.ChannelType.BaseColor
-    try:
-        mode = getattr(layerstack.BlendingMode, blend_mode, layerstack.BlendingMode.Multiply)
-        layerstack.set_channel_blending_mode(layer, base_color, mode)
-    except AttributeError:
-        logger.warning("[bake] BlendingMode/set_channel_blending_mode unavailable.")
+    _set_blending_mode(layerstack, layer, base_color, blend_mode)
 
-    # Source: drive base color from the AO mesh map. The exact call here is
-    # the version-sensitive part of the helper — different Painter releases
-    # have used different names.  Two attempts in order.
+    # Source: drive base color from the AO mesh map. NOTE: neither name below
+    # exists in the installed Painter's layerstack module — the real recipe
+    # goes through TextureSet.get_mesh_map_resource(usage) plus the fill
+    # layer's SourceEditorMixin, whose per-channel source contract can't be
+    # designed statically (needs a live Painter session to validate). Until
+    # then this resolves defensively and degrades to a warning: the layer is
+    # created, blended, and intensity-scaled, but not yet map-driven.
     mesh_map_setter = (
         getattr(layerstack, "set_source_from_mesh_map", None)
         or getattr(layerstack, "set_channel_source_to_mesh_map", None)
@@ -114,17 +190,15 @@ def _add_lighting_layer(
     import substance_painter.baking as baking
 
     mesh_map_setter(layer, base_color, baking.MeshMapUsage.AO)
+    _apply_layer_intensity(layer, base_color, intensity)
 
     if include_curvature:
-        # Stack a second multiply layer for curvature contribution.
-        curv_layer = layerstack.insert_fill(insert_pos, name=f"{layer_name} (Curvature)")
-        try:
-            layerstack.set_channel_blending_mode(
-                curv_layer, base_color, layerstack.BlendingMode.Overlay
-            )
-        except AttributeError:
-            pass
+        # Stack a second overlay layer for curvature contribution.
+        curv_layer = layerstack.insert_fill(insert_pos)
+        _name_node(curv_layer, f"{layer_name} (Curvature)")
+        _set_blending_mode(layerstack, curv_layer, base_color, "Overlay")
         mesh_map_setter(curv_layer, base_color, baking.MeshMapUsage.Curvature)
+        _apply_layer_intensity(curv_layer, base_color, curvature_intensity)
 
     return getattr(layer, "uid", _ts_name(ts) + "/" + layer_name)
 

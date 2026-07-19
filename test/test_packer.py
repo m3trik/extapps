@@ -13,9 +13,11 @@ The heavy UI wiring in ``__init__`` is bypassed (``__new__``); ``_pack_set``
 touches no UI, so it is exercised directly.
 """
 import os
+import types
 import tempfile
 import shutil
 import unittest
+from unittest import mock
 
 from pythontk import ImgUtils
 
@@ -187,6 +189,118 @@ class TestMapPackerPresets(unittest.TestCase):
             (mrao["R"], mrao["G"], mrao["B"], mrao["A"]),
             ("Metallic", "Roughness", "Ambient_Occlusion", "None"),
         )
+
+
+class _FakeCombo:
+    """Minimal QComboBox stand-in for exercising slot handlers off-screen."""
+
+    def __init__(self, items=None, current="None"):
+        self._items = list(items or [])
+        self._current = current
+        self._enabled = True
+
+    def currentText(self):
+        return self._current
+
+    def setEnabled(self, value):
+        self._enabled = bool(value)
+
+    def isEnabled(self):
+        return self._enabled
+
+    def findText(self, text):
+        return self._items.index(text) if text in self._items else -1
+
+    def setCurrentIndex(self, index):
+        if 0 <= index < len(self._items):
+            self._current = self._items[index]
+
+
+class _FakeUI:
+    """Bare namespace exposing the widgets ``_on_format_changed`` touches."""
+
+    def __init__(self, cmbA, mode):
+        self.cmbA = cmbA
+        header = types.SimpleNamespace()
+        header.menu = types.SimpleNamespace()
+        header.menu.cmb_mode = _FakeCombo(items=["Pack", "Unpack"], current=mode)
+        self.header = header
+
+
+class TestMapPackerFormatAlphaGuard(unittest.TestCase):
+    """``_on_format_changed`` must not clear the alpha combo while unpacking.
+
+    Regression: the format combo's ``currentTextChanged`` fires in both modes.
+    Selecting an alpha-less output format (JPG) disabled cmbA and reset it to
+    'None' unconditionally — silently dropping the channel the user chose to
+    *extract* in Unpack mode. The guard mirrors ``_on_mode_changed``: format
+    only constrains alpha in Pack mode.
+    """
+
+    @staticmethod
+    def _slots(mode, alpha_choice):
+        inst = PackerSlots.__new__(PackerSlots)
+        cmbA = _FakeCombo(items=PackerSlots.grayscale_types, current=alpha_choice)
+        inst.ui = _FakeUI(cmbA, mode)
+        return inst, cmbA
+
+    def test_unpack_mode_keeps_alpha_selection_on_jpg(self):
+        inst, cmbA = self._slots("Unpack", "Smoothness")
+        inst._on_format_changed("JPG")
+        # Alpha combo stays enabled and its extraction choice is untouched.
+        self.assertTrue(cmbA.isEnabled())
+        self.assertEqual(cmbA.currentText(), "Smoothness")
+
+    def test_pack_mode_clears_alpha_on_jpg(self):
+        inst, cmbA = self._slots("Pack", "Smoothness")
+        inst._on_format_changed("JPG")
+        # Pack mode still constrains alpha to the output format's capabilities.
+        self.assertFalse(cmbA.isEnabled())
+        self.assertEqual(cmbA.currentText(), "None")
+
+    def test_pack_mode_keeps_alpha_on_png(self):
+        inst, cmbA = self._slots("Pack", "Smoothness")
+        inst._on_format_changed("PNG")
+        self.assertTrue(cmbA.isEnabled())
+        self.assertEqual(cmbA.currentText(), "Smoothness")
+
+
+class TestMapPackerOpenOutputDirSafety(unittest.TestCase):
+    """``b001`` opens the output dir via a non-shell launcher (no injection).
+
+    Regression: the old handler built ``os.system(f'open "{output_dir}"')`` /
+    ``xdg-open`` strings, so a directory named e.g. ``foo$(touch pwned)`` was
+    passed through /bin/sh. The fix delegates to ``FileUtils.open_explorer``,
+    which passes the path as a single argv entry — shell metacharacters are
+    inert and ``os.system`` is never used.
+    """
+
+    def test_open_output_dir_delegates_to_non_shell_launcher(self):
+        inst = PackerSlots.__new__(PackerSlots)
+        malicious = 'O:/foo$(touch pwned)/out'
+        inst._last_output_dir = malicious
+
+        with mock.patch("os.path.isdir", return_value=True), mock.patch(
+            "os.system"
+        ) as system_mock, mock.patch(
+            "extapps.texture_maps.packer.slots.FileUtils.open_explorer",
+            return_value=True,
+        ) as open_mock:
+            inst.b001()
+
+        # No shell was spawned; the raw path went to the safe launcher intact.
+        system_mock.assert_not_called()
+        open_mock.assert_called_once_with(malicious)
+
+    def test_open_output_dir_noop_without_output(self):
+        inst = PackerSlots.__new__(PackerSlots)
+        # No _last_output_dir set at all → guarded early-return, no launcher call.
+        with mock.patch("os.system") as system_mock, mock.patch(
+            "extapps.texture_maps.packer.slots.FileUtils.open_explorer"
+        ) as open_mock:
+            inst.b001()
+        system_mock.assert_not_called()
+        open_mock.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -82,9 +82,18 @@ class PhotogrammetryPanelSlots(BridgeSlotsBase):
         ``["--frames-dir", path]``) or ``None`` after logging an error."""
         raise NotImplementedError
 
+    # Run-mode token shared by the image-in panels: dry-run the input curation
+    # (``--curate-preview``) instead of reconstructing. Both runners accept the
+    # flag; the Metashape runner routes it to the panel's venv (metashape.exe's
+    # bundled Python has no cv2).
+    PREP_PREVIEW_MODE = "prep_preview"
+
     def _mode_argv(self) -> List[str]:
-        """Extra flags from the run-mode combo (``--stop-after`` / ``--publish``).
-        Default: none."""
+        """Extra flags from the run-mode combo (``--stop-after`` / ``--publish``
+        / the shared curation-preview mode). Default: preview only."""
+        pair = self._selected_template_mode()
+        if pair and pair[1] == self.PREP_PREVIEW_MODE:
+            return ["--curate-preview"]
         return []
 
     def header_menu_items(self):

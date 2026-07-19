@@ -75,38 +75,43 @@ frames = ex.extract_frames(
 
 | Control | Purpose |
 |---|---|
-| Project Directory (`txt000`) | Where `.psx` + outputs are written. Option-box menu has Browse / Open in Explorer / recent dirs. |
-| Project Name (`txt001`) | Project basename (no extension). Defaults to project-dir basename. |
-| Frames Directory (`txt002`) | Source images. Option-box menu has Browse / **Extract from Video** / Open in Explorer / recent dirs. |
-| Quality Preset (`cmb000`) | Draft / Low / Medium / High — populates the Advanced params. |
-| Pipeline Stages popup | Per-stage checkboxes: Align, Depth, Model, Texture, Save, Export. |
-| Advanced popup | Texture size, face count, depth filter, downscale overrides, frame-extraction params. |
-| Run Workflow (`b000`) | Validate inputs, then run the selected stages. |
-| Header menu | Log level (DEBUG / INFO / WARNING / ERROR), instructions tooltip. |
-| Output panel (`txt003`) | Log redirect via `LoggingMixin`. |
+| Source | Frames folder, or video clip(s) to extract (sharpest-per-window, in the panel's Python). |
+| Project Name | Project basename (`--name`). Outputs land in `<output-root>/<name>/`. |
+| Output Root | Root the project is written under (blank = the photogrammetry profile's `metashape_output_root`). |
+| Run mode combo | **Full pipeline** / **Align only** / **Refine only** (`--stop-after`) / **Prep preview** (`--curate-preview` — curation dry-run in the panel's Python; no Metashape launch). |
+| Preset combo | Semantic run templates shared with `run_combined --preset` (`preview` / `high` / `specular_metal` + user-saved). Applied as defaults + overlay, exactly like the CLI. |
+| Parameter rows | The `parameters.py` registry — input pre-processing, alignment, reconstruction, and mesh-cleanup knobs; rows show/hide per run mode. |
+| Run Workflow | Streams the run into the log pane; header menu has Cancel / Open Output Folder / Clear Log. |
 
-## Quality presets
+## Input pre-processing (two-stage runs)
 
-Defined in [`extapps/photogrammetry/metashape_workflow/slots.py`](../extapps/photogrammetry/metashape_workflow/slots.py):
+`metashape.exe`'s bundled Python has no cv2/PIL, so curation / exposure
+equalization / rembg masking can never execute inside `metashape.exe -r`. The
+panel's runner therefore chains two processes: `run_combined --prep-only`
+under the panel's own Python (curation, equalization, and — with masking on —
+rembg file masks, all QC-logged to `<name>_prep_qc.json`), then
+`metashape.exe -r` on the prepared frames with `--skip-curate
+--skip-equalize`. Headless, the same split is manual: run `--prep-only` in a
+venv and feed the printed dir to the Metashape run. Tuning guidance and the
+non-destructive baseline philosophy: [`photogrammetry/TUNING.md`](../extapps/photogrammetry/TUNING.md).
 
-| Preset | Align ds | Depth ds | Face count | Texture |
-|---|---|---|---|---|
-| Draft | 8 | 8 | Low | 1024 |
-| Low Quality | 4 | 4 | Low | 2048 |
-| Medium Quality (default) | 2 | 2 | Medium | 4096 |
-| High Quality | 1 | 1 | High | 8192 |
+## Quality tiers and presets
 
-Advanced popup overrides win: `spn_align_downscale` / `spn_depth_downscale` of `0` mean "use preset"; non-zero overrides the preset value.
+`--quality draft|balanced|max` maps to align/depth downscale 4/4, 2/2, 1/1 and
+face count low/medium/high (`balanced` is the default). Shipped presets
+(`presets/metashape/`) layer over that: see the preset table in
+[`TUNING.md`](../extapps/photogrammetry/TUNING.md). Explicit flags beat a
+preset; a preset beats `--quality`-derived values.
 
 ## API surface
 
 `MetashapeWorkflow(project_path, name, mock_mode=None, progress=None)`
 - `create_chunk(label)`
 - `add_images(image_sources)` — str directory or sequence of paths; non-recursive
-- `align_photos(downscale=2, generic_preselection=False, reference_preselection=True, keypoint_limit=100000, tiepoint_limit=10000, filter_mask=False)`
+- `align_photos(downscale=2, generic_preselection=True, reference_preselection=True, keypoint_limit=60000, tiepoint_limit=10000, filter_mask=False)`
 - `generate_depth_maps(downscale=2, filter_mode=None)` — `filter_mode` defaults to `Metashape.MildFiltering`
 - `build_model(source_data=None, surface_type=None, interpolation=None, face_count=None)`
-- `build_texture(texture_size=4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter=True)`
+- `build_texture(texture_size=8192, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter=True)`
 - `save_project()`
 - `export_model(export_format=None, binary=True, precision=6, texture_format=None, save_texture=True, save_normals=True, save_colors=True, save_cameras=False, overwrite=True)` — accepts `Metashape.ModelFormatOBJ/PLY/STL/FBX`
 

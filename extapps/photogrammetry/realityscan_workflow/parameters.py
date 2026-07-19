@@ -24,6 +24,7 @@ from uitk.bridge import AttributeSpec, defaults as _defaults
 
 from ..profile import QUALITY_TIERS
 from .._shared_params import (
+    PREPROCESSING_KEYS,
     PREPROCESSING_PARAMS,
     preprocessing_argv,
     render_flag_argv,
@@ -110,12 +111,15 @@ def to_argv(values: "Dict[str, Any]") -> "List[str]":
 def referenced_keys(source: str = "") -> "set[str]":
     """Params relevant to the panel's current input — drives row visibility.
 
-    RealityScan has no ``--stop-after`` run modes (a single Full-pipeline mode),
-    so every registered param applies regardless of *source*. Implemented for
-    parity with the Metashape panel's relevance contract (the panel + bridge base
-    consume this the same way).
+    RealityScan has no ``--stop-after`` run modes, so the Full-pipeline mode
+    shows every registered param; the shared Prep-preview mode (a curation
+    dry-run) shows only the pre-processing knobs. Same relevance contract as
+    the Metashape panel (the panel + bridge base consume this the same way).
     """
-    return set(PARAMS)
+    keys = set(PARAMS)
+    if source == "prep_preview":
+        return keys & PREPROCESSING_KEYS
+    return keys
 
 
 def defaults() -> "Dict[str, Any]":

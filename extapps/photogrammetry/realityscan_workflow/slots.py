@@ -24,9 +24,13 @@ from . import parameters as _params
 from ._realityscan_runner import RealityScanRunner
 from ..profile import get_profile
 
-# RealityScan has no --stop-after; a single full-pipeline run mode keeps the
-# panel consistent with the framework (template combo + relevance contract).
-_RUN_MODES: List[Tuple[str, str]] = [("Full pipeline", "")]
+# RealityScan has no --stop-after; besides the full pipeline it offers only
+# the shared curation-preview dry-run (its runner executes in the panel's own
+# Python, so --curate-preview just works — no Metashape-style venv chaining).
+_RUN_MODES: List[Tuple[str, str]] = [
+    ("Full pipeline", ""),
+    ("Prep preview", PhotogrammetryPanelSlots.PREP_PREVIEW_MODE),
+]
 
 
 class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
@@ -51,6 +55,14 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
     )
     NAME_PLACEHOLDER = "(basename for the .rsproj project + outputs)"
     NAME_TOOLTIP = "Project basename (--name). Outputs land in <output-root>/<name>/."
+    MODE_DESC = {
+        "": "Full pipeline: align → mesh → texture → export → publish.",
+        PhotogrammetryPanelSlots.PREP_PREVIEW_MODE:
+            "Prep preview: dry-run the input curation — survivor counts per "
+            "dedup threshold + the sharpness distribution. No RealityScan "
+            "launch, no files written; use it to tune the pre-processing "
+            "knobs before a run.",
+    }
     OUTPUT_FOLDER_TOOLTIP = (
         "Open <output-root>/<name>/ — the exported mesh/texture, QC report, and "
         "sidecar land here."

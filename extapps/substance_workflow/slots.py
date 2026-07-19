@@ -397,6 +397,15 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
                 ".spp Project Save Path to open."
             )
             return False
+        if stages.get("stage_save"):
+            creating_new = stages.get("stage_open") and not os.path.isfile(save_path)
+            if creating_new and not save_path:
+                self.logger.error(
+                    "Set a Project Save Path to save the project — a newly "
+                    "created project has no file yet, so 'Save Project' needs a "
+                    "destination (or an existing .spp to open)."
+                )
+                return False
         return True
 
     # ------------------------------------------------------------------ run

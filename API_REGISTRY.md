@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-07-17_
+_Generated: 2026-07-18_
 
 ## Index
 
@@ -103,10 +103,10 @@ Shared helpers for Marmoset Toolbag template scripts.
 - [`find_material(name, scene_mats)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L153) — Return the Toolbag material whose name matches *name*.
 - [`load_manifest(manifest_path)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L168) — Return the ``materials`` dict from a MatManifest JSON sidecar.
 - [`wire_materials_from_manifest(manifest_path, verbose=True)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L185) — Wire every texture slot in *manifest_path* onto matching Toolbag mats.
-- [`split_high_low(objects, high_suffix, low_suffix, pre_classified=None)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L309) — Group *objects* into ``(highs, lows, others)`` by name suffix.
-- [`collect_mesh_objects(root)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L391) — Recursively gather ``mset.MeshObject`` descendants of *root*.
-- [`apply_sky_preset(preset_path)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L431) — Load a ``.tbsky`` preset onto the scene's existing SkyObject.
-- [`frame_in_viewport()`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L455) — Frame the imported scene in the viewport (best-effort).
+- [`split_high_low(objects, high_suffix, low_suffix, pre_classified=None)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L311) — Group *objects* into ``(highs, lows, others)`` by name suffix.
+- [`collect_mesh_objects(root)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L393) — Recursively gather ``mset.MeshObject`` descendants of *root*.
+- [`apply_sky_preset(preset_path)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L433) — Load a ``.tbsky`` preset onto the scene's existing SkyObject.
+- [`frame_in_viewport()`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L457) — Frame the imported scene in the viewport (best-effort).
 
 <a id="marmoset_workflow--launcher"></a>
 ### `marmoset_workflow/launcher.py`
@@ -201,7 +201,7 @@ Shared scaffolding for the photogrammetry workflow panels.
   - `PhotogrammetryPanelSlots.cancel_run(self) -> None`
   - `PhotogrammetryPanelSlots.open_output_folder(self) -> None` — Reveal the output folder.
   - `PhotogrammetryPanelSlots.b000(self) -> None` — Run Workflow.
-- **[`class FramesSourceMixin`](extapps/extapps/photogrammetry/_panel_slots.py#L368)** — A single 'Source' row + browser for image-in panels (Metashape, RC).
+- **[`class FramesSourceMixin`](extapps/extapps/photogrammetry/_panel_slots.py#L377)** — A single 'Source' row + browser for image-in panels (Metashape, RC).
   - `FramesSourceMixin.resolved_frames_dir(self) -> str`
 
 <a id="photogrammetry--_process_runner"></a>
@@ -215,7 +215,7 @@ Async, log-streaming process runner shared by the photogrammetry panels.
   - `ProcessRunner.is_running(self) -> bool`
   - `ProcessRunner.start(self, argv: Sequence[str], on_line: Optional[Callable[[str], None]] = None, on_done: Optional[Callable[[int], None]] = None, cwd: Optional[str] = None) -> None` — Launch the engine command asynchronously.
   - `ProcessRunner.cancel(self) -> None` — Kill an in-flight run (no-op when idle).
-- **[`class PyModuleRunner(ProcessRunner)`](extapps/extapps/photogrammetry/_process_runner.py#L157)** — ``ProcessRunner`` for engines whose headless driver is a normal-Python
+- **[`class PyModuleRunner(ProcessRunner)`](extapps/extapps/photogrammetry/_process_runner.py#L173)** — ``ProcessRunner`` for engines whose headless driver is a normal-Python
 
 <a id="photogrammetry--_shared_params"></a>
 ### `photogrammetry/_shared_params.py`
@@ -331,9 +331,10 @@ Headless launch connection for Agisoft Metashape.
 
 Local, async runner the Metashape panel dispatches to.
 
-- **[`class MetashapeRunner(ProcessRunner)`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_runner.py#L26)** — Discover + asynchronously drive ``run_combined`` in the local Metashape.
+- **[`class MetashapeRunner(ProcessRunner)`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_runner.py#L48)** — Discover + asynchronously drive ``run_combined`` in the local Metashape.
   - `MetashapeRunner.exe(self) -> Optional[str]` *(property)*
   - `MetashapeRunner.is_available(self) -> bool` — True when a local ``metashape.exe`` was found (a real run is possible).
+  - `MetashapeRunner.start(self, argv: Sequence[str], on_line: Optional[Callable[[str], None]] = None, on_done: Optional[Callable[[int], None]] = None, cwd: Optional[str] = None) -> None`
 
 <a id="photogrammetry--metashape_workflow--_metashape_workflow"></a>
 ### `photogrammetry/metashape_workflow/_metashape_workflow.py`
@@ -381,22 +382,22 @@ Application shell for the Metashape Workflow UI.
 Tunable parameters surfaced in the Metashape Workflow panel.
 
 - [`to_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L228) — Render collected param *values* into ``run_combined`` CLI flags (via the
-- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L261) — Params relevant to the panel's current input — drives row visibility.
-- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L278) — Return ``{key: default}`` for every registered parameter.
+- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L264) — Params relevant to the panel's current input — drives row visibility.
+- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L281) — Return ``{key: default}`` for every registered parameter.
 
 <a id="photogrammetry--metashape_workflow--run_combined"></a>
 ### `photogrammetry/metashape_workflow/run_combined.py`
 
 Driver script for multi-session combined runs.
 
-- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/metashape_workflow/run_combined.py#L98)
+- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/metashape_workflow/run_combined.py#L224)
 
 <a id="photogrammetry--metashape_workflow--slots"></a>
 ### `photogrammetry/metashape_workflow/slots.py`
 
 Slots for the Metashape Workflow panel.
 
-- **[`class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/metashape_workflow/slots.py#L39)** — Switchboard slots wired to ``metashape_workflow.ui``.
+- **[`class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/metashape_workflow/slots.py#L40)** — Switchboard slots wired to ``metashape_workflow.ui``.
   - `MetashapeWorkflowSlots.params_module(self)` *(property)*
   - `MetashapeWorkflowSlots.template_dir(self) -> Path` *(property)*
   - `MetashapeWorkflowSlots.make_bridge(self) -> MetashapeRunner`
@@ -532,9 +533,9 @@ Application shell for the RealityCapture Workflow UI.
 
 Tunable parameters surfaced in the RealityCapture Workflow panel.
 
-- [`to_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L100) — Render collected param *values* into ``run_combined`` CLI flags (via the
-- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L110) — Params relevant to the panel's current input — drives row visibility.
-- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L121) — Return ``{key: default}`` for every registered parameter.
+- [`to_argv(values: 'Dict[str, Any]') -> 'List[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L101) — Render collected param *values* into ``run_combined`` CLI flags (via the
+- [`referenced_keys(source: str = '') -> 'set[str]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L111) — Params relevant to the panel's current input — drives row visibility.
+- [`defaults() -> 'Dict[str, Any]'`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L125) — Return ``{key: default}`` for every registered parameter.
 
 <a id="photogrammetry--realityscan_workflow--run_combined"></a>
 ### `photogrammetry/realityscan_workflow/run_combined.py`
@@ -542,14 +543,14 @@ Tunable parameters surfaced in the RealityCapture Workflow panel.
 Driver script for multi-session combined RealityCapture runs.
 
 - [`publish_outputs(project_dir: str, publish_dir: str)`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L85) — Copy finished deliverables from local scratch to the synced output root.
-- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L130)
+- [`main(argv=None) -> int`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L133)
 
 <a id="photogrammetry--realityscan_workflow--slots"></a>
 ### `photogrammetry/realityscan_workflow/slots.py`
 
 Slots for the RealityCapture Workflow panel.
 
-- **[`class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/realityscan_workflow/slots.py#L32)** — Switchboard slots wired to ``realityscan_workflow.ui``.
+- **[`class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/realityscan_workflow/slots.py#L36)** — Switchboard slots wired to ``realityscan_workflow.ui``.
   - `RealityscanWorkflowSlots.params_module(self)` *(property)*
   - `RealityscanWorkflowSlots.template_dir(self) -> Path` *(property)*
   - `RealityscanWorkflowSlots.make_bridge(self) -> RealityScanRunner`
@@ -581,10 +582,10 @@ Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``
 
 Bake operations — iray-backed mesh-map bakes and lighting composites.
 
-- [`lighting_to_diffuse(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L138) — Bake iray-backed AO (+ optional curvature) and composite onto base color.
-- [`mesh_maps(texture_set: str, maps: Optional[List[str]] = None, high_poly: Optional[str] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L257) — Bake the named mesh maps.
-- [`all_texture_sets(maps: Optional[List[str]] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L270) — Bake mesh maps for every texture set in the project.
-- [`set_resolution(texture_set: str, width: int, height: int) -> None`](extapps/extapps/substance_workflow/bake_utils.py#L276) — Set the baking resolution for the named texture set.
+- [`lighting_to_diffuse(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L212) — Bake iray-backed AO (+ optional curvature) and composite onto base color.
+- [`mesh_maps(texture_set: str, maps: Optional[List[str]] = None, high_poly: Optional[str] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L331) — Bake the named mesh maps.
+- [`all_texture_sets(maps: Optional[List[str]] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L344) — Bake mesh maps for every texture set in the project.
+- [`set_resolution(texture_set: str, width: int, height: int) -> None`](extapps/extapps/substance_workflow/bake_utils.py#L350) — Set the baking resolution for the named texture set.
 
 <a id="substance_workflow--channel_utils"></a>
 ### `substance_workflow/channel_utils.py`

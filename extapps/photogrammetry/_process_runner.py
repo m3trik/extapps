@@ -47,6 +47,10 @@ class ProcessRunner(ptk.LoggingMixin):
         self._proc: Optional[QtCore.QProcess] = None
         self._on_line: Optional[Callable[[str], None]] = None
         self._on_done: Optional[Callable[[int], None]] = None
+        # True from cancel() until the next start() — lets a multi-stage
+        # subclass (MetashapeRunner's prep chain) distinguish "stage killed by
+        # the user" from "stage failed" and not launch the next stage.
+        self._cancelled: bool = False
 
     # ------------------------------------------------------------ subclass contract
     @property
@@ -97,16 +101,27 @@ class ProcessRunner(ptk.LoggingMixin):
         if self.is_running():
             raise RuntimeError("A run is already in progress.")
 
+        self._cancelled = False
         self._on_line = on_line
         self._on_done = on_done
         program, args = self._command(argv)
+        self._launch(program, args, cwd)
 
+    def _launch(self, program, args, cwd=None, extra_env=None) -> None:
+        """Launch one process, streaming into the already-set callbacks.
+
+        Split out of :meth:`start` so a multi-stage subclass can run another
+        command (with per-stage *extra_env*) before/after the engine stage
+        while reusing the same QProcess plumbing. Callers must set
+        ``self._on_line`` / ``self._on_done`` (``start`` does)."""
         proc = QtCore.QProcess()
         proc.setProcessChannelMode(QtCore.QProcess.MergedChannels)
         if cwd:
             proc.setWorkingDirectory(cwd)
         env = QtCore.QProcessEnvironment.systemEnvironment()
         for k, v in self._env().items():
+            env.insert(k, v)
+        for k, v in (extra_env or {}).items():
             env.insert(k, v)
         proc.setProcessEnvironment(env)
 
@@ -120,6 +135,7 @@ class ProcessRunner(ptk.LoggingMixin):
     def cancel(self) -> None:
         """Kill an in-flight run (no-op when idle)."""
         if self.is_running():
+            self._cancelled = True
             self._proc.kill()
 
     # ------------------------------------------------------------ internals

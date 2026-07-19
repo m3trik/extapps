@@ -50,6 +50,21 @@ class TestRealityScanPanelLoads(unittest.TestCase):
             cmb.findText("Full pipeline"), 0, "Full pipeline mode missing"
         )
 
+    def test_prep_preview_mode_maps_to_curate_preview(self) -> None:
+        """Parity with the Metashape panel: the shared Prep-preview run mode
+        emits --curate-preview (RC's runner executes in the panel's Python, so
+        the dry-run just works) and shows only the pre-processing knobs."""
+        from extapps.photogrammetry.realityscan_workflow import parameters as P
+        from extapps.photogrammetry._shared_params import PREPROCESSING_KEYS
+
+        cmb = self.ui.cmb000
+        idx = cmb.findText("Prep preview")
+        self.assertGreaterEqual(idx, 0, "Prep preview mode missing")
+        cmb.setCurrentIndex(idx)
+        self.assertEqual(self.slots._mode_argv(), ["--curate-preview"])
+        self.assertEqual(P.referenced_keys("prep_preview"),
+                         set(P.PARAMS) & PREPROCESSING_KEYS)
+
     def test_semantic_preset_mode_uses_realityscan_store(self) -> None:
         listed = set(self.slots._preset_mgr.list())
         self.assertTrue(

@@ -116,7 +116,12 @@ class RealityScanConnection:
         quoted = " ".join(
             f'"{a}"' if (" " in a or "\\" in a) else a for a in argv
         )
-        with open(bat, "w", encoding="ascii", errors="replace") as fh:
+        # cmd reads .bat text in the console OEM codepage; write it that way so
+        # non-ASCII paths survive verbatim. No errors="replace" — a path cmd
+        # cannot represent must fail loudly (UnicodeEncodeError) rather than be
+        # silently mangled to '?', which would redirect RC output / the .done
+        # marker to a wrong file and hang the poll loop to its deadline.
+        with open(bat, "w", encoding="oem") as fh:
             fh.write("@echo off\r\n")
             fh.write(f'{quoted} > "{log_path}" 2>&1\r\n')
             # Leading-redirect form is deliberate: ``echo %errorlevel%>file``

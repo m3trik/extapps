@@ -20,45 +20,16 @@ camera (70%/50% overlap) — standard drone-mapping geometry that aligns fully.
 import json
 import os
 import shutil
-import sys
 import tempfile
 import textwrap
 import unittest
 
+try:
+    from ._photogrammetry_live_scene import make_nadir_scene
+except ImportError:  # bare pytest collection (test dir on sys.path, not a package)
+    from _photogrammetry_live_scene import make_nadir_scene
+
 RUN_LIVE = os.environ.get("METASHAPE_RUN_INTEGRATION") == "1"
-
-
-def _make_scene(root, n_cols=6, n_rows=4):
-    """Textured plane + overlapping crops + all-white file masks."""
-    import numpy as np
-    import cv2
-
-    frames = os.path.join(root, "frames")
-    masks = os.path.join(root, "masks")
-    os.makedirs(frames)
-    os.makedirs(masks)
-    rng = np.random.default_rng(7)
-    H, W = 3600, 4800
-    tex = np.zeros((H, W, 3), np.float32)
-    for scale, weight in ((8, 0.4), (32, 0.35), (128, 0.25)):
-        layer = rng.random((H // scale + 2, W // scale + 2, 3)).astype(np.float32)
-        tex += weight * cv2.resize(layer, (W, H), interpolation=cv2.INTER_CUBIC)
-    span = float(tex.max() - tex.min()) + 1e-6
-    tex = (255 * (tex - tex.min()) / span).astype(np.uint8)
-    cw, ch = 1920, 1440
-    xs = np.linspace(0, W - cw, n_cols).astype(int)
-    ys = np.linspace(0, H - ch, n_rows).astype(int)
-    n = 0
-    for y in ys:
-        for x in xs:
-            name = f"cam_{n:03d}"
-            cv2.imwrite(os.path.join(frames, name + ".jpg"),
-                        tex[y:y + ch, x:x + cw],
-                        [cv2.IMWRITE_JPEG_QUALITY, 95])
-            cv2.imwrite(os.path.join(masks, name + "_mask.png"),
-                        np.full((ch, cw), 255, np.uint8))
-            n += 1
-    return frames, masks
 
 
 @unittest.skipUnless(RUN_LIVE, "set METASHAPE_RUN_INTEGRATION=1 to run")
@@ -72,7 +43,7 @@ class MetashapeLiveIntegrationTest(unittest.TestCase):
         if not cls.conn.is_available():
             raise unittest.SkipTest("metashape.exe not found")
         cls.tmp = tempfile.mkdtemp(prefix="ms_live_")
-        cls.frames, cls.masks = _make_scene(cls.tmp)
+        cls.frames, cls.masks = make_nadir_scene(cls.tmp, with_masks=True)
 
     @classmethod
     def tearDownClass(cls):

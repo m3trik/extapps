@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-07-17",
+  "generated_at": "2026-07-18",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
@@ -167,7 +167,7 @@
           "kind": "function",
           "signature": "(objects, high_suffix, low_suffix, pre_classified=None)",
           "summary": "Group *objects* into ``(highs, lows, others)`` by name suffix.",
-          "line": 309,
+          "line": 311,
           "deprecated": false
         },
         {
@@ -176,7 +176,7 @@
           "kind": "function",
           "signature": "(root)",
           "summary": "Recursively gather ``mset.MeshObject`` descendants of *root*.",
-          "line": 391,
+          "line": 393,
           "deprecated": false
         },
         {
@@ -185,7 +185,7 @@
           "kind": "function",
           "signature": "(preset_path)",
           "summary": "Load a ``.tbsky`` preset onto the scene's existing SkyObject.",
-          "line": 431,
+          "line": 433,
           "deprecated": false
         },
         {
@@ -194,7 +194,7 @@
           "kind": "function",
           "signature": "()",
           "summary": "Frame the imported scene in the viewport (best-effort).",
-          "line": 455,
+          "line": 457,
           "deprecated": false
         }
       ],
@@ -541,7 +541,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Process-runner header menu: Cancel Run / Open Output Folder / Clear",
-              "line": 90,
+              "line": 99,
               "deprecated": false
             },
             {
@@ -550,7 +550,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Semantic-preset mode: the engine-scoped store the headless runner uses",
-              "line": 107,
+              "line": 116,
               "deprecated": false
             },
             {
@@ -559,7 +559,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 249,
+              "line": 258,
               "deprecated": false
             },
             {
@@ -568,7 +568,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 270,
+              "line": 279,
               "deprecated": false
             },
             {
@@ -577,7 +577,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Reveal the output folder.",
-              "line": 284,
+              "line": 293,
               "deprecated": false
             },
             {
@@ -586,7 +586,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run Workflow.",
-              "line": 292,
+              "line": 301,
               "deprecated": false
             }
           ]
@@ -594,7 +594,7 @@
         {
           "name": "FramesSourceMixin",
           "summary": "A single 'Source' row + browser for image-in panels (Metashape, RC).",
-          "line": 368,
+          "line": 377,
           "bases": [],
           "members": [
             {
@@ -603,7 +603,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 400,
+              "line": 409,
               "deprecated": false
             }
           ]
@@ -629,7 +629,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Path of the engine executable used (display / diagnostics).",
-              "line": 53,
+              "line": 57,
               "deprecated": false
             },
             {
@@ -638,7 +638,7 @@
               "kind": "method",
               "signature": "(self) -> bool",
               "summary": "True when a real run is possible (the engine was discovered).",
-              "line": 57,
+              "line": 61,
               "deprecated": false
             },
             {
@@ -647,7 +647,7 @@
               "kind": "method",
               "signature": "(self) -> bool",
               "summary": "",
-              "line": 75,
+              "line": 79,
               "deprecated": false
             },
             {
@@ -656,7 +656,7 @@
               "kind": "method",
               "signature": "(self, argv: Sequence[str], on_line: Optional[Callable[[str], None]] = None, on_done: Optional[Callable[[int], None]] = None, cwd: Optional[str] = None) -> None",
               "summary": "Launch the engine command asynchronously.",
-              "line": 82,
+              "line": 86,
               "deprecated": false
             },
             {
@@ -665,7 +665,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Kill an in-flight run (no-op when idle).",
-              "line": 120,
+              "line": 135,
               "deprecated": false
             }
           ]
@@ -673,7 +673,7 @@
         {
           "name": "PyModuleRunner",
           "summary": "``ProcessRunner`` for engines whose headless driver is a normal-Python",
-          "line": 157,
+          "line": 173,
           "bases": [
             "ProcessRunner"
           ],
@@ -1200,7 +1200,7 @@
         {
           "name": "MetashapeRunner",
           "summary": "Discover + asynchronously drive ``run_combined`` in the local Metashape.",
-          "line": 26,
+          "line": 48,
           "bases": [
             "ProcessRunner"
           ],
@@ -1211,7 +1211,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "",
-              "line": 34,
+              "line": 57,
               "deprecated": false
             },
             {
@@ -1220,7 +1220,16 @@
               "kind": "method",
               "signature": "(self) -> bool",
               "summary": "True when a local ``metashape.exe`` was found (a real run is possible).",
-              "line": 37,
+              "line": 60,
+              "deprecated": false
+            },
+            {
+              "name": "start",
+              "qualname": "MetashapeRunner.start",
+              "kind": "method",
+              "signature": "(self, argv: Sequence[str], on_line: Optional[Callable[[str], None]] = None, on_done: Optional[Callable[[int], None]] = None, cwd: Optional[str] = None) -> None",
+              "summary": "",
+              "line": 198,
               "deprecated": false
             }
           ]
@@ -1530,7 +1539,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 261,
+          "line": 264,
           "deprecated": false
         },
         {
@@ -1539,7 +1548,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 278,
+          "line": 281,
           "deprecated": false
         }
       ],
@@ -1555,7 +1564,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 98,
+          "line": 224,
           "deprecated": false
         }
       ],
@@ -1569,7 +1578,7 @@
         {
           "name": "MetashapeWorkflowSlots",
           "summary": "Switchboard slots wired to ``metashape_workflow.ui``.",
-          "line": 39,
+          "line": 40,
           "bases": [
             "FramesSourceMixin",
             "PhotogrammetryPanelSlots"
@@ -1581,7 +1590,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 79,
+              "line": 85,
               "deprecated": false
             },
             {
@@ -1590,7 +1599,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 83,
+              "line": 89,
               "deprecated": false
             },
             {
@@ -1599,7 +1608,7 @@
               "kind": "method",
               "signature": "(self) -> MetashapeRunner",
               "summary": "",
-              "line": 87,
+              "line": 93,
               "deprecated": false
             },
             {
@@ -1608,7 +1617,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 90,
+              "line": 96,
               "deprecated": false
             },
             {
@@ -1617,7 +1626,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 93,
+              "line": 99,
               "deprecated": false
             },
             {
@@ -1626,7 +1635,7 @@
               "kind": "method",
               "signature": "(self) -> dict",
               "summary": "",
-              "line": 105,
+              "line": 111,
               "deprecated": false
             }
           ]
@@ -2373,7 +2382,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-          "line": 100,
+          "line": 101,
           "deprecated": false
         },
         {
@@ -2382,7 +2391,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 110,
+          "line": 111,
           "deprecated": false
         },
         {
@@ -2391,7 +2400,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 121,
+          "line": 125,
           "deprecated": false
         }
       ],
@@ -2416,7 +2425,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 130,
+          "line": 133,
           "deprecated": false
         }
       ],
@@ -2430,7 +2439,7 @@
         {
           "name": "RealityscanWorkflowSlots",
           "summary": "Switchboard slots wired to ``realityscan_workflow.ui``.",
-          "line": 32,
+          "line": 36,
           "bases": [
             "FramesSourceMixin",
             "PhotogrammetryPanelSlots"
@@ -2442,7 +2451,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 71,
+              "line": 83,
               "deprecated": false
             },
             {
@@ -2451,7 +2460,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 75,
+              "line": 87,
               "deprecated": false
             },
             {
@@ -2460,7 +2469,7 @@
               "kind": "method",
               "signature": "(self) -> RealityScanRunner",
               "summary": "",
-              "line": 78,
+              "line": 90,
               "deprecated": false
             },
             {
@@ -2469,7 +2478,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 101,
+              "line": 113,
               "deprecated": false
             },
             {
@@ -2478,7 +2487,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 104,
+              "line": 116,
               "deprecated": false
             },
             {
@@ -2487,7 +2496,7 @@
               "kind": "method",
               "signature": "(self) -> dict",
               "summary": "",
-              "line": 110,
+              "line": 122,
               "deprecated": false
             }
           ]
@@ -2581,7 +2590,7 @@
           "kind": "function",
           "signature": "(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict",
           "summary": "Bake iray-backed AO (+ optional curvature) and composite onto base color.",
-          "line": 138,
+          "line": 212,
           "deprecated": false
         },
         {
@@ -2590,7 +2599,7 @@
           "kind": "function",
           "signature": "(texture_set: str, maps: Optional[List[str]] = None, high_poly: Optional[str] = None) -> dict",
           "summary": "Bake the named mesh maps.",
-          "line": 257,
+          "line": 331,
           "deprecated": false
         },
         {
@@ -2599,7 +2608,7 @@
           "kind": "function",
           "signature": "(maps: Optional[List[str]] = None) -> dict",
           "summary": "Bake mesh maps for every texture set in the project.",
-          "line": 270,
+          "line": 344,
           "deprecated": false
         },
         {
@@ -2608,7 +2617,7 @@
           "kind": "function",
           "signature": "(texture_set: str, width: int, height: int) -> None",
           "summary": "Set the baking resolution for the named texture set.",
-          "line": 276,
+          "line": 350,
           "deprecated": false
         }
       ],
@@ -2738,7 +2747,7 @@
               "kind": "method",
               "signature": "(self, op: str = '') -> dict",
               "summary": "Fetch the registry's signature description for agent self-discovery.",
-              "line": 219,
+              "line": 223,
               "deprecated": false
             },
             {
@@ -2747,7 +2756,7 @@
               "kind": "method",
               "signature": "(self, force: bool = False) -> None",
               "summary": "Close the bridge and terminate the Painter process we launched.",
-              "line": 234,
+              "line": 243,
               "deprecated": false
             }
           ]
@@ -3483,7 +3492,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the header menu with global options.",
-              "line": 497,
+              "line": 501,
               "deprecated": false
             },
             {
@@ -3492,7 +3501,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 576,
+              "line": 580,
               "deprecated": false
             },
             {
@@ -3501,7 +3510,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Destination Directory",
-              "line": 605,
+              "line": 609,
               "deprecated": false
             },
             {
@@ -3510,7 +3519,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Map Name",
-              "line": 632,
+              "line": 636,
               "deprecated": false
             },
             {
@@ -3519,7 +3528,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 643,
+              "line": 647,
               "deprecated": false
             },
             {
@@ -3528,7 +3537,7 @@
               "kind": "method",
               "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 653,
+              "line": 657,
               "deprecated": false
             }
           ]
@@ -3806,7 +3815,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Build the header menu's Pack/Unpack mode toggle.",
-              "line": 164,
+              "line": 177,
               "deprecated": false
             },
             {
@@ -3815,7 +3824,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 244,
+              "line": 257,
               "deprecated": false
             },
             {
@@ -3824,7 +3833,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 281,
+              "line": 294,
               "deprecated": false
             },
             {
@@ -3833,7 +3842,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 457,
+              "line": 470,
               "deprecated": false
             }
           ]
@@ -3961,7 +3970,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Copy the picked model into the Unity project (+ optional Editor launch).",
-              "line": 335,
+              "line": 339,
               "deprecated": false
             }
           ]

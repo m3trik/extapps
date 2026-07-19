@@ -271,9 +271,13 @@ class UnityWorkflowSlots(BridgeSlotsBase):
             from unitytk import UnityFinder
 
             editors = UnityFinder.find_editors()
+            # Numeric ordering (2020.3.10f1 > 2020.3.9f1); a plain lexicographic
+            # sort misorders same-major versions. Inside the try so an import
+            # failure keeps the graceful empty-combo fallback.
+            ordered = sorted(editors, key=UnityFinder.version_sort_key, reverse=True)
         except Exception:  # noqa: BLE001
-            editors = {}
-        for ver in sorted(editors, reverse=True):
+            ordered = []
+        for ver in ordered:
             widget.addItem(ver, ver)
 
     def _open_project_folder(self) -> None:

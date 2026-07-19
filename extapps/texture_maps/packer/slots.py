@@ -155,7 +155,20 @@ class PackerSlots(ImgUtils):
         widget.currentTextChanged.connect(self._on_format_changed)
 
     def _on_format_changed(self, fmt: str):
-        """Disable alpha combobox for formats without alpha support."""
+        """Disable alpha combobox for formats without alpha support.
+
+        Only constrains alpha in *pack* mode: there the alpha combo selects a
+        source map to write into the output's alpha channel, so a format
+        without alpha support (e.g. JPG) must clear it. In *unpack* mode the
+        alpha combo selects which channel to *extract* from the input image,
+        which is independent of the output format, so it stays enabled and its
+        selection is left untouched (mirrors the invariant in
+        :meth:`_on_mode_changed`). This handler is wired to the format combo's
+        ``currentTextChanged``, so it fires in both modes.
+        """
+        if self._unpack_mode():
+            self.ui.cmbA.setEnabled(True)
+            return
         supports_alpha = fmt.upper() in {"PNG", "TGA", "TIFF", "EXR", "BMP"}
         self.ui.cmbA.setEnabled(supports_alpha)
         if not supports_alpha:
@@ -457,17 +470,14 @@ class PackerSlots(ImgUtils):
     def b001(self):
         """Open the last output directory in the system file explorer."""
         import os
-        import sys
 
         output_dir = getattr(self, "_last_output_dir", None)
         if not output_dir or not os.path.isdir(output_dir):
             print("// No output directory available.")
             return
-        if sys.platform.startswith("darwin"):
-            os.system(f'open "{output_dir}"')
-        elif sys.platform.startswith("win"):
-            os.startfile(output_dir)
-        elif sys.platform.startswith("linux"):
-            os.system(f'xdg-open "{output_dir}"')
-        else:
-            print("// Unsupported OS for opening directories.")
+        # Delegate to the canonical, non-shell launcher. It passes the path as
+        # a single argv entry (os.startfile / subprocess.Popen(["xdg-open", ...])),
+        # so shell metacharacters in the directory name are inert — this avoids
+        # the os.system shell-injection the interpolated command strings had.
+        if not FileUtils.open_explorer(output_dir):
+            print("// Unable to open output directory.")

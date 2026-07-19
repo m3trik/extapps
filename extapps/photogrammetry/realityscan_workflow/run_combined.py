@@ -87,7 +87,8 @@ def publish_outputs(project_dir: str, publish_dir: str):
 
     RC must work in local scratch (cloud-sync fights its live multi-GB project
     I/O), so the static post-run deliverables are published separately. Copies
-    everything in ``project_dir`` EXCEPT the ``.rsproj`` (RC working state, not
+    everything in ``project_dir`` EXCEPT the project file (``.rsproj`` for
+    RealityScan / ``.rcproj`` for legacy RealityCapture — RC working state, not
     a deliverable) and the prep-stage intermediates (``curated/`` /
     ``equalized/`` frame copies, ``masks/``, ``logs/`` — publishing those
     pushed multi-GB image trees into the cloud-sync root). Returns the item
@@ -110,7 +111,9 @@ def publish_outputs(project_dir: str, publish_dir: str):
         return 0
     count = 0
     for entry in entries:
-        if entry.lower().endswith(".rsproj"):
+        if entry.lower().endswith((".rsproj", ".rcproj")):
+            # RealityScan writes .rsproj; legacy RealityCapture writes .rcproj.
+            # Both are working state, not a deliverable — never publish either.
             continue
         src = os.path.join(project_dir, entry)
         if entry.lower() in _PUBLISH_EXCLUDE_DIRS and os.path.isdir(src):
@@ -377,6 +380,36 @@ def main(argv=None) -> int:
     project_dir = os.path.join(args.output_root, args.name)
     os.makedirs(project_dir, exist_ok=True)
 
+    if args.curate_preview:
+        # Dry-run: report-only, no reconstruction — so use a prep-named mock
+        # host. Writing to <name>_qc.json here would clobber a previous real
+        # run's engine sidecar under the same project name; the preview is a
+        # prep artifact and shares the prep sidecar name instead (parity with
+        # the Metashape runner).
+        pv = RealityCaptureWorkflow(
+            project_path=project_dir,
+            name=f"{args.name}_prep",
+            mock_mode=True,  # preview needs cv2, never RealityScan
+            gate_mode=args.gate_mode,
+            checkpoint_each_stage=False,
+        )
+        pv.preview_curation(
+            sources,
+            # Sweep the standard thresholds plus the user's own value (and 0,
+            # the no-dedup baseline) so the preview answers the question they
+            # are actually tuning.
+            hash_thresholds=sorted({0, 5, 8, 10, 12, 15,
+                                    args.curate_hash_threshold}),
+            sharpness_floor_percentile=(
+                args.curate_sharpness_percentile
+                if args.curate_sharpness_percentile > 0 else None
+            ),
+            min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
+            keep_per_cluster=args.keep_per_cluster,
+        )
+        pv.finalize_run(success=True)  # flush the preview stage to the sidecar
+        return 0
+
     rc = RealityCaptureWorkflow(
         project_path=project_dir,
         name=args.name,
@@ -394,24 +427,6 @@ def main(argv=None) -> int:
             f"Running in MOCK MODE ({reason}). "
             "QC sidecar will still be written; no scene produced."
         )
-
-    if args.curate_preview:
-        rc.preview_curation(
-            sources,
-            # Sweep the standard thresholds plus the user's own value (and 0,
-            # the no-dedup baseline) so the preview answers the question they
-            # are actually tuning.
-            hash_thresholds=sorted({0, 5, 8, 10, 12, 15,
-                                    args.curate_hash_threshold}),
-            sharpness_floor_percentile=(
-                args.curate_sharpness_percentile
-                if args.curate_sharpness_percentile > 0 else None
-            ),
-            min_sharpness_fraction_of_median=args.curate_min_sharpness_frac,
-            keep_per_cluster=args.keep_per_cluster,
-        )
-        rc.finalize_run(success=True)  # flush the preview stage to the sidecar
-        return 0
 
     try:
         rc.create_chunk(f"{args.name} (combined)")

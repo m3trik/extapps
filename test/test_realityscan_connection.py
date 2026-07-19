@@ -74,6 +74,39 @@ class RealityScanConnectionTest(unittest.TestCase):
         self.assertNotIn("%errorlevel%>", text)
         self.assertIn("echo %errorlevel%", text)
 
+    def test_non_interactive_bat_preserves_non_ascii_path(self):
+        # Regression: the cross-session .bat was written encoding="ascii",
+        # errors="replace", so a non-ASCII output path (e.g. C:\Users\José\...)
+        # was mangled to '?'. cmd then redirected RC output + the .done marker
+        # to the wrong file while Python polled the correct one -> 2h hang +
+        # TimeoutError. The wrapper must preserve the non-ASCII path verbatim.
+        try:
+            "José".encode("oem")  # OEM codepage must be able to represent it
+        except UnicodeEncodeError:  # pragma: no cover - depends on host codepage
+            self.skipTest("host OEM codepage cannot represent the test path")
+
+        log = os.path.join(self.tmp, "José", "align.log")
+        os.makedirs(os.path.dirname(log), exist_ok=True)
+
+        def fake_launch(app, args=None, session=None, **kw):
+            with open(log + ".done", "w") as fh:
+                fh.write("0")
+            return subprocess.CompletedProcess(["psexec"], 0)
+
+        with mock.patch(f"{CONN}.AppLauncher.is_interactive_session", return_value=False), \
+             mock.patch(f"{CONN}.AppLauncher.active_console_session_id", return_value=1), \
+             mock.patch(f"{CONN}.AppLauncher.launch_in_session", side_effect=fake_launch):
+            cp = self.conn.run(
+                ["-align", "-quit"], log_path=log, poll_interval=0.02, timeout=30
+            )
+        self.assertEqual(cp.returncode, 0)
+        bat = log + ".run.bat"
+        with open(bat, encoding="oem") as fh:
+            text = fh.read()
+        # The non-ASCII directory name must survive verbatim (not become 'Jos?').
+        self.assertIn("José", text)
+        self.assertNotIn("Jos?", text)
+
     def test_epic_signin_active_heuristic(self):
         with mock.patch(f"{CONN}.AppLauncher.get_running_processes", return_value=[123]):
             self.assertTrue(RealityScanConnection.epic_signin_active())

@@ -449,10 +449,14 @@ class CompositorSlots:
 
     @staticmethod
     def _open_dir(path: Optional[str]) -> None:
-        try:
-            os.startfile(path)
-        except (FileNotFoundError, TypeError):
-            pass
+        """Reveal a directory in the OS file explorer (cross-platform).
+
+        Delegates to the canonical, non-shell launcher (packer.b001 uses the
+        same one), which dispatches os.startfile / open / xdg-open by platform
+        and no-ops safely on an empty or nonexistent path. Using it here fixes
+        the AttributeError crash that a bare ``os.startfile`` raised off-Windows.
+        """
+        ptk.FileUtils.open_explorer(path)
 
     def _on_log_link_clicked(self, url) -> None:
         """Route clickable links in the log panel.

@@ -211,6 +211,10 @@ class PainterConnection:
                 body = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             body = json.loads(e.read().decode("utf-8"))
+        except (urllib.error.URLError, ConnectionError, OSError) as e:
+            raise ConnectionError(
+                f"Painter plugin not reachable at {url!r}: {e}"
+            ) from e
 
         if not body.get("ok"):
             raise RuntimeError(f"Op {op!r} failed: {body.get('error')}")
@@ -226,8 +230,13 @@ class PainterConnection:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return json.loads(resp.read().decode("utf-8")).get("value", {})
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                return json.loads(resp.read().decode("utf-8")).get("value", {})
+        except (urllib.error.URLError, ConnectionError, OSError) as e:
+            raise ConnectionError(
+                f"Painter plugin not reachable at {url!r}: {e}"
+            ) from e
 
     # ---- shutdown --------------------------------------------------------
 

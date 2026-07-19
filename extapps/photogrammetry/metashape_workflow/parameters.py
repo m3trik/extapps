@@ -252,6 +252,9 @@ _ALIGN_MODE_KEYS = frozenset({
 _MODE_KEYS: "Dict[str, frozenset]" = {
     "align": _ALIGN_MODE_KEYS,
     "refine": _ALIGN_MODE_KEYS | {"skip_refine"},
+    # Prep preview (--curate-preview) dry-runs curation only — nothing but the
+    # shared pre-processing knobs is consulted.
+    "prep_preview": PREPROCESSING_KEYS,
     # "" (full pipeline) intentionally absent → every registered param applies.
     # dedupe_cameras / calibrate_colors are post-align full-pipeline stages, so
     # like the mesh-cleanup knobs they're absent from the stop-after modes.

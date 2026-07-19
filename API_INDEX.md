@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
-_Generated: 2026-07-17_
+_Generated: 2026-07-18_
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - `list_templates() -> List[Path]`
@@ -118,7 +118,7 @@ _Generated: 2026-07-17_
 
 ### `photogrammetry/metashape_workflow/_metashape_runner.py` — Local, async runner the Metashape panel dispatches to.
 - `class MetashapeRunner(ProcessRunner)`
-  - methods: exe, is_available
+  - methods: exe, is_available, start
 
 ### `photogrammetry/metashape_workflow/_metashape_workflow.py`
 - `is_metashape_available() -> bool`

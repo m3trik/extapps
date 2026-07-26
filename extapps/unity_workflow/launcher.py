@@ -7,11 +7,12 @@ The engine half (editor discovery + launch + project creation) lives in ``unityt
 :mod:`extapps.unity_workflow.slots`. This module only assembles the Switchboard-driven
 UI and provides the script entry point.
 """
-from uitk import configure_high_dpi
+
+from uitk import Bootstrap
 
 # Must run before QApplication is constructed (before any Switchboard import).
 # No-ops inside DCC hosts that already own the QApplication.
-configure_high_dpi()
+Bootstrap.configure_high_dpi()
 
 
 class UnityWorkflowUI:

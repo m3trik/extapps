@@ -23,6 +23,7 @@ Path values support ``~`` / ``${ENV}`` expansion and two intra-document tokens â
 Resolution is **Qt-free** (``pythontk.UserConfig`` uses plain ``os``/``json``), so
 this module is import-safe in the headless Metashape (Python 3.9, no Qt) context.
 """
+
 from __future__ import annotations
 
 import copy
@@ -31,7 +32,7 @@ import os
 import tempfile
 from typing import List, Optional
 
-from pythontk import PresetStore, UserConfig, user_config_root
+from pythontk import PresetStore, UserConfig
 
 PROFILE_NAME = "photogrammetry"
 PROFILE_PACKAGE = "extapps"
@@ -213,7 +214,7 @@ def _packaged_default() -> dict:
     Lands under the user's own config dir + system temp so a clone with no
     profile still runs without touching any specific machine's drives.
     """
-    base = str(user_config_root() / PROFILE_PACKAGE / "photogrammetry")
+    base = str(UserConfig.user_config_root() / PROFILE_PACKAGE / "photogrammetry")
     scratch = os.path.join(tempfile.gettempdir(), "photogrammetry")
     return _skeleton(base, scratch)
 

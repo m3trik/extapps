@@ -12,6 +12,7 @@ Run::
 
     pytest extapps/test/test_toolbag_helpers.py
 """
+
 from __future__ import annotations
 
 import json
@@ -85,7 +86,7 @@ class TestWireMaterialsNullTexturePath(unittest.TestCase):
 
         with mock.patch.object(tbh, "mset", fake_mset):
             # Must not raise TypeError on the null baseColor slot.
-            wired = tbh.wire_materials_from_manifest(
+            wired = tbh.ToolbagHelpers.wire_materials_from_manifest(
                 self.manifest_path, verbose=False
             )
 

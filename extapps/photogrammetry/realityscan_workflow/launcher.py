@@ -5,11 +5,12 @@
 Assembles the Switchboard-driven panel and provides the script entry point;
 slot bindings live in :mod:`extapps.photogrammetry.realityscan_workflow.slots`.
 """
-from uitk import configure_high_dpi
+
+from uitk import Bootstrap
 
 # Must run before QApplication is constructed. No-ops inside DCC hosts that
 # already own the QApplication.
-configure_high_dpi()
+Bootstrap.configure_high_dpi()
 
 
 class RealityScanWorkflowUI:

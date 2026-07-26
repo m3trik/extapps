@@ -17,7 +17,7 @@ import pythontk as ptk
 from pythontk.core_utils.logging_mixin import LevelAwareFormatter
 from qtpy.QtWidgets import QPushButton
 from uitk.widgets.textEditLogHandler import TextEditLogHandler
-from uitk.widgets.mixins.tooltip_mixin import fmt, hl
+from uitk.widgets.mixins.tooltip_mixin import TooltipFormat
 
 from pythontk import BatchResult, MapCompositor, NormalOutputMode
 
@@ -56,12 +56,12 @@ def _build_source_tooltip() -> str:
     the ecosystem's tooltips. Shown while the field is empty; once a valid
     source is entered the validator swaps in :meth:`_source_valid_tooltip`.
     """
-    return fmt(
+    return TooltipFormat.fmt(
         title="Source maps to combine",
         body="A folder of texture maps, or specific image files.",
         bullets=[
-            f"{hl('Add files…')} — pick one or more image files.",
-            f"{hl('Choose folder…')} — use every image in a folder.",
+            f"{TooltipFormat.hl('Add files…')} — pick one or more image files.",
+            f"{TooltipFormat.hl('Choose folder…')} — use every image in a folder.",
             "Or type / paste a folder path directly.",
             "Recent sources are in the option box (clock icon).",
         ],
@@ -74,11 +74,11 @@ def _build_source_tooltip() -> str:
 
 def _build_dest_tooltip() -> str:
     """Rich-text tooltip for the destination-directory field."""
-    return fmt(
+    return TooltipFormat.fmt(
         title="Destination directory",
         body="The folder where your combined maps are written.",
         bullets=[
-            f"{hl('Choose folder…')} — pick the output folder.",
+            f"{TooltipFormat.hl('Choose folder…')} — pick the output folder.",
             "Or type / paste a folder path directly.",
             "Recent destinations are in the option box (clock icon).",
         ],
@@ -87,7 +87,7 @@ def _build_dest_tooltip() -> str:
 
 def _build_mapname_tooltip() -> str:
     """Rich-text tooltip for the map-name (filename prefix) field."""
-    return fmt(
+    return TooltipFormat.fmt(
         title="Map name prefix",
         body="Optional filename prefix for the combined maps.",
         notes=["Leave empty to use the source folder's name."],
@@ -414,7 +414,7 @@ class CompositorSlots:
         s_plural = "" if n_sets == 1 else "s"
         muted = "color:#9a9a9a"
         lines = [
-            f"{hl(f'{n_files} image file{f_plural}')} "
+            f"{TooltipFormat.hl(f'{n_files} image file{f_plural}')} "
             f'<span style="{muted}">in {n_sets} texture set{s_plural}</span>'
         ]
         for set_name, members in sets.items():
@@ -728,8 +728,7 @@ class CompositorSlots:
         total_maps = len(sorted_images) + total_maps_extra
 
         self.engine.logger.info(
-            f"Sorting <b>{total_layers}</b> images, into "
-            f"<b>{total_maps}</b> maps ..",
+            f"Sorting <b>{total_layers}</b> images, into <b>{total_maps}</b> maps ..",
             preset="italic",
         )
         # Reveal the footer's slim progress bar; engine ticks flow into

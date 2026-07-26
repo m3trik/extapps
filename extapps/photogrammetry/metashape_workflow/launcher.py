@@ -8,12 +8,13 @@ not generic) and slot bindings in :mod:`extapps.photogrammetry.metashape_workflo
 this module only assembles the Switchboard-driven UI and provides the
 script entry point.
 """
-from uitk import configure_high_dpi
+
+from uitk import Bootstrap
 
 # Must run before QApplication is constructed, so before any import
 # that touches Switchboard. No-ops inside DCC hosts that already own
 # the QApplication.
-configure_high_dpi()
+Bootstrap.configure_high_dpi()
 
 
 class MetashapeWorkflowUI:
@@ -21,7 +22,9 @@ class MetashapeWorkflowUI:
         from qtpy import QtCore
         from uitk import Switchboard
         from extapps import __version__
-        from extapps.photogrammetry.metashape_workflow.slots import MetashapeWorkflowSlots
+        from extapps.photogrammetry.metashape_workflow.slots import (
+            MetashapeWorkflowSlots,
+        )
 
         sb = Switchboard(
             *args,

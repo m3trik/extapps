@@ -11,6 +11,7 @@ host that loads uitk (tentacle, a bare ``python -c`` launch, etc.).
 Scoped to "open + set up a project": the ``import`` and ``lookdev``
 templates. The bake (high/low) workflow stays with the Maya panel.
 """
+
 from __future__ import annotations
 
 import os
@@ -28,8 +29,8 @@ from extapps.marmoset_workflow._marmoset_engine import (
     MarmosetEngine,
     SEND_TO,
     _TEMPLATE_DIR,
-    list_template_modes as _engine_list_template_modes,
 )
+
 from extapps.marmoset_workflow import parameters as _params
 
 
@@ -38,8 +39,15 @@ _ALLOWED_TEMPLATES = ("import", "lookdev")
 
 # Toolbag-importable model formats offered in the file picker.
 _MODEL_FILE_TYPES = [
-    "*.fbx", "*.obj", "*.usd", "*.usdc", "*.usda",
-    "*.abc", "*.gltf", "*.glb", "*.ply",
+    "*.fbx",
+    "*.obj",
+    "*.usd",
+    "*.usdc",
+    "*.usda",
+    "*.abc",
+    "*.gltf",
+    "*.glb",
+    "*.ply",
 ]
 
 
@@ -99,7 +107,8 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
     def list_template_modes(self) -> List[Tuple[str, str]]:
         """Engine templates filtered to the 'set up a project' subset."""
         return [
-            (t, m) for (t, m) in _engine_list_template_modes()
+            (t, m)
+            for (t, m) in MarmosetEngine.list_template_modes()
             if t in _ALLOWED_TEMPLATES
         ]
 
@@ -236,9 +245,7 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
                     params=self.collect_param_values(),
                 )
         except Exception:
-            self.bridge.logger.error(
-                "Engine raised:\n" + traceback.format_exc()
-            )
+            self.bridge.logger.error("Engine raised:\n" + traceback.format_exc())
             return
 
         if result is None:

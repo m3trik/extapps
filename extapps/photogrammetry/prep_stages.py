@@ -13,6 +13,7 @@ unifies their QC payloads.
 Host requirements: ``self.qc`` (a ``pythontk.QcLog``), ``self.project_path``
 (str), and ``self._notify(stage, fraction)``.
 """
+
 from __future__ import annotations
 
 import os
@@ -38,6 +39,7 @@ def image_long_edge(image_path: str) -> Optional[int]:
     """
     try:
         from pythontk import ImgUtils
+
         size = ImgUtils.get_image_size(image_path)
     except Exception:
         return None
@@ -107,8 +109,10 @@ def extract_videos_to_dir(
         # ({ii}_{stem}_NNNNNN.jpg) so an upgrade re-extraction can't leave
         # them behind to be silently co-ingested.
         frame_re = re.compile(
-            "(?:" + re.escape(prefix)
-            + r"|\d{2}_" + re.escape(safe_stem)
+            "(?:"
+            + re.escape(prefix)
+            + r"|\d{2}_"
+            + re.escape(safe_stem)
             + r")_\d{6}\.(jpg|jpeg)$",
             re.IGNORECASE,
         )
@@ -142,7 +146,8 @@ def extract_videos_to_dir(
     if written and log:
         written_names = {os.path.basename(p) for p in written}
         foreign = [
-            f for f in os.listdir(output_dir)
+            f
+            for f in os.listdir(output_dir)
             if f.lower().endswith(IMAGE_EXTS) and f not in written_names
         ]
         if foreign:
@@ -204,7 +209,7 @@ class PrepStagesMixin:
         try:
             import pythontk as ptk
 
-            usdz = ptk.obj_to_usdz(model_path)
+            usdz = ptk.UsdMeshWriter.obj_to_usdz(model_path)
             print(f"Exported USDZ sidecar: {usdz}")
             return usdz
         except Exception as e:
@@ -275,8 +280,10 @@ class PrepStagesMixin:
                 return list(source_dirs)
             before = sum(
                 1
-                for d in source_dirs if os.path.isdir(d)
-                for f in os.listdir(d) if f.lower().endswith(IMAGE_EXTS)
+                for d in source_dirs
+                if os.path.isdir(d)
+                for f in os.listdir(d)
+                if f.lower().endswith(IMAGE_EXTS)
             )
             out_dirs = curator.curate(
                 source_dirs=list(source_dirs),
@@ -289,8 +296,10 @@ class PrepStagesMixin:
             )
             after = sum(
                 1
-                for d in out_dirs if os.path.isdir(d)
-                for f in os.listdir(d) if f.lower().endswith(IMAGE_EXTS)
+                for d in out_dirs
+                if os.path.isdir(d)
+                for f in os.listdir(d)
+                if f.lower().endswith(IMAGE_EXTS)
             )
             st["before"] = before
             st["after"] = after

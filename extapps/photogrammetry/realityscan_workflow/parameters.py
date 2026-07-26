@@ -16,11 +16,12 @@ tier, the mesh-cleanup floor + simplify target — plus the shared input
 pre-processing (curate + equalize), which runs before RC in the panel's own
 Python.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from uitk.bridge import AttributeSpec, defaults as _defaults
+from uitk.bridge import AttributeSpec, Parameters as _BridgeParams
 
 from ..profile import QUALITY_TIERS
 from .._shared_params import (
@@ -36,50 +37,68 @@ from .._shared_params import (
 # panel (it runs first in the pipeline — order of operations), so the shared
 # specs are merged in *first*; RC's reconstruction / cleanup params follow.
 PARAMS: "Dict[str, AttributeSpec]" = dict(PREPROCESSING_PARAMS)
-PARAMS.update({
-    "quality": AttributeSpec(
-        key="quality", label="Quality", kind="choice",
-        # SSoT: profile.QUALITY_TIERS — a hardcoded copy here could drift
-        # from the four runners that were already converted to it.
-        default="balanced", choices=list(QUALITY_TIERS),
-        tooltip="Reconstruction quality → RC's mesh preset (draft=preview / "
-                "balanced=normal / max=high). Maps to --quality.",
-    ),
-    "gate_mode": AttributeSpec(
-        key="gate_mode", label="Gate Mode", kind="choice",
-        default="warn", choices=["warn", "halt"],
-        tooltip="Acceptance gates: warn (log + continue) or halt (raise on a "
-                "failed gate). Maps to --gate-mode.",
-    ),
-    "save_project": AttributeSpec(
-        key="save_project", label="Save .rsproj Project", kind="bool",
-        default=False,
-        tooltip="Keep a reopenable RC project (.rsproj) so a later run can reopen "
-                "it and re-run only some stages. Default off removes the local "
-                ".rsproj after export, leaving only deliverables. Emits "
-                "--save-project.",
-    ),
-    # --- Mesh cleanup (post-build) ------------------------------------------
-    "min_component_size": AttributeSpec(
-        key="min_component_size", label="Min Component Size", kind="int",
-        section="Mesh Cleanup",
-        default=100, minimum=0, maximum=200000,
-        tooltip="Delete disconnected mesh islands smaller than this many faces "
-                "(RC -setMinComponentSize) - the main CLI-reachable lever against "
-                "floater 'snow'. 0 disables. On specular / low-texture metal do "
-                "NOT crank this (strips real detail without fixing depth noise). "
-                "Maps to --clean-min-component.",
-    ),
-    "simplify_target": AttributeSpec(
-        key="simplify_target", label="Simplify Target", kind="int",
-        section="Mesh Cleanup",
-        default=20_000_000, minimum=0, maximum=200_000_000,
-        tooltip="Simplify the high model to ~N triangles before unwrap so the UV "
-                "atlas fits the texture budget (fixes RC's unwrap-overflow). "
-                "Texture quality is unaffected (bakes from the photos). 0 = no "
-                "simplify. Maps to --simplify.",
-    ),
-})
+PARAMS.update(
+    {
+        "quality": AttributeSpec(
+            key="quality",
+            label="Quality",
+            kind="choice",
+            # SSoT: profile.QUALITY_TIERS — a hardcoded copy here could drift
+            # from the four runners that were already converted to it.
+            default="balanced",
+            choices=list(QUALITY_TIERS),
+            tooltip="Reconstruction quality → RC's mesh preset (draft=preview / "
+            "balanced=normal / max=high). Maps to --quality.",
+        ),
+        "gate_mode": AttributeSpec(
+            key="gate_mode",
+            label="Gate Mode",
+            kind="choice",
+            default="warn",
+            choices=["warn", "halt"],
+            tooltip="Acceptance gates: warn (log + continue) or halt (raise on a "
+            "failed gate). Maps to --gate-mode.",
+        ),
+        "save_project": AttributeSpec(
+            key="save_project",
+            label="Save .rsproj Project",
+            kind="bool",
+            default=False,
+            tooltip="Keep a reopenable RC project (.rsproj) so a later run can reopen "
+            "it and re-run only some stages. Default off removes the local "
+            ".rsproj after export, leaving only deliverables. Emits "
+            "--save-project.",
+        ),
+        # --- Mesh cleanup (post-build) ------------------------------------------
+        "min_component_size": AttributeSpec(
+            key="min_component_size",
+            label="Min Component Size",
+            kind="int",
+            section="Mesh Cleanup",
+            default=100,
+            minimum=0,
+            maximum=200000,
+            tooltip="Delete disconnected mesh islands smaller than this many faces "
+            "(RC -setMinComponentSize) - the main CLI-reachable lever against "
+            "floater 'snow'. 0 disables. On specular / low-texture metal do "
+            "NOT crank this (strips real detail without fixing depth noise). "
+            "Maps to --clean-min-component.",
+        ),
+        "simplify_target": AttributeSpec(
+            key="simplify_target",
+            label="Simplify Target",
+            kind="int",
+            section="Mesh Cleanup",
+            default=20_000_000,
+            minimum=0,
+            maximum=200_000_000,
+            tooltip="Simplify the high model to ~N triangles before unwrap so the UV "
+            "atlas fits the texture budget (fixes RC's unwrap-overflow). "
+            "Texture quality is unaffected (bakes from the photos). 0 = no "
+            "simplify. Maps to --simplify.",
+        ),
+    }
+)
 
 
 # Value params -> CLI flags that take an argument (always emitted). The shared
@@ -124,4 +143,4 @@ def referenced_keys(source: str = "") -> "set[str]":
 
 def defaults() -> "Dict[str, Any]":
     """Return ``{key: default}`` for every registered parameter."""
-    return _defaults(PARAMS)
+    return _BridgeParams.defaults(PARAMS)

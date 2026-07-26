@@ -9,11 +9,12 @@ use** and :func:`to_argv` renders the collected values into ``run_combined`` CLI
 flags. The two run modes are ``""`` (Train only) and ``"publish"`` (Train +
 Publish); :func:`referenced_keys` hides the Publish-section knobs in Train-only.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from uitk.bridge import AttributeSpec, defaults as _defaults
+from uitk.bridge import AttributeSpec, Parameters as _BridgeParams
 
 from .._shared_params import render_flag_argv
 
@@ -23,46 +24,73 @@ from .._shared_params import render_flag_argv
 PARAMS: "Dict[str, AttributeSpec]" = {
     # --- Brush splat training -----------------------------------------------
     "total_steps": AttributeSpec(
-        key="total_steps", label="Total Steps", kind="int",
-        default=30000, minimum=1000, maximum=100000,
+        key="total_steps",
+        label="Total Steps",
+        kind="int",
+        default=30000,
+        minimum=1000,
+        maximum=100000,
         tooltip="Brush training steps. More steps is a VRAM-free quality lever on "
-                "an 8-10 GB card (draft 7k / balanced 30k / max 50k). Maps to "
-                "--total-steps.",
+        "an 8-10 GB card (draft 7k / balanced 30k / max 50k). Maps to "
+        "--total-steps.",
     ),
     "max_resolution": AttributeSpec(
-        key="max_resolution", label="Max Resolution", kind="int",
-        default=1920, minimum=512, maximum=7680,
+        key="max_resolution",
+        label="Max Resolution",
+        kind="int",
+        default=1920,
+        minimum=512,
+        maximum=7680,
         tooltip="Input long-edge cap. 1920 — A/B showed no gain from 3840 at the "
-                "gaussian budget an 8 GB GPU holds. Maps to --max-resolution.",
+        "gaussian budget an 8 GB GPU holds. Maps to --max-resolution.",
     ),
     "max_splats": AttributeSpec(
-        key="max_splats", label="Max Splats", kind="int",
-        default=10_000_000, minimum=100_000, maximum=30_000_000,
+        key="max_splats",
+        label="Max Splats",
+        kind="int",
+        default=10_000_000,
+        minimum=100_000,
+        maximum=30_000_000,
         tooltip="Upper bound on gaussians; Brush's stock growth settles ~2.5-3M "
-                "on 8 GB. Maps to --max-splats.",
+        "on 8 GB. Maps to --max-splats.",
     ),
     "sh_degree": AttributeSpec(
-        key="sh_degree", label="SH Degree", kind="int",
-        default=3, minimum=0, maximum=3,
+        key="sh_degree",
+        label="SH Degree",
+        kind="int",
+        default=3,
+        minimum=0,
+        maximum=3,
         tooltip="Spherical-harmonics degree (view-dependent colour detail; "
-                "0 = flat). Maps to --sh-degree.",
+        "0 = flat). Maps to --sh-degree.",
     ),
     # --- Publish (engine delivery — Train + Publish mode only) --------------
     "publish_targets": AttributeSpec(
-        key="publish_targets", label="Targets", kind="str", section="Publish",
+        key="publish_targets",
+        label="Targets",
+        kind="str",
+        section="Publish",
         default="unity,web",
         tooltip="Comma-separated engine targets for the publish stage: unity "
-                "(.spz) and/or web (.sog + .html viewer). Maps to "
-                "--publish-targets.",
+        "(.spz) and/or web (.sog + .html viewer). Maps to "
+        "--publish-targets.",
     ),
     "web_format": AttributeSpec(
-        key="web_format", label="Web Format", kind="choice", section="Publish",
-        default="sog", choices=["sog", "compressed-ply"],
+        key="web_format",
+        label="Web Format",
+        kind="choice",
+        section="Publish",
+        default="sog",
+        choices=["sog", "compressed-ply"],
         tooltip="Browser data format for the web target. Maps to --web-format.",
     ),
     "spz_version": AttributeSpec(
-        key="spz_version", label="SPZ Version", kind="choice", section="Publish",
-        default="4", choices=["4", "3"],
+        key="spz_version",
+        label="SPZ Version",
+        kind="choice",
+        section="Publish",
+        default="4",
+        choices=["4", "3"],
         tooltip="SPZ format version for the Unity .spz. Maps to --spz-version.",
     ),
 }
@@ -89,9 +117,7 @@ def to_argv(values: "Dict[str, Any]") -> "List[str]":
 
 # Which params apply per run mode: training knobs always; the Publish-section
 # knobs only in the "publish" (Train + Publish) mode.
-_TRAIN_KEYS = frozenset(
-    {"total_steps", "max_resolution", "max_splats", "sh_degree"}
-)
+_TRAIN_KEYS = frozenset({"total_steps", "max_resolution", "max_splats", "sh_degree"})
 _PUBLISH_KEYS = frozenset({"publish_targets", "web_format", "spz_version"})
 
 
@@ -107,4 +133,4 @@ def referenced_keys(source: str = "") -> "set[str]":
 
 def defaults() -> "Dict[str, Any]":
     """Return ``{key: default}`` for every registered parameter."""
-    return _defaults(PARAMS)
+    return _BridgeParams.defaults(PARAMS)

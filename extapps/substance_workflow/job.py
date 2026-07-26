@@ -1,6 +1,6 @@
 """Job spec + batch convenience wrapper.
 
-There is only one execution mode (live bridge). ``run_batch`` exists for
+There is only one execution mode (live bridge). ``Job.run_batch`` exists for
 ergonomics — it launches Painter, runs a sequence of calls, and shuts down.
 For long-running agent sessions, use :class:`PainterConnection` directly.
 """
@@ -43,51 +43,51 @@ class Job:
         return self
 
     def run(self, **launch_kwargs: Any) -> List[Result]:
-        return run_batch(self.calls, **launch_kwargs)
+        return Job.run_batch(self.calls, **launch_kwargs)
 
+    @staticmethod
+    def run_batch(
+        calls: List[Call],
+        gui: bool = False,
+        app_path: Optional[str] = None,
+        timeout: float = 180.0,
+        launch_args: Optional[List[str]] = None,
+        invoke_timeout: float = 60.0,
+    ) -> List[Result]:
+        """Launch Painter, execute ``calls`` in order over the bridge, shut down.
 
-def run_batch(
-    calls: List[Call],
-    gui: bool = False,
-    app_path: Optional[str] = None,
-    timeout: float = 180.0,
-    launch_args: Optional[List[str]] = None,
-    invoke_timeout: float = 60.0,
-) -> List[Result]:
-    """Launch Painter, execute ``calls`` in order over the bridge, shut down.
+        Args:
+            calls: Sequence of :class:`Call` to execute.
+            gui: Show Painter's UI. Default ``False``.
+            app_path: Override Painter executable.
+            timeout: Seconds to wait for the bridge to come up.
+            launch_args: Extra CLI args forwarded to Painter.
+            invoke_timeout: Per-call HTTP timeout.
 
-    Args:
-        calls: Sequence of :class:`Call` to execute.
-        gui: Show Painter's UI. Default ``False``.
-        app_path: Override Painter executable.
-        timeout: Seconds to wait for the bridge to come up.
-        launch_args: Extra CLI args forwarded to Painter.
-        invoke_timeout: Per-call HTTP timeout.
+        Raises:
+            RuntimeError: Painter failed to launch or the bridge never appeared.
+        """
+        conn = PainterConnection()
+        if not conn.connect(
+            gui=gui, app_path=app_path, launch_args=launch_args, timeout=timeout
+        ):
+            raise RuntimeError("Failed to launch Painter or reach the bridge.")
 
-    Raises:
-        RuntimeError: Painter failed to launch or the bridge never appeared.
-    """
-    conn = PainterConnection()
-    if not conn.connect(
-        gui=gui, app_path=app_path, launch_args=launch_args, timeout=timeout
-    ):
-        raise RuntimeError("Failed to launch Painter or reach the bridge.")
-
-    results: List[Result] = []
-    try:
-        for i, call in enumerate(calls):
-            try:
-                value = conn.invoke(call.op, timeout=invoke_timeout, **call.kwargs)
-                results.append(Result(index=i, op=call.op, ok=True, value=value))
-            except Exception as e:
-                results.append(
-                    Result(
-                        index=i,
-                        op=call.op,
-                        ok=False,
-                        error=f"{type(e).__name__}: {e}",
+        results: List[Result] = []
+        try:
+            for i, call in enumerate(calls):
+                try:
+                    value = conn.invoke(call.op, timeout=invoke_timeout, **call.kwargs)
+                    results.append(Result(index=i, op=call.op, ok=True, value=value))
+                except Exception as e:
+                    results.append(
+                        Result(
+                            index=i,
+                            op=call.op,
+                            ok=False,
+                            error=f"{type(e).__name__}: {e}",
+                        )
                     )
-                )
-    finally:
-        conn.shutdown(force=True)
-    return results
+        finally:
+            conn.shutdown(force=True)
+        return results

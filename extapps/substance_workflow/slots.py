@@ -7,14 +7,15 @@ Painter, then dispatch registered ops (``project.*``, ``bake.*``, …) over
 the JSON-RPC bridge. Engine/domain logic lives in the op modules — these
 slots only collect widget state and invoke ops by name.
 """
+
 import os
 import traceback
 from typing import Any, Dict, Optional
 
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
-from uitk import AttributeSpec, make_widget
-from uitk.widgets.mixins.tooltip_mixin import fmt
+from uitk import AttributeSpec, KindFactory
+from uitk.widgets.mixins.tooltip_mixin import TooltipFormat
 
 from .env_utils.painter_connection import PainterConnection
 from .env_utils.painter_finder import PainterFinder
@@ -22,17 +23,47 @@ from .env_utils.painter_finder import PainterFinder
 # ---------------------------------------------------------------------------
 # Mesh formats Painter accepts for project creation.
 # ---------------------------------------------------------------------------
-MESH_EXTS = ["*.fbx", "*.obj", "*.abc", "*.gltf", "*.glb", "*.ply", "*.usd", "*.usda", "*.usdc"]
+MESH_EXTS = [
+    "*.fbx",
+    "*.obj",
+    "*.abc",
+    "*.gltf",
+    "*.glb",
+    "*.ply",
+    "*.usd",
+    "*.usda",
+    "*.usdc",
+]
 
 # ---------------------------------------------------------------------------
 # Workflow stages: (object_name, label, tooltip, default_on). Order here is
 # both the menu order and the canonical execution order.
 # ---------------------------------------------------------------------------
 PIPELINE_STAGES = [
-    ("stage_open",   "Open / Create Project", "Open the .spp at the save path if it exists, else create a new project from the mesh file.", True),
-    ("stage_bake",   "Bake Lighting → Diffuse", "iray-backed AO (+ optional curvature) composited onto the base color channel.", True),
-    ("stage_save",   "Save Project",          "Save the project (save-as to the save path on first save).", True),
-    ("stage_export", "Export Textures",       "Export textures via a preset. NOTE: export.* ops are not yet implemented.", False),
+    (
+        "stage_open",
+        "Open / Create Project",
+        "Open the .spp at the save path if it exists, else create a new project from the mesh file.",
+        True,
+    ),
+    (
+        "stage_bake",
+        "Bake Lighting → Diffuse",
+        "iray-backed AO (+ optional curvature) composited onto the base color channel.",
+        True,
+    ),
+    (
+        "stage_save",
+        "Save Project",
+        "Save the project (save-as to the save path on first save).",
+        True,
+    ),
+    (
+        "stage_export",
+        "Export Textures",
+        "Export textures via a preset. NOTE: export.* ops are not yet implemented.",
+        False,
+    ),
 ]
 
 BLEND_MODES = ["Multiply", "Overlay", "Normal", "Darken", "LinearBurn"]
@@ -45,39 +76,110 @@ BAKE_RESOLUTIONS = ["256", "512", "1024", "2048", "4096"]
 # self.ui.<key> resolves each field via findChild.
 # ---------------------------------------------------------------------------
 ADVANCED_PARAMS = [
-    AttributeSpec(key="cmb_bake_res",       label="Bake Resolution:",  kind="choice",
-                  default="1024", choices=BAKE_RESOLUTIONS,
-                  tooltip="Mesh-map bake output size (square, power of two)."),
-    AttributeSpec(key="spn_ao_rays",        label="AO Rays:",          kind="int",
-                  default=64, minimum=1, maximum=1024, step=8,
-                  tooltip="AO secondary-ray sample count. Higher = cleaner, slower."),
-    AttributeSpec(key="spn_ao_max",         label="AO Max Dist:",      kind="float",
-                  default=1.0, minimum=0.0, maximum=100.0, step=0.1, decimals=3,
-                  tooltip="AO ray maximum length in world units."),
-    AttributeSpec(key="spn_ao_min",         label="AO Min Dist:",      kind="float",
-                  default=0.0, minimum=0.0, maximum=100.0, step=0.1, decimals=3,
-                  tooltip="AO ray minimum length (helps avoid self-shadow noise)."),
-    AttributeSpec(key="spn_ao_spread",      label="AO Spread (deg):",  kind="float",
-                  default=162.0, minimum=0.0, maximum=180.0, step=1.0, decimals=1,
-                  tooltip="Hemisphere spread angle in degrees."),
-    AttributeSpec(key="spn_ao_subsample",   label="AO Subsample:",     kind="int",
-                  default=1, minimum=1, maximum=8,
-                  tooltip="Supersampling factor (1 = none)."),
-    AttributeSpec(key="spn_ao_intensity",   label="AO Intensity:",     kind="float",
-                  default=1.0, minimum=0.0, maximum=4.0, step=0.05, decimals=2,
-                  tooltip="Multiplier applied to the AO contribution when compositing."),
-    AttributeSpec(key="cmb_blend",          label="Blend Mode:",       kind="choice",
-                  default="Multiply", choices=BLEND_MODES,
-                  tooltip="Blend mode for the inserted AO lighting layer."),
-    AttributeSpec(key="chk_curvature",      label="Include Curvature:", kind="bool",
-                  default=False,
-                  tooltip="Also bake curvature and stack it as an overlay layer."),
-    AttributeSpec(key="spn_curv_intensity", label="Curvature Intensity:", kind="float",
-                  default=0.3, minimum=0.0, maximum=4.0, step=0.05, decimals=2,
-                  tooltip="Curvature multiplier when 'Include Curvature' is on."),
-    AttributeSpec(key="chk_skip_bakes",     label="Skip Existing Bakes:", kind="bool",
-                  default=False,
-                  tooltip="Only bake when the AO mesh map is missing."),
+    AttributeSpec(
+        key="cmb_bake_res",
+        label="Bake Resolution:",
+        kind="choice",
+        default="1024",
+        choices=BAKE_RESOLUTIONS,
+        tooltip="Mesh-map bake output size (square, power of two).",
+    ),
+    AttributeSpec(
+        key="spn_ao_rays",
+        label="AO Rays:",
+        kind="int",
+        default=64,
+        minimum=1,
+        maximum=1024,
+        step=8,
+        tooltip="AO secondary-ray sample count. Higher = cleaner, slower.",
+    ),
+    AttributeSpec(
+        key="spn_ao_max",
+        label="AO Max Dist:",
+        kind="float",
+        default=1.0,
+        minimum=0.0,
+        maximum=100.0,
+        step=0.1,
+        decimals=3,
+        tooltip="AO ray maximum length in world units.",
+    ),
+    AttributeSpec(
+        key="spn_ao_min",
+        label="AO Min Dist:",
+        kind="float",
+        default=0.0,
+        minimum=0.0,
+        maximum=100.0,
+        step=0.1,
+        decimals=3,
+        tooltip="AO ray minimum length (helps avoid self-shadow noise).",
+    ),
+    AttributeSpec(
+        key="spn_ao_spread",
+        label="AO Spread (deg):",
+        kind="float",
+        default=162.0,
+        minimum=0.0,
+        maximum=180.0,
+        step=1.0,
+        decimals=1,
+        tooltip="Hemisphere spread angle in degrees.",
+    ),
+    AttributeSpec(
+        key="spn_ao_subsample",
+        label="AO Subsample:",
+        kind="int",
+        default=1,
+        minimum=1,
+        maximum=8,
+        tooltip="Supersampling factor (1 = none).",
+    ),
+    AttributeSpec(
+        key="spn_ao_intensity",
+        label="AO Intensity:",
+        kind="float",
+        default=1.0,
+        minimum=0.0,
+        maximum=4.0,
+        step=0.05,
+        decimals=2,
+        tooltip="Multiplier applied to the AO contribution when compositing.",
+    ),
+    AttributeSpec(
+        key="cmb_blend",
+        label="Blend Mode:",
+        kind="choice",
+        default="Multiply",
+        choices=BLEND_MODES,
+        tooltip="Blend mode for the inserted AO lighting layer.",
+    ),
+    AttributeSpec(
+        key="chk_curvature",
+        label="Include Curvature:",
+        kind="bool",
+        default=False,
+        tooltip="Also bake curvature and stack it as an overlay layer.",
+    ),
+    AttributeSpec(
+        key="spn_curv_intensity",
+        label="Curvature Intensity:",
+        kind="float",
+        default=0.3,
+        minimum=0.0,
+        maximum=4.0,
+        step=0.05,
+        decimals=2,
+        tooltip="Curvature multiplier when 'Include Curvature' is on.",
+    ),
+    AttributeSpec(
+        key="chk_skip_bakes",
+        label="Skip Existing Bakes:",
+        kind="bool",
+        default=False,
+        tooltip="Only bake when the AO mesh map is missing.",
+    ),
 ]
 
 _LOG_LEVELS = {
@@ -134,7 +236,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
             setToolTip="Set the log level.",
         )
         widget.set_help_text(
-            fmt(
+            TooltipFormat.fmt(
                 title="Substance Workflow",
                 body="Drive Adobe Substance 3D Painter from a single panel. "
                 "Each launch starts a NEW Painter instance over a JSON-RPC "
@@ -252,7 +354,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
             lbl.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
             lbl.setToolTip(spec.tooltip)
 
-            field = make_widget(spec, row)
+            field = KindFactory.make_widget(spec, row)
             field.setMinimumHeight(19)
             field.setMaximumHeight(19)
 
@@ -363,7 +465,9 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
 
     def _sync_launch_button(self) -> None:
         """Keep the launch button's label in step with the session state."""
-        self.ui.btn_launch.setText("Close Painter" if self._connected else "Launch Painter")
+        self.ui.btn_launch.setText(
+            "Close Painter" if self._connected else "Launch Painter"
+        )
 
     # ------------------------------------------------------------------ helpers
 
@@ -431,7 +535,9 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
             with self.sb.progress(text="Working: Substance Workflow") as tick:
                 if stages["stage_open"]:
                     if save_path and os.path.isfile(save_path):
-                        self.logger.info(self.conn.invoke("project.open", path=save_path))
+                        self.logger.info(
+                            self.conn.invoke("project.open", path=save_path)
+                        )
                         tick(text="Project opened")
                     else:
                         self.logger.info(

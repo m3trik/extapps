@@ -2,26 +2,15 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
-_Generated: 2026-07-18_
+_Generated: 2026-07-26_
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
-- `list_templates() -> List[Path]`
-- `template_modes(template_path: Path) -> Tuple[str, ...]`
-- `list_template_modes() -> List[Tuple[str, str]]`
 - `class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`
-  - methods: toolbag_path, toolbag_log_path, preflight, deliver, send, render_template
+  - methods: toolbag_path, toolbag_log_path, preflight, deliver, send, render_template, list_templates, template_modes, list_template_modes
 
 ### `marmoset_workflow/_toolbag_helpers.py` — Shared helpers for Marmoset Toolbag template scripts.
-- `derive_per_run_log_path(manifest_path)`
-- `begin_log(reference_path)`
-- `log(msg)`
-- `find_material(name, scene_mats)`
-- `load_manifest(manifest_path)`
-- `wire_materials_from_manifest(manifest_path, verbose=True)`
-- `split_high_low(objects, high_suffix, low_suffix, pre_classified=None)`
-- `collect_mesh_objects(root)`
-- `apply_sky_preset(preset_path)`
-- `frame_in_viewport()`
+- `class ToolbagHelpers(_ToolbagHelpersInternal)`
+  - methods: derive_per_run_log_path, begin_log, log, find_material, load_manifest, wire_materials_from_manifest, split_high_low, collect_mesh_objects, apply_sky_preset, frame_in_viewport
 
 ### `marmoset_workflow/launcher.py` — Application shell for the Marmoset Workflow UI.
 - `class MarmosetWorkflowUI`
@@ -36,9 +25,8 @@ _Generated: 2026-07-18_
   - methods: params_module, template_dir, make_bridge, list_template_modes, select_initial_template_index, resolved_model_path, set_model_path, b000
 
 ### `marmoset_workflow/template_params.py` — Plain default values + literal formatting for Marmoset template tokens.
-- `python_literal(value: Any) -> str`
-- `defaults() -> Dict[str, Any]`
-- `to_context(values: Dict[str, Any]) -> Dict[str, str]`
+- `class TemplateParams`
+  - methods: python_literal, defaults, to_context
 
 ### `marmoset_workflow/templates/import.py` — Open the model in Toolbag and wire materials from the manifest.
 - `main()`
@@ -47,10 +35,8 @@ _Generated: 2026-07-18_
 - `main()`
 
 ### `marmoset_workflow/toolbag_log.py` — Marmoset Toolbag log-file resolution, classification, and live tailing.
-- `resolve_toolbag_log_path(toolbag_exe: Optional[str]) -> Optional[str]`
-- `classify_log_line(line: str) -> Optional[Tuple[str, str]]`
-- `dispatch_log_lines(lines, logger) -> None`
-- `start_toolbag_log_tail(log_path: str, start_offset: int, process, logger, poll_interval: float = 0.4, file_wait_timeout: float = 60.0)`
+- `class ToolbagLog`
+  - methods: resolve_toolbag_log_path, classify_log_line, dispatch_log_lines, start_toolbag_log_tail
 
 ### `mesh_convert/launcher.py` — Application shell for the Mesh Convert UI.
 - `class MeshConvertUI`
@@ -121,12 +107,8 @@ _Generated: 2026-07-18_
   - methods: exe, is_available, start
 
 ### `photogrammetry/metashape_workflow/_metashape_workflow.py`
-- `is_metashape_available() -> bool`
-- `is_license_valid() -> bool`
-- `get_metashape_version() -> str`
-- `get_image_filepaths(directory: str) -> List[str]`
 - `class MetashapeWorkflow(PrepStagesMixin)`
-  - methods: get_license_info, create_chunk, add_images, add_image_dirs, clean_mesh_advanced, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, generate_masks_native, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
+  - methods: is_metashape_available, is_license_valid, get_metashape_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, clean_mesh_advanced, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, generate_masks_native, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
 
 ### `photogrammetry/metashape_workflow/launcher.py` — Application shell for the Metashape Workflow UI.
 - `class MetashapeWorkflowUI`
@@ -240,12 +222,11 @@ _Generated: 2026-07-18_
 - `preset_to_dict(preset: str) -> dict`
 
 ### `substance_workflow/job.py` — Job spec + batch convenience wrapper.
-- `run_batch(calls: List[Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: float = 60.0) -> List[Result]`
 - `class Call`
   - methods: to_dict
 - `class Result`
 - `class Job`
-  - methods: add, run
+  - methods: add, run, run_batch
 
 ### `substance_workflow/launcher.py` — Application shell for the Substance Workflow UI.
 - `class SubstanceWorkflowUI`

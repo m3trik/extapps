@@ -11,6 +11,7 @@ Run::
 
     pytest extapps/test/test_metashape_workflow.py
 """
+
 from __future__ import annotations
 
 import json
@@ -42,6 +43,7 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import metashape_workflow as m
+
         self.ui = m.MetashapeWorkflowUI()
         self.slots = self.ui.sb.get_slots_instance(self.ui)
         self.assertIsNotNone(self.slots, "Switchboard returned no slots instance")
@@ -58,6 +60,7 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
 
         from uitk.widgets.header import Header
         from uitk.widgets.footer import Footer
+
         self.assertIsInstance(self.ui.header, Header)
         self.assertIsInstance(self.ui.footer, Footer)
 
@@ -75,9 +78,11 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
     def test_param_widgets_built_for_every_spec(self) -> None:
         """Each semantic AttributeSpec gets a widget the panel can read/write."""
         from extapps.photogrammetry.metashape_workflow import parameters as P
+
         for key in P.PARAMS:
             self.assertIn(
-                key, self.slots._param_widgets,
+                key,
+                self.slots._param_widgets,
                 f"param widget {key!r} not built from PARAMS",
             )
 
@@ -107,7 +112,7 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
         self.assertTrue(rows["dedupe_cameras"].isHidden())
         self.assertTrue(rows["calibrate_colors"].isHidden())
         self.assertFalse(rows["align_downscale"].isHidden())  # align stage param
-        self.assertFalse(rows["skip_curate"].isHidden())      # pre-align param
+        self.assertFalse(rows["skip_curate"].isHidden())  # pre-align param
 
         # Refine only re-enables skip_refine (refine runs in this mode).
         cmb.setCurrentIndex(cmb.findText("Refine only"))
@@ -153,7 +158,8 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
         """The Input Pre-processing master toggle (preprocess_input) collapses
         its knobs when off — only the toggle + section divider stay — and
         restores them when on. (The section leads the panel, order of ops.)"""
-        from uitk.bridge.spec import set_value
+        from uitk.bridge.spec import KindFactory
+
         rows = self.slots._param_rows
         seps = self.slots._section_separators
         cmb = self.ui.cmb000
@@ -166,14 +172,14 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
 
         # Off: the knobs collapse, but the master toggle + its divider remain
         # (so the stage can be re-enabled).
-        set_value(self.slots._param_widgets["preprocess_input"], False)
+        KindFactory.set_value(self.slots._param_widgets["preprocess_input"], False)
         self.assertTrue(rows["curate_hash_threshold"].isHidden())
         self.assertTrue(rows["skip_equalize"].isHidden())
         self.assertFalse(rows["preprocess_input"].isHidden())
         self.assertFalse(seps["Input Pre-processing"].isHidden())
 
         # On again: the knobs are restored.
-        set_value(self.slots._param_widgets["preprocess_input"], True)
+        KindFactory.set_value(self.slots._param_widgets["preprocess_input"], True)
         self.assertFalse(rows["curate_hash_threshold"].isHidden())
 
     def test_semantic_preset_mode_active(self) -> None:
@@ -184,28 +190,30 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
         self.assertIn("specular_metal", self.slots._preset_mgr.list())
 
     def test_builtin_preset_loads_into_param_widgets(self) -> None:
-        from uitk.bridge.spec import read_value
+        from uitk.bridge.spec import KindFactory
+
         self.slots._preset_mgr.load("specular_metal")
         w = self.slots._param_widgets
-        self.assertEqual(read_value(w["depth_filter"]), "moderate")
-        self.assertEqual(read_value(w["face_count"]), "high")
-        self.assertTrue(read_value(w["mask_background"]))
+        self.assertEqual(KindFactory.read_value(w["depth_filter"]), "moderate")
+        self.assertEqual(KindFactory.read_value(w["face_count"]), "high")
+        self.assertTrue(KindFactory.read_value(w["mask_background"]))
 
     def test_quality_presets_load_into_param_widgets(self) -> None:
         """preview / default / high each apply their explicit knobs to the
         widgets (the `quality` key is ignored — no widget for it)."""
-        from uitk.bridge.spec import read_value
+        from uitk.bridge.spec import KindFactory
+
         w = self.slots._param_widgets
 
         self.slots._preset_mgr.load("preview")
-        self.assertEqual(read_value(w["align_downscale"]), 4)
-        self.assertEqual(read_value(w["face_count"]), "low")
-        self.assertEqual(read_value(w["texture_size"]), "2048")
+        self.assertEqual(KindFactory.read_value(w["align_downscale"]), 4)
+        self.assertEqual(KindFactory.read_value(w["face_count"]), "low")
+        self.assertEqual(KindFactory.read_value(w["texture_size"]), "2048")
 
         self.slots._preset_mgr.load("high")
-        self.assertEqual(read_value(w["align_downscale"]), 1)
-        self.assertEqual(read_value(w["depth_downscale"]), 1)
-        self.assertEqual(read_value(w["face_count"]), "high")
+        self.assertEqual(KindFactory.read_value(w["align_downscale"]), 1)
+        self.assertEqual(KindFactory.read_value(w["depth_downscale"]), 1)
+        self.assertEqual(KindFactory.read_value(w["face_count"]), "high")
 
     def test_missing_exe_reports_instead_of_mocking(self) -> None:
         """No silent mock fallback: with no exe, b000 logs + leaves UI usable."""
@@ -235,6 +243,7 @@ class TestParametersReferencedKeys(unittest.TestCase):
 
     def _P(self):
         from extapps.photogrammetry.metashape_workflow import parameters as P
+
         return P
 
     def test_full_pipeline_returns_all_keys(self) -> None:
@@ -244,21 +253,40 @@ class TestParametersReferencedKeys(unittest.TestCase):
     def test_align_mode_drops_post_align_stage_knobs(self) -> None:
         P = self._P()
         keys = P.referenced_keys("align")
-        for hidden in ("depth_downscale", "depth_filter", "face_count",
-                       "texture_size", "dedupe_cameras", "skip_refine",
-                       "calibrate_colors",
-                       # mesh cleanup is a post-build stage -> full pipeline only
-                       "min_component_size", "smooth_strength", "close_holes"):
+        for hidden in (
+            "depth_downscale",
+            "depth_filter",
+            "face_count",
+            "texture_size",
+            "dedupe_cameras",
+            "skip_refine",
+            "calibrate_colors",
+            # mesh cleanup is a post-build stage -> full pipeline only
+            "min_component_size",
+            "smooth_strength",
+            "close_holes",
+        ):
             self.assertNotIn(hidden, keys, f"{hidden} should not apply in align-only")
-        for shown in ("align_downscale", "skip_curate", "skip_equalize",
-                      "mask_background", "gate_mode", "save_project",
-                      # alignment-quality levers (pre-align triage + matchPhotos)
-                      "triage_quality", "generic_preselection",
-                      "keypoint_limit", "tiepoint_limit",
-                      # input pre-processing runs before align -> applies here too
-                      "curate_hash_threshold", "curate_sharpness_percentile",
-                      "curate_min_sharpness_frac", "keep_per_cluster",
-                      "equalize_strength", "equalize_reference"):
+        for shown in (
+            "align_downscale",
+            "skip_curate",
+            "skip_equalize",
+            "mask_background",
+            "gate_mode",
+            "save_project",
+            # alignment-quality levers (pre-align triage + matchPhotos)
+            "triage_quality",
+            "generic_preselection",
+            "keypoint_limit",
+            "tiepoint_limit",
+            # input pre-processing runs before align -> applies here too
+            "curate_hash_threshold",
+            "curate_sharpness_percentile",
+            "curate_min_sharpness_frac",
+            "keep_per_cluster",
+            "equalize_strength",
+            "equalize_reference",
+        ):
             self.assertIn(shown, keys, f"{shown} should apply in align-only")
 
     def test_refine_mode_adds_skip_refine(self) -> None:
@@ -273,14 +301,16 @@ class TestParametersReferencedKeys(unittest.TestCase):
 
     def test_preprocessing_values_render_to_cli_flags(self) -> None:
         P = self._P()
-        argv = P.to_argv({
-            "curate_hash_threshold": 0,          # 0 = disable dedup; must still emit
-            "curate_sharpness_percentile": 12.5,
-            "curate_min_sharpness_frac": 0.2,
-            "keep_per_cluster": 2,
-            "equalize_strength": 0.8,
-            "equalize_reference": "global",
-        })
+        argv = P.to_argv(
+            {
+                "curate_hash_threshold": 0,  # 0 = disable dedup; must still emit
+                "curate_sharpness_percentile": 12.5,
+                "curate_min_sharpness_frac": 0.2,
+                "keep_per_cluster": 2,
+                "equalize_strength": 0.8,
+                "equalize_reference": "global",
+            }
+        )
         self.assertEqual(argv[argv.index("--curate-hash-threshold") + 1], "0")
         self.assertEqual(argv[argv.index("--keep-per-cluster") + 1], "2")
         self.assertEqual(argv[argv.index("--equalize-reference") + 1], "global")
@@ -294,15 +324,17 @@ class TestParametersReferencedKeys(unittest.TestCase):
         pair (--flag / --no-flag), so unchecking it can override the on-by-default
         runner baseline."""
         P = self._P()
-        argv = P.to_argv({
-            "triage_quality": 0.3,
-            "generic_preselection": True,
-            "keypoint_limit": 60000,
-            "tiepoint_limit": 20000,
-            "min_component_size": 25000,
-            "smooth_strength": 1,
-            "close_holes": 10,
-        })
+        argv = P.to_argv(
+            {
+                "triage_quality": 0.3,
+                "generic_preselection": True,
+                "keypoint_limit": 60000,
+                "tiepoint_limit": 20000,
+                "min_component_size": 25000,
+                "smooth_strength": 1,
+                "close_holes": 10,
+            }
+        )
         self.assertEqual(argv[argv.index("--triage-quality") + 1], "0.3")
         self.assertEqual(argv[argv.index("--keypoint-limit") + 1], "60000")
         self.assertEqual(argv[argv.index("--tiepoint-limit") + 1], "20000")
@@ -321,6 +353,7 @@ class TestParametersReferencedKeys(unittest.TestCase):
         panel (order of operations): the master toggle is the first param and
         every pre-processing key precedes the engine-specific ones."""
         from extapps.photogrammetry._shared_params import PREPROCESSING_KEYS
+
         P = self._P()
         keys = list(P.PARAMS)
         self.assertEqual(keys[0], "preprocess_input")
@@ -328,22 +361,33 @@ class TestParametersReferencedKeys(unittest.TestCase):
         first_engine = min(
             keys.index(k) for k in ("align_downscale", "depth_filter", "face_count")
         )
-        self.assertLess(last_pre, first_engine,
-                        "pre-processing must precede the engine params")
+        self.assertLess(
+            last_pre, first_engine, "pre-processing must precede the engine params"
+        )
 
     def test_preprocessing_master_off_skips_whole_stage(self) -> None:
         """preprocess_input=False renders the wholesale skip (both stages) and
         omits the now-moot knob flags; True renders the knobs and emits no
         skip (with the per-stage skips left off)."""
         P = self._P()
-        off = P.to_argv({"preprocess_input": False,
-                         "curate_hash_threshold": 7, "equalize_strength": 0.9})
+        off = P.to_argv(
+            {
+                "preprocess_input": False,
+                "curate_hash_threshold": 7,
+                "equalize_strength": 0.9,
+            }
+        )
         self.assertIn("--skip-curate", off)
         self.assertIn("--skip-equalize", off)
         self.assertNotIn("--curate-hash-threshold", off)
         self.assertNotIn("--equalize-strength", off)
-        on = P.to_argv({"preprocess_input": True,
-                        "curate_hash_threshold": 7, "equalize_strength": 0.9})
+        on = P.to_argv(
+            {
+                "preprocess_input": True,
+                "curate_hash_threshold": 7,
+                "equalize_strength": 0.9,
+            }
+        )
         self.assertEqual(on[on.index("--curate-hash-threshold") + 1], "7")
         self.assertNotIn("--skip-curate", on)
 
@@ -354,6 +398,7 @@ class TestBuiltinPresets(unittest.TestCase):
 
     def _profile(self):
         from extapps.photogrammetry import profile
+
         return profile
 
     def test_quality_presets_available_and_well_formed(self) -> None:
@@ -381,8 +426,11 @@ class TestBuiltinPresets(unittest.TestCase):
         self.assertTrue(spec.get("generic_preselection"))
         self.assertEqual(spec.get("tiepoint_limit"), 20000)
         self.assertEqual(spec.get("smooth_strength"), 1)
-        self.assertNotIn("min_component_size", spec,
-                         "specular_metal must NOT crank component removal")
+        self.assertNotIn(
+            "min_component_size",
+            spec,
+            "specular_metal must NOT crank component removal",
+        )
         # High quality: denser tie cloud, but generic preselection left off.
         hq = P.get_preset("high", "metashape")
         self.assertEqual(hq.get("tiepoint_limit"), 20000)
@@ -408,9 +456,8 @@ class TestMetashapeWorkflowEngine(unittest.TestCase):
 
     def _new_workflow(self, **kwargs):
         from extapps.photogrammetry.metashape_workflow import MetashapeWorkflow
-        return MetashapeWorkflow(
-            project_path=self.tmp, name="test_run", **kwargs
-        )
+
+        return MetashapeWorkflow(project_path=self.tmp, name="test_run", **kwargs)
 
     def test_full_pipeline_runs_mock_mode(self) -> None:
         mp = self._new_workflow()
@@ -432,8 +479,16 @@ class TestMetashapeWorkflowEngine(unittest.TestCase):
         with open(sidecar_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         expected_stages = {
-            "add_images", "triage", "align", "refine_alignment",
-            "depth", "model", "texture", "save", "export", "report",
+            "add_images",
+            "triage",
+            "align",
+            "refine_alignment",
+            "depth",
+            "model",
+            "texture",
+            "save",
+            "export",
+            "report",
         }
         self.assertTrue(
             expected_stages.issubset(data["stages"].keys()),
@@ -469,6 +524,7 @@ class TestMetashapeWorkflowEngine(unittest.TestCase):
 
     def test_gate_halt_mode_raises_on_failure(self) -> None:
         from extapps.photogrammetry.metashape_workflow import GateError
+
         mp = self._new_workflow(gate_mode="halt")
         with self.assertRaises(GateError):
             mp._evaluate_gate("align", {"aligned_pct": 10.0, "rms_reproj_px": 5.0})
@@ -492,9 +548,7 @@ class TestMetashapeWorkflowEngine(unittest.TestCase):
 
     def test_custom_gate_thresholds_override_defaults(self) -> None:
         mp = self._new_workflow(gates={"align": {"min_aligned_pct": 99.0}})
-        passed = mp._evaluate_gate(
-            "align", {"aligned_pct": 95.0, "rms_reproj_px": 0.3}
-        )
+        passed = mp._evaluate_gate("align", {"aligned_pct": 95.0, "rms_reproj_px": 0.3})
         self.assertFalse(passed, "custom 99% floor should reject 95%")
 
 
@@ -509,9 +563,8 @@ class TestMetashapeWorkflowPhase2(unittest.TestCase):
 
     def _new_workflow(self, **kwargs):
         from extapps.photogrammetry.metashape_workflow import MetashapeWorkflow
-        return MetashapeWorkflow(
-            project_path=self.tmp, name="phase2", **kwargs
-        )
+
+        return MetashapeWorkflow(project_path=self.tmp, name="phase2", **kwargs)
 
     def test_full_phase2_pipeline_runs_mock_mode(self) -> None:
         mp = self._new_workflow()
@@ -535,9 +588,20 @@ class TestMetashapeWorkflowPhase2(unittest.TestCase):
         with open(sidecar) as f:
             data = json.load(f)
         expected = {
-            "generate_masks", "triage", "align", "refine_alignment",
-            "dedupe_cameras", "calibrate_colors", "depth", "model",
-            "clean_mesh", "reduce_overlap", "texture", "save", "export", "report",
+            "generate_masks",
+            "triage",
+            "align",
+            "refine_alignment",
+            "dedupe_cameras",
+            "calibrate_colors",
+            "depth",
+            "model",
+            "clean_mesh",
+            "reduce_overlap",
+            "texture",
+            "save",
+            "export",
+            "report",
         }
         missing = expected - data["stages"].keys()
         self.assertFalse(missing, f"Missing Phase 2 stages: {missing}")
@@ -582,16 +646,23 @@ class TestMetashapeWorkflowPhase2(unittest.TestCase):
 
         self.assertFalse(hasattr(_Meta({}), "get"))  # guard: the fake has no .get
         self.assertAlmostEqual(MetashapeWorkflow._camera_quality(_Cam("0.75")), 0.75)
-        self.assertIsNone(MetashapeWorkflow._camera_quality(_Cam()))  # missing -> default
+        self.assertIsNone(
+            MetashapeWorkflow._camera_quality(_Cam())
+        )  # missing -> default
         self.assertEqual(MetashapeWorkflow._camera_quality(_Cam(), 1.0), 1.0)
 
     def test_save_project_defaults_off(self) -> None:
         """--save-project must default OFF (deliverables only, no reopenable
         .psx); only an explicit opt-in enables it."""
         from extapps.photogrammetry.metashape_workflow import MetashapeWorkflow
-        self.assertFalse(MetashapeWorkflow(project_path=self.tmp, name="d").save_project_enabled)
+
+        self.assertFalse(
+            MetashapeWorkflow(project_path=self.tmp, name="d").save_project_enabled
+        )
         self.assertTrue(
-            MetashapeWorkflow(project_path=self.tmp, name="d", save_project=True).save_project_enabled
+            MetashapeWorkflow(
+                project_path=self.tmp, name="d", save_project=True
+            ).save_project_enabled
         )
 
 
@@ -615,9 +686,8 @@ class TestMetashapeWorkflowPhase3(unittest.TestCase):
 
     def _new_workflow(self, **kwargs):
         from extapps.photogrammetry.metashape_workflow import MetashapeWorkflow
-        return MetashapeWorkflow(
-            project_path=self.tmp, name="phase3", **kwargs
-        )
+
+        return MetashapeWorkflow(project_path=self.tmp, name="phase3", **kwargs)
 
     def test_add_image_dirs_records_per_dir_counts(self) -> None:
         mp = self._new_workflow()
@@ -681,12 +751,20 @@ class TestMetashapeWorkflowPhase3(unittest.TestCase):
         though curation happened."""
         import sys
         from unittest import mock as umock
+
         mp = self._new_workflow()
         # Simulate ImageCurator import failure deterministically.
-        with umock.patch.dict(sys.modules, {"pythontk": umock.MagicMock(
-                spec_set=["ImageCurator"], ImageCurator=property(
-                    lambda self_: (_ for _ in ()).throw(ImportError("synthetic"))
-                ))}):
+        with umock.patch.dict(
+            sys.modules,
+            {
+                "pythontk": umock.MagicMock(
+                    spec_set=["ImageCurator"],
+                    ImageCurator=property(
+                        lambda self_: (_ for _ in ()).throw(ImportError("synthetic"))
+                    ),
+                )
+            },
+        ):
             # An ImportError on `from pythontk import ImageCurator` would
             # really require the module to lack the attribute; we can't
             # truly simulate that without removing pythontk. Instead,
@@ -705,9 +783,12 @@ class TestMetashapeWorkflowPhase3(unittest.TestCase):
         self.assertEqual(stage.get("fallback"), "cv2_missing")
         # On fallback we return source_dirs unchanged — no false "after" claim.
         self.assertEqual(result, [self.src_a, self.src_b])
-        self.assertNotIn("before", stage,
-                         "fallback path should not log a before/after that "
-                         "implies curation happened")
+        self.assertNotIn(
+            "before",
+            stage,
+            "fallback path should not log a before/after that "
+            "implies curation happened",
+        )
 
     def test_clean_mesh_advanced_unavailable_is_noop(self) -> None:
         mp = self._new_workflow()
@@ -730,6 +811,7 @@ class TestMetashapePanelDispatch(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import metashape_workflow as m
+
         self.tmp = tempfile.mkdtemp(prefix="mw_dispatch_")
         self.frames = os.path.join(self.tmp, "frames")
         os.makedirs(self.frames)
@@ -771,14 +853,10 @@ class TestMetashapePanelDispatch(unittest.TestCase):
         targets the run that actually ran, even if the fields change after."""
         self._set_inputs()
         self.ui.b000.click()
-        self.assertEqual(
-            self.slots._last_output_dir, os.path.join(self.tmp, "proj")
-        )
+        self.assertEqual(self.slots._last_output_dir, os.path.join(self.tmp, "proj"))
         # Editing the name afterward must not move the captured path.
         self.slots._name_edit.setText("renamed")
-        self.assertEqual(
-            self.slots._last_output_dir, os.path.join(self.tmp, "proj")
-        )
+        self.assertEqual(self.slots._last_output_dir, os.path.join(self.tmp, "proj"))
 
     def test_success_logs_clickable_output_link(self) -> None:
         """On success the completion message embeds a clickable ``action://open``
@@ -798,9 +876,7 @@ class TestMetashapePanelDispatch(unittest.TestCase):
         self.assertIsNotNone(match, f"no action:// link in completion msg: {msg}")
         url = urlparse(match.group(1))
         self.assertEqual(url.netloc, "open")
-        self.assertEqual(
-            parse_qs(url.query)["path"][0], os.path.join(self.tmp, "proj")
-        )
+        self.assertEqual(parse_qs(url.query)["path"][0], os.path.join(self.tmp, "proj"))
 
     def test_active_preset_values_flow_into_argv(self) -> None:
         self.slots._preset_mgr.load("specular_metal")
@@ -862,6 +938,7 @@ class TestMetashapeRunnerCallbacks(unittest.TestCase):
         from extapps.photogrammetry.metashape_workflow._metashape_runner import (
             MetashapeRunner,
         )
+
         r = MetashapeRunner.__new__(MetashapeRunner)  # skip exe discovery
         r._proc = proc
         self.lines: list = []
@@ -909,6 +986,7 @@ class TestMetashapeRunnerPrepChain(unittest.TestCase):
         from extapps.photogrammetry.metashape_workflow._metashape_runner import (
             MetashapeRunner,
         )
+
         r = MetashapeRunner.__new__(MetashapeRunner)  # skip exe discovery
         ProcessRunner.__init__(r)
         r._prep_text = ""
@@ -919,18 +997,24 @@ class TestMetashapeRunnerPrepChain(unittest.TestCase):
         from extapps.photogrammetry.metashape_workflow._metashape_runner import (
             MetashapeRunner as R,
         )
+
         # Preview always runs venv-only.
-        self.assertEqual(R._prep_mode(["--curate-preview", "--frames-dir", "x"]),
-                         "preview")
+        self.assertEqual(
+            R._prep_mode(["--curate-preview", "--frames-dir", "x"]), "preview"
+        )
         # Default panel argv (prep on) chains.
         self.assertEqual(R._prep_mode(["--frames-dir", "x"]), "chain")
         # Master pre-processing off + no masks: nothing for a venv stage to do.
-        self.assertIsNone(R._prep_mode(
-            ["--frames-dir", "x", "--skip-curate", "--skip-equalize"]))
+        self.assertIsNone(
+            R._prep_mode(["--frames-dir", "x", "--skip-curate", "--skip-equalize"])
+        )
         # ...but masks alone still warrant the venv stage (rembg pre-generation).
-        self.assertEqual(R._prep_mode(
-            ["--frames-dir", "x", "--skip-curate", "--skip-equalize",
-             "--use-masks"]), "chain")
+        self.assertEqual(
+            R._prep_mode(
+                ["--frames-dir", "x", "--skip-curate", "--skip-equalize", "--use-masks"]
+            ),
+            "chain",
+        )
         # No single --frames-dir source: straight to Metashape (CLI multi-capture).
         self.assertIsNone(R._prep_mode(["--input-root", "x"]))
 
@@ -938,6 +1022,7 @@ class TestMetashapeRunnerPrepChain(unittest.TestCase):
         from extapps.photogrammetry.metashape_workflow._metashape_runner import (
             MetashapeRunner as R,
         )
+
         out = R._argv_with_prepped_source(
             ["--name", "n", "--frames-dir", "orig", "--gate-mode", "warn"],
             "prepped",
@@ -954,10 +1039,11 @@ class TestMetashapeRunnerPrepChain(unittest.TestCase):
         from extapps.photogrammetry.metashape_workflow.run_combined import (
             PREP_RESULT_PREFIX,
         )
+
         text = (
             "noise\n"
-            f"{PREP_RESULT_PREFIX}{{\"dirs\": [\"a\"], \"masks\": 0}}\n"
-            f"{PREP_RESULT_PREFIX}{{\"dirs\": [\"b\"], \"masks\": 2}}\n"
+            f'{PREP_RESULT_PREFIX}{{"dirs": ["a"], "masks": 0}}\n'
+            f'{PREP_RESULT_PREFIX}{{"dirs": ["b"], "masks": 2}}\n'
         )
         self.assertEqual(R._parse_prep_result(text)["dirs"], ["b"])
         self.assertIsNone(R._parse_prep_result(f"{PREP_RESULT_PREFIX}not json"))
@@ -983,6 +1069,7 @@ class TestMetashapeRunnerPrepChain(unittest.TestCase):
         from extapps.photogrammetry.metashape_workflow.run_combined import (
             PREP_RESULT_PREFIX,
         )
+
         prepped = tempfile.mkdtemp(prefix="mw_prepped_")
         self.addCleanup(shutil.rmtree, prepped, True)
         text = PREP_RESULT_PREFIX + json.dumps({"dirs": [prepped], "masks": 0})
@@ -1000,13 +1087,12 @@ class TestMetashapeRunnerPrepChain(unittest.TestCase):
         _prog, args = launched[0]
         self.assertEqual(args[args.index("--frames-dir") + 1], "orig")
         self.assertNotIn("--skip-curate", args)
-        self.assertTrue(any("continuing with the original frames" in ln
-                            for ln in lines))
+        self.assertTrue(
+            any("continuing with the original frames" in ln for ln in lines)
+        )
 
     def test_cancelled_prep_does_not_launch_metashape(self) -> None:
-        launched, done_codes, _ = self._continuation_case(
-            62097, "", cancelled=True
-        )
+        launched, done_codes, _ = self._continuation_case(62097, "", cancelled=True)
         self.assertEqual(launched, [])
         self.assertEqual(done_codes, [62097])
 
@@ -1031,13 +1117,20 @@ class TestRunCombinedStopAfter(unittest.TestCase):
 
     def _run(self, *extra):
         from extapps.photogrammetry.metashape_workflow import run_combined
-        rc = run_combined.main([
-            "--input-root", self.in_root,
-            "--output-root", self.out_root,
-            "--name", "sa",
-            "--skip-curate", "--skip-equalize",
-            *extra,
-        ])
+
+        rc = run_combined.main(
+            [
+                "--input-root",
+                self.in_root,
+                "--output-root",
+                self.out_root,
+                "--name",
+                "sa",
+                "--skip-curate",
+                "--skip-equalize",
+                *extra,
+            ]
+        )
         sidecar = os.path.join(self.out_root, "sa", "sa_qc.json")
         with open(sidecar, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -1050,8 +1143,9 @@ class TestRunCombinedStopAfter(unittest.TestCase):
         self.assertIn("align", stages)
         # Everything downstream of alignment must be absent.
         for downstream in ("refine_alignment", "depth", "model", "texture", "export"):
-            self.assertNotIn(downstream, stages,
-                             f"--stop-after align should not run '{downstream}'")
+            self.assertNotIn(
+                downstream, stages, f"--stop-after align should not run '{downstream}'"
+            )
         # _stop_after must still report (the report PDF is the point) — but a
         # .psx is only persisted when --save-project asked for one.
         self.assertNotIn("save", stages)
@@ -1070,8 +1164,9 @@ class TestRunCombinedStopAfter(unittest.TestCase):
         self.assertIn("align", stages)
         self.assertIn("refine_alignment", stages)
         for downstream in ("depth", "model", "texture", "export"):
-            self.assertNotIn(downstream, stages,
-                             f"--stop-after refine should not run '{downstream}'")
+            self.assertNotIn(
+                downstream, stages, f"--stop-after refine should not run '{downstream}'"
+            )
         self.assertNotIn("save", stages)
         self.assertIn("report", stages)
 
@@ -1093,21 +1188,38 @@ class TestRunCombinedFramesDir(unittest.TestCase):
 
     def test_frames_dir_single_capture_runs(self) -> None:
         from extapps.photogrammetry.metashape_workflow import run_combined
-        rc = run_combined.main([
-            "--frames-dir", self.frames,
-            "--output-root", self.out_root, "--name", "fd",
-            "--skip-curate", "--skip-equalize", "--stop-after", "align",
-        ])
+
+        rc = run_combined.main(
+            [
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                self.out_root,
+                "--name",
+                "fd",
+                "--skip-curate",
+                "--skip-equalize",
+                "--stop-after",
+                "align",
+            ]
+        )
         self.assertEqual(rc, 0)
         sidecar = os.path.join(self.out_root, "fd", "fd_qc.json")
         self.assertTrue(os.path.exists(sidecar), "QC sidecar not written")
 
     def test_missing_frames_dir_errors(self) -> None:
         from extapps.photogrammetry.metashape_workflow import run_combined
-        rc = run_combined.main([
-            "--frames-dir", os.path.join(self.tmp, "nope"),
-            "--output-root", self.out_root, "--name", "fd",
-        ])
+
+        rc = run_combined.main(
+            [
+                "--frames-dir",
+                os.path.join(self.tmp, "nope"),
+                "--output-root",
+                self.out_root,
+                "--name",
+                "fd",
+            ]
+        )
         self.assertEqual(rc, 1)
 
 
@@ -1115,6 +1227,7 @@ def _cv2_or_none():
     try:
         import cv2  # noqa: F401
         import numpy  # noqa: F401
+
         return cv2
     except ImportError:
         return None
@@ -1134,6 +1247,7 @@ class TestRunCombinedPrepOnly(unittest.TestCase):
 
     def setUp(self) -> None:
         import numpy as np
+
         cv2 = _cv2_or_none()
         self.tmp = tempfile.mkdtemp(prefix="mw_preponly_")
         self.frames = os.path.join(self.tmp, "cap")
@@ -1160,11 +1274,17 @@ class TestRunCombinedPrepOnly(unittest.TestCase):
 
         buf = io.StringIO()
         with redirect_stdout(buf):
-            rc = run_combined.main([
-                "--prep-only",
-                "--frames-dir", self.frames,
-                "--output-root", self.out_root, "--name", "po",
-            ])
+            rc = run_combined.main(
+                [
+                    "--prep-only",
+                    "--frames-dir",
+                    self.frames,
+                    "--output-root",
+                    self.out_root,
+                    "--name",
+                    "po",
+                ]
+            )
         self.assertEqual(rc, 0)
         out = buf.getvalue()
 
@@ -1172,7 +1292,7 @@ class TestRunCombinedPrepOnly(unittest.TestCase):
         result = None
         for line in out.splitlines():
             if line.startswith(run_combined.PREP_RESULT_PREFIX):
-                result = json.loads(line[len(run_combined.PREP_RESULT_PREFIX):])
+                result = json.loads(line[len(run_combined.PREP_RESULT_PREFIX) :])
         self.assertIsNotNone(result, f"no PREP_RESULT_JSON line in:\n{out}")
         self.assertEqual(len(result["dirs"]), 1)
         prepped = result["dirs"][0]
@@ -1197,11 +1317,17 @@ class TestRunCombinedPrepOnly(unittest.TestCase):
         previous real run's engine sidecar under the same project name."""
         from extapps.photogrammetry.metashape_workflow import run_combined
 
-        rc = run_combined.main([
-            "--curate-preview",
-            "--frames-dir", self.frames,
-            "--output-root", self.out_root, "--name", "pv",
-        ])
+        rc = run_combined.main(
+            [
+                "--curate-preview",
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                self.out_root,
+                "--name",
+                "pv",
+            ]
+        )
         self.assertEqual(rc, 0)
         proj = os.path.join(self.out_root, "pv")
         self.assertTrue(os.path.exists(os.path.join(proj, "pv_prep_qc.json")))
@@ -1223,16 +1349,23 @@ class TestRunCombinedPrepOnly(unittest.TestCase):
 
         buf = io.StringIO()
         with redirect_stdout(buf):
-            rc = run_combined.main([
-                "--prep-only", "--skip-curate",
-                "--frames-dir", self.frames,
-                "--output-root", self.out_root, "--name", "po2",
-            ])
+            rc = run_combined.main(
+                [
+                    "--prep-only",
+                    "--skip-curate",
+                    "--frames-dir",
+                    self.frames,
+                    "--output-root",
+                    self.out_root,
+                    "--name",
+                    "po2",
+                ]
+            )
         self.assertEqual(rc, 0)
         result = None
         for line in buf.getvalue().splitlines():
             if line.startswith(run_combined.PREP_RESULT_PREFIX):
-                result = json.loads(line[len(run_combined.PREP_RESULT_PREFIX):])
+                result = json.loads(line[len(run_combined.PREP_RESULT_PREFIX) :])
         self.assertEqual(result["dirs"], [self.frames])
 
 
@@ -1255,14 +1388,25 @@ class TestRunCombinedPregeneratedMasks(unittest.TestCase):
 
     def _run(self):
         from extapps.photogrammetry.metashape_workflow import run_combined
-        rc = run_combined.main([
-            "--frames-dir", self.frames,
-            "--output-root", self.out_root, "--name", "pm",
-            "--skip-curate", "--skip-equalize", "--use-masks",
-            "--stop-after", "align",
-        ])
-        with open(os.path.join(self.out_root, "pm", "pm_qc.json"),
-                  encoding="utf-8") as f:
+
+        rc = run_combined.main(
+            [
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                self.out_root,
+                "--name",
+                "pm",
+                "--skip-curate",
+                "--skip-equalize",
+                "--use-masks",
+                "--stop-after",
+                "align",
+            ]
+        )
+        with open(
+            os.path.join(self.out_root, "pm", "pm_qc.json"), encoding="utf-8"
+        ) as f:
             return rc, json.load(f)
 
     def test_pre_generated_masks_are_imported_not_regenerated(self) -> None:
@@ -1275,8 +1419,11 @@ class TestRunCombinedPregeneratedMasks(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn("masks", qc["stages"], "pre-generated masks not imported")
         self.assertEqual(qc["stages"]["masks"]["masks_dir"], mask_dir)
-        self.assertNotIn("masks_native", qc["stages"],
-                         "native masking ran despite pre-generated file masks")
+        self.assertNotIn(
+            "masks_native",
+            qc["stages"],
+            "native masking ran despite pre-generated file masks",
+        )
 
     def test_without_pregenerated_masks_native_path_runs(self) -> None:
         rc, qc = self._run()
@@ -1301,11 +1448,20 @@ class TestRunCombinedAlignmentLevers(unittest.TestCase):
 
     def _run(self, *extra):
         from extapps.photogrammetry.metashape_workflow import run_combined
-        rc = run_combined.main([
-            "--frames-dir", self.frames,
-            "--output-root", self.out_root, "--name", "lv",
-            "--skip-curate", "--skip-equalize", *extra,
-        ])
+
+        rc = run_combined.main(
+            [
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                self.out_root,
+                "--name",
+                "lv",
+                "--skip-curate",
+                "--skip-equalize",
+                *extra,
+            ]
+        )
         sidecar = os.path.join(self.out_root, "lv", "lv_qc.json")
         with open(sidecar, "r", encoding="utf-8") as f:
             return rc, json.load(f)
@@ -1319,20 +1475,33 @@ class TestRunCombinedAlignmentLevers(unittest.TestCase):
         store = pp.preset_store("metashape")
         store.save("t_badg", {"gate_mode": "Halt"})
         self.addCleanup(lambda: getattr(store, "delete", lambda n: None)("t_badg"))
-        rc = run_combined.main([
-            "--frames-dir", self.frames,
-            "--output-root", self.out_root, "--name", "lv",
-            "--skip-curate", "--skip-equalize", "--preset", "t_badg",
-        ])
+        rc = run_combined.main(
+            [
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                self.out_root,
+                "--name",
+                "lv",
+                "--skip-curate",
+                "--skip-equalize",
+                "--preset",
+                "t_badg",
+            ]
+        )
         self.assertEqual(rc, 2)
 
     def test_match_levers_reach_align_stage(self) -> None:
         rc, data = self._run(
-            "--stop-after", "align",
+            "--stop-after",
+            "align",
             "--generic-preselection",
-            "--keypoint-limit", "60000",
-            "--tiepoint-limit", "20000",
-            "--triage-quality", "0.3",
+            "--keypoint-limit",
+            "60000",
+            "--tiepoint-limit",
+            "20000",
+            "--triage-quality",
+            "0.3",
         )
         self.assertEqual(rc, 0)
         align = data["stages"]["align"]
@@ -1344,14 +1513,20 @@ class TestRunCombinedAlignmentLevers(unittest.TestCase):
     def test_triage_quality_zero_skips_triage(self) -> None:
         rc, data = self._run("--stop-after", "align", "--triage-quality", "0")
         self.assertEqual(rc, 0)
-        self.assertNotIn("triage", data["stages"],
-                         "--triage-quality 0 must skip the triage stage entirely")
+        self.assertNotIn(
+            "triage",
+            data["stages"],
+            "--triage-quality 0 must skip the triage stage entirely",
+        )
 
     def test_cleanup_levers_reach_clean_mesh_stage(self) -> None:
         rc, data = self._run(
-            "--clean-min-component", "25000",
-            "--smooth-strength", "1",
-            "--close-holes", "10",
+            "--clean-min-component",
+            "25000",
+            "--smooth-strength",
+            "1",
+            "--close-holes",
+            "10",
         )
         self.assertEqual(rc, 0)
         clean = data["stages"]["clean_mesh"]
@@ -1371,6 +1546,7 @@ class TestMetashapeVideoInput(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import metashape_workflow as m
+
         self.tmp = tempfile.mkdtemp(prefix="mw_video_")
         self.ui = m.MetashapeWorkflowUI()
         self.slots = self.ui.sb.get_slots_instance(self.ui)
@@ -1399,14 +1575,17 @@ class TestMetashapeVideoInput(unittest.TestCase):
             return ["f1.jpg", "f2.jpg"]
 
         # The single '...' browser returns BOTH video clips -> extraction path.
-        with umock.patch.object(self.slots.sb, "file_dialog",
-                                lambda **kw: [v1, v2]), \
-             umock.patch.object(prep_stages, "extract_videos_to_dir",
-                                fake_extract):
+        with (
+            umock.patch.object(self.slots.sb, "file_dialog", lambda **kw: [v1, v2]),
+            umock.patch.object(prep_stages, "extract_videos_to_dir", fake_extract),
+        ):
             self.slots._pick_source()
 
-        self.assertEqual(captured.get("videos"), [v1, v2],
-                         "both selected videos must reach the extractor")
+        self.assertEqual(
+            captured.get("videos"),
+            [v1, v2],
+            "both selected videos must reach the extractor",
+        )
         self.assertEqual(captured.get("out"), out)
 
     def test_source_browser_uses_folder_of_a_picked_frame(self) -> None:
@@ -1419,8 +1598,7 @@ class TestMetashapeVideoInput(unittest.TestCase):
 
         # The same browser returns a frame image -> use its containing folder,
         # no extraction.
-        with umock.patch.object(self.slots.sb, "file_dialog",
-                                lambda **kw: [img]):
+        with umock.patch.object(self.slots.sb, "file_dialog", lambda **kw: [img]):
             self.slots._pick_source()
 
         self.assertEqual(self.slots._frames_edit.text(), frames_dir)
@@ -1445,8 +1623,9 @@ class TestExtractVideosToDir(unittest.TestCase):
         calls: list = []
 
         class _FakeFE:
-            def extract_frames_sharpest(self, video_path, output_folder,
-                                        prefix="frame", **kw):
+            def extract_frames_sharpest(
+                self, video_path, output_folder, prefix="frame", **kw
+            ):
                 calls.append(prefix)
                 p = os.path.join(output_folder, f"{prefix}_0.jpg")
                 open(p, "w").close()
@@ -1454,8 +1633,10 @@ class TestExtractVideosToDir(unittest.TestCase):
 
         out = os.path.join(self.tmp, "frames")
         # Two clips sharing a stem — the index prefix must still disambiguate.
-        videos = [os.path.join(self.tmp, "clip.mp4"),
-                  os.path.join(self.tmp, "sub", "clip.mp4")]
+        videos = [
+            os.path.join(self.tmp, "clip.mp4"),
+            os.path.join(self.tmp, "sub", "clip.mp4"),
+        ]
         with umock.patch.object(pythontk, "FrameExtractor", _FakeFE):
             written = prep_stages.extract_videos_to_dir(videos, out)
 
@@ -1507,23 +1688,40 @@ class TestRunCombinedVideo(unittest.TestCase):
             return paths
 
         # run_combined binds the name at import time -> patch it there.
-        with umock.patch.object(run_combined, "extract_videos_to_dir",
-                                fake_extract):
-            rc = run_combined.main([
-                "--video", vid, "--output-root", self.out_root, "--name", "vid",
-                "--skip-curate", "--skip-equalize", "--stop-after", "align",
-            ])
+        with umock.patch.object(run_combined, "extract_videos_to_dir", fake_extract):
+            rc = run_combined.main(
+                [
+                    "--video",
+                    vid,
+                    "--output-root",
+                    self.out_root,
+                    "--name",
+                    "vid",
+                    "--skip-curate",
+                    "--skip-equalize",
+                    "--stop-after",
+                    "align",
+                ]
+            )
         self.assertEqual(rc, 0)
         sidecar = os.path.join(self.out_root, "vid", "vid_qc.json")
         self.assertTrue(os.path.exists(sidecar), "QC sidecar not written")
 
     def test_video_and_frames_dir_mutually_exclusive(self) -> None:
         from extapps.photogrammetry.metashape_workflow import run_combined
-        rc = run_combined.main([
-            "--video", os.path.join(self.tmp, "x.mp4"),
-            "--frames-dir", self.tmp,
-            "--output-root", self.out_root, "--name", "z",
-        ])
+
+        rc = run_combined.main(
+            [
+                "--video",
+                os.path.join(self.tmp, "x.mp4"),
+                "--frames-dir",
+                self.tmp,
+                "--output-root",
+                self.out_root,
+                "--name",
+                "z",
+            ]
+        )
         self.assertEqual(rc, 2)
 
     def test_video_no_frames_extracted_errors(self) -> None:
@@ -1532,11 +1730,19 @@ class TestRunCombinedVideo(unittest.TestCase):
 
         vid = os.path.join(self.tmp, "clip.mp4")
         open(vid, "w").close()
-        with umock.patch.object(run_combined, "extract_videos_to_dir",
-                                lambda *a, **k: []):
-            rc = run_combined.main([
-                "--video", vid, "--output-root", self.out_root, "--name", "z",
-            ])
+        with umock.patch.object(
+            run_combined, "extract_videos_to_dir", lambda *a, **k: []
+        ):
+            rc = run_combined.main(
+                [
+                    "--video",
+                    vid,
+                    "--output-root",
+                    self.out_root,
+                    "--name",
+                    "z",
+                ]
+            )
         self.assertEqual(rc, 1)
 
 
@@ -1559,20 +1765,25 @@ class TestExtractVideosPurgesStaleFrames(unittest.TestCase):
     def _fake_extractor(index):
         """FrameExtractor stand-in writing the REAL naming shape
         ({prefix}_{idx:06d}.jpg) with a fixed winning frame index."""
+
         class FakeExtractor:
-            def extract_frames_sharpest(self, video_path, output_folder,
-                                        window_sec, quality, prefix):
+            def extract_frames_sharpest(
+                self, video_path, output_folder, window_sec, quality, prefix
+            ):
                 path = os.path.join(output_folder, f"{prefix}_{index:06d}.jpg")
                 open(path, "w").close()
                 return [path]
+
         return FakeExtractor
 
     def _extract(self, videos, index, logs):
         from unittest import mock as umock
         import pythontk
         from extapps.photogrammetry.prep_stages import extract_videos_to_dir
-        with umock.patch.object(pythontk, "FrameExtractor",
-                                self._fake_extractor(index)):
+
+        with umock.patch.object(
+            pythontk, "FrameExtractor", self._fake_extractor(index)
+        ):
             return extract_videos_to_dir(videos, self.out, log=logs.append)
 
     def test_reextraction_purges_only_this_clips_frames(self) -> None:
@@ -1587,14 +1798,17 @@ class TestExtractVideosPurgesStaleFrames(unittest.TestCase):
 
         logs: list = []
         first = self._extract([vid], 123, logs)
-        self.assertFalse(os.path.exists(legacy),
-                         "old-scheme frame of this clip must be purged")
+        self.assertFalse(
+            os.path.exists(legacy), "old-scheme frame of this clip must be purged"
+        )
         second = self._extract([vid], 456, logs)  # window changed -> new index
-        self.assertFalse(os.path.exists(first[0]),
-                         "previous extraction's frame must be purged")
+        self.assertFalse(
+            os.path.exists(first[0]), "previous extraction's frame must be purged"
+        )
         self.assertTrue(os.path.exists(second[0]))
-        self.assertTrue(os.path.exists(foreign),
-                        "non-extraction files are not ours to delete")
+        self.assertTrue(
+            os.path.exists(foreign), "non-extraction files are not ours to delete"
+        )
         joined = " ".join(logs)
         self.assertIn("purged", joined)
         self.assertIn("WARNING", joined)
@@ -1609,8 +1823,9 @@ class TestExtractVideosPurgesStaleFrames(unittest.TestCase):
         # Two separate calls, like two panel browses (indices restart each call).
         a = self._extract([os.path.join(dir_a, "clip.mp4")], 1, logs)
         b = self._extract([os.path.join(dir_b, "clip.mp4")], 2, logs)
-        self.assertTrue(os.path.exists(a[0]),
-                        "capA frames deleted by capB's same-stem extraction")
+        self.assertTrue(
+            os.path.exists(a[0]), "capA frames deleted by capB's same-stem extraction"
+        )
         self.assertTrue(os.path.exists(b[0]))
         self.assertNotEqual(os.path.basename(a[0]), os.path.basename(b[0]))
 
@@ -1623,8 +1838,9 @@ class TestExtractVideosPurgesStaleFrames(unittest.TestCase):
         logs: list = []
         final = self._extract([v2], 5, logs)
         self._extract([v1], 9, logs)
-        self.assertTrue(os.path.exists(final[0]),
-                        "sibling clip's frames were wrongly purged")
+        self.assertTrue(
+            os.path.exists(final[0]), "sibling clip's frames were wrongly purged"
+        )
 
 
 class TestStopAfterStillExportsColmap(unittest.TestCase):
@@ -1643,13 +1859,23 @@ class TestStopAfterStillExportsColmap(unittest.TestCase):
 
     def test_stop_after_align_exports_colmap(self) -> None:
         from extapps.photogrammetry.metashape_workflow import run_combined
-        rc = run_combined.main([
-            "--name", "cm", "--frames-dir", self.frames,
-            "--output-root", os.path.join(self.tmp, "out"),
-            "--skip-curate", "--skip-equalize",
-            "--stop-after", "align",
-            "--export-colmap", os.path.join(self.tmp, "colmap"),
-        ])
+
+        rc = run_combined.main(
+            [
+                "--name",
+                "cm",
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                os.path.join(self.tmp, "out"),
+                "--skip-curate",
+                "--skip-equalize",
+                "--stop-after",
+                "align",
+                "--export-colmap",
+                os.path.join(self.tmp, "colmap"),
+            ]
+        )
         self.assertEqual(rc, 0)
         sidecar = os.path.join(self.tmp, "out", "cm", "cm_qc.json")
         with open(sidecar, "r", encoding="utf-8") as f:
@@ -1668,6 +1894,7 @@ class TestPanelPresetResetsUnnamedKeys(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import metashape_workflow as m
+
         self.ui = m.MetashapeWorkflowUI()
         self.slots = self.ui.sb.get_slots_instance(self.ui)
 
@@ -1677,22 +1904,26 @@ class TestPanelPresetResetsUnnamedKeys(unittest.TestCase):
 
     def test_unnamed_keys_reset_to_defaults(self) -> None:
         from extapps.photogrammetry.metashape_workflow import parameters as P
+
         # Simulate residue from an earlier preset/session.
         self.slots._write_param("smooth_strength", 3)
         self.slots._write_param("depth_filter", "aggressive")
         # Apply a preset that names neither key.
         self.slots._apply_param_dict({"align_downscale": 4})
         self.assertEqual(self.slots._read_param("align_downscale"), 4)
-        self.assertEqual(self.slots._read_param("smooth_strength"),
-                         P.PARAMS["smooth_strength"].default)
-        self.assertEqual(self.slots._read_param("depth_filter"),
-                         P.PARAMS["depth_filter"].default)
+        self.assertEqual(
+            self.slots._read_param("smooth_strength"),
+            P.PARAMS["smooth_strength"].default,
+        )
+        self.assertEqual(
+            self.slots._read_param("depth_filter"), P.PARAMS["depth_filter"].default
+        )
 
     def test_widgetless_preset_keys_are_logged(self) -> None:
         from unittest import mock as umock
+
         with umock.patch.object(self.slots.bridge.logger, "warning") as warn:
-            self.slots._apply_param_dict({"align_downscale": 2,
-                                          "no_such_key": True})
+            self.slots._apply_param_dict({"align_downscale": 2, "no_such_key": True})
         self.assertTrue(warn.called)
         self.assertIn("no_such_key", str(warn.call_args))
 

@@ -1,11 +1,12 @@
 # !/usr/bin/python
 # coding=utf-8
 """Tests for extapps.substance_workflow.job — Call / Job / Result / run_batch."""
+
 import json
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 try:
     from .base_test import SubstanceWorkflowTestCase
@@ -17,11 +18,10 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from extapps.substance_workflow import Call, Job, Result, run_batch
+from extapps.substance_workflow import Call, Job, Result
 
 
 class TestCall(SubstanceWorkflowTestCase):
-
     def test_to_dict_includes_op_and_kwargs(self) -> None:
         c = Call("project.info", kwargs={"path": "/tmp/x.spp"})
         self.assertEqual(
@@ -42,7 +42,6 @@ class TestCall(SubstanceWorkflowTestCase):
 
 
 class TestResult(SubstanceWorkflowTestCase):
-
     def test_defaults(self) -> None:
         r = Result(index=0, op="x", ok=True)
         self.assertIsNone(r.value)
@@ -55,7 +54,6 @@ class TestResult(SubstanceWorkflowTestCase):
 
 
 class TestJob(SubstanceWorkflowTestCase):
-
     def test_add_chains(self) -> None:
         j = Job().add("project.info").add("project.save")
         self.assertEqual([c.op for c in j.calls], ["project.info", "project.save"])
@@ -71,7 +69,7 @@ class TestJob(SubstanceWorkflowTestCase):
         self.assertEqual(decoded["calls"][1]["kwargs"]["x"], 1)
 
     def test_run_delegates_to_run_batch(self) -> None:
-        with patch("extapps.substance_workflow.job.run_batch") as mock_batch:
+        with patch("extapps.substance_workflow.job.Job.run_batch") as mock_batch:
             mock_batch.return_value = [Result(index=0, op="x", ok=True)]
             j = Job().add("x")
             j.run(gui=True)
@@ -82,7 +80,6 @@ class TestJob(SubstanceWorkflowTestCase):
 
 
 class TestRunBatch(SubstanceWorkflowTestCase):
-
     def test_collects_successful_results(self) -> None:
         captured: list = []
 
@@ -95,7 +92,7 @@ class TestRunBatch(SubstanceWorkflowTestCase):
             instance.connect.return_value = True
             instance.invoke.side_effect = fake_invoke
 
-            results = run_batch([Call("a"), Call("b", kwargs={"x": 1})])
+            results = Job.run_batch([Call("a"), Call("b", kwargs={"x": 1})])
 
         self.assertEqual(len(results), 2)
         self.assertTrue(all(r.ok for r in results))
@@ -116,7 +113,7 @@ class TestRunBatch(SubstanceWorkflowTestCase):
             instance.connect.return_value = True
             instance.invoke.side_effect = fake_invoke
 
-            results = run_batch([Call("ok1"), Call("fails"), Call("ok2")])
+            results = Job.run_batch([Call("ok1"), Call("fails"), Call("ok2")])
 
         self.assertEqual(invoked, ["ok1", "fails", "ok2"])
         self.assertTrue(results[0].ok)
@@ -128,14 +125,14 @@ class TestRunBatch(SubstanceWorkflowTestCase):
         with patch("extapps.substance_workflow.job.PainterConnection") as MockConn:
             MockConn.return_value.connect.return_value = False
             with self.assertRaises(RuntimeError):
-                run_batch([Call("never_called")])
+                Job.run_batch([Call("never_called")])
 
     def test_always_shuts_down_on_success(self) -> None:
         with patch("extapps.substance_workflow.job.PainterConnection") as MockConn:
             instance = MockConn.return_value
             instance.connect.return_value = True
             instance.invoke.return_value = None
-            run_batch([Call("x")])
+            Job.run_batch([Call("x")])
         instance.shutdown.assert_called_once_with(force=True)
 
     def test_shuts_down_on_baseexception(self) -> None:
@@ -145,7 +142,7 @@ class TestRunBatch(SubstanceWorkflowTestCase):
             instance.connect.return_value = True
             instance.invoke.side_effect = KeyboardInterrupt()
             with self.assertRaises(KeyboardInterrupt):
-                run_batch([Call("x")])
+                Job.run_batch([Call("x")])
         instance.shutdown.assert_called_once_with(force=True)
 
     def test_invoke_timeout_passed_through(self) -> None:
@@ -153,7 +150,7 @@ class TestRunBatch(SubstanceWorkflowTestCase):
             instance = MockConn.return_value
             instance.connect.return_value = True
             instance.invoke.return_value = None
-            run_batch([Call("x")], invoke_timeout=42.0)
+            Job.run_batch([Call("x")], invoke_timeout=42.0)
         kwargs = instance.invoke.call_args.kwargs
         self.assertEqual(kwargs["timeout"], 42.0)
 
@@ -163,9 +160,8 @@ class TestRunBatch(SubstanceWorkflowTestCase):
     "Set SUBSTANCE_WORKFLOW_RUN_INTEGRATION=1 to run live Painter integration tests",
 )
 class TestRunBatchIntegration(SubstanceWorkflowTestCase):
-
     def test_run_batch(self) -> None:
-        results = run_batch([Call("project.info")], gui=False, timeout=240)
+        results = Job.run_batch([Call("project.info")], gui=False, timeout=240)
         self.assertEqual(len(results), 1)
         self.assertTrue(results[0].ok, f"Op failed: {results[0].error}")
         self.assertIsInstance(results[0].value, dict)

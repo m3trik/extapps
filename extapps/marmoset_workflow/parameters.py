@@ -17,22 +17,17 @@ bake parameter set lives with the Maya asset-pipeline panel in
 :data:`extapps.marmoset_workflow.template_params.DEFAULTS` (the local copy
 of the engine's token defaults).
 """
+
 from __future__ import annotations
 
 from typing import Any
 
-from uitk.bridge import (
-    AttributeSpec,
-    python_literal,
-    referenced_keys as _refkeys,
-    defaults as _defaults,
-    render_context as _render_context,
-)
+from uitk.bridge import AttributeSpec, Formatters, Parameters as _BridgeParams
 
 
 # Targets Python templates -- ``python_literal`` turns user values into
 # Python source literals when the engine substitutes them.
-_FORMATTER = python_literal
+_FORMATTER = Formatters.python_literal
 
 
 # Display order is iteration order over this dict.
@@ -62,14 +57,14 @@ PARAMS: "dict[str, AttributeSpec]" = {
 
 def referenced_keys(script_text: str) -> "set[str]":
     """Registered keys present in *script_text* (delegates to uitk.bridge)."""
-    return _refkeys(script_text, PARAMS)
+    return _BridgeParams.referenced_keys(script_text, PARAMS)
 
 
 def defaults() -> "dict[str, Any]":
     """Return ``{key: default}`` for every registered parameter."""
-    return _defaults(PARAMS)
+    return _BridgeParams.defaults(PARAMS)
 
 
 def render_context(values: "dict[str, Any]") -> "dict[str, str]":
     """Format *values* for ``StrUtils.replace_delimited`` using Python literals."""
-    return _render_context(values, PARAMS, formatter=_FORMATTER)
+    return _BridgeParams.render_context(values, PARAMS, formatter=_FORMATTER)

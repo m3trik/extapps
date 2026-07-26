@@ -7,10 +7,11 @@ Each subpackage is a self-contained app registered via the
 Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
 ``ExternalAppHandler`` — no host-side knowledge required.
 """
+
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 
 DEFAULT_INCLUDE = {
@@ -18,13 +19,7 @@ DEFAULT_INCLUDE = {
     "texture_maps.compositor.slots": ["CompositorSlots"],
     "photogrammetry.metashape_workflow.launcher": ["MetashapeWorkflowUI"],
     "photogrammetry.metashape_workflow.slots": ["MetashapeWorkflowSlots"],
-    "photogrammetry.metashape_workflow._metashape_workflow": [
-        "MetashapeWorkflow",
-        "get_image_filepaths",
-        "get_metashape_version",
-        "is_license_valid",
-        "is_metashape_available",
-    ],
+    "photogrammetry.metashape_workflow._metashape_workflow": ["MetashapeWorkflow"],
     "photogrammetry.realityscan_workflow.launcher": ["RealityScanWorkflowUI"],
     "photogrammetry.realityscan_workflow.slots": ["RealityscanWorkflowSlots"],
     "photogrammetry.gaussian_splat_workflow.launcher": ["GaussianSplatWorkflowUI"],
@@ -33,7 +28,7 @@ DEFAULT_INCLUDE = {
     "substance_workflow.slots": ["SubstanceWorkflowSlots"],
     "substance_workflow.env_utils.painter_connection": ["PainterConnection"],
     "substance_workflow.env_utils.painter_finder": ["PainterFinder"],
-    "substance_workflow.job": ["Call", "Job", "Result", "run_batch"],
+    "substance_workflow.job": ["Call", "Job", "Result"],
     "texture_maps.converter.launcher": ["ConverterUI"],
     "texture_maps.converter.slots": ["ConverterSlots"],
     "texture_maps.packer.launcher": ["PackerUI"],
@@ -47,40 +42,9 @@ DEFAULT_INCLUDE = {
 }
 
 
+# ``bootstrap_package`` derives ``__all__`` from the resolved panel surface
+# (DEFAULT_INCLUDE) and unions in anything declared here first — so only the
+# non-derivable ``__version__`` needs listing by hand.
+__all__ = ["__version__"]
+
 bootstrap_package(globals(), include=DEFAULT_INCLUDE)
-
-
-__all__ = [
-    "CompositorUI",
-    "CompositorSlots",
-    "MetashapeWorkflowUI",
-    "MetashapeWorkflowSlots",
-    "MetashapeWorkflow",
-    "get_image_filepaths",
-    "get_metashape_version",
-    "is_license_valid",
-    "is_metashape_available",
-    "RealityScanWorkflowUI",
-    "RealityscanWorkflowSlots",
-    "GaussianSplatWorkflowUI",
-    "GaussianSplatWorkflowSlots",
-    "SubstanceWorkflowUI",
-    "SubstanceWorkflowSlots",
-    "PainterConnection",
-    "PainterFinder",
-    "Call",
-    "Job",
-    "Result",
-    "run_batch",
-    "ConverterUI",
-    "ConverterSlots",
-    "PackerUI",
-    "PackerSlots",
-    "MeshConvertUI",
-    "MeshConvertSlots",
-    "MarmosetWorkflowUI",
-    "MarmosetWorkflowSlots",
-    "UnityWorkflowUI",
-    "UnityWorkflowSlots",
-    "__version__",
-]

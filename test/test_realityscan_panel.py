@@ -7,6 +7,7 @@ semantic-preset round-trip against the engine-scoped ``realityscan`` store, and
 b000 argv assembly without launching a real process. Plus a mock-mode check that
 ``run_combined --frames-dir`` uses a single prepared capture directly.
 """
+
 from __future__ import annotations
 
 import os
@@ -30,6 +31,7 @@ class TestRealityScanPanelLoads(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import realityscan_workflow as r
+
         self.ui = r.RealityScanWorkflowUI()
         self.slots = self.ui.sb.get_slots_instance(self.ui)
         self.assertIsNotNone(self.slots, "Switchboard returned no slots instance")
@@ -40,6 +42,7 @@ class TestRealityScanPanelLoads(unittest.TestCase):
 
     def test_param_widgets_built_for_every_spec(self) -> None:
         from extapps.photogrammetry.realityscan_workflow import parameters as P
+
         for key in P.PARAMS:
             self.assertIn(key, self.slots._param_widgets, f"no widget for {key}")
 
@@ -62,8 +65,9 @@ class TestRealityScanPanelLoads(unittest.TestCase):
         self.assertGreaterEqual(idx, 0, "Prep preview mode missing")
         cmb.setCurrentIndex(idx)
         self.assertEqual(self.slots._mode_argv(), ["--curate-preview"])
-        self.assertEqual(P.referenced_keys("prep_preview"),
-                         set(P.PARAMS) & PREPROCESSING_KEYS)
+        self.assertEqual(
+            P.referenced_keys("prep_preview"), set(P.PARAMS) & PREPROCESSING_KEYS
+        )
 
     def test_semantic_preset_mode_uses_realityscan_store(self) -> None:
         listed = set(self.slots._preset_mgr.list())
@@ -73,9 +77,12 @@ class TestRealityScanPanelLoads(unittest.TestCase):
         )
 
     def test_builtin_preset_loads_into_param_widgets(self) -> None:
-        from uitk.bridge.spec import read_value
+        from uitk.bridge.spec import KindFactory
+
         self.slots._preset_mgr.load("high")
-        self.assertEqual(read_value(self.slots._param_widgets["quality"]), "max")
+        self.assertEqual(
+            KindFactory.read_value(self.slots._param_widgets["quality"]), "max"
+        )
 
     def test_missing_exe_reports_instead_of_dispatching(self) -> None:
         self.slots.bridge.is_available = lambda: False
@@ -93,6 +100,7 @@ class TestRealityScanPanelDispatch(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import realityscan_workflow as r
+
         self.tmp = tempfile.mkdtemp(prefix="rc_dispatch_")
         self.frames = os.path.join(self.tmp, "frames")
         os.makedirs(self.frames)
@@ -157,11 +165,23 @@ class TestRCRunCombinedFramesDir(unittest.TestCase):
 
     def test_frames_dir_single_capture_runs(self) -> None:
         from extapps.photogrammetry.realityscan_workflow import run_combined as rc_run
-        code = rc_run.main([
-            "--frames-dir", self.frames, "--output-root", self.out, "--name", "fd",
-            "--mock", "--rsnode", "off", "--skip-curate", "--skip-equalize",
-            "--no-publish",
-        ])
+
+        code = rc_run.main(
+            [
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                self.out,
+                "--name",
+                "fd",
+                "--mock",
+                "--rsnode",
+                "off",
+                "--skip-curate",
+                "--skip-equalize",
+                "--no-publish",
+            ]
+        )
         self.assertEqual(code, 0)
         self.assertTrue(
             os.path.exists(os.path.join(self.out, "fd", "fd_qc.json")),
@@ -170,10 +190,20 @@ class TestRCRunCombinedFramesDir(unittest.TestCase):
 
     def test_missing_frames_dir_errors(self) -> None:
         from extapps.photogrammetry.realityscan_workflow import run_combined as rc_run
-        code = rc_run.main([
-            "--frames-dir", os.path.join(self.tmp, "nope"),
-            "--output-root", self.out, "--name", "fd", "--mock", "--rsnode", "off",
-        ])
+
+        code = rc_run.main(
+            [
+                "--frames-dir",
+                os.path.join(self.tmp, "nope"),
+                "--output-root",
+                self.out,
+                "--name",
+                "fd",
+                "--mock",
+                "--rsnode",
+                "off",
+            ]
+        )
         self.assertEqual(code, 1)
 
 

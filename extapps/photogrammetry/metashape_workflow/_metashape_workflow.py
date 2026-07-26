@@ -35,30 +35,6 @@ DEFAULT_GATES: Dict[str, Dict[str, float]] = {
 }
 
 
-def is_metashape_available() -> bool:
-    """True if the Metashape Python module imported successfully."""
-    return _Metashape is not None
-
-
-def is_license_valid() -> bool:
-    """True if a valid Metashape license is reachable. Never mutates state."""
-    if _Metashape is None:
-        return False
-    try:
-        return bool(_Metashape.license.valid)
-    except Exception:
-        return False
-
-
-def get_metashape_version() -> str:
-    if _Metashape is None:
-        return "n/a"
-    try:
-        return str(_Metashape.app.version)
-    except Exception:
-        return "unknown"
-
-
 class MetashapeWorkflow(PrepStagesMixin):
     """Wrapper around Agisoft Metashape's Python API for the standard
     photogrammetry pipeline. Supports a `mock_mode` for dry-runs without a
@@ -70,6 +46,41 @@ class MetashapeWorkflow(PrepStagesMixin):
     """
 
     PROJECT_EXT = "psx"
+
+    @staticmethod
+    def is_metashape_available() -> bool:
+        """True if the Metashape Python module imported successfully."""
+        return _Metashape is not None
+
+    @staticmethod
+    def is_license_valid() -> bool:
+        """True if a valid Metashape license is reachable. Never mutates state."""
+        if _Metashape is None:
+            return False
+        try:
+            return bool(_Metashape.license.valid)
+        except Exception:
+            return False
+
+    @staticmethod
+    def get_metashape_version() -> str:
+        if _Metashape is None:
+            return "n/a"
+        try:
+            return str(_Metashape.app.version)
+        except Exception:
+            return "unknown"
+
+    @staticmethod
+    def get_image_filepaths(directory: str) -> List[str]:
+        """Return absolute paths to all images in `directory` (non-recursive)."""
+        if not os.path.isdir(directory):
+            raise ValueError(f"Directory does not exist: {directory}")
+        return [
+            os.path.join(directory, f)
+            for f in sorted(os.listdir(directory))
+            if f.lower().endswith(IMAGE_EXTS)
+        ]
 
     def __init__(
         self,
@@ -111,7 +122,10 @@ class MetashapeWorkflow(PrepStagesMixin):
         self.save_project_enabled = bool(save_project)
 
         if mock_mode is None:
-            mock_mode = not (is_metashape_available() and is_license_valid())
+            mock_mode = not (
+                MetashapeWorkflow.is_metashape_available()
+                and MetashapeWorkflow.is_license_valid()
+            )
         self.mock_mode = bool(mock_mode)
 
         if self.mock_mode:
@@ -124,8 +138,8 @@ class MetashapeWorkflow(PrepStagesMixin):
         self.qc = QcLog(os.path.join(project_path, f"{name}_qc.json"))
         self.qc.set("project_name", name)
         self.qc.set("project_path", project_path)
-        self.qc.set("metashape_version", get_metashape_version())
-        self.qc.set("licensed", is_license_valid())
+        self.qc.set("metashape_version", MetashapeWorkflow.get_metashape_version())
+        self.qc.set("licensed", MetashapeWorkflow.is_license_valid())
         self.qc.set("mock_mode", self.mock_mode)
         self.gate = QcGate(self.gates, self.qc, mode=self.gate_mode)
 
@@ -134,7 +148,10 @@ class MetashapeWorkflow(PrepStagesMixin):
     def get_license_info(self) -> str:
         if _Metashape is None:
             return "Metashape module not installed"
-        return f"Metashape {get_metashape_version()} ({'Licensed' if is_license_valid() else 'No valid license'})"
+        return (
+            f"Metashape {MetashapeWorkflow.get_metashape_version()} "
+            f"({'Licensed' if MetashapeWorkflow.is_license_valid() else 'No valid license'})"
+        )
 
     def _notify(self, stage: str, fraction: float = 0.0) -> None:
         if self.progress is None:
@@ -143,6 +160,7 @@ class MetashapeWorkflow(PrepStagesMixin):
             self.progress(stage, float(fraction))
         except Exception as e:
             import sys
+
             print(f"[MetashapeWorkflow] progress callback raised: {e}", file=sys.stderr)
 
     @staticmethod
@@ -201,7 +219,9 @@ class MetashapeWorkflow(PrepStagesMixin):
             # reopened project), which is exactly what we hit before.
             os.makedirs(self.project_path, exist_ok=True)
             self.doc.save(path=self._project_file)
-            print(f"[project] established {self._project_file} (reopenable; incremental save on)")
+            print(
+                f"[project] established {self._project_file} (reopenable; incremental save on)"
+            )
 
     def add_images(self, image_sources: Union[str, Sequence[str]]):
         """Add images from a directory path (non-recursive) or list of paths."""
@@ -549,9 +569,17 @@ class MetashapeWorkflow(PrepStagesMixin):
 
             F = _Metashape.TiePoints.Filter
             passes = [
-                ("ReconstructionUncertainty", F.ReconstructionUncertainty, uncertainty_threshold),
-                ("ReprojectionError",         F.ReprojectionError,         reprojection_threshold),
-                ("ProjectionAccuracy",        F.ProjectionAccuracy,        projection_accuracy_threshold),
+                (
+                    "ReconstructionUncertainty",
+                    F.ReconstructionUncertainty,
+                    uncertainty_threshold,
+                ),
+                ("ReprojectionError", F.ReprojectionError, reprojection_threshold),
+                (
+                    "ProjectionAccuracy",
+                    F.ProjectionAccuracy,
+                    projection_accuracy_threshold,
+                ),
             ]
             # Safety rails: a single absolute-threshold pass can decimate a sparse
             # cloud (e.g. ReprojectionError@0.5 removing 95% of points), after
@@ -577,45 +605,71 @@ class MetashapeWorkflow(PrepStagesMixin):
                     n_remove = sum(1 for v in vals if v > threshold)
                 except Exception:
                     vals, n_remove = None, None
-                if n_remove is not None and total and (
-                    n_remove / total > max_removal_fraction
-                    or total - n_remove < min_points_floor
+                if (
+                    n_remove is not None
+                    and total
+                    and (
+                        n_remove / total > max_removal_fraction
+                        or total - n_remove < min_points_floor
+                    )
                 ):
-                    msg = (f"refine[{label}@{threshold}]: would remove "
-                           f"{n_remove}/{total} ({100*n_remove/total:.0f}%) - "
-                           f"skipped to protect the alignment")
+                    msg = (
+                        f"refine[{label}@{threshold}]: would remove "
+                        f"{n_remove}/{total} ({100 * n_remove / total:.0f}%) - "
+                        f"skipped to protect the alignment"
+                    )
                     self.qc.warn(msg)
                     print("  " + msg)
-                    results.append({"filter": label, "threshold": threshold,
-                                    "removed": 0, "kept": total, "skipped": True})
+                    results.append(
+                        {
+                            "filter": label,
+                            "threshold": threshold,
+                            "removed": 0,
+                            "kept": total,
+                            "skipped": True,
+                        }
+                    )
                     continue
                 before = total
                 f.removePoints(threshold)
                 after = len(tie_points.points)
                 self.chunk.optimizeCameras(
-                    fit_f=True, fit_cx=True, fit_cy=True,
-                    fit_b1=True, fit_b2=True,
-                    fit_k1=True, fit_k2=True, fit_k3=True, fit_k4=False,
-                    fit_p1=True, fit_p2=True,
+                    fit_f=True,
+                    fit_cx=True,
+                    fit_cy=True,
+                    fit_b1=True,
+                    fit_b2=True,
+                    fit_k1=True,
+                    fit_k2=True,
+                    fit_k3=True,
+                    fit_k4=False,
+                    fit_p1=True,
+                    fit_p2=True,
                     adaptive_fitting=True,
                     tiepoint_covariance=False,
                 )
-                n_aligned = sum(1 for c in self.chunk.cameras if c.transform is not None)
-                results.append({
-                    "filter": label,
-                    "threshold": threshold,
-                    "removed": before - after,
-                    "kept": after,
-                    "aligned_after": n_aligned,
-                })
-                print(f"  refine[{label}@{threshold}]: removed {before - after}, "
-                      f"kept {after} ({n_aligned} cameras aligned)")
+                n_aligned = sum(
+                    1 for c in self.chunk.cameras if c.transform is not None
+                )
+                results.append(
+                    {
+                        "filter": label,
+                        "threshold": threshold,
+                        "removed": before - after,
+                        "kept": after,
+                        "aligned_after": n_aligned,
+                    }
+                )
+                print(
+                    f"  refine[{label}@{threshold}]: removed {before - after}, "
+                    f"kept {after} ({n_aligned} cameras aligned)"
+                )
                 if n_aligned0 and n_aligned < 0.5 * n_aligned0:
                     self.qc.warn(
                         f"refine[{label}]: aligned cameras collapsed "
                         f"{n_aligned0}->{n_aligned}; aborting further refinement."
                     )
-                    print(f"  refine: aligned cameras collapsed -> aborting refine.")
+                    print("  refine: aligned cameras collapsed -> aborting refine.")
                     break
             st["passes"] = results
             st.update(self._alignment_metrics())
@@ -659,6 +713,7 @@ class MetashapeWorkflow(PrepStagesMixin):
 
             try:
                 import math
+
                 aligned = [c for c in self.chunk.cameras if c.transform and c.enabled]
                 cos_thresh = math.cos(math.radians(rotation_threshold_deg))
                 disabled = 0
@@ -667,7 +722,7 @@ class MetashapeWorkflow(PrepStagesMixin):
                         continue
                     ca = cam_a.transform.translation()
                     ra = cam_a.transform.rotation()
-                    for cam_b in aligned[i + 1:]:
+                    for cam_b in aligned[i + 1 :]:
                         if not cam_b.enabled:
                             continue
                         cb = cam_b.transform.translation()
@@ -739,9 +794,7 @@ class MetashapeWorkflow(PrepStagesMixin):
             st["masks_dir"] = masks_dir
             st["model"] = model_name
             if self.mock_mode:
-                print(
-                    f"[mock] generate_masks('{source_dir}', model={model_name})"
-                )
+                print(f"[mock] generate_masks('{source_dir}', model={model_name})")
                 return masks_dir
             try:
                 from pythontk import MaskGenerator
@@ -860,15 +913,14 @@ class MetashapeWorkflow(PrepStagesMixin):
             if not os.path.isdir(masks_dir):
                 raise ValueError(f"Masks directory not found: {masks_dir}")
             modes = {
-                "alpha":      _Metashape.MaskingMode.MaskingModeAlpha,
-                "file":       _Metashape.MaskingMode.MaskingModeFile,
+                "alpha": _Metashape.MaskingMode.MaskingModeAlpha,
+                "file": _Metashape.MaskingMode.MaskingModeFile,
                 "background": _Metashape.MaskingMode.MaskingModeBackground,
             }
             mode = modes.get(mask_source.lower())
             if mode is None:
                 raise ValueError(
-                    f"Unsupported mask_source: {mask_source}. "
-                    f"Supported: {list(modes)}"
+                    f"Unsupported mask_source: {mask_source}. Supported: {list(modes)}"
                 )
             kwargs = dict(
                 path=os.path.join(masks_dir, template),
@@ -886,9 +938,7 @@ class MetashapeWorkflow(PrepStagesMixin):
             ):
                 matched = []
                 for cam in self.chunk.cameras:
-                    photo_path = getattr(
-                        getattr(cam, "photo", None), "path", None
-                    )
+                    photo_path = getattr(getattr(cam, "photo", None), "path", None)
                     if not photo_path:
                         continue
                     stem = os.path.splitext(os.path.basename(photo_path))[0]
@@ -924,8 +974,10 @@ class MetashapeWorkflow(PrepStagesMixin):
             if isinstance(filter_mode, str):
                 st["depth_filter"] = filter_mode.lower()
             if self.mock_mode:
-                print(f"[mock] generate_depth_maps(downscale={downscale}, "
-                      f"filter_mode={filter_mode})")
+                print(
+                    f"[mock] generate_depth_maps(downscale={downscale}, "
+                    f"filter_mode={filter_mode})"
+                )
                 return
 
             if isinstance(filter_mode, str):
@@ -979,8 +1031,13 @@ class MetashapeWorkflow(PrepStagesMixin):
             elif face_count is None:
                 face_count = _Metashape.MediumFaceCount
 
-            if source_data == _Metashape.DataSource.DepthMapsData and not self.chunk.depth_maps:
-                raise RuntimeError("Depth maps not found. Run generate_depth_maps() first.")
+            if (
+                source_data == _Metashape.DataSource.DepthMapsData
+                and not self.chunk.depth_maps
+            ):
+                raise RuntimeError(
+                    "Depth maps not found. Run generate_depth_maps() first."
+                )
 
             self.chunk.buildModel(
                 source_data=source_data,
@@ -1283,7 +1340,9 @@ class MetashapeWorkflow(PrepStagesMixin):
                 return output_dir
 
             os.makedirs(output_dir, exist_ok=True)
-            aligned = [c for c in self.chunk.cameras if c.transform is not None and c.enabled]
+            aligned = [
+                c for c in self.chunk.cameras if c.transform is not None and c.enabled
+            ]
             st["aligned_cameras"] = len(aligned)
             if not aligned:
                 raise RuntimeError(
@@ -1298,10 +1357,12 @@ class MetashapeWorkflow(PrepStagesMixin):
                 # picking round(i * N / cap) indices spends the whole cap
                 # while staying evenly spread over the capture.
                 n = len(aligned)
-                indices = sorted({
-                    min(n - 1, int(round(i * n / float(max_cameras))))
-                    for i in range(max_cameras)
-                })
+                indices = sorted(
+                    {
+                        min(n - 1, int(round(i * n / float(max_cameras))))
+                        for i in range(max_cameras)
+                    }
+                )
                 export_cameras = [aligned[i] for i in indices]
                 print(
                     f"COLMAP export: evenly sampling {len(aligned)} aligned "
@@ -1367,17 +1428,6 @@ class MetashapeWorkflow(PrepStagesMixin):
         self.qc.finalize(success)
         print(f"QC sidecar: {self.qc.path}")
         return self.qc.path
-
-
-def get_image_filepaths(directory: str) -> List[str]:
-    """Return absolute paths to all images in `directory` (non-recursive)."""
-    if not os.path.isdir(directory):
-        raise ValueError(f"Directory does not exist: {directory}")
-    return [
-        os.path.join(directory, f)
-        for f in sorted(os.listdir(directory))
-        if f.lower().endswith(IMAGE_EXTS)
-    ]
 
 
 # -----------------------------------------------------------------------------

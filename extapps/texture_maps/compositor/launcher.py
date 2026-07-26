@@ -7,12 +7,12 @@ slot bindings in :mod:`extapps.texture_maps.compositor.slots`; this module only
 assembles the Switchboard-driven UI and provides the script entry point.
 """
 
-from uitk import configure_high_dpi
+from uitk import Bootstrap
 
 # Must run before QApplication is constructed, so before any import
 # that touches Switchboard. No-ops inside DCC hosts that already own
 # the QApplication.
-configure_high_dpi()
+Bootstrap.configure_high_dpi()
 
 
 class CompositorUI:

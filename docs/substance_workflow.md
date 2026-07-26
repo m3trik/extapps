@@ -6,7 +6,7 @@ Adobe Substance 3D Painter automation as a Switchboard panel + headless engine.
 
 `substance_workflow` drives Painter over a JSON-RPC bridge. An in-Painter plugin
 (`plugins/substance_workflow_bridge`) loads the op **registry** and serves it over
-HTTP; the client side (`PainterConnection`, `run_batch`) launches a fresh Painter
+HTTP; the client side (`PainterConnection`, `Job.run_batch`) launches a fresh Painter
 and invokes ops by name.
 
 - **`SubstanceWorkflowUI`** — the Switchboard panel. Set a mesh and/or project
@@ -14,7 +14,7 @@ and invokes ops by name.
   lighting→diffuse → save → export), tune advanced bake parameters, and Run.
 - **`PainterConnection`** — agent/session client: `connect()` then
   `invoke("project.info", ...)`.
-- **`run_batch([Call(...), ...])`** — one-shot pipelines (launch → run → shut down).
+- **`Job.run_batch([Call(...), ...])`** — one-shot pipelines (launch → run → shut down).
 
 ## Session safety (hard rule)
 
@@ -38,8 +38,8 @@ python -c "from extapps.substance_workflow import SubstanceWorkflowUI; Substance
 
 ```python
 # Batch
-from extapps.substance_workflow import Call, run_batch
-results = run_batch([
+from extapps.substance_workflow import Call, Job
+results = Job.run_batch([
     Call("project.create", kwargs={"mesh_path": "/path/mesh.fbx"}),
     Call("bake.lighting_to_diffuse", kwargs={"bake_resolution": 2048}),
     Call("project.save_as", kwargs={"path": "/path/out.spp"}),

@@ -17,11 +17,12 @@ both front-ends: a built-in run-template like ``specular_metal.json`` (keys
 ``mask_background``) loads straight into these widgets, and a preset saved from
 the panel is read back verbatim by ``run_combined --preset``.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from uitk.bridge import AttributeSpec, defaults as _defaults
+from uitk.bridge import AttributeSpec, Parameters as _BridgeParams
 
 from .._shared_params import (
     PREPROCESSING_KEYS,
@@ -37,153 +38,213 @@ from .._shared_params import (
 # operations), so the shared specs are merged in *first*; the engine-specific
 # reconstruction / alignment / cleanup params follow.
 PARAMS: "Dict[str, AttributeSpec]" = dict(PREPROCESSING_PARAMS)
-PARAMS.update({
-    "align_downscale": AttributeSpec(
-        key="align_downscale", label="Align Downscale", kind="int",
-        default=2, minimum=1, maximum=16,
-        tooltip="Match-photos downscale (1 = full res / highest quality, "
-                "slower). Maps to --align-downscale.",
-    ),
-    "depth_downscale": AttributeSpec(
-        key="depth_downscale", label="Depth Downscale", kind="int",
-        default=2, minimum=1, maximum=16,
-        tooltip="Depth-map downscale (1 = Ultra). On specular / low-texture "
-                "surfaces, full-res depth over-fits and warps geometry — keep "
-                "this at 2 there. Maps to --depth-downscale.",
-    ),
-    "depth_filter": AttributeSpec(
-        key="depth_filter", label="Depth Filter", kind="choice",
-        default="mild", choices=["mild", "moderate", "aggressive", "none"],
-        tooltip="Depth-map filtering strength. 'mild' keeps the most detail; "
-                "raise to 'moderate' to denoise specular geometry. Maps to "
-                "--depth-filter.",
-    ),
-    "face_count": AttributeSpec(
-        key="face_count", label="Face Count", kind="choice",
-        default="medium", choices=["low", "medium", "high"],
-        tooltip="Reconstructed mesh density (Metashape FaceCount). Maps to "
-                "--face-count.",
-    ),
-    "texture_size": AttributeSpec(
-        key="texture_size", label="Texture Size", kind="choice",
-        default="auto", choices=["auto", "1024", "2048", "4096", "8192"],
-        tooltip="Texture page resolution. 'auto' derives it from the source "
-                "frames' long edge (next power-of-two, capped 8192). Maps to "
-                "--texture-size.",
-    ),
-    "mask_background": AttributeSpec(
-        key="mask_background", label="Mask Background", kind="bool",
-        default=False,
-        tooltip="Mask the background before alignment: Metashape 2.2's "
-                "native AI masking when available, else rembg (needs rembg "
-                "installed). Emits --use-masks.",
-    ),
-    "gate_mode": AttributeSpec(
-        key="gate_mode", label="Gate Mode", kind="choice",
-        default="warn", choices=["warn", "halt"],
-        tooltip="Acceptance gates: warn (log + continue) or halt (raise on a "
-                "failed gate). Maps to --gate-mode.",
-    ),
-    "save_project": AttributeSpec(
-        key="save_project", label="Save .psx Project", kind="bool",
-        default=False,
-        tooltip="Save a reopenable Metashape project (.psx + full .files) so a "
-                "later run can re-texture without redoing alignment/depth. "
-                "Emits --save-project.",
-    ),
-    # --- Alignment quality (pre-align triage + matchPhotos levers) ----------
-    "triage_quality": AttributeSpec(
-        key="triage_quality", label="Triage Quality", kind="float",
-        section="Alignment",
-        default=0.0, minimum=0.0, maximum=1.0, decimals=2,
-        tooltip="Disable cameras below this Metashape Image/quality score "
-                "(analyzeImages) before alignment. 0 (default) = off: the score "
-                "correlates with texture, so on low-texture / specular subjects "
-                "triage disables good frames wholesale, on top of curation's "
-                "blur culling. Set ~0.5 for genuinely messy input. Maps to "
-                "--triage-quality.",
-    ),
-    "generic_preselection": AttributeSpec(
-        key="generic_preselection", label="Generic Preselection", kind="bool",
-        section="Alignment",
-        default=True,
-        tooltip="Fast low-res pairwise image preselection before matching "
-                "(Metashape's own default; the key lever to fully align "
-                "featureless / specular captures, where reference preselection "
-                "has no camera coords to work from). Uncheck only for "
-                "well-textured, geo-referenced sets. Emits "
-                "--generic-preselection / --no-generic-preselection.",
-    ),
-    "keypoint_limit": AttributeSpec(
-        key="keypoint_limit", label="Keypoint Limit", kind="int",
-        section="Alignment",
-        default=60000, minimum=10000, maximum=400000,
-        tooltip="Max detected feature points per photo (matchPhotos keypoint "
-                "limit). 60000 is the verified robust-alignment baseline "
-                "(TUNING.md); Metashape's stock 40000 under-aligns low-texture "
-                "/ specular surfaces. Maps to --keypoint-limit.",
-    ),
-    "tiepoint_limit": AttributeSpec(
-        key="tiepoint_limit", label="Tiepoint Limit", kind="int",
-        section="Alignment",
-        default=10000, minimum=0, maximum=100000,
-        tooltip="Max tie points kept per photo (matchPhotos tiepoint limit; "
-                "0 = unlimited). Higher = denser sparse cloud + more robust "
-                "alignment on hard sets. Maps to --tiepoint-limit.",
-    ),
-    # --- Alignment stage toggles (post initial align) -----------------------
-    "dedupe_cameras": AttributeSpec(
-        key="dedupe_cameras", label="Dedupe Cameras", kind="bool",
-        section="Alignment",
-        default=False,
-        tooltip="Disable near-duplicate camera poses after alignment. OPT-IN: "
-                "the distance threshold is in arbitrary chunk units (scale "
-                "varies solve to solve) and disabled cameras are excluded from "
-                "depth mapping - enable only on captures with genuinely "
-                "redundant static footage. Emits --dedupe-cameras.",
-    ),
-    "skip_refine": AttributeSpec(
-        key="skip_refine", label="Skip Refine", kind="bool", section="Alignment",
-        default=False,
-        tooltip="Skip gradual-selection alignment refinement. Emits --skip-refine.",
-    ),
-    "calibrate_colors": AttributeSpec(
-        key="calibrate_colors", label="Calibrate Colors", kind="bool",
-        section="Mesh Cleanup",
-        default=False,
-        tooltip="Run Metashape's calibrateColors (incl. white balance) before "
-                "texturing. OPT-IN: with exposure equalization already applied "
-                "to the frames this stacks a second color transform into the "
-                "albedo - enable for mixed-lighting captures that skip "
-                "equalization. Emits --calibrate-colors.",
-    ),
-    # --- Mesh cleanup (post-build) ------------------------------------------
-    "min_component_size": AttributeSpec(
-        key="min_component_size", label="Min Component Size", kind="int",
-        section="Mesh Cleanup",
-        default=100, minimum=0, maximum=200000,
-        tooltip="Delete disconnected mesh islands smaller than this many faces "
-                "(removeComponents) - the main lever against floater 'snow'. 0 "
-                "disables. NOTE: on specular / low-texture metal do NOT crank "
-                "this (it strips real detail without fixing depth-level noise). "
-                "Maps to --clean-min-component (parity with the RC runner).",
-    ),
-    "smooth_strength": AttributeSpec(
-        key="smooth_strength", label="Smooth Strength", kind="int",
-        section="Mesh Cleanup",
-        default=0, minimum=0, maximum=10,
-        tooltip="Laplacian mesh-smoothing passes after cleanup (0 = none). A "
-                "light value (1) denoises specular geometry; high values melt "
-                "real detail. Maps to --smooth-strength.",
-    ),
-    "close_holes": AttributeSpec(
-        key="close_holes", label="Close Holes %", kind="int",
-        section="Mesh Cleanup",
-        default=30, minimum=0, maximum=100,
-        tooltip="Close mesh holes up to this percent of the total mesh size "
-                "(closeHoles). 0 disables. Maps to --close-holes.",
-    ),
-})
+PARAMS.update(
+    {
+        "align_downscale": AttributeSpec(
+            key="align_downscale",
+            label="Align Downscale",
+            kind="int",
+            default=2,
+            minimum=1,
+            maximum=16,
+            tooltip="Match-photos downscale (1 = full res / highest quality, "
+            "slower). Maps to --align-downscale.",
+        ),
+        "depth_downscale": AttributeSpec(
+            key="depth_downscale",
+            label="Depth Downscale",
+            kind="int",
+            default=2,
+            minimum=1,
+            maximum=16,
+            tooltip="Depth-map downscale (1 = Ultra). On specular / low-texture "
+            "surfaces, full-res depth over-fits and warps geometry — keep "
+            "this at 2 there. Maps to --depth-downscale.",
+        ),
+        "depth_filter": AttributeSpec(
+            key="depth_filter",
+            label="Depth Filter",
+            kind="choice",
+            default="mild",
+            choices=["mild", "moderate", "aggressive", "none"],
+            tooltip="Depth-map filtering strength. 'mild' keeps the most detail; "
+            "raise to 'moderate' to denoise specular geometry. Maps to "
+            "--depth-filter.",
+        ),
+        "face_count": AttributeSpec(
+            key="face_count",
+            label="Face Count",
+            kind="choice",
+            default="medium",
+            choices=["low", "medium", "high"],
+            tooltip="Reconstructed mesh density (Metashape FaceCount). Maps to "
+            "--face-count.",
+        ),
+        "texture_size": AttributeSpec(
+            key="texture_size",
+            label="Texture Size",
+            kind="choice",
+            default="auto",
+            choices=["auto", "1024", "2048", "4096", "8192"],
+            tooltip="Texture page resolution. 'auto' derives it from the source "
+            "frames' long edge (next power-of-two, capped 8192). Maps to "
+            "--texture-size.",
+        ),
+        "mask_background": AttributeSpec(
+            key="mask_background",
+            label="Mask Background",
+            kind="bool",
+            default=False,
+            tooltip="Mask the background before alignment: Metashape 2.2's "
+            "native AI masking when available, else rembg (needs rembg "
+            "installed). Emits --use-masks.",
+        ),
+        "gate_mode": AttributeSpec(
+            key="gate_mode",
+            label="Gate Mode",
+            kind="choice",
+            default="warn",
+            choices=["warn", "halt"],
+            tooltip="Acceptance gates: warn (log + continue) or halt (raise on a "
+            "failed gate). Maps to --gate-mode.",
+        ),
+        "save_project": AttributeSpec(
+            key="save_project",
+            label="Save .psx Project",
+            kind="bool",
+            default=False,
+            tooltip="Save a reopenable Metashape project (.psx + full .files) so a "
+            "later run can re-texture without redoing alignment/depth. "
+            "Emits --save-project.",
+        ),
+        # --- Alignment quality (pre-align triage + matchPhotos levers) ----------
+        "triage_quality": AttributeSpec(
+            key="triage_quality",
+            label="Triage Quality",
+            kind="float",
+            section="Alignment",
+            default=0.0,
+            minimum=0.0,
+            maximum=1.0,
+            decimals=2,
+            tooltip="Disable cameras below this Metashape Image/quality score "
+            "(analyzeImages) before alignment. 0 (default) = off: the score "
+            "correlates with texture, so on low-texture / specular subjects "
+            "triage disables good frames wholesale, on top of curation's "
+            "blur culling. Set ~0.5 for genuinely messy input. Maps to "
+            "--triage-quality.",
+        ),
+        "generic_preselection": AttributeSpec(
+            key="generic_preselection",
+            label="Generic Preselection",
+            kind="bool",
+            section="Alignment",
+            default=True,
+            tooltip="Fast low-res pairwise image preselection before matching "
+            "(Metashape's own default; the key lever to fully align "
+            "featureless / specular captures, where reference preselection "
+            "has no camera coords to work from). Uncheck only for "
+            "well-textured, geo-referenced sets. Emits "
+            "--generic-preselection / --no-generic-preselection.",
+        ),
+        "keypoint_limit": AttributeSpec(
+            key="keypoint_limit",
+            label="Keypoint Limit",
+            kind="int",
+            section="Alignment",
+            default=60000,
+            minimum=10000,
+            maximum=400000,
+            tooltip="Max detected feature points per photo (matchPhotos keypoint "
+            "limit). 60000 is the verified robust-alignment baseline "
+            "(TUNING.md); Metashape's stock 40000 under-aligns low-texture "
+            "/ specular surfaces. Maps to --keypoint-limit.",
+        ),
+        "tiepoint_limit": AttributeSpec(
+            key="tiepoint_limit",
+            label="Tiepoint Limit",
+            kind="int",
+            section="Alignment",
+            default=10000,
+            minimum=0,
+            maximum=100000,
+            tooltip="Max tie points kept per photo (matchPhotos tiepoint limit; "
+            "0 = unlimited). Higher = denser sparse cloud + more robust "
+            "alignment on hard sets. Maps to --tiepoint-limit.",
+        ),
+        # --- Alignment stage toggles (post initial align) -----------------------
+        "dedupe_cameras": AttributeSpec(
+            key="dedupe_cameras",
+            label="Dedupe Cameras",
+            kind="bool",
+            section="Alignment",
+            default=False,
+            tooltip="Disable near-duplicate camera poses after alignment. OPT-IN: "
+            "the distance threshold is in arbitrary chunk units (scale "
+            "varies solve to solve) and disabled cameras are excluded from "
+            "depth mapping - enable only on captures with genuinely "
+            "redundant static footage. Emits --dedupe-cameras.",
+        ),
+        "skip_refine": AttributeSpec(
+            key="skip_refine",
+            label="Skip Refine",
+            kind="bool",
+            section="Alignment",
+            default=False,
+            tooltip="Skip gradual-selection alignment refinement. Emits --skip-refine.",
+        ),
+        "calibrate_colors": AttributeSpec(
+            key="calibrate_colors",
+            label="Calibrate Colors",
+            kind="bool",
+            section="Mesh Cleanup",
+            default=False,
+            tooltip="Run Metashape's calibrateColors (incl. white balance) before "
+            "texturing. OPT-IN: with exposure equalization already applied "
+            "to the frames this stacks a second color transform into the "
+            "albedo - enable for mixed-lighting captures that skip "
+            "equalization. Emits --calibrate-colors.",
+        ),
+        # --- Mesh cleanup (post-build) ------------------------------------------
+        "min_component_size": AttributeSpec(
+            key="min_component_size",
+            label="Min Component Size",
+            kind="int",
+            section="Mesh Cleanup",
+            default=100,
+            minimum=0,
+            maximum=200000,
+            tooltip="Delete disconnected mesh islands smaller than this many faces "
+            "(removeComponents) - the main lever against floater 'snow'. 0 "
+            "disables. NOTE: on specular / low-texture metal do NOT crank "
+            "this (it strips real detail without fixing depth-level noise). "
+            "Maps to --clean-min-component (parity with the RC runner).",
+        ),
+        "smooth_strength": AttributeSpec(
+            key="smooth_strength",
+            label="Smooth Strength",
+            kind="int",
+            section="Mesh Cleanup",
+            default=0,
+            minimum=0,
+            maximum=10,
+            tooltip="Laplacian mesh-smoothing passes after cleanup (0 = none). A "
+            "light value (1) denoises specular geometry; high values melt "
+            "real detail. Maps to --smooth-strength.",
+        ),
+        "close_holes": AttributeSpec(
+            key="close_holes",
+            label="Close Holes %",
+            kind="int",
+            section="Mesh Cleanup",
+            default=30,
+            minimum=0,
+            maximum=100,
+            tooltip="Close mesh holes up to this percent of the total mesh size "
+            "(closeHoles). 0 disables. Maps to --close-holes.",
+        ),
+    }
+)
 
 
 # Value params -> CLI flags that take an argument (always emitted; the widget
@@ -244,11 +305,22 @@ def to_argv(values: "Dict[str, Any]") -> "List[str]":
 #   ""    : full pipeline → every param
 # Mesh-cleanup knobs (min_component_size/smooth_strength/close_holes) are a
 # post-build stage, so they're intentionally absent here → full pipeline only.
-_ALIGN_MODE_KEYS = frozenset({
-    "align_downscale", "mask_background", "gate_mode", "save_project",
-    # Alignment-quality levers (pre-align triage + matchPhotos) run in every mode.
-    "triage_quality", "generic_preselection", "keypoint_limit", "tiepoint_limit",
-}) | PREPROCESSING_KEYS  # input pre-processing runs before alignment -> every mode
+_ALIGN_MODE_KEYS = (
+    frozenset(
+        {
+            "align_downscale",
+            "mask_background",
+            "gate_mode",
+            "save_project",
+            # Alignment-quality levers (pre-align triage + matchPhotos) run in every mode.
+            "triage_quality",
+            "generic_preselection",
+            "keypoint_limit",
+            "tiepoint_limit",
+        }
+    )
+    | PREPROCESSING_KEYS
+)  # input pre-processing runs before alignment -> every mode
 _MODE_KEYS: "Dict[str, frozenset]" = {
     "align": _ALIGN_MODE_KEYS,
     "refine": _ALIGN_MODE_KEYS | {"skip_refine"},
@@ -280,4 +352,4 @@ def referenced_keys(source: str = "") -> "set[str]":
 
 def defaults() -> "Dict[str, Any]":
     """Return ``{key: default}`` for every registered parameter."""
-    return _defaults(PARAMS)
+    return _BridgeParams.defaults(PARAMS)

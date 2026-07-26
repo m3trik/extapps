@@ -7,6 +7,7 @@ the Publish section), semantic-preset round-trip against the engine-scoped
 ``gaussian_splat`` store, and b000 argv assembly (--colmap-dir + --publish in
 Train + Publish) without launching a real process.
 """
+
 from __future__ import annotations
 
 import os
@@ -25,6 +26,7 @@ def _ensure_app() -> QApplication:
 class TestParametersReferencedKeys(unittest.TestCase):
     def _P(self):
         from extapps.photogrammetry.gaussian_splat_workflow import parameters as P
+
         return P
 
     def test_train_only_hides_publish_keys(self) -> None:
@@ -55,6 +57,7 @@ class TestBrushPanelLoads(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import gaussian_splat_workflow as g
+
         self.ui = g.GaussianSplatWorkflowUI()
         self.slots = self.ui.sb.get_slots_instance(self.ui)
         self.assertIsNotNone(self.slots, "Switchboard returned no slots instance")
@@ -65,6 +68,7 @@ class TestBrushPanelLoads(unittest.TestCase):
 
     def test_param_widgets_built_for_every_spec(self) -> None:
         from extapps.photogrammetry.gaussian_splat_workflow import parameters as P
+
         for key in P.PARAMS:
             self.assertIn(key, self.slots._param_widgets, f"no widget for {key}")
 
@@ -83,9 +87,12 @@ class TestBrushPanelLoads(unittest.TestCase):
         self.assertNotIn("default", listed)
 
     def test_high_preset_loads_into_param_widgets(self) -> None:
-        from uitk.bridge.spec import read_value
+        from uitk.bridge.spec import KindFactory
+
         self.slots._preset_mgr.load("high")
-        self.assertEqual(read_value(self.slots._param_widgets["total_steps"]), 50000)
+        self.assertEqual(
+            KindFactory.read_value(self.slots._param_widgets["total_steps"]), 50000
+        )
 
 
 class TestBrushPanelDispatch(unittest.TestCase):
@@ -95,6 +102,7 @@ class TestBrushPanelDispatch(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.photogrammetry import gaussian_splat_workflow as g
+
         self.tmp = tempfile.mkdtemp(prefix="brush_dispatch_")
         self.colmap = os.path.join(self.tmp, "ds")
         os.makedirs(self.colmap)

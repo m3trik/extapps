@@ -1,45 +1,17 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-07-18",
+  "generated_at": "2026-07-26",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
       "summary": "Drive Marmoset Toolbag from the outside -- launch + templated automation.",
-      "functions": [
-        {
-          "name": "list_templates",
-          "qualname": "list_templates",
-          "kind": "function",
-          "signature": "() -> List[Path]",
-          "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
-          "line": 59,
-          "deprecated": false
-        },
-        {
-          "name": "template_modes",
-          "qualname": "template_modes",
-          "kind": "function",
-          "signature": "(template_path: Path) -> Tuple[str, ...]",
-          "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
-          "line": 64,
-          "deprecated": false
-        },
-        {
-          "name": "list_template_modes",
-          "qualname": "list_template_modes",
-          "kind": "function",
-          "signature": "() -> List[Tuple[str, str]]",
-          "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
-          "line": 73,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "MarmosetEngine",
           "summary": "Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.",
-          "line": 83,
+          "line": 58,
           "bases": [
             "ptk.Deliverer",
             "ptk.LoggingMixin"
@@ -51,7 +23,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve the Toolbag executable path.",
-              "line": 122,
+              "line": 97,
               "deprecated": false
             },
             {
@@ -60,7 +32,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve Toolbag's application log file (script prints + tracebacks).",
-              "line": 145,
+              "line": 120,
               "deprecated": false
             },
             {
@@ -69,7 +41,7 @@
               "kind": "method",
               "signature": "(self, bridge, request) -> bool",
               "summary": "Validate the (template, mode) before the bridge produces its payload.",
-              "line": 156,
+              "line": 131,
               "deprecated": false
             },
             {
@@ -78,7 +50,7 @@
               "kind": "method",
               "signature": "(self, bridge, payload, request) -> Optional[Dict[str, Any]]",
               "summary": "Hand the produced model + manifests to Toolbag via :meth:`send`.",
-              "line": 168,
+              "line": 147,
               "deprecated": false
             },
             {
@@ -87,7 +59,7 @@
               "kind": "method",
               "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, output_dir: Optional[str] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]",
               "summary": "Render *template* in *mode* against *model_path* and hand off to Toolbag.",
-              "line": 190,
+              "line": 169,
               "deprecated": false
             },
             {
@@ -96,7 +68,34 @@
               "kind": "method",
               "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None) -> Optional[str]",
               "summary": "Return the rendered Toolbag Python script body, or *None* on miss.",
-              "line": 330,
+              "line": 314,
+              "deprecated": false
+            },
+            {
+              "name": "list_templates",
+              "qualname": "MarmosetEngine.list_templates",
+              "kind": "staticmethod",
+              "signature": "() -> List[Path]",
+              "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
+              "line": 491,
+              "deprecated": false
+            },
+            {
+              "name": "template_modes",
+              "qualname": "MarmosetEngine.template_modes",
+              "kind": "staticmethod",
+              "signature": "(template_path: Path) -> Tuple[str, ...]",
+              "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
+              "line": 496,
+              "deprecated": false
+            },
+            {
+              "name": "list_template_modes",
+              "qualname": "MarmosetEngine.list_template_modes",
+              "kind": "staticmethod",
+              "signature": "() -> List[Tuple[str, str]]",
+              "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
+              "line": 505,
               "deprecated": false
             }
           ]
@@ -106,99 +105,109 @@
     {
       "relpath": "marmoset_workflow/_toolbag_helpers.py",
       "summary": "Shared helpers for Marmoset Toolbag template scripts.",
-      "functions": [
+      "functions": [],
+      "classes": [
         {
-          "name": "derive_per_run_log_path",
-          "qualname": "derive_per_run_log_path",
-          "kind": "function",
-          "signature": "(manifest_path)",
-          "summary": "Return the ``<base>.toolbag.log`` path next to *manifest_path*.",
-          "line": 41,
-          "deprecated": false
-        },
-        {
-          "name": "begin_log",
-          "qualname": "begin_log",
-          "kind": "function",
-          "signature": "(reference_path)",
-          "summary": "Start a fresh log file alongside *reference_path*.",
-          "line": 55,
-          "deprecated": false
-        },
-        {
-          "name": "log",
-          "qualname": "log",
-          "kind": "function",
-          "signature": "(msg)",
-          "summary": "Print *msg* and (best-effort) append it to the active log file.",
-          "line": 75,
-          "deprecated": false
-        },
-        {
-          "name": "find_material",
-          "qualname": "find_material",
-          "kind": "function",
-          "signature": "(name, scene_mats)",
-          "summary": "Return the Toolbag material whose name matches *name*.",
-          "line": 153,
-          "deprecated": false
-        },
-        {
-          "name": "load_manifest",
-          "qualname": "load_manifest",
-          "kind": "function",
-          "signature": "(manifest_path)",
-          "summary": "Return the ``materials`` dict from a MatManifest JSON sidecar.",
-          "line": 168,
-          "deprecated": false
-        },
-        {
-          "name": "wire_materials_from_manifest",
-          "qualname": "wire_materials_from_manifest",
-          "kind": "function",
-          "signature": "(manifest_path, verbose=True)",
-          "summary": "Wire every texture slot in *manifest_path* onto matching Toolbag mats.",
-          "line": 185,
-          "deprecated": false
-        },
-        {
-          "name": "split_high_low",
-          "qualname": "split_high_low",
-          "kind": "function",
-          "signature": "(objects, high_suffix, low_suffix, pre_classified=None)",
-          "summary": "Group *objects* into ``(highs, lows, others)`` by name suffix.",
-          "line": 311,
-          "deprecated": false
-        },
-        {
-          "name": "collect_mesh_objects",
-          "qualname": "collect_mesh_objects",
-          "kind": "function",
-          "signature": "(root)",
-          "summary": "Recursively gather ``mset.MeshObject`` descendants of *root*.",
-          "line": 393,
-          "deprecated": false
-        },
-        {
-          "name": "apply_sky_preset",
-          "qualname": "apply_sky_preset",
-          "kind": "function",
-          "signature": "(preset_path)",
-          "summary": "Load a ``.tbsky`` preset onto the scene's existing SkyObject.",
-          "line": 433,
-          "deprecated": false
-        },
-        {
-          "name": "frame_in_viewport",
-          "qualname": "frame_in_viewport",
-          "kind": "function",
-          "signature": "()",
-          "summary": "Frame the imported scene in the viewport (best-effort).",
-          "line": 457,
-          "deprecated": false
+          "name": "ToolbagHelpers",
+          "summary": "ToolbagHelpers — module namespace.",
+          "line": 120,
+          "bases": [
+            "_ToolbagHelpersInternal"
+          ],
+          "members": [
+            {
+              "name": "derive_per_run_log_path",
+              "qualname": "ToolbagHelpers.derive_per_run_log_path",
+              "kind": "staticmethod",
+              "signature": "(manifest_path)",
+              "summary": "Return the ``<base>.toolbag.log`` path next to *manifest_path*.",
+              "line": 124,
+              "deprecated": false
+            },
+            {
+              "name": "begin_log",
+              "qualname": "ToolbagHelpers.begin_log",
+              "kind": "staticmethod",
+              "signature": "(reference_path)",
+              "summary": "Start a fresh log file alongside *reference_path*.",
+              "line": 138,
+              "deprecated": false
+            },
+            {
+              "name": "log",
+              "qualname": "ToolbagHelpers.log",
+              "kind": "staticmethod",
+              "signature": "(msg)",
+              "summary": "Print *msg* and (best-effort) append it to the active log file.",
+              "line": 158,
+              "deprecated": false
+            },
+            {
+              "name": "find_material",
+              "qualname": "ToolbagHelpers.find_material",
+              "kind": "staticmethod",
+              "signature": "(name, scene_mats)",
+              "summary": "Return the Toolbag material whose name matches *name*.",
+              "line": 170,
+              "deprecated": false
+            },
+            {
+              "name": "load_manifest",
+              "qualname": "ToolbagHelpers.load_manifest",
+              "kind": "staticmethod",
+              "signature": "(manifest_path)",
+              "summary": "Return the ``materials`` dict from a MatManifest JSON sidecar.",
+              "line": 185,
+              "deprecated": false
+            },
+            {
+              "name": "wire_materials_from_manifest",
+              "qualname": "ToolbagHelpers.wire_materials_from_manifest",
+              "kind": "staticmethod",
+              "signature": "(manifest_path, verbose=True)",
+              "summary": "Wire every texture slot in *manifest_path* onto matching Toolbag mats.",
+              "line": 204,
+              "deprecated": false
+            },
+            {
+              "name": "split_high_low",
+              "qualname": "ToolbagHelpers.split_high_low",
+              "kind": "staticmethod",
+              "signature": "(objects, high_suffix, low_suffix, pre_classified=None)",
+              "summary": "Group *objects* into ``(highs, lows, others)`` by name suffix.",
+              "line": 323,
+              "deprecated": false
+            },
+            {
+              "name": "collect_mesh_objects",
+              "qualname": "ToolbagHelpers.collect_mesh_objects",
+              "kind": "staticmethod",
+              "signature": "(root)",
+              "summary": "Recursively gather ``mset.MeshObject`` descendants of *root*.",
+              "line": 407,
+              "deprecated": false
+            },
+            {
+              "name": "apply_sky_preset",
+              "qualname": "ToolbagHelpers.apply_sky_preset",
+              "kind": "staticmethod",
+              "signature": "(preset_path)",
+              "summary": "Load a ``.tbsky`` preset onto the scene's existing SkyObject.",
+              "line": 447,
+              "deprecated": false
+            },
+            {
+              "name": "frame_in_viewport",
+              "qualname": "ToolbagHelpers.frame_in_viewport",
+              "kind": "staticmethod",
+              "signature": "()",
+              "summary": "Frame the imported scene in the viewport (best-effort).",
+              "line": 473,
+              "deprecated": false
+            }
+          ]
         }
-      ],
-      "classes": []
+      ]
     },
     {
       "relpath": "marmoset_workflow/launcher.py",
@@ -208,7 +217,7 @@
         {
           "name": "MarmosetWorkflowUI",
           "summary": "",
-          "line": 19,
+          "line": 20,
           "bases": [],
           "members": []
         }
@@ -224,7 +233,7 @@
           "kind": "function",
           "signature": "(script_text: str) -> 'set[str]'",
           "summary": "Registered keys present in *script_text* (delegates to uitk.bridge).",
-          "line": 63,
+          "line": 58,
           "deprecated": false
         },
         {
@@ -233,7 +242,7 @@
           "kind": "function",
           "signature": "() -> 'dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 68,
+          "line": 63,
           "deprecated": false
         },
         {
@@ -242,7 +251,7 @@
           "kind": "function",
           "signature": "(values: 'dict[str, Any]') -> 'dict[str, str]'",
           "summary": "Format *values* for ``StrUtils.replace_delimited`` using Python literals.",
-          "line": 73,
+          "line": 68,
           "deprecated": false
         }
       ],
@@ -256,7 +265,7 @@
         {
           "name": "MarmosetWorkflowSlots",
           "summary": "Switchboard slots wired to ``marmoset_workflow.ui``.",
-          "line": 46,
+          "line": 54,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -267,7 +276,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 89,
+              "line": 97,
               "deprecated": false
             },
             {
@@ -276,7 +285,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 93,
+              "line": 101,
               "deprecated": false
             },
             {
@@ -285,7 +294,7 @@
               "kind": "method",
               "signature": "(self) -> MarmosetEngine",
               "summary": "",
-              "line": 96,
+              "line": 104,
               "deprecated": false
             },
             {
@@ -294,7 +303,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Engine templates filtered to the 'set up a project' subset.",
-              "line": 99,
+              "line": 107,
               "deprecated": false
             },
             {
@@ -303,7 +312,7 @@
               "kind": "method",
               "signature": "(self, pairs: List[Tuple[str, str]]) -> int",
               "summary": "Prefer 'lookdev (send_to)', else first entry.",
-              "line": 106,
+              "line": 115,
               "deprecated": false
             },
             {
@@ -312,7 +321,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 176,
+              "line": 185,
               "deprecated": false
             },
             {
@@ -321,7 +330,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (e.g.",
-              "line": 181,
+              "line": 190,
               "deprecated": false
             },
             {
@@ -330,7 +339,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Set up the picked model in Toolbag using the chosen template + mode.",
-              "line": 198,
+              "line": 207,
               "deprecated": false
             }
           ]
@@ -340,36 +349,44 @@
     {
       "relpath": "marmoset_workflow/template_params.py",
       "summary": "Plain default values + literal formatting for Marmoset template tokens.",
-      "functions": [
+      "functions": [],
+      "classes": [
         {
-          "name": "python_literal",
-          "qualname": "python_literal",
-          "kind": "function",
-          "signature": "(value: Any) -> str",
-          "summary": "Format *value* as a Python source literal for template substitution.",
-          "line": 49,
-          "deprecated": false
-        },
-        {
-          "name": "defaults",
-          "qualname": "defaults",
-          "kind": "function",
-          "signature": "() -> Dict[str, Any]",
-          "summary": "Return a copy of :data:`DEFAULTS`.",
-          "line": 60,
-          "deprecated": false
-        },
-        {
-          "name": "to_context",
-          "qualname": "to_context",
-          "kind": "function",
-          "signature": "(values: Dict[str, Any]) -> Dict[str, str]",
-          "summary": "Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.",
-          "line": 65,
-          "deprecated": false
+          "name": "TemplateParams",
+          "summary": "TemplateParams — module namespace.",
+          "line": 50,
+          "bases": [],
+          "members": [
+            {
+              "name": "python_literal",
+              "qualname": "TemplateParams.python_literal",
+              "kind": "staticmethod",
+              "signature": "(value: Any) -> str",
+              "summary": "Format *value* as a Python source literal for template substitution.",
+              "line": 54,
+              "deprecated": false
+            },
+            {
+              "name": "defaults",
+              "qualname": "TemplateParams.defaults",
+              "kind": "staticmethod",
+              "signature": "() -> Dict[str, Any]",
+              "summary": "Return a copy of :data:`DEFAULTS`.",
+              "line": 65,
+              "deprecated": false
+            },
+            {
+              "name": "to_context",
+              "qualname": "TemplateParams.to_context",
+              "kind": "staticmethod",
+              "signature": "(values: Dict[str, Any]) -> Dict[str, str]",
+              "summary": "Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.",
+              "line": 70,
+              "deprecated": false
+            }
+          ]
         }
-      ],
-      "classes": []
+      ]
     },
     {
       "relpath": "marmoset_workflow/templates/import.py",
@@ -397,7 +414,7 @@
           "kind": "function",
           "signature": "()",
           "summary": "",
-          "line": 41,
+          "line": 35,
           "deprecated": false
         }
       ],
@@ -406,45 +423,53 @@
     {
       "relpath": "marmoset_workflow/toolbag_log.py",
       "summary": "Marmoset Toolbag log-file resolution, classification, and live tailing.",
-      "functions": [
+      "functions": [],
+      "classes": [
         {
-          "name": "resolve_toolbag_log_path",
-          "qualname": "resolve_toolbag_log_path",
-          "kind": "function",
-          "signature": "(toolbag_exe: Optional[str]) -> Optional[str]",
-          "summary": "Return the path to Toolbag's application log, robust to version bumps.",
-          "line": 29,
-          "deprecated": false
-        },
-        {
-          "name": "classify_log_line",
-          "qualname": "classify_log_line",
-          "kind": "function",
-          "signature": "(line: str) -> Optional[Tuple[str, str]]",
-          "summary": "Map a Toolbag log line to ``(level, line)`` for routing into a logger.",
-          "line": 83,
-          "deprecated": false
-        },
-        {
-          "name": "dispatch_log_lines",
-          "qualname": "dispatch_log_lines",
-          "kind": "function",
-          "signature": "(lines, logger) -> None",
-          "summary": "Forward each classified line to *logger* at its routed level.",
-          "line": 134,
-          "deprecated": false
-        },
-        {
-          "name": "start_toolbag_log_tail",
-          "qualname": "start_toolbag_log_tail",
-          "kind": "function",
-          "signature": "(log_path: str, start_offset: int, process, logger, poll_interval: float = 0.4, file_wait_timeout: float = 60.0)",
-          "summary": "Tail *log_path* from *start_offset* in a daemon thread.",
-          "line": 148,
-          "deprecated": false
+          "name": "ToolbagLog",
+          "summary": "ToolbagLog — module namespace.",
+          "line": 30,
+          "bases": [],
+          "members": [
+            {
+              "name": "resolve_toolbag_log_path",
+              "qualname": "ToolbagLog.resolve_toolbag_log_path",
+              "kind": "staticmethod",
+              "signature": "(toolbag_exe: Optional[str]) -> Optional[str]",
+              "summary": "Return the path to Toolbag's application log, robust to version bumps.",
+              "line": 34,
+              "deprecated": false
+            },
+            {
+              "name": "classify_log_line",
+              "qualname": "ToolbagLog.classify_log_line",
+              "kind": "staticmethod",
+              "signature": "(line: str) -> Optional[Tuple[str, str]]",
+              "summary": "Map a Toolbag log line to ``(level, line)`` for routing into a logger.",
+              "line": 84,
+              "deprecated": false
+            },
+            {
+              "name": "dispatch_log_lines",
+              "qualname": "ToolbagLog.dispatch_log_lines",
+              "kind": "staticmethod",
+              "signature": "(lines, logger) -> None",
+              "summary": "Forward each classified line to *logger* at its routed level.",
+              "line": 135,
+              "deprecated": false
+            },
+            {
+              "name": "start_toolbag_log_tail",
+              "qualname": "ToolbagLog.start_toolbag_log_tail",
+              "kind": "staticmethod",
+              "signature": "(log_path: str, start_offset: int, process, logger, poll_interval: float = 0.4, file_wait_timeout: float = 60.0)",
+              "summary": "Tail *log_path* from *start_offset* in a daemon thread.",
+              "line": 149,
+              "deprecated": false
+            }
+          ]
         }
-      ],
-      "classes": []
+      ]
     },
     {
       "relpath": "mesh_convert/launcher.py",
@@ -454,7 +479,7 @@
         {
           "name": "MeshConvertUI",
           "summary": "",
-          "line": 17,
+          "line": 18,
           "bases": [],
           "members": []
         }
@@ -960,7 +985,7 @@
         {
           "name": "GaussianSplatWorkflowUI",
           "summary": "",
-          "line": 15,
+          "line": 16,
           "bases": [],
           "members": []
         }
@@ -976,7 +1001,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags via the",
-          "line": 83,
+          "line": 111,
           "deprecated": false
         },
         {
@@ -985,7 +1010,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the selected run mode — drives row visibility.",
-          "line": 98,
+          "line": 124,
           "deprecated": false
         },
         {
@@ -994,7 +1019,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 108,
+          "line": 134,
           "deprecated": false
         }
       ],
@@ -1239,60 +1264,59 @@
     {
       "relpath": "photogrammetry/metashape_workflow/_metashape_workflow.py",
       "summary": "",
-      "functions": [
-        {
-          "name": "is_metashape_available",
-          "qualname": "is_metashape_available",
-          "kind": "function",
-          "signature": "() -> bool",
-          "summary": "True if the Metashape Python module imported successfully.",
-          "line": 38,
-          "deprecated": false
-        },
-        {
-          "name": "is_license_valid",
-          "qualname": "is_license_valid",
-          "kind": "function",
-          "signature": "() -> bool",
-          "summary": "True if a valid Metashape license is reachable.",
-          "line": 43,
-          "deprecated": false
-        },
-        {
-          "name": "get_metashape_version",
-          "qualname": "get_metashape_version",
-          "kind": "function",
-          "signature": "() -> str",
-          "summary": "",
-          "line": 53,
-          "deprecated": false
-        },
-        {
-          "name": "get_image_filepaths",
-          "qualname": "get_image_filepaths",
-          "kind": "function",
-          "signature": "(directory: str) -> List[str]",
-          "summary": "Return absolute paths to all images in `directory` (non-recursive).",
-          "line": 1372,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "MetashapeWorkflow",
           "summary": "Wrapper around Agisoft Metashape's Python API for the standard",
-          "line": 62,
+          "line": 38,
           "bases": [
             "PrepStagesMixin"
           ],
           "members": [
+            {
+              "name": "is_metashape_available",
+              "qualname": "MetashapeWorkflow.is_metashape_available",
+              "kind": "staticmethod",
+              "signature": "() -> bool",
+              "summary": "True if the Metashape Python module imported successfully.",
+              "line": 51,
+              "deprecated": false
+            },
+            {
+              "name": "is_license_valid",
+              "qualname": "MetashapeWorkflow.is_license_valid",
+              "kind": "staticmethod",
+              "signature": "() -> bool",
+              "summary": "True if a valid Metashape license is reachable.",
+              "line": 56,
+              "deprecated": false
+            },
+            {
+              "name": "get_metashape_version",
+              "qualname": "MetashapeWorkflow.get_metashape_version",
+              "kind": "staticmethod",
+              "signature": "() -> str",
+              "summary": "",
+              "line": 66,
+              "deprecated": false
+            },
+            {
+              "name": "get_image_filepaths",
+              "qualname": "MetashapeWorkflow.get_image_filepaths",
+              "kind": "staticmethod",
+              "signature": "(directory: str) -> List[str]",
+              "summary": "Return absolute paths to all images in `directory` (non-recursive).",
+              "line": 75,
+              "deprecated": false
+            },
             {
               "name": "get_license_info",
               "qualname": "MetashapeWorkflow.get_license_info",
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 134,
+              "line": 148,
               "deprecated": false
             },
             {
@@ -1301,7 +1325,7 @@
               "kind": "method",
               "signature": "(self, label: str = 'New Chunk')",
               "summary": "",
-              "line": 190,
+              "line": 208,
               "deprecated": false
             },
             {
@@ -1310,7 +1334,7 @@
               "kind": "method",
               "signature": "(self, image_sources: Union[str, Sequence[str]])",
               "summary": "Add images from a directory path (non-recursive) or list of paths.",
-              "line": 206,
+              "line": 226,
               "deprecated": false
             },
             {
@@ -1319,7 +1343,7 @@
               "kind": "method",
               "signature": "(self, dirs: Sequence[str])",
               "summary": "Add images from multiple directories — flattens to one chunk.",
-              "line": 240,
+              "line": 260,
               "deprecated": false
             },
             {
@@ -1328,7 +1352,7 @@
               "kind": "method",
               "signature": "(self, exported_model_path: Optional[str] = None, decimate_target_faces: int = 0) -> Optional[str]",
               "summary": "PyMeshLab post-export polish on the exported mesh file.",
-              "line": 273,
+              "line": 293,
               "deprecated": false
             },
             {
@@ -1337,7 +1361,7 @@
               "kind": "method",
               "signature": "(self, quality_threshold: float = 0.5)",
               "summary": "Run ``analyzePhotos`` and disable cameras below ``quality_threshold``.",
-              "line": 306,
+              "line": 326,
               "deprecated": false
             },
             {
@@ -1346,7 +1370,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "",
-              "line": 359,
+              "line": 379,
               "deprecated": false
             },
             {
@@ -1355,7 +1379,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0, filter_mask: bool = False)",
               "summary": "Run ``align_photos``;",
-              "line": 448,
+              "line": 468,
               "deprecated": false
             },
             {
@@ -1364,7 +1388,7 @@
               "kind": "method",
               "signature": "(self, uncertainty_threshold: float = 15.0, reprojection_threshold: float = 0.5, projection_accuracy_threshold: float = 3.0)",
               "summary": "Gradual-selection cleanup: iteratively filter tie points by",
-              "line": 517,
+              "line": 537,
               "deprecated": false
             },
             {
@@ -1373,7 +1397,7 @@
               "kind": "method",
               "signature": "(self, translation_threshold: float = 0.02, rotation_threshold_deg: float = 2.0)",
               "summary": "Cluster aligned cameras by pose and disable redundants.",
-              "line": 625,
+              "line": 679,
               "deprecated": false
             },
             {
@@ -1382,7 +1406,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, white_balance: bool = True)",
               "summary": "Run ``chunk.calibrateColors`` to equalize white-balance across",
-              "line": 701,
+              "line": 756,
               "deprecated": false
             },
             {
@@ -1391,7 +1415,7 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 723,
+              "line": 778,
               "deprecated": false
             },
             {
@@ -1400,7 +1424,7 @@
               "kind": "method",
               "signature": "(self, tolerance: int = 10) -> bool",
               "summary": "Background-mask every camera with Metashape's built-in AI masking",
-              "line": 765,
+              "line": 818,
               "deprecated": false
             },
             {
@@ -1409,7 +1433,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'file', template: str = '{filename}_mask.png')",
               "summary": "Import per-camera masks from a directory.",
-              "line": 827,
+              "line": 880,
               "deprecated": false
             },
             {
@@ -1418,7 +1442,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, filter_mode=None)",
               "summary": "",
-              "line": 916,
+              "line": 966,
               "deprecated": false
             },
             {
@@ -1427,7 +1451,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count=None)",
               "summary": "",
-              "line": 950,
+              "line": 1002,
               "deprecated": false
             },
             {
@@ -1436,7 +1460,7 @@
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
               "summary": "Mesh cleanup chain: ``removeComponents → closeHoles → smoothModel``.",
-              "line": 1028,
+              "line": 1085,
               "deprecated": false
             },
             {
@@ -1445,7 +1469,7 @@
               "kind": "method",
               "signature": "(self, target_overlap: int = 9)",
               "summary": "Thin redundant cameras for texture bake while preserving",
-              "line": 1074,
+              "line": 1131,
               "deprecated": false
             },
             {
@@ -1454,7 +1478,7 @@
               "kind": "method",
               "signature": "(self, texture_size: int = 8192, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "",
-              "line": 1100,
+              "line": 1157,
               "deprecated": false
             },
             {
@@ -1463,7 +1487,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "",
-              "line": 1158,
+              "line": 1215,
               "deprecated": false
             },
             {
@@ -1472,7 +1496,7 @@
               "kind": "method",
               "signature": "(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)",
               "summary": "",
-              "line": 1171,
+              "line": 1228,
               "deprecated": false
             },
             {
@@ -1481,7 +1505,7 @@
               "kind": "method",
               "signature": "(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]",
               "summary": "Export the aligned chunk as a COLMAP dataset to feed the splat track.",
-              "line": 1241,
+              "line": 1298,
               "deprecated": false
             },
             {
@@ -1490,7 +1514,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Write Metashape's processing report PDF + finalize the JSON sidecar.",
-              "line": 1339,
+              "line": 1400,
               "deprecated": false
             },
             {
@@ -1499,7 +1523,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Write the QC JSON sidecar.",
-              "line": 1361,
+              "line": 1422,
               "deprecated": false
             }
           ]
@@ -1514,7 +1538,7 @@
         {
           "name": "MetashapeWorkflowUI",
           "summary": "",
-          "line": 19,
+          "line": 20,
           "bases": [],
           "members": []
         }
@@ -1530,7 +1554,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-          "line": 228,
+          "line": 289,
           "deprecated": false
         },
         {
@@ -1539,7 +1563,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 264,
+          "line": 336,
           "deprecated": false
         },
         {
@@ -1548,7 +1572,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 281,
+          "line": 353,
           "deprecated": false
         }
       ],
@@ -1652,7 +1676,7 @@
           "kind": "function",
           "signature": "(image_path: str) -> Optional[int]",
           "summary": "Long edge (px) of an image, or ``None`` if unreadable.",
-          "line": 29,
+          "line": 30,
           "deprecated": false
         },
         {
@@ -1661,7 +1685,7 @@
           "kind": "function",
           "signature": "(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]",
           "summary": "Extract frames from one or more videos into a single ``output_dir``.",
-          "line": 47,
+          "line": 49,
           "deprecated": false
         },
         {
@@ -1670,7 +1694,7 @@
           "kind": "function",
           "signature": "(dirs: Sequence[str]) -> Optional[str]",
           "summary": "First image file (sorted) across ``dirs``, or ``None``.",
-          "line": 157,
+          "line": 162,
           "deprecated": false
         },
         {
@@ -1679,7 +1703,7 @@
           "kind": "function",
           "signature": "(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int",
           "summary": "Texture page size from a source image: next power-of-two ≥ its long edge,",
-          "line": 168,
+          "line": 173,
           "deprecated": false
         }
       ],
@@ -1687,7 +1711,7 @@
         {
           "name": "PrepStagesMixin",
           "summary": "Curate / equalize / export-sidecar stages shared by both photogrammetry engines.",
-          "line": 191,
+          "line": 196,
           "bases": [],
           "members": [
             {
@@ -1696,7 +1720,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, hash_threshold: int = 0, sharpness_floor: float = 0.0, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0, keep_per_cluster: int = 1, overcuration_warn_pct: float = 30.0) -> List[str]",
               "summary": "Pre-SfM content + sharpness culling via :class:`pythontk.ImageCurator`.",
-              "line": 216,
+              "line": 221,
               "deprecated": false
             },
             {
@@ -1705,7 +1729,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], hash_thresholds: Sequence[int] = (5, 8, 10, 12, 15), keep_per_cluster: int = 1, sharpness_floor_percentile: Optional[float] = None, min_sharpness_fraction_of_median: float = 0.0)",
               "summary": "Dry-run curation QC — report survivor counts per dHash threshold + the",
-              "line": 312,
+              "line": 321,
               "deprecated": false
             },
             {
@@ -1714,7 +1738,7 @@
               "kind": "method",
               "signature": "(self, source_dirs: Sequence[str], output_root: Optional[str] = None, reference_dir: Optional[str] = None, strength: float = 0.5, reference_strategy: str = 'median') -> List[str]",
               "summary": "Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.",
-              "line": 362,
+              "line": 371,
               "deprecated": false
             }
           ]
@@ -1731,7 +1755,7 @@
           "kind": "function",
           "signature": "(path=None) -> dict",
           "summary": "Resolve the active photogrammetry profile (fully interpolated).",
-          "line": 239,
+          "line": 240,
           "deprecated": false
         },
         {
@@ -1740,7 +1764,7 @@
           "kind": "function",
           "signature": "(key: str, path=None) -> Optional[str]",
           "summary": "Return the profile-configured install path for an engine, or ``None``.",
-          "line": 257,
+          "line": 258,
           "deprecated": false
         },
         {
@@ -1749,7 +1773,7 @@
           "kind": "function",
           "signature": "(engine: str) -> PresetStore",
           "summary": "The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)",
-          "line": 280,
+          "line": 281,
           "deprecated": false
         },
         {
@@ -1758,7 +1782,7 @@
           "kind": "function",
           "signature": "(name: Optional[str], engine: str) -> dict",
           "summary": "Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).",
-          "line": 301,
+          "line": 302,
           "deprecated": false
         },
         {
@@ -1767,7 +1791,7 @@
           "kind": "function",
           "signature": "(path: Optional[str] = None, force: bool = False) -> str",
           "summary": "Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).",
-          "line": 324,
+          "line": 325,
           "deprecated": false
         },
         {
@@ -1776,7 +1800,7 @@
           "kind": "function",
           "signature": "(input_root: str) -> List[str]",
           "summary": "Return immediate subdirs of ``input_root`` that contain images.",
-          "line": 342,
+          "line": 343,
           "deprecated": false
         }
       ],
@@ -2366,7 +2390,7 @@
         {
           "name": "RealityScanWorkflowUI",
           "summary": "",
-          "line": 15,
+          "line": 16,
           "bases": [],
           "members": []
         }
@@ -2382,7 +2406,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-          "line": 101,
+          "line": 120,
           "deprecated": false
         },
         {
@@ -2391,7 +2415,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 111,
+          "line": 130,
           "deprecated": false
         },
         {
@@ -2400,7 +2424,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 125,
+          "line": 144,
           "deprecated": false
         }
       ],
@@ -2842,17 +2866,7 @@
     {
       "relpath": "substance_workflow/job.py",
       "summary": "Job spec + batch convenience wrapper.",
-      "functions": [
-        {
-          "name": "run_batch",
-          "qualname": "run_batch",
-          "kind": "function",
-          "signature": "(calls: List[Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: float = 60.0) -> List[Result]",
-          "summary": "Launch Painter, execute ``calls`` in order over the bridge, shut down.",
-          "line": 49,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "Call",
@@ -2901,6 +2915,15 @@
               "summary": "",
               "line": 45,
               "deprecated": false
+            },
+            {
+              "name": "run_batch",
+              "qualname": "Job.run_batch",
+              "kind": "staticmethod",
+              "signature": "(calls: List[Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: float = 60.0) -> List[Result]",
+              "summary": "Launch Painter, execute ``calls`` in order over the bridge, shut down.",
+              "line": 49,
+              "deprecated": false
             }
           ]
         }
@@ -2914,7 +2937,7 @@
         {
           "name": "SubstanceWorkflowUI",
           "summary": "",
-          "line": 18,
+          "line": 19,
           "bases": [],
           "members": []
         }
@@ -3256,7 +3279,7 @@
         {
           "name": "SubstanceWorkflowSlots",
           "summary": "Switchboard slots for the Substance Workflow UI.",
-          "line": 91,
+          "line": 193,
           "bases": [
             "ptk.LoggingMixin"
           ],
@@ -3267,7 +3290,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "",
-              "line": 126,
+              "line": 228,
               "deprecated": false
             },
             {
@@ -3276,7 +3299,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Mesh File",
-              "line": 161,
+              "line": 263,
               "deprecated": false
             },
             {
@@ -3285,7 +3308,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Template (optional)",
-              "line": 175,
+              "line": 277,
               "deprecated": false
             },
             {
@@ -3294,7 +3317,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Project Save Path",
-              "line": 190,
+              "line": 292,
               "deprecated": false
             },
             {
@@ -3303,7 +3326,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Painter install picker",
-              "line": 204,
+              "line": 306,
               "deprecated": false
             },
             {
@@ -3312,7 +3335,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Stages popup — QMenu of checkboxes attached to the button.",
-              "line": 211,
+              "line": 313,
               "deprecated": false
             },
             {
@@ -3321,7 +3344,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Advanced-params popup — labeled form inside a QMenu via QWidgetAction.",
-              "line": 228,
+              "line": 330,
               "deprecated": false
             },
             {
@@ -3330,7 +3353,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Log level changed",
-              "line": 270,
+              "line": 372,
               "deprecated": false
             },
             {
@@ -3339,7 +3362,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Toggle the Painter session.",
-              "line": 274,
+              "line": 376,
               "deprecated": false
             },
             {
@@ -3348,7 +3371,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run Workflow",
-              "line": 284,
+              "line": 386,
               "deprecated": false
             },
             {
@@ -3357,7 +3380,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the mesh field (e.g.",
-              "line": 293,
+              "line": 395,
               "deprecated": false
             },
             {
@@ -3366,7 +3389,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 300,
+              "line": 402,
               "deprecated": false
             },
             {
@@ -3375,7 +3398,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 311,
+              "line": 413,
               "deprecated": false
             },
             {
@@ -3384,7 +3407,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 322,
+              "line": 424,
               "deprecated": false
             }
           ]
@@ -3552,7 +3575,7 @@
         {
           "name": "ConverterUI",
           "summary": "Standalone launcher.",
-          "line": 18,
+          "line": 19,
           "bases": [],
           "members": []
         }
@@ -3745,7 +3768,7 @@
         {
           "name": "PackerUI",
           "summary": "",
-          "line": 17,
+          "line": 18,
           "bases": [],
           "members": []
         }
@@ -3857,7 +3880,7 @@
         {
           "name": "UnityWorkflowUI",
           "summary": "",
-          "line": 17,
+          "line": 18,
           "bases": [],
           "members": []
         }
@@ -3873,7 +3896,7 @@
           "kind": "function",
           "signature": "(script_text: str) -> 'set[str]'",
           "summary": "Registered keys present in *script_text* (delegates to uitk.bridge).",
-          "line": 91,
+          "line": 86,
           "deprecated": false
         },
         {
@@ -3882,7 +3905,7 @@
           "kind": "function",
           "signature": "() -> 'dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 96,
+          "line": 91,
           "deprecated": false
         },
         {
@@ -3891,7 +3914,7 @@
           "kind": "function",
           "signature": "(values: 'dict[str, Any]') -> 'dict[str, str]'",
           "summary": "Format *values* for substitution (kept for API parity;",
-          "line": 101,
+          "line": 96,
           "deprecated": false
         }
       ],

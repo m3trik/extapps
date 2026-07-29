@@ -15,7 +15,15 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-dependencies = ["pythontk", "uitk", "qtpy", "unitytk"]
+dependencies = ["pythontk", "uitk", "qtpy"]
+
+# unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
+# take exports into Unity and want to extend what ships here. The panel is
+# runtime-discovered like every other extapps app, so a missing unitytk costs
+# that one panel and nothing else.
+# Install with the extra when you want it:  pip install extapps[unity]
+[project.optional-dependencies]
+unity = ["unitytk>=0.0.2"]
 
 [project.urls]
 Homepage = "https://github.com/m3trik/extapps"

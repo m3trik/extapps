@@ -30,7 +30,14 @@ from qtpy import QtCore, QtWidgets
 
 from uitk.bridge import BridgeSlotsBase
 
-from unitytk import FileToUnityBridge
+try:
+    from unitytk import FileToUnityBridge
+except ImportError as error:  # optional dependency -- Unity users only
+    raise ImportError(
+        "The Unity Workflow panel needs the optional 'unitytk' package, which "
+        "is not installed. Install it with:  pip install extapps[unity]\n"
+        "(Every other extapps panel works without it.)"
+    ) from error
 
 from extapps.unity_workflow import parameters as _params
 

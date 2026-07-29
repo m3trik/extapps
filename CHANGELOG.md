@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **2026-07-29 — The Unity Workflow panel offers to install the optional `unitytk` rather than failing to import.** `slots.py` imported `unitytk` at module scope, so a missing optional package (`pip install extapps[unity]`) raised while the module was being discovered rather than when the panel was used. `make_bridge` now calls `ensure_optional_package("unitytk", feature="Unity Workflow")` (see uitk's changelog) and imports `FileToUnityBridge` only after it resolves. 501 tests pass.
+
 - **2026-07-28 — Mesh Convert's FBX→GLB tooltip lost its filename placeholder.** The text promised each file is "written next to the source as `<i><name>.glb</i>`" — but Qt parses the tooltip as rich text and `<name>` isn't a tag, so it was swallowed and the line rendered "written next to the source as `.glb`", hiding exactly the naming rule it was there to explain. Now `&amp;lt;name&amp;gt;` in the `.ui`, which reaches Qt as a literal `<name>`. Found by the new workspace-wide `m3trik/scripts/check_tooltips.py` gate (see m3trik's CHANGELOG); the texture-maps converter tooltips were cleared by the same pass.
 
 - **2026-07-25 — metashape_workflow: restored the `GateError` re-export.** `GateError` is declared in `DEFAULT_INCLUDE`/`__all__` (a back-compat re-export of `pythontk.GateError`), but its import was accidentally dropped from `_metashape_workflow.py`, so `from …metashape_workflow import GateError` failed. Re-added the import.

@@ -856,10 +856,10 @@ User-tunable parameters for the standalone Unity Workflow panel.
 
 Slots for the standalone Unity Workflow panel.
 
-- **[`class UnityWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/unity_workflow/slots.py#L47)** — Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
+- **[`class UnityWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/unity_workflow/slots.py#L46)** — Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
   - `UnityWorkflowSlots.params_module(self)` *(property)*
   - `UnityWorkflowSlots.template_dir(self) -> Path` *(property)*
-  - `UnityWorkflowSlots.make_bridge(self) -> FileToUnityBridge`
+  - `UnityWorkflowSlots.make_bridge(self)` — Build the unitytk engine, offering to install it if absent.
   - `UnityWorkflowSlots.list_template_modes(self) -> List[Tuple[str, str]]`
   - `UnityWorkflowSlots.resolved_model_path(self) -> str`
   - `UnityWorkflowSlots.set_model_path(self, path: str) -> None` — Pre-fill the Model File field (public hand-off point for hosts).

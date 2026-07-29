@@ -3928,7 +3928,7 @@
         {
           "name": "UnityWorkflowSlots",
           "summary": "Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.",
-          "line": 47,
+          "line": 46,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -3939,7 +3939,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 118,
+              "line": 117,
               "deprecated": false
             },
             {
@@ -3948,16 +3948,16 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 122,
+              "line": 121,
               "deprecated": false
             },
             {
               "name": "make_bridge",
               "qualname": "UnityWorkflowSlots.make_bridge",
               "kind": "method",
-              "signature": "(self) -> FileToUnityBridge",
-              "summary": "",
-              "line": 127,
+              "signature": "(self)",
+              "summary": "Build the unitytk engine, offering to install it if absent.",
+              "line": 126,
               "deprecated": false
             },
             {
@@ -3966,7 +3966,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 130,
+              "line": 140,
               "deprecated": false
             },
             {
@@ -3975,7 +3975,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 245,
+              "line": 255,
               "deprecated": false
             },
             {
@@ -3984,7 +3984,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (public hand-off point for hosts).",
-              "line": 250,
+              "line": 260,
               "deprecated": false
             },
             {
@@ -3993,7 +3993,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Copy the picked model into the Unity project (+ optional Editor launch).",
-              "line": 339,
+              "line": 349,
               "deprecated": false
             }
           ]

@@ -30,14 +30,6 @@ from qtpy import QtCore, QtWidgets
 
 from uitk.bridge import BridgeSlotsBase
 
-try:
-    from unitytk import FileToUnityBridge
-except ImportError as error:  # optional dependency -- Unity users only
-    raise ImportError(
-        "The Unity Workflow panel needs the optional 'unitytk' package, which "
-        "is not installed. Install it with:  pip install extapps[unity]\n"
-        "(Every other extapps panel works without it.)"
-    ) from error
 
 from extapps.unity_workflow import parameters as _params
 
@@ -131,7 +123,18 @@ class UnityWorkflowSlots(BridgeSlotsBase):
         # a harmless stand-in for the (no-op) per-template description lookup.
         return _PKG_DIR
 
-    def make_bridge(self) -> FileToUnityBridge:
+    def make_bridge(self):
+        """Build the unitytk engine, offering to install it if absent.
+
+        ``unitytk`` is optional (``pip install extapps[unity]``) -- imported
+        here rather than at module scope so a missing one becomes a prompt
+        instead of an import error the panel can't report.
+        """
+        if not self.ensure_optional_package("unitytk", feature="Unity Workflow"):
+            return None
+
+        from unitytk import FileToUnityBridge
+
         return FileToUnityBridge()
 
     def list_template_modes(self) -> List[Tuple[str, str]]:

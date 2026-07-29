@@ -356,5 +356,84 @@ class TestCompositorOutputLink(unittest.TestCase):
         self.assertEqual(parse_qs(url.query)["path"][0], out)
 
 
+    def _estimated_map_count(self, inst, images, src, out):
+        """The pre-flight 'Sorting N images, into M maps' estimate."""
+        inst.engine.process_batch = Mock(return_value=Mock())
+        with mock.patch.object(inst.engine.logger, "info") as info:
+            inst.process(images, src, out, "mymap")
+        line = next(
+            c.args[0]
+            for c in info.call_args_list
+            if c.args and "Sorting" in str(c.args[0])
+        )
+        return int(re.search(r"into <b>(\d+)</b> maps", line).group(1))
+
+    def _normal_images(self, directory, *types):
+        from PIL import Image
+
+        images = {}
+        for typ in types:
+            path = os.path.join(directory, f"src_{typ}.png")
+            Image.new("RGB", (4, 4), (127, 127, 255)).save(path)
+            with Image.open(path) as im:
+                images[path] = im.copy()
+        return images
+
+    def test_estimate_adds_the_complement_only_when_one_format_is_present(self):
+        """+1 is owed when the engine will synthesize the missing counterpart.
+
+        ``contains_map_types`` is an *any* test, so the old ``has_normal_pair``
+        flag added the complement whenever any normal map was present —
+        including when the batch already carried both formats, where nothing
+        is generated.
+        """
+        inst = self._bare_slots()
+        src = tempfile.mkdtemp(prefix="compositor_src_")
+        self.addCleanup(shutil.rmtree, src, ignore_errors=True)
+        out = tempfile.mkdtemp(prefix="compositor_out_")
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+
+        one = self._normal_images(src, "Normal_OpenGL")
+        self.assertEqual(self._estimated_map_count(inst, one, src, out), 2)  # 1 + 1
+
+        both = self._normal_images(src, "Normal_OpenGL", "Normal_DirectX")
+        self.assertEqual(self._estimated_map_count(inst, both, src, out), 2)  # 2 + 0
+
+    def test_success_reports_actual_written_count(self):
+        """The completion message counts what the engine wrote.
+
+        ``total_maps`` is a pre-flight estimate that adds one for the
+        auto-generated normal complement — which the engine skips when the
+        batch already carries that format — so it over-reports. The engine's
+        ``written_paths`` is the post-run ground truth.
+        """
+        inst = self._bare_slots()
+        out = tempfile.mkdtemp(prefix="compositor_out_")
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+        src = tempfile.mkdtemp(prefix="compositor_src_")
+        self.addCleanup(shutil.rmtree, src, ignore_errors=True)
+
+        written = [
+            os.path.join(out, f"mymap_{t}.png") for t in ("Base_Color", "Metallic")
+        ]
+
+        def _fake_batch(*_args, **_kwargs):
+            inst.engine._written_paths = list(written)
+            return Mock()
+
+        inst.engine.process_batch = _fake_batch
+
+        with mock.patch.object(inst.engine.logger, "info") as info:
+            inst.process({}, src, out, "mymap")
+
+        wrote = [
+            c.args[0]
+            for c in info.call_args_list
+            if c.args and "map(s) to" in str(c.args[0])
+        ]
+        self.assertTrue(wrote, "no completion count logged on success")
+        self.assertIn(f"Wrote {len(written)} map(s)", wrote[-1])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

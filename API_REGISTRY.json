@@ -3896,7 +3896,7 @@
           "kind": "function",
           "signature": "(script_text: str) -> 'set[str]'",
           "summary": "Registered keys present in *script_text* (delegates to uitk.bridge).",
-          "line": 86,
+          "line": 109,
           "deprecated": false
         },
         {
@@ -3905,7 +3905,7 @@
           "kind": "function",
           "signature": "() -> 'dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 91,
+          "line": 114,
           "deprecated": false
         },
         {
@@ -3914,7 +3914,7 @@
           "kind": "function",
           "signature": "(values: 'dict[str, Any]') -> 'dict[str, str]'",
           "summary": "Format *values* for substitution (kept for API parity;",
-          "line": 96,
+          "line": 119,
           "deprecated": false
         }
       ],
@@ -3939,7 +3939,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 117,
+              "line": 126,
               "deprecated": false
             },
             {
@@ -3948,7 +3948,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 121,
+              "line": 130,
               "deprecated": false
             },
             {
@@ -3956,8 +3956,8 @@
               "qualname": "UnityWorkflowSlots.make_bridge",
               "kind": "method",
               "signature": "(self)",
-              "summary": "Build the unitytk engine, offering to install it if absent.",
-              "line": 126,
+              "summary": "Build the unitytk engine, or ``None`` when it is absent.",
+              "line": 135,
               "deprecated": false
             },
             {
@@ -3966,7 +3966,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 140,
+              "line": 151,
               "deprecated": false
             },
             {
@@ -3975,7 +3975,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 255,
+              "line": 271,
               "deprecated": false
             },
             {
@@ -3984,7 +3984,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (public hand-off point for hosts).",
-              "line": 260,
+              "line": 276,
               "deprecated": false
             },
             {
@@ -3992,8 +3992,8 @@
               "qualname": "UnityWorkflowSlots.b000",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Copy the picked model into the Unity project (+ optional Editor launch).",
-              "line": 349,
+              "summary": "Run the selected template: copy the model, or script management.",
+              "line": 440,
               "deprecated": false
             }
           ]

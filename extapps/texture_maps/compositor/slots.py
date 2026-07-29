@@ -681,13 +681,15 @@ class CompositorSlots:
             map_name = ptk.format_path(source_dir, "dir")
 
         sorted_images = ptk.MapFactory.sort_images_by_type(images)
-        has_normal_pair = ptk.MapFactory.contains_map_types(
+        # NB: contains_map_types is an *any* test — true when the batch carries
+        # either normal format, which is what the generic-Normal drop below
+        # keys off. (The complement estimate is computed further down, once
+        # the mode pre-filter has settled the final map set.)
+        has_any_normal = ptk.MapFactory.contains_map_types(
             sorted_images, ["Normal_DirectX", "Normal_OpenGL"]
         )
-        # +1 for the auto-generated complementary normal map.
-        total_maps_extra = 1 if has_normal_pair else 0
 
-        if self.engine.remove_normal_map and has_normal_pair:
+        if self.engine.remove_normal_map and has_any_normal:
             normal = next(
                 (
                     k
@@ -723,6 +725,19 @@ class CompositorSlots:
         # NB: pythontk's sort_images_by_type already aliases legacy variants
         # like Mixed_AO into Ambient_Occlusion, so no manual rename is needed.
         ptk.MapFactory.filter_redundant_maps(sorted_images)
+
+        # +1 for the auto-generated complementary normal map. BOTH emits the
+        # missing counterpart, which it can only do when the batch carries
+        # exactly one of the two formats — with both present neither is
+        # regenerated, and the *_ONLY modes convert in place (src is deleted),
+        # so the map count is unchanged in every other case.
+        total_maps_extra = (
+            1
+            if mode is NormalOutputMode.BOTH
+            and ("Normal_DirectX" in sorted_images)
+            != ("Normal_OpenGL" in sorted_images)
+            else 0
+        )
 
         total_layers = sum(len(v) for v in sorted_images.values())
         total_maps = len(sorted_images) + total_maps_extra
@@ -765,5 +780,10 @@ class CompositorSlots:
             # straight to the results; routed to the explorer by
             # _on_log_link_clicked.
             link = self.engine.logger.log_link(output_dir, "open", path=output_dir)
-            self.engine.logger.info(f"Wrote {total_maps} map(s) to {link}")
-            self.ui.footer.finish_progress(f"Wrote {total_maps} map(s) to {output_dir}")
+            # Report what the engine actually wrote, not the pre-flight
+            # estimate — total_maps counts an auto-generated normal complement
+            # the engine skips when the batch already carries that format, so
+            # it over-reports. written_paths is the post-run ground truth.
+            written = len(self.engine.written_paths)
+            self.engine.logger.info(f"Wrote {written} map(s) to {link}")
+            self.ui.footer.finish_progress(f"Wrote {written} map(s) to {output_dir}")

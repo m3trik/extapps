@@ -847,9 +847,9 @@ Application shell for the Unity Workflow launcher UI.
 
 User-tunable parameters for the standalone Unity Workflow panel.
 
-- [`referenced_keys(script_text: str) -> 'set[str]'`](extapps/extapps/unity_workflow/parameters.py#L86) — Registered keys present in *script_text* (delegates to uitk.bridge).
-- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/unity_workflow/parameters.py#L91) — Return ``{key: default}`` for every registered parameter.
-- [`render_context(values: 'dict[str, Any]') -> 'dict[str, str]'`](extapps/extapps/unity_workflow/parameters.py#L96) — Format *values* for substitution (kept for API parity;
+- [`referenced_keys(script_text: str) -> 'set[str]'`](extapps/extapps/unity_workflow/parameters.py#L109) — Registered keys present in *script_text* (delegates to uitk.bridge).
+- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/unity_workflow/parameters.py#L114) — Return ``{key: default}`` for every registered parameter.
+- [`render_context(values: 'dict[str, Any]') -> 'dict[str, str]'`](extapps/extapps/unity_workflow/parameters.py#L119) — Format *values* for substitution (kept for API parity;
 
 <a id="unity_workflow--slots"></a>
 ### `unity_workflow/slots.py`
@@ -859,8 +859,8 @@ Slots for the standalone Unity Workflow panel.
 - **[`class UnityWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/unity_workflow/slots.py#L46)** — Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
   - `UnityWorkflowSlots.params_module(self)` *(property)*
   - `UnityWorkflowSlots.template_dir(self) -> Path` *(property)*
-  - `UnityWorkflowSlots.make_bridge(self)` — Build the unitytk engine, offering to install it if absent.
+  - `UnityWorkflowSlots.make_bridge(self)` — Build the unitytk engine, or ``None`` when it is absent.
   - `UnityWorkflowSlots.list_template_modes(self) -> List[Tuple[str, str]]`
   - `UnityWorkflowSlots.resolved_model_path(self) -> str`
   - `UnityWorkflowSlots.set_model_path(self, path: str) -> None` — Pre-fill the Model File field (public hand-off point for hosts).
-  - `UnityWorkflowSlots.b000(self) -> None` — Copy the picked model into the Unity project (+ optional Editor launch).
+  - `UnityWorkflowSlots.b000(self) -> None` — Run the selected template: copy the model, or script management.

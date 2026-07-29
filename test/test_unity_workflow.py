@@ -34,7 +34,15 @@ class TestUnityWorkflowParameters(unittest.TestCase):
         P = self._P()
         self.assertEqual(
             set(P.defaults()),
-            {"ASSETS_SUBDIR", "ASSET_NAME", "LAUNCH_MODE", "UNITY_VERSION"},
+            {
+                "ASSETS_SUBDIR",
+                "ASSET_NAME",
+                "LAUNCH_MODE",
+                "UNITY_VERSION",
+                # Manage Unity Scripts mode's action combo — Unity-side too
+                # (it manages the embedded unitytk package in the project).
+                "SCRIPTS_ACTION",
+            },
         )
         # No DCC export knobs (this panel takes an already-exported file).
         for export_key in ("SCOPE", "TRIANGULATE", "EMBED_TEXTURES", "INCLUDE_MATERIALS"):
@@ -42,8 +50,8 @@ class TestUnityWorkflowParameters(unittest.TestCase):
 
     def test_referenced_keys_is_token_based(self) -> None:
         # referenced_keys is the generic __KEY__ token scan; with no tokens in
-        # the text it finds nothing (the panel bypasses gating via
-        # _relevant_param_keys()->None instead — see the panel-load test).
+        # the text it finds nothing (the panel drives visibility explicitly
+        # from _relevant_param_keys() instead — see the panel-load test).
         P = self._P()
         self.assertEqual(P.referenced_keys("plain text"), set())
         self.assertEqual(P.referenced_keys("uses __ASSET_NAME__"), {"ASSET_NAME"})
@@ -76,9 +84,24 @@ class TestUnityWorkflowPanelLoads(unittest.TestCase):
     def test_delivery_combo_shows_friendly_label(self) -> None:
         self.assertGreaterEqual(self.ui.cmb000.findText("Copy to Project"), 0)
 
-    def test_all_params_visible_no_gating(self) -> None:
-        # Copy-to-assets is template-free: the panel shows every param.
-        self.assertIsNone(self.slots._relevant_param_keys())
+    def test_copy_mode_shows_every_delivery_param(self) -> None:
+        # Copy-to-assets shows every delivery param and hides the action combo
+        # that only Manage Unity Scripts uses.
+        from extapps.unity_workflow import parameters as P
+
+        self.assertEqual(
+            self.slots._relevant_param_keys(),
+            set(P.PARAMS) - {"SCRIPTS_ACTION"},
+        )
+
+    def test_manage_mode_shows_only_the_action_combo(self) -> None:
+        # The other half of the same gate: delivery params hide in manage mode.
+        with mock.patch.object(
+            self.slots,
+            "_selected_template_mode",
+            return_value=(self.slots.MODE_MANAGE, None),
+        ):
+            self.assertEqual(self.slots._relevant_param_keys(), {"SCRIPTS_ACTION"})
 
     def test_set_model_path_prefills_field(self) -> None:
         self.slots.set_model_path("C:/scan/robot.fbx")

@@ -308,7 +308,11 @@ class UnityWorkflowSlots(BridgeSlotsBase):
         ``Packages/com.m3trik.unitytk`` UPM package -- visible in Unity's
         Package Manager, configurable under Project Settings > unitytk.
         """
-        if not self.ensure_optional_package("unitytk", feature="Unity Workflow"):
+        # reask: an explicit install button must re-prompt even after a
+        # declined implicit ask memoized the miss.
+        if not self.ensure_optional_package(
+            "unitytk", feature="Unity Workflow", reask=True
+        ):
             return
         from unitytk import TemplateDeployer
 

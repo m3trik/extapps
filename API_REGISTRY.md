@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-07-26_
+_Generated: 2026-07-29_
 
 ## Index
 
@@ -733,7 +733,7 @@ Shelf / resource operations — query and import shelf assets.
 
 Switchboard slots for the Substance Workflow UI.
 
-- **[`class SubstanceWorkflowSlots(ptk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L193)** — Switchboard slots for the Substance Workflow UI.
+- **[`class SubstanceWorkflowSlots(ptk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L191)** — Switchboard slots for the Substance Workflow UI.
   - `SubstanceWorkflowSlots.header_init(self, widget) -> None`
   - `SubstanceWorkflowSlots.txt000_init(self, widget) -> None` — Mesh File
   - `SubstanceWorkflowSlots.txt001_init(self, widget) -> None` — Template (optional)

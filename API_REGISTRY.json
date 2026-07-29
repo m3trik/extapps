@@ -1,7 +1,7 @@
 {
   "name": "extapps",
   "source_root": "extapps/extapps",
-  "generated_at": "2026-07-26",
+  "generated_at": "2026-07-29",
   "modules": [
     {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
@@ -3279,7 +3279,7 @@
         {
           "name": "SubstanceWorkflowSlots",
           "summary": "Switchboard slots for the Substance Workflow UI.",
-          "line": 193,
+          "line": 191,
           "bases": [
             "ptk.LoggingMixin"
           ],
@@ -3290,7 +3290,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "",
-              "line": 228,
+              "line": 226,
               "deprecated": false
             },
             {
@@ -3299,7 +3299,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Mesh File",
-              "line": 263,
+              "line": 261,
               "deprecated": false
             },
             {
@@ -3308,7 +3308,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Template (optional)",
-              "line": 277,
+              "line": 275,
               "deprecated": false
             },
             {
@@ -3317,7 +3317,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Project Save Path",
-              "line": 292,
+              "line": 290,
               "deprecated": false
             },
             {
@@ -3326,7 +3326,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Painter install picker",
-              "line": 306,
+              "line": 304,
               "deprecated": false
             },
             {
@@ -3335,7 +3335,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Stages popup — QMenu of checkboxes attached to the button.",
-              "line": 313,
+              "line": 311,
               "deprecated": false
             },
             {
@@ -3344,7 +3344,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Advanced-params popup — labeled form inside a QMenu via QWidgetAction.",
-              "line": 330,
+              "line": 328,
               "deprecated": false
             },
             {
@@ -3353,7 +3353,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Log level changed",
-              "line": 372,
+              "line": 370,
               "deprecated": false
             },
             {
@@ -3362,7 +3362,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Toggle the Painter session.",
-              "line": 376,
+              "line": 374,
               "deprecated": false
             },
             {
@@ -3371,7 +3371,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run Workflow",
-              "line": 386,
+              "line": 384,
               "deprecated": false
             },
             {
@@ -3380,7 +3380,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the mesh field (e.g.",
-              "line": 395,
+              "line": 393,
               "deprecated": false
             },
             {
@@ -3389,7 +3389,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 402,
+              "line": 400,
               "deprecated": false
             },
             {
@@ -3398,7 +3398,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 413,
+              "line": 411,
               "deprecated": false
             },
             {
@@ -3407,7 +3407,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 424,
+              "line": 422,
               "deprecated": false
             }
           ]

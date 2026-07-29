@@ -149,7 +149,7 @@
               <property name="toolTip">
                <string>&lt;b&gt;Convert FBX to GLB&lt;/b&gt;&lt;br&gt;
 Convert one or more FBX files to binary glTF 2.0 (GLB) using the godotengine/FBX2glTF CLI.&lt;br&gt;&lt;br&gt;
-&lt;b&gt;Usage:&lt;/b&gt; Click to choose FBX files. Each is written next to the source as &lt;i&gt;&lt;name&gt;.glb&lt;/i&gt;.&lt;br&gt;&lt;br&gt;
+&lt;b&gt;Usage:&lt;/b&gt; Click to choose FBX files. Each is written next to the source as &lt;i&gt;&amp;lt;name&amp;gt;.glb&lt;/i&gt;.&lt;br&gt;&lt;br&gt;
 - &lt;b&gt;First-run:&lt;/b&gt; the FBX2glTF binary (a few MB) is downloaded into &lt;i&gt;~/.pythontk/tools/&lt;/i&gt;.&lt;br&gt;
 - Use the option box for &lt;b&gt;Draco&lt;/b&gt; compression and &lt;b&gt;Overwrite&lt;/b&gt; behavior.</string>
               </property>

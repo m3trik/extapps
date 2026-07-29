@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **2026-07-28 — Mesh Convert's FBX→GLB tooltip lost its filename placeholder.** The text promised each file is "written next to the source as `<i><name>.glb</i>`" — but Qt parses the tooltip as rich text and `<name>` isn't a tag, so it was swallowed and the line rendered "written next to the source as `.glb`", hiding exactly the naming rule it was there to explain. Now `&amp;lt;name&amp;gt;` in the `.ui`, which reaches Qt as a literal `<name>`. Found by the new workspace-wide `m3trik/scripts/check_tooltips.py` gate (see m3trik's CHANGELOG); the texture-maps converter tooltips were cleared by the same pass.
+
 - **2026-07-25 — metashape_workflow: restored the `GateError` re-export.** `GateError` is declared in `DEFAULT_INCLUDE`/`__all__` (a back-compat re-export of `pythontk.GateError`), but its import was accidentally dropped from `_metashape_workflow.py`, so `from …metashape_workflow import GateError` failed. Re-added the import.
 - **2026-07-19 — Root `__all__` now auto-derives from `DEFAULT_INCLUDE` instead of a parallel hand-maintained list.** `pythontk.bootstrap_package` gained automatic `__all__` derivation (unioning any pre-declared names with the resolver's registered surface), so the 30-name block that mirrored `DEFAULT_INCLUDE` by hand — a standing drift risk (its own history: `unity_workflow`/`realityscan`/`gaussian_splat` once missing) — is deleted. Only the non-derivable `__version__` is still declared (before the bootstrap call, so the union preserves it). The advertised surface is byte-identical (verified equal to the old list, `__version__` included); `test_imports.py` (panel UI/Slots ∈ `__all__`, `__version__` present) unchanged and green (22/22). No public API change.
 

@@ -15,8 +15,6 @@ from typing import Any, Dict, Optional
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
 from uitk import AttributeSpec, KindFactory
-from uitk.widgets.mixins.tooltip_mixin import TooltipFormat
-
 from .env_utils.painter_connection import PainterConnection
 from .env_utils.painter_finder import PainterFinder
 
@@ -236,7 +234,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
             setToolTip="Set the log level.",
         )
         widget.set_help_text(
-            TooltipFormat.fmt(
+            self.sb.tooltip.fmt(
                 title="Substance Workflow",
                 body="Drive Adobe Substance 3D Painter from a single panel. "
                 "Each launch starts a NEW Painter instance over a JSON-RPC "

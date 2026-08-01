@@ -3589,7 +3589,7 @@
         {
           "name": "ConverterSlots",
           "summary": "Switchboard slots for ``converter.ui``.",
-          "line": 31,
+          "line": 29,
           "bases": [
             "ImgUtils"
           ],
@@ -3600,25 +3600,52 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "Get the starting directory for file dialogs.",
-              "line": 50,
+              "line": 64,
+              "deprecated": false
+            },
+            {
+              "name": "scopes",
+              "qualname": "ConverterSlots.scopes",
+              "kind": "property",
+              "signature": "(self) -> Tuple[str, ...]",
+              "summary": "Scope labels currently offered, in combobox order.",
+              "line": 78,
+              "deprecated": false
+            },
+            {
+              "name": "register_scope",
+              "qualname": "ConverterSlots.register_scope",
+              "kind": "method",
+              "signature": "(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None",
+              "summary": "Offer *label* in the Scope combobox, resolved by calling *provider*.",
+              "line": 88,
+              "deprecated": false
+            },
+            {
+              "name": "unregister_scope",
+              "qualname": "ConverterSlots.unregister_scope",
+              "kind": "method",
+              "signature": "(self, label: str) -> None",
+              "summary": "Drop a previously registered scope (no-op if it isn't registered).",
+              "line": 123,
               "deprecated": false
             },
             {
               "name": "texture_provider",
               "qualname": "ConverterSlots.texture_provider",
               "kind": "property",
-              "signature": "(self)",
-              "summary": "Callable returning a list of texture paths from the host DCC selection.",
-              "line": 60,
+              "signature": "(self) -> Optional[Callable[[], Iterable[str]]]",
+              "summary": "Provider for the plain \"Selected\" scope.",
+              "line": 129,
               "deprecated": false
             },
             {
-              "name": "footer_init",
-              "qualname": "ConverterSlots.footer_init",
+              "name": "header_init",
+              "qualname": "ConverterSlots.header_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Add the global Use-Selection toggle to the footer.",
-              "line": 74,
+              "summary": "Add the global Scope combobox to the header menu.",
+              "line": 146,
               "deprecated": false
             },
             {
@@ -3627,7 +3654,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Optimize toolbutton's option menu (format, clamp, modifier).",
-              "line": 153,
+              "line": 252,
               "deprecated": false
             },
             {
@@ -3636,7 +3663,16 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Optimize a texture map(s)",
-              "line": 222,
+              "line": 346,
+              "deprecated": false
+            },
+            {
+              "name": "resolve_affix",
+              "qualname": "ConverterSlots.resolve_affix",
+              "kind": "staticmethod",
+              "signature": "(mode: str, modifier: str) -> Tuple[str, str]",
+              "summary": "Resolve the Affix mode against the modifier text.",
+              "line": 414,
               "deprecated": false
             },
             {
@@ -3645,7 +3681,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 349,
+              "line": 629,
               "deprecated": false
             },
             {
@@ -3654,7 +3690,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 359,
+              "line": 639,
               "deprecated": false
             },
             {
@@ -3663,7 +3699,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 415,
+              "line": 695,
               "deprecated": false
             },
             {
@@ -3672,7 +3708,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 441,
+              "line": 721,
               "deprecated": false
             },
             {
@@ -3681,7 +3717,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
-              "line": 497,
+              "line": 777,
               "deprecated": false
             },
             {
@@ -3690,7 +3726,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
-              "line": 526,
+              "line": 806,
               "deprecated": false
             },
             {
@@ -3699,7 +3735,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert DirectX to OpenGL",
-              "line": 601,
+              "line": 881,
               "deprecated": false
             },
             {
@@ -3708,7 +3744,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert OpenGL to DirectX",
-              "line": 618,
+              "line": 898,
               "deprecated": false
             },
             {
@@ -3717,7 +3753,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 635,
+              "line": 915,
               "deprecated": false
             },
             {
@@ -3726,7 +3762,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 678,
+              "line": 958,
               "deprecated": false
             },
             {
@@ -3735,7 +3771,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 705,
+              "line": 985,
               "deprecated": false
             },
             {
@@ -3744,7 +3780,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 731,
+              "line": 1011,
               "deprecated": false
             },
             {
@@ -3753,7 +3789,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
-              "line": 757,
+              "line": 1037,
               "deprecated": false
             }
           ]

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-"""Regression guard: photogrammetry engines/drivers must not emit non-ASCII
+"""Regression guard: batch-reporting engines/drivers must not emit non-ASCII
 in ``print()`` calls.
 
 Windows consoles default to cp1252; a stray ``→`` / ``—`` inside a printed
@@ -8,6 +8,10 @@ string raises UnicodeEncodeError mid-pipeline and aborts an otherwise good
 run (observed crashing ``equalize_exposures`` on a real combined run).
 Docstrings and comments are exempt — only string *literals passed to
 ``print``* are checked, since those are the bytes that hit stdout.
+
+Covers the photogrammetry workflows and the texture_maps panels: both report
+progress line-by-line over a long batch, so a single bad glyph aborts work
+that already succeeded.
 """
 import ast
 import os
@@ -15,6 +19,7 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.normpath(os.path.join(HERE, "..", "extapps", "photogrammetry"))
+MAPS = os.path.normpath(os.path.join(HERE, "..", "extapps", "texture_maps"))
 
 TARGETS = [
     os.path.join(PKG, "prep_stages.py"),
@@ -24,6 +29,9 @@ TARGETS = [
     os.path.join(PKG, "realityscan_workflow", "_realityscan_workflow.py"),
     os.path.join(PKG, "realityscan_workflow", "_realityscan_connection.py"),
     os.path.join(PKG, "realityscan_workflow", "run_combined.py"),
+    os.path.join(MAPS, "converter", "slots.py"),
+    os.path.join(MAPS, "compositor", "slots.py"),
+    os.path.join(MAPS, "packer", "slots.py"),
 ]
 
 

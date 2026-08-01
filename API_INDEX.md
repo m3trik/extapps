@@ -298,7 +298,7 @@ _Generated: 2026-08-01_
 
 ### `texture_maps/converter/slots.py` — Map Converter UI — slot file for ``converter.ui``.
 - `class ConverterSlots(ImgUtils)`
-  - methods: source_dir, texture_provider, footer_init, tb000_init, tb000, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
+  - methods: source_dir, scopes, register_scope, unregister_scope, texture_provider, header_init, tb000_init, tb000, resolve_affix, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
 
 ### `texture_maps/packer/launcher.py` — Application shell for the Map Packer UI.
 - `class PackerUI`

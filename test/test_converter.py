@@ -17,7 +17,7 @@ from unittest.mock import Mock, MagicMock, patch
 from pathlib import Path
 from PIL import Image
 
-from pythontk import ImgUtils
+from pythontk import ImgUtils, FileUtils
 from pythontk.core_utils.engines.textures.map_factory import MapFactory as TextureMapFactory
 from pythontk.core_utils.engines.textures.map_registry import MapRegistry, WF
 
@@ -395,37 +395,6 @@ class TestMapConverterTextureFactory(unittest.TestCase):
             sorted(offered), sorted(MapRegistry().get_workflow_presets())
         )
 
-    @skip_if_no_qt
-    def test_footer_button_no_slot_name_collision(self):
-        """Regression: the 'Use Selection' footer toggle must not be stored under an
-        attribute equal to its objectName.
-
-        Switchboard resolves a widget's slot via ``getattr(slots, objectName)``; an
-        attribute named 'btn_use_selection' returns the (non-callable) button itself
-        and makes wiring its 'clicked' signal fail with 'is not a callable object'.
-        """
-        from qtpy import QtWidgets
-
-        # A QApplication is required to instantiate the real footer button.
-        QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-        footer = Mock()
-
-        self.converter.footer_init(footer)
-
-        footer.add_widget.assert_called_once()
-        btn = footer.add_widget.call_args.args[0]
-        self.assertEqual(btn.objectName(), "btn_use_selection")
-
-        # The slot instance must not shadow the objectName with the widget.
-        resolved = getattr(self.converter, btn.objectName(), None)
-        self.assertNotIsInstance(resolved, QtWidgets.QWidget)
-
-        # The toggle is still readable on demand.
-        btn.setChecked(True)
-        self.assertTrue(self.converter._selection_enabled())
-        btn.setChecked(False)
-        self.assertFalse(self.converter._selection_enabled())
-
     # -------------------------------------------------------------------------
     # Integration Tests
     # -------------------------------------------------------------------------
@@ -797,6 +766,405 @@ class TestMapConverterIntegration(unittest.TestCase):
             # Exact values depend on filter implementation, but should be close to blue
             r, g, b = img.getpixel((32, 32))
             self.assertTrue(b > r and b > g)
+
+class _FakeScopeCombo:
+    """Minimal uitk ComboBox stand-in for the header Scope picker."""
+
+    def __init__(self):
+        self._items = []  # (label, data)
+        self._index = -1
+        self.restore_state = True
+
+    def add(self, entries, prefix=None, **kwargs):
+        self._items = [(f"{prefix}\t{label}" if prefix else label, data) for label, data in entries]
+        self._index = 0 if self._items else -1
+
+    def setCurrentIndex(self, index):
+        self._index = index
+
+    def currentIndex(self):
+        return self._index
+
+    def currentData(self):
+        if 0 <= self._index < len(self._items):
+            return self._items[self._index][1]
+        return None
+
+    @property
+    def labels(self):
+        return [data for _, data in self._items]
+
+
+class TestConverterScopes(unittest.TestCase):
+    """The global Scope picker — the panel's only route to host selection."""
+
+    def setUp(self):
+        self.mock_sb = MagicMock()
+        self.mock_sb.file_dialog = Mock(return_value=[])
+        self.converter = ConverterSlots(self.mock_sb)
+
+        self.combo = _FakeScopeCombo()
+        self.header = MagicMock()
+        self.header.menu.cmb_scope = self.combo
+        self.converter.ui = MagicMock()
+        self.converter.ui.header = self.header
+
+    def _select(self, label):
+        self.combo.setCurrentIndex(self.converter.scopes.index(label))
+
+    def test_browse_is_the_only_scope_standalone(self):
+        """With no host providers the picker offers just the file dialog."""
+        self.assertEqual(self.converter.scopes, (ConverterSlots.BROWSE_SCOPE,))
+
+    def test_register_scope_appends_and_repopulates_combo(self):
+        self.converter.header_init(self.header)
+        self.converter.register_scope("Selected Objects", lambda: [])
+        self.converter.register_scope("Selected Materials", lambda: [])
+
+        self.assertEqual(
+            self.converter.scopes,
+            (ConverterSlots.BROWSE_SCOPE, "Selected Objects", "Selected Materials"),
+        )
+        self.assertEqual(self.combo.labels, list(self.converter.scopes))
+
+    def test_register_scope_keeps_the_active_scope(self):
+        """Registering a second scope must not silently retarget the first."""
+        self.converter.header_init(self.header)
+        self.converter.register_scope("Selected Objects", lambda: [])
+        self._select("Selected Objects")
+
+        self.converter.register_scope("Selected File Nodes", lambda: [])
+
+        self.assertEqual(self.converter._current_scope(), "Selected Objects")
+
+    def test_scope_combo_state_is_not_persisted(self):
+        """Combo state restores by index; a saved index means a different scope
+        under a different host, so persistence stays off."""
+        self.converter.header_init(self.header)
+        self.converter.register_scope("Selected Objects", lambda: [])
+
+        self.assertFalse(self.combo.restore_state)
+
+    def test_browse_scope_uses_the_file_dialog(self):
+        self.converter.register_scope("Selected Objects", lambda: ["/nope.png"])
+        self.converter.header_init(self.header)  # defaults to Browse
+
+        self.converter._get_texture_paths(title="t")
+
+        self.mock_sb.file_dialog.assert_called_once()
+
+    def test_host_scope_calls_its_provider_not_the_dialog(self):
+        provider = Mock(return_value=[])
+        self.converter.header_init(self.header)
+        self.converter.register_scope("Selected Objects", provider, select=True)
+
+        self.converter._get_texture_paths(title="t")
+
+        provider.assert_called_once()
+        self.mock_sb.file_dialog.assert_not_called()
+
+    def test_provider_is_called_per_invocation(self):
+        """Selection is read at tool time, not cached at registration."""
+        provider = Mock(return_value=[])
+        self.converter.header_init(self.header)
+        self.converter.register_scope("Selected Objects", provider, select=True)
+
+        self.converter._get_texture_paths(title="t")
+        self.converter._get_texture_paths(title="t")
+
+        self.assertEqual(provider.call_count, 2)
+
+    def test_map_type_filter_applies_to_scope_results(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            normal = os.path.join(temp_dir, "mat_Normal_OpenGL.png")
+            rough = os.path.join(temp_dir, "mat_Roughness.png")
+            for path, mode in ((normal, "RGB"), (rough, "L")):
+                ImgUtils.save_image(ImgUtils.create_image(mode, (8, 8), 128), path)
+
+            self.converter.header_init(self.header)
+            self.converter.register_scope(
+                "Selected Objects", lambda: [normal, rough], select=True
+            )
+
+            kept = self.converter._get_texture_paths(
+                title="t", map_type_filter=["Normal", "Normal_OpenGL"]
+            )
+
+            self.assertEqual(kept, [normal])
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_texture_provider_registers_a_selected_scope(self):
+        """Back-compat: hosts that set the single-provider property still work."""
+        provider = Mock(return_value=[])
+        self.converter.header_init(self.header)
+        self.converter.texture_provider = provider
+
+        self.assertIn("Selected", self.converter.scopes)
+        self.assertIs(self.converter.texture_provider, provider)
+
+        self._select("Selected")
+        self.converter._get_texture_paths(title="t")
+        provider.assert_called_once()
+
+    def test_texture_provider_none_removes_the_scope(self):
+        self.converter.header_init(self.header)
+        self.converter.texture_provider = Mock(return_value=[])
+        self.converter.texture_provider = None
+
+        self.assertNotIn("Selected", self.converter.scopes)
+        self.assertIsNone(self.converter.texture_provider)
+
+    def test_register_scope_rejects_non_callable(self):
+        with self.assertRaises(TypeError):
+            self.converter.register_scope("Bad", ["not", "callable"])
+
+    def test_register_scope_rejects_the_reserved_browse_label(self):
+        """Shadowing it would route the built-in entry to the host, so 'Browse'
+        would silently stop opening the file dialog."""
+        with self.assertRaises(ValueError):
+            self.converter.register_scope(
+                ConverterSlots.BROWSE_SCOPE, lambda: ["/nope.png"]
+            )
+        self.assertEqual(self.converter.scopes, (ConverterSlots.BROWSE_SCOPE,))
+
+    def test_select_survives_registration_before_the_combo_exists(self):
+        """Hosts register right after launch(show=False); the header menu may
+        not be built until first show, so the request has to survive the gap."""
+        provider = Mock(return_value=[])
+        self.converter.register_scope("Selected Objects", provider, select=True)
+
+        self.converter.header_init(self.header)  # combo appears only now
+
+        self.assertEqual(self.converter._current_scope(), "Selected Objects")
+        self.converter._get_texture_paths(title="t")
+        provider.assert_called_once()
+        self.mock_sb.file_dialog.assert_not_called()
+
+    def test_current_scope_falls_back_to_browse_without_a_header(self):
+        self.converter.ui = MagicMock()  # no real combo behind it
+        self.assertEqual(self.converter._current_scope(), ConverterSlots.BROWSE_SCOPE)
+
+
+class TestConverterOptimize(unittest.TestCase):
+    """Optimize (tb000) — affix resolution, dry run, and size reporting."""
+
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp(prefix="converter_optimize_")
+        self.mock_sb = MagicMock()
+        self.converter = ConverterSlots(self.mock_sb)
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def _texture(self, name="rock_BaseColor.png", size=(128, 128)):
+        path = os.path.join(self.test_dir, name)
+        ImgUtils.save_image(ImgUtils.create_image("RGB", size, (200, 120, 60)), path)
+        return path
+
+    def _widget(self, *, modifier="", affix="auto", clamp=0, dry_run=False, old="old"):
+        widget = MagicMock()
+        menu = widget.option_box.menu
+        menu.cmb001.currentData.return_value = ""
+        menu.cmb000.currentData.return_value = clamp
+        menu.cmb_secondary_scale.currentData.return_value = 1.0
+        menu.cmb_affix.currentData.return_value = affix
+        menu.txt_modifier.text.return_value = modifier
+        menu.txt_old_folder.text.return_value = old
+        menu.chk_dry_run.isChecked.return_value = dry_run
+        return widget
+
+    # ---- affix ----------------------------------------------------------
+
+    def test_resolve_affix_auto_reads_the_underscore(self):
+        cases = [
+            ("auto", "LD_", ("prefix", "LD")),      # trailing _ -> prefix
+            ("auto", "_LD", ("suffix", "LD")),      # leading _ -> suffix
+            ("auto", "LD", ("suffix", "LD")),       # unmarked -> legacy default
+            ("auto", "_LD_", ("suffix", "LD")),     # ambiguous -> legacy default
+            ("auto", "  LD_  ", ("prefix", "LD")),  # whitespace tolerated
+            ("auto", "", ("suffix", "")),
+            ("auto", None, ("suffix", "")),
+        ]
+        for mode, text, expected in cases:
+            with self.subTest(modifier=text):
+                self.assertEqual(ConverterSlots.resolve_affix(mode, text), expected)
+
+    def test_resolve_affix_explicit_modes_override_the_underscore(self):
+        self.assertEqual(ConverterSlots.resolve_affix("prefix", "_LD"), ("prefix", "LD"))
+        self.assertEqual(ConverterSlots.resolve_affix("suffix", "LD_"), ("suffix", "LD"))
+
+    def test_auto_prefix_names_the_output_file(self):
+        path = self._texture()
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(self._widget(modifier="LD_"))
+
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.test_dir, "LD_rock_BaseColor.png"))
+        )
+
+    def test_auto_suffix_names_the_output_file(self):
+        path = self._texture()
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(self._widget(modifier="_LD"))
+
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.test_dir, "rock_LD_BaseColor.png"))
+        )
+
+    # ---- dry run --------------------------------------------------------
+
+    def test_dry_run_writes_nothing(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+        before = sorted(os.listdir(self.test_dir))
+
+        self.converter.tb000(
+            self._widget(modifier="LD_", clamp=128, dry_run=True)
+        )
+
+        self.assertEqual(sorted(os.listdir(self.test_dir)), before)
+
+    def test_dry_run_predicts_the_real_result(self):
+        """The projected byte count must match what the real run then produces —
+        an estimate that drifts is worse than no number at all."""
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        predicted = self.converter._optimize_one(
+            path,
+            file_type=None,
+            max_size=128,
+            secondary_scale=1.0,
+            mode="suffix",
+            modifier="",
+            old_folder="",
+            registry=MapRegistry(),
+            dry_run=True,
+        )
+        actual = self.converter._optimize_one(
+            path,
+            file_type=None,
+            max_size=128,
+            secondary_scale=1.0,
+            mode="suffix",
+            modifier="",
+            old_folder="",
+            registry=MapRegistry(),
+        )
+
+        self.assertEqual(predicted, actual)
+
+    def test_dry_run_reports_the_path_the_real_run_writes(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        predicted = self._captured_path(
+            "// Would write: ", self._widget(modifier="LD_", clamp=128, dry_run=True)
+        )
+        written = self._captured_path(
+            "// Result: ", self._widget(modifier="LD_", clamp=128)
+        )
+
+        self.assertEqual(predicted, written)
+        self.assertTrue(os.path.isfile(predicted))
+        self.assertEqual(os.path.basename(predicted), "LD_rock_BaseColor.png")
+
+    def _captured_path(self, marker, widget):
+        """Run tb000 and return the path reported on the line after *marker*."""
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(widget)
+        for call in mock_print.call_args_list:
+            line = str(call.args[0]) if call.args else ""
+            if line.startswith(marker):
+                return line[len(marker):].split("  [")[0].strip()
+        self.fail(f"No {marker!r} line was printed.")
+
+    def test_dry_run_reports_a_size_transition(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128, dry_run=True))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertRegex(reported, r"\d[\d,.]* (bytes|KB|MB|GB) -> \d[\d,.]* (bytes|KB|MB|GB)")
+
+    # ---- size reporting -------------------------------------------------
+
+    def test_real_run_reports_size_before_and_after(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+        size_before = os.path.getsize(path)
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertIn(FileUtils.format_bytes(size_before), reported)
+        self.assertIn("// Total (1 map(s)):", reported)
+
+    def test_total_counts_only_the_maps_it_measured(self):
+        """A total labelled '2 map(s)' that summed one of them is a wrong
+        number, and size is the number being trusted here."""
+        good = self._texture(size=(256, 256))
+        missing = os.path.join(self.test_dir, "gone_Roughness.png")
+        self.converter._get_texture_paths = Mock(return_value=[good, missing])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128, dry_run=True))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertIn("// Total (1 map(s)) (1 unmeasured):", reported)
+
+    def test_dry_run_calls_out_an_in_place_overwrite(self):
+        """No modifier and no archive folder means the source is clobbered —
+        the single most important thing a dry run can surface."""
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(
+                self._widget(clamp=128, dry_run=True, old="")
+            )
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertIn("overwrites the original in place", reported)
+
+    def test_archived_run_is_not_called_an_overwrite(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(
+                self._widget(clamp=128, dry_run=True, old="old")
+            )
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertNotIn("overwrites the original in place", reported)
+        self.assertIn("Would move the original into: old/", reported)
+
+    def test_optimize_one_returns_measured_sizes(self):
+        path = self._texture(size=(256, 256))
+        size_before = os.path.getsize(path)
+
+        before, after = self.converter._optimize_one(
+            path,
+            file_type=None,
+            max_size=128,
+            secondary_scale=1.0,
+            mode="suffix",
+            modifier="",
+            old_folder="",
+            registry=MapRegistry(),
+        )
+
+        self.assertEqual(before, size_before)
+        self.assertEqual(after, os.path.getsize(path))
+
 
 class TestMapConverterFlipChannels(unittest.TestCase):
     """Tests for the Flip Channels tool (tb002) — invert / swizzle / constant-fill."""

@@ -39,8 +39,10 @@ class TestUnityWorkflowParameters(unittest.TestCase):
                 "ASSET_NAME",
                 "LAUNCH_MODE",
                 "UNITY_VERSION",
-                # Manage Unity Scripts mode's action combo — Unity-side too
-                # (it manages the embedded unitytk package in the project).
+                # Manage Unity Scripts mode's script checklist + action combo —
+                # Unity-side too (they manage the embedded unitytk package in
+                # the project).
+                "SCRIPTS",
                 "SCRIPTS_ACTION",
             },
         )
@@ -85,23 +87,55 @@ class TestUnityWorkflowPanelLoads(unittest.TestCase):
         self.assertGreaterEqual(self.ui.cmb000.findText("Copy to Project"), 0)
 
     def test_copy_mode_shows_every_delivery_param(self) -> None:
-        # Copy-to-assets shows every delivery param and hides the action combo
-        # that only Manage Unity Scripts uses.
+        # Copy-to-assets shows every delivery param and hides the script
+        # checklist + action combo that only Manage Unity Scripts uses.
         from extapps.unity_workflow import parameters as P
 
         self.assertEqual(
             self.slots._relevant_param_keys(),
-            set(P.PARAMS) - {"SCRIPTS_ACTION"},
+            set(P.PARAMS) - {"SCRIPTS", "SCRIPTS_ACTION"},
         )
 
-    def test_manage_mode_shows_only_the_action_combo(self) -> None:
+    def test_manage_mode_shows_only_the_script_params(self) -> None:
         # The other half of the same gate: delivery params hide in manage mode.
         with mock.patch.object(
             self.slots,
             "_selected_template_mode",
             return_value=(self.slots.MODE_MANAGE, None),
         ):
-            self.assertEqual(self.slots._relevant_param_keys(), {"SCRIPTS_ACTION"})
+            self.assertEqual(
+                self.slots._relevant_param_keys(), {"SCRIPTS", "SCRIPTS_ACTION"}
+            )
+
+    def test_script_checklist_populates_from_unitytk(self) -> None:
+        """One checked row per optional unitytk component — discovered from
+        the installed release, not hard-coded in the panel (core is implicit:
+        it rides along with every install)."""
+        from unitytk import TemplateDeployer
+
+        expected = [c for c in TemplateDeployer.components() if not c.required]
+        lw = self.slots._param_widgets["SCRIPTS"]
+        self.assertEqual(
+            [lw.item(i).text() for i in range(lw.count())],
+            [c.label for c in expected],
+        )
+        self.assertNotIn("Core", [lw.item(i).text() for i in range(lw.count())])
+        # All checked by default == the historical full-set deploy.
+        self.assertEqual(
+            self.slots._script_selection(), [c.key for c in expected]
+        )
+
+    def test_action_runs_over_the_checked_scripts_only(self) -> None:
+        """The action is applied to the checked components — the panel hands
+        that selection straight to the engine."""
+        keys = [c.key for c in self.slots._script_components]
+        self.slots._write_param("SCRIPTS", keys[:1])
+        self.slots._output_dir_edit.setText("C:/proj/MyUnityProject")
+        with mock.patch(
+            "unitytk.TemplateDeployer.run_action", return_value=[]
+        ) as run:
+            self.slots._manage_unity_scripts("install")
+        run.assert_called_once_with("C:/proj/MyUnityProject", "install", keys[:1])
 
     def test_set_model_path_prefills_field(self) -> None:
         self.slots.set_model_path("C:/scan/robot.fbx")

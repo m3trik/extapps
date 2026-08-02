@@ -82,6 +82,25 @@ PARAMS: "dict[str, AttributeSpec]" = {
     ),
     # Shown only when the 'Manage Unity Scripts' template is selected
     # (the slots' _relevant_param_keys gates it; delivery params hide).
+    "SCRIPTS": AttributeSpec(
+        key="SCRIPTS",
+        label="Scripts",
+        kind="check_list",
+        # Entries + initial checks are filled at runtime from the installed
+        # unitytk release (UnityWorkflowSlots._populate_script_components), the
+        # same way UNITY_VERSION is filled from the installed Editors --
+        # nothing about the C# set is duplicated here.
+        default=[],
+        choices=[],
+        tooltip=(
+            "Which of unitytk's C# scripts the action below applies to — one\n"
+            "row per import channel, all checked by default. Right-click for\n"
+            "Check All / Uncheck All; hover a row for what it does.\n"
+            "The shared core files (the Project Settings ▸ unitytk page and\n"
+            "the import gate every controller compiles against) always ride\n"
+            "along with an install, and leave with the last script removed."
+        ),
+    ),
     "SCRIPTS_ACTION": AttributeSpec(
         key="SCRIPTS_ACTION",
         label="Action",
@@ -93,14 +112,15 @@ PARAMS: "dict[str, AttributeSpec]" = {
             ("Uninstall", "uninstall"),
         ],
         tooltip=(
-            "Manage unitytk's C# import automation in the Unity project above\n"
-            "(the embedded Packages/com.m3trik.unitytk package):\n"
+            "What to do with the scripts checked above, in the Unity project\n"
+            "field (the embedded Packages/com.m3trik.unitytk package):\n"
             "• Status — report the deployed version vs this unitytk release,\n"
-            "  and any missing files.\n"
-            "• Install / Update — deploy the full script set (updates in place;\n"
-            "  configure per-channel behavior in Unity under Project Settings ▸\n"
-            "  unitytk).\n"
-            "• Uninstall — remove the package folder from the project."
+            "  and which scripts are in the project. Ignores the checkboxes.\n"
+            "• Install / Update — deploy the checked scripts (updates in\n"
+            "  place, leaves unchecked ones alone; configure per-channel\n"
+            "  behavior in Unity under Project Settings ▸ unitytk).\n"
+            "• Uninstall — remove the checked scripts. Removing the last one\n"
+            "  takes the whole package folder with it."
         ),
     ),
 }

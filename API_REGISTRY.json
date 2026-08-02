@@ -3932,7 +3932,7 @@
           "kind": "function",
           "signature": "(script_text: str) -> 'set[str]'",
           "summary": "Registered keys present in *script_text* (delegates to uitk.bridge).",
-          "line": 109,
+          "line": 129,
           "deprecated": false
         },
         {
@@ -3941,7 +3941,7 @@
           "kind": "function",
           "signature": "() -> 'dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 114,
+          "line": 134,
           "deprecated": false
         },
         {
@@ -3950,7 +3950,7 @@
           "kind": "function",
           "signature": "(values: 'dict[str, Any]') -> 'dict[str, str]'",
           "summary": "Format *values* for substitution (kept for API parity;",
-          "line": 119,
+          "line": 139,
           "deprecated": false
         }
       ],
@@ -3964,7 +3964,7 @@
         {
           "name": "UnityWorkflowSlots",
           "summary": "Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.",
-          "line": 46,
+          "line": 53,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -3975,7 +3975,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 126,
+              "line": 140,
               "deprecated": false
             },
             {
@@ -3984,7 +3984,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 130,
+              "line": 144,
               "deprecated": false
             },
             {
@@ -3993,7 +3993,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Build the unitytk engine, or ``None`` when it is absent.",
-              "line": 135,
+              "line": 149,
               "deprecated": false
             },
             {
@@ -4002,7 +4002,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 151,
+              "line": 165,
               "deprecated": false
             },
             {
@@ -4011,7 +4011,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 271,
+              "line": 289,
               "deprecated": false
             },
             {
@@ -4020,7 +4020,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (public hand-off point for hosts).",
-              "line": 276,
+              "line": 294,
               "deprecated": false
             },
             {
@@ -4029,7 +4029,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run the selected template: copy the model, or script management.",
-              "line": 440,
+              "line": 470,
               "deprecated": false
             }
           ]

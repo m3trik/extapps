@@ -851,16 +851,16 @@ Application shell for the Unity Workflow launcher UI.
 
 User-tunable parameters for the standalone Unity Workflow panel.
 
-- [`referenced_keys(script_text: str) -> 'set[str]'`](extapps/extapps/unity_workflow/parameters.py#L109) — Registered keys present in *script_text* (delegates to uitk.bridge).
-- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/unity_workflow/parameters.py#L114) — Return ``{key: default}`` for every registered parameter.
-- [`render_context(values: 'dict[str, Any]') -> 'dict[str, str]'`](extapps/extapps/unity_workflow/parameters.py#L119) — Format *values* for substitution (kept for API parity;
+- [`referenced_keys(script_text: str) -> 'set[str]'`](extapps/extapps/unity_workflow/parameters.py#L129) — Registered keys present in *script_text* (delegates to uitk.bridge).
+- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/unity_workflow/parameters.py#L134) — Return ``{key: default}`` for every registered parameter.
+- [`render_context(values: 'dict[str, Any]') -> 'dict[str, str]'`](extapps/extapps/unity_workflow/parameters.py#L139) — Format *values* for substitution (kept for API parity;
 
 <a id="unity_workflow--slots"></a>
 ### `unity_workflow/slots.py`
 
 Slots for the standalone Unity Workflow panel.
 
-- **[`class UnityWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/unity_workflow/slots.py#L46)** — Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
+- **[`class UnityWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/unity_workflow/slots.py#L53)** — Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
   - `UnityWorkflowSlots.params_module(self)` *(property)*
   - `UnityWorkflowSlots.template_dir(self) -> Path` *(property)*
   - `UnityWorkflowSlots.make_bridge(self)` — Build the unitytk engine, or ``None`` when it is absent.

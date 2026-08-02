@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9
+
+- **Version bump so the Unity Workflow work below actually ships.** `publish.yml` uploads only when `__version__` outpaces PyPI, so the previous push landed on GitHub with `__version__` still at `0.1.8` and every publish step skipped — the new panel *and* the raised `uitk` / `unitytk` floors sat in the repo while PyPI kept serving a build whose metadata still pinned `uitk>=1.3.40`, i.e. one that pip would happily satisfy with a uitk that has no `check_list` kind.
+
 ## Unreleased
 
 - **2026-08-02 — Unity Workflow: Manage Unity Scripts lists the C# scripts as a checkable set, and the Action applies to whatever is checked.** Same change as the in-DCC `unity_bridge` panels (mayatk / blendertk). New **`SCRIPTS`** parameter (uitk's `check_list` kind) populated at panel init from `unitytk.TemplateDeployer.components()` — one checked row per import channel, tooltips included — so Install / Update deploys the checked controllers plus the shared core, Uninstall removes the checked ones (taking the package folder with the last), and Status reports every component regardless of the checkboxes. The panel keeps only its preconditions; the work and its wording come from `TemplateDeployer.run_action`. `test_unity_workflow.py` +2 (checklist populates from the installed unitytk release with core excluded; the action is handed exactly the checked keys) and the param-set / visibility-gate expectations updated → 15.

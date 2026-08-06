@@ -12,12 +12,16 @@ raised ``AttributeError`` and the conversion path never worked.
 The heavy UI wiring in ``__init__`` is bypassed (``__new__``); ``_pack_set``
 touches no UI, so it is exercised directly.
 """
+import io
 import os
 import types
 import tempfile
 import shutil
 import unittest
+import contextlib
 from unittest import mock
+
+from PIL import Image
 
 from pythontk import ImgUtils
 
@@ -77,6 +81,210 @@ class TestMapPackerConversion(unittest.TestCase):
         self.assertFalse(result)
         self.assertFalse(
             os.path.isfile(os.path.join(self.test_dir, "mat_Empty.png"))
+        )
+
+
+class TestMapPackerCompleteness(unittest.TestCase):
+    """``_pack_set`` only packs complete sets unless the Missing Maps rule allows it.
+
+    Regression: an unresolvable channel map used to be reported and skipped,
+    but whatever had already been assigned was still packed — writing a map
+    whose missing channels are filled with a constant, indistinguishable
+    downstream from a legitimately flat channel. The default is now to skip
+    the whole set; the header's 'Missing Maps' policy opts back in, either
+    always (``force``) or only when 2+ channels resolved (``multi``).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.test_dir = tempfile.mkdtemp(prefix="packer_complete_")
+        # Roughness only — Metallic is neither present nor derivable from it.
+        # Smoothness IS derivable from Roughness (inversion), so a set asking
+        # for Roughness+Smoothness+Metallic resolves 2 of 3 channels.
+        cls.roughness = os.path.join(cls.test_dir, "mat_Roughness.png")
+        ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), 64), cls.roughness)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.test_dir):
+            shutil.rmtree(cls.test_dir)
+
+    @staticmethod
+    def _bare_slots():
+        return PackerSlots.__new__(PackerSlots)
+
+    def _pack(self, suffix, combos, **kwargs):
+        return self._bare_slots()._pack_set(
+            base_name="mat",
+            files=[self.roughness],
+            combos=combos,
+            suffix=suffix,
+            ext="png",
+            fmt="PNG",
+            **kwargs,
+        )
+
+    def _path(self, suffix):
+        return os.path.join(self.test_dir, f"mat{suffix}.png")
+
+    def _written(self, suffix):
+        return os.path.isfile(self._path(suffix))
+
+    # One channel resolves, one doesn't. Channel ORDER is load-bearing here:
+    # the old code stopped at the first unresolvable channel and packed
+    # whatever preceded it, so only the resolvable-first layout exposes the
+    # partial write. The missing-first layout instead proves the packing rules
+    # keep resolving channels *past* the gap (the old break never did).
+    RESOLVABLE_FIRST = ["Roughness", "Metallic", "None", "None"]
+    MISSING_FIRST = ["Metallic", "Roughness", "None", "None"]
+    # Two resolve (Roughness directly, Smoothness by conversion), one doesn't.
+    TWO_OF_THREE = ["Roughness", "Smoothness", "Metallic", "None"]
+
+    def test_incomplete_set_skipped_by_default(self):
+        """Caller omits the rule → safe default, nothing written."""
+        self.assertFalse(self._pack("_Default", self.RESOLVABLE_FIRST))
+        self.assertFalse(self._written("_Default"))
+
+    def test_incomplete_set_skipped_under_skip_rule(self):
+        self.assertFalse(
+            self._pack("_Skip", self.RESOLVABLE_FIRST, rule=PackerSlots.MISSING_SKIP)
+        )
+        self.assertFalse(self._written("_Skip"))
+
+    def test_incomplete_set_packed_under_force_rule(self):
+        """Pack Anyway → resolution continues past the gap, missing channels fill."""
+        self.assertTrue(
+            self._pack("_Forced", self.MISSING_FIRST, rule=PackerSlots.MISSING_FORCE)
+        )
+        self.assertTrue(self._written("_Forced"))
+
+    def test_multi_rule_skips_single_resolved_channel(self):
+        """Pack If 2+ Maps → one resolved channel isn't enough."""
+        self.assertFalse(
+            self._pack(
+                "_MultiOne", self.RESOLVABLE_FIRST, rule=PackerSlots.MISSING_MULTI
+            )
+        )
+        self.assertFalse(self._written("_MultiOne"))
+
+    def test_multi_rule_packs_two_resolved_channels(self):
+        """Pack If 2+ Maps → two resolved channels pack despite the third missing."""
+        self.assertTrue(
+            self._pack("_MultiTwo", self.TWO_OF_THREE, rule=PackerSlots.MISSING_MULTI)
+        )
+        self.assertTrue(self._written("_MultiTwo"))
+
+    def test_complete_set_packs_under_every_rule(self):
+        """A set with no missing maps is unaffected by the policy."""
+        for rule in (
+            PackerSlots.MISSING_SKIP,
+            PackerSlots.MISSING_MULTI,
+            PackerSlots.MISSING_FORCE,
+        ):
+            with self.subTest(rule=rule):
+                suffix = f"_Complete_{rule}"
+                self.assertTrue(
+                    self._pack(suffix, ["Roughness", "None", "None", "None"], rule=rule)
+                )
+                self.assertTrue(self._written(suffix))
+
+    def test_wholly_unresolvable_set_is_reported_not_silent(self):
+        """No channel resolves → skipped WITH a reason, under every rule.
+
+        The empty-assignment early-out used to return before the missing-map
+        report, so a set whose *only* requested map was absent dropped out
+        with no per-set explanation at all. 'Pack Anyway' must also land here
+        rather than in ``pack_channels``, which raises on an empty assignment.
+        """
+        for rule in (
+            PackerSlots.MISSING_SKIP,
+            PackerSlots.MISSING_MULTI,
+            PackerSlots.MISSING_FORCE,
+        ):
+            with self.subTest(rule=rule):
+                suffix = f"_NoneResolved_{rule}"
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    result = self._pack(
+                        suffix, ["Metallic", "None", "None", "None"], rule=rule
+                    )
+                self.assertFalse(result)
+                self.assertFalse(self._written(suffix))
+                self.assertIn("Metallic", buf.getvalue())
+                self.assertIn("mat", buf.getvalue())
+
+    def test_output_mode_follows_the_configured_layout(self):
+        """Channel count comes from the layout, not from what happened to resolve.
+
+        A 3-channel layout (ORM / MRAO — A on 'None') must stay RGB, which is
+        the point of those formats. Conversely a force-packed set whose alpha
+        map is missing still writes RGBA, so one batch can't emit a mix of RGB
+        and RGBA files under a single suffix.
+        """
+        self.assertTrue(
+            self._pack("_RGB", ["Metallic", "Roughness", "Smoothness", "None"],
+                       rule=PackerSlots.MISSING_FORCE)
+        )
+        self.assertEqual(Image.open(self._path("_RGB")).mode, "RGB")
+
+        # A requested but unresolvable (Metallic) -> still RGBA, alpha filled.
+        self.assertTrue(
+            self._pack("_RGBA", ["Roughness", "Smoothness", "None", "Metallic"],
+                       rule=PackerSlots.MISSING_FORCE)
+        )
+        self.assertEqual(Image.open(self._path("_RGBA")).mode, "RGBA")
+
+    def test_rule_reads_header_combo(self):
+        """``_missing_map_rule`` mirrors the header combo; safe default if absent."""
+        inst = self._bare_slots()
+        # Header menu not built yet (bare instance) → safe default.
+        inst.ui = types.SimpleNamespace()
+        self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_SKIP)
+
+        combo = _FakeDataCombo(PackerSlots.MISSING_FORCE)
+        inst.ui = types.SimpleNamespace(
+            header=types.SimpleNamespace(
+                menu=types.SimpleNamespace(cmb_missing=combo)
+            )
+        )
+        self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_FORCE)
+        # No selection (currentData() -> None) must not disable the guard.
+        combo.data = None
+        self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_SKIP)
+
+
+class TestMapPackerChannelSelection(unittest.TestCase):
+    """The channel layout is read once, in channel order, and gates both batches."""
+
+    @staticmethod
+    def _bare_slots():
+        return PackerSlots.__new__(PackerSlots)
+
+    def test_channel_combos_read_in_channel_order(self):
+        inst = self._bare_slots()
+        picks = ["Metallic", "Roughness", "Ambient_Occlusion", "Smoothness"]
+        inst.ui = types.SimpleNamespace(
+            **{f"cmb{c}": _FakeCombo(current=p) for c, p in zip("RGBA", picks)}
+        )
+        self.assertEqual(inst._channel_combos(), picks)
+
+    def test_empty_selection_is_reported_and_blocks_the_batch(self):
+        """All channels 'None' → the run stops before the file dialog.
+
+        Otherwise both batches walk the whole selection to no effect and
+        report every set as skipped, blaming the files for an empty layout.
+        """
+        inst = self._bare_slots()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            allowed = inst._require_channel_selection(["None"] * 4)
+        self.assertFalse(allowed)
+        self.assertIn("No channels assigned", buf.getvalue())
+
+    def test_partial_selection_passes(self):
+        inst = self._bare_slots()
+        self.assertTrue(
+            inst._require_channel_selection(["None", "Roughness", "None", "None"])
         )
 
 
@@ -190,6 +398,47 @@ class TestMapPackerPresets(unittest.TestCase):
             ("Metallic", "Roughness", "Ambient_Occlusion", "None"),
         )
 
+    def test_three_channel_presets_pack_to_the_declared_layout(self):
+        """ORM / MRAO round-trip: 3-channel RGB, each map in its named channel.
+
+        Locks the layouts against ``pythontk.MapRegistry``'s ``MapType.channels``
+        (the ecosystem SSoT that blendertk's material builder also reads), and
+        that they stay RGB — no alpha is what lets these compress as BC1 rather
+        than BC3/BC7, and it is the whole point of the format.
+        """
+        expected = {  # preset -> (R, G, B) source values, per the SSoT layout
+            "ORM (Unreal, glTF)": (50, 100, 200),  # AO, Roughness, Metallic
+            "MRAO (Metallic, Roughness, AO)": (200, 100, 50),  # M, R, AO
+        }
+        values = {"Metallic": 200, "Roughness": 100, "Ambient_Occlusion": 50}
+
+        test_dir = tempfile.mkdtemp(prefix="packer_preset_")
+        self.addCleanup(shutil.rmtree, test_dir, ignore_errors=True)
+        files = []
+        for map_type, value in values.items():
+            path = os.path.join(test_dir, f"mat_{map_type}.png")
+            ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), value), path)
+            files.append(path)
+
+        inst = PackerSlots.__new__(PackerSlots)
+        for name, rgb in expected.items():
+            with self.subTest(preset=name):
+                preset = PackerSlots.BUILTIN_PRESETS[name]
+                self.assertTrue(
+                    inst._pack_set(
+                        base_name="mat",
+                        files=files,
+                        combos=[preset[c] for c in "RGBA"],
+                        suffix=preset["suffix"],
+                        ext=preset["format"].lower(),
+                        fmt=preset["format"],
+                    )
+                )
+                out = os.path.join(test_dir, f"mat{preset['suffix']}.png")
+                with Image.open(out) as img:
+                    self.assertEqual(img.mode, "RGB")
+                    self.assertEqual(img.getpixel((0, 0)), rgb)
+
 
 class _FakeCombo:
     """Minimal QComboBox stand-in for exercising slot handlers off-screen."""
@@ -214,6 +463,16 @@ class _FakeCombo:
     def setCurrentIndex(self, index):
         if 0 <= index < len(self._items):
             self._current = self._items[index]
+
+
+class _FakeDataCombo:
+    """Minimal data-carrying QComboBox stand-in for the Missing Maps option."""
+
+    def __init__(self, data=None):
+        self.data = data
+
+    def currentData(self):
+        return self.data
 
 
 class _FakeUI:

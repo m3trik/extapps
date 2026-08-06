@@ -81,13 +81,13 @@ _Generated: 2026-08-06_
 
 Drive Marmoset Toolbag from the outside -- launch + templated automation.
 
-- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L58)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
+- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L57)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
   - `MarmosetEngine.toolbag_path(self) -> Optional[str]` *(property)* — Resolve the Toolbag executable path.
   - `MarmosetEngine.toolbag_log_path(self) -> Optional[str]` *(property)* — Resolve Toolbag's application log file (script prints + tracebacks).
   - `MarmosetEngine.preflight(self, bridge, request) -> bool` — Validate the (template, mode) before the bridge produces its payload.
   - `MarmosetEngine.deliver(self, bridge, payload, request) -> Optional[Dict[str, Any]]` — Hand the produced model + manifests to Toolbag via :meth:`send`.
-  - `MarmosetEngine.send(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, output_dir: Optional[str] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]` — Render *template* in *mode* against *model_path* and hand off to Toolbag.
-  - `MarmosetEngine.render_template(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None) -> Optional[str]` — Return the rendered Toolbag Python script body, or *None* on miss.
+  - `MarmosetEngine.send(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, output_dir: Optional[str] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]` — Render *template* in *mode* against *model_path* and hand off to Toolbag.
+  - `MarmosetEngine.render_template(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None) -> Optional[str]` — Return the rendered Toolbag Python script body, or *None* on miss.
   - `MarmosetEngine.list_templates() -> List[Path]` *(static)* — Return user-visible templates in ``templates/`` (skips underscore-prefixed).
   - `MarmosetEngine.template_modes(template_path: Path) -> Tuple[str, ...]` *(static)* — Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.
   - `MarmosetEngine.list_template_modes() -> List[Tuple[str, str]]` *(static)* — Return ``[(stem, mode), ...]`` for every (template, mode) pairing.
@@ -97,14 +97,14 @@ Drive Marmoset Toolbag from the outside -- launch + templated automation.
 
 Shared helpers for Marmoset Toolbag template scripts.
 
-- **[`class ToolbagHelpers(_ToolbagHelpersInternal)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L120)** — ToolbagHelpers — module namespace.
+- **[`class ToolbagHelpers(_ToolbagHelpersInternal)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L200)** — ToolbagHelpers — module namespace.
   - `ToolbagHelpers.derive_per_run_log_path(manifest_path)` *(static)* — Return the ``<base>.toolbag.log`` path next to *manifest_path*.
   - `ToolbagHelpers.begin_log(reference_path)` *(static)* — Start a fresh log file alongside *reference_path*.
   - `ToolbagHelpers.log(msg)` *(static)* — Print *msg* and (best-effort) append it to the active log file.
   - `ToolbagHelpers.find_material(name, scene_mats)` *(static)* — Return the Toolbag material whose name matches *name*.
   - `ToolbagHelpers.load_manifest(manifest_path)` *(static)* — Return the ``materials`` dict from a MatManifest JSON sidecar.
-  - `ToolbagHelpers.wire_materials_from_manifest(manifest_path, verbose=True)` *(static)* — Wire every texture slot in *manifest_path* onto matching Toolbag mats.
-  - `ToolbagHelpers.split_high_low(objects, high_suffix, low_suffix, pre_classified=None)` *(static)* — Group *objects* into ``(highs, lows, others)`` by name suffix.
+  - `ToolbagHelpers.wire_materials_from_manifest(manifest_path, verbose=True, srgb_colors=True)` *(static)* — Wire every texture slot in *manifest_path* onto matching Toolbag mats.
+  - `ToolbagHelpers.split_source_target(objects, high_suffix, low_suffix, pre_classified=None, include_children=True)` *(static)* — Group *objects* into ``(sources, targets, others)`` by name suffix.
   - `ToolbagHelpers.collect_mesh_objects(root)` *(static)* — Recursively gather ``mset.MeshObject`` descendants of *root*.
   - `ToolbagHelpers.apply_sky_preset(preset_path)` *(static)* — Load a ``.tbsky`` preset onto the scene's existing SkyObject.
   - `ToolbagHelpers.frame_in_viewport()` *(static)* — Frame the imported scene in the viewport (best-effort).
@@ -145,7 +145,8 @@ Slots for the standalone Marmoset Workflow panel.
 
 Plain default values + literal formatting for Marmoset template tokens.
 
-- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L50)** — TemplateParams — module namespace.
+- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L73)** — TemplateParams — module namespace.
+  - `TemplateParams.derive_bake_values(values: Dict[str, Any]) -> Dict[str, Any]` *(static)* — Return the managed bake tokens derived from *values*.
   - `TemplateParams.python_literal(value: Any) -> str` *(static)* — Format *value* as a Python source literal for template substitution.
   - `TemplateParams.defaults() -> Dict[str, Any]` *(static)* — Return a copy of :data:`DEFAULTS`.
   - `TemplateParams.to_context(values: Dict[str, Any]) -> Dict[str, str]` *(static)* — Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.
@@ -155,14 +156,14 @@ Plain default values + literal formatting for Marmoset template tokens.
 
 Open the model in Toolbag and wire materials from the manifest.
 
-- [`main()`](extapps/extapps/marmoset_workflow/templates/import.py#L32)
+- [`main()`](extapps/extapps/marmoset_workflow/templates/import.py#L35)
 
 <a id="marmoset_workflow--templates--lookdev"></a>
 ### `marmoset_workflow/templates/lookdev.py`
 
 Open the model in Toolbag, apply a Sky preset, and frame the model.
 
-- [`main()`](extapps/extapps/marmoset_workflow/templates/lookdev.py#L35)
+- [`main()`](extapps/extapps/marmoset_workflow/templates/lookdev.py#L38)
 
 <a id="marmoset_workflow--toolbag_log"></a>
 ### `marmoset_workflow/toolbag_log.py`
@@ -682,8 +683,8 @@ Smart-material / preset operations — apply shelf materials onto layers.
 
 substance_workflow_bridge — Painter-side Python plugin.
 
-- [`start_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L61) — Painter plugin entry point — start the JSON-RPC bridge server.
-- [`close_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L75) — Painter plugin teardown.
+- [`start_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L107) — Painter plugin entry point — start the JSON-RPC bridge server.
+- [`close_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L121) — Painter plugin teardown.
 
 <a id="substance_workflow--plugins--substance_workflow_bridge--server"></a>
 ### `substance_workflow/plugins/substance_workflow_bridge/server.py`
@@ -794,14 +795,14 @@ Application shell for the Map Converter UI.
 
 Map Converter UI — slot file for ``converter.ui``.
 
-- **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L29)** — Switchboard slots for ``converter.ui``.
+- **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L30)** — Switchboard slots for ``converter.ui``.
   - `ConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
   - `ConverterSlots.scopes(self) -> Tuple[str, ...]` *(property)* — Scope labels currently offered, in combobox order.
   - `ConverterSlots.register_scope(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None` — Offer *label* in the Scope combobox, resolved by calling *provider*.
   - `ConverterSlots.unregister_scope(self, label: str) -> None` — Drop a previously registered scope (no-op if it isn't registered).
   - `ConverterSlots.texture_provider(self) -> Optional[Callable[[], Iterable[str]]]` *(property)* — Provider for the plain "Selected" scope.
   - `ConverterSlots.header_init(self, widget)` — Add the global Scope combobox to the header menu.
-  - `ConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu (format, clamp, modifier).
+  - `ConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu.
   - `ConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
   - `ConverterSlots.resolve_affix(mode: str, modifier: str) -> Tuple[str, str]` *(static)* — Resolve the Affix mode against the modifier text.
   - `ConverterSlots.tb001_init(self, widget)`
@@ -833,8 +834,9 @@ Application shell for the Map Packer UI.
   - `PackerSlots.cmbG_init(self, widget)`
   - `PackerSlots.cmbB_init(self, widget)`
   - `PackerSlots.cmbA_init(self, widget)`
+  - `PackerSlots.txtSuffix_init(self, widget)` — Output-suffix field — clearable back to the ``_Packed`` default.
   - `PackerSlots.cmbFormat_init(self, widget)` — Populate the output-format combo and react to format changes.
-  - `PackerSlots.header_init(self, widget)` — Build the header menu's Pack/Unpack mode toggle.
+  - `PackerSlots.header_init(self, widget)` — Build the header menu's Pack/Unpack toggle and Missing Maps policy.
   - `PackerSlots.source_dir(self)` *(property)*
   - `PackerSlots.b000(self)` — Run the configured channel operation: Pack (default) or Unpack.
   - `PackerSlots.b001(self)` — Open the last output directory in the system file explorer.

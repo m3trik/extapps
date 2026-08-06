@@ -10,7 +10,7 @@ _Generated: 2026-08-06_
 
 ### `marmoset_workflow/_toolbag_helpers.py` — Shared helpers for Marmoset Toolbag template scripts.
 - `class ToolbagHelpers(_ToolbagHelpersInternal)`
-  - methods: derive_per_run_log_path, begin_log, log, find_material, load_manifest, wire_materials_from_manifest, split_high_low, collect_mesh_objects, apply_sky_preset, frame_in_viewport
+  - methods: derive_per_run_log_path, begin_log, log, find_material, load_manifest, wire_materials_from_manifest, split_source_target, collect_mesh_objects, apply_sky_preset, frame_in_viewport
 
 ### `marmoset_workflow/launcher.py` — Application shell for the Marmoset Workflow UI.
 - `class MarmosetWorkflowUI`
@@ -26,7 +26,7 @@ _Generated: 2026-08-06_
 
 ### `marmoset_workflow/template_params.py` — Plain default values + literal formatting for Marmoset template tokens.
 - `class TemplateParams`
-  - methods: python_literal, defaults, to_context
+  - methods: derive_bake_values, python_literal, defaults, to_context
 
 ### `marmoset_workflow/templates/import.py` — Open the model in Toolbag and wire materials from the manifest.
 - `main()`
@@ -305,7 +305,7 @@ _Generated: 2026-08-06_
 
 ### `texture_maps/packer/slots.py`
 - `class PackerSlots(ImgUtils)`
-  - methods: cmbR_init, cmbG_init, cmbB_init, cmbA_init, cmbFormat_init, header_init, source_dir, b000, b001
+  - methods: cmbR_init, cmbG_init, cmbB_init, cmbA_init, txtSuffix_init, cmbFormat_init, header_init, source_dir, b000, b001
 
 ### `unity_workflow/launcher.py` — Application shell for the Unity Workflow launcher UI.
 - `class UnityWorkflowUI`

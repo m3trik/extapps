@@ -11,7 +11,7 @@
         {
           "name": "MarmosetEngine",
           "summary": "Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.",
-          "line": 58,
+          "line": 57,
           "bases": [
             "ptk.Deliverer",
             "ptk.LoggingMixin"
@@ -23,7 +23,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve the Toolbag executable path.",
-              "line": 97,
+              "line": 96,
               "deprecated": false
             },
             {
@@ -32,7 +32,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve Toolbag's application log file (script prints + tracebacks).",
-              "line": 120,
+              "line": 119,
               "deprecated": false
             },
             {
@@ -41,7 +41,7 @@
               "kind": "method",
               "signature": "(self, bridge, request) -> bool",
               "summary": "Validate the (template, mode) before the bridge produces its payload.",
-              "line": 131,
+              "line": 130,
               "deprecated": false
             },
             {
@@ -50,14 +50,14 @@
               "kind": "method",
               "signature": "(self, bridge, payload, request) -> Optional[Dict[str, Any]]",
               "summary": "Hand the produced model + manifests to Toolbag via :meth:`send`.",
-              "line": 147,
+              "line": 146,
               "deprecated": false
             },
             {
               "name": "send",
               "qualname": "MarmosetEngine.send",
               "kind": "method",
-              "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, output_dir: Optional[str] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]",
+              "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, output_dir: Optional[str] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]",
               "summary": "Render *template* in *mode* against *model_path* and hand off to Toolbag.",
               "line": 169,
               "deprecated": false
@@ -66,9 +66,9 @@
               "name": "render_template",
               "qualname": "MarmosetEngine.render_template",
               "kind": "method",
-              "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None) -> Optional[str]",
+              "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None) -> Optional[str]",
               "summary": "Return the rendered Toolbag Python script body, or *None* on miss.",
-              "line": 314,
+              "line": 365,
               "deprecated": false
             },
             {
@@ -77,7 +77,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Path]",
               "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
-              "line": 491,
+              "line": 595,
               "deprecated": false
             },
             {
@@ -86,7 +86,7 @@
               "kind": "staticmethod",
               "signature": "(template_path: Path) -> Tuple[str, ...]",
               "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
-              "line": 496,
+              "line": 600,
               "deprecated": false
             },
             {
@@ -95,7 +95,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Tuple[str, str]]",
               "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
-              "line": 505,
+              "line": 609,
               "deprecated": false
             }
           ]
@@ -110,7 +110,7 @@
         {
           "name": "ToolbagHelpers",
           "summary": "ToolbagHelpers — module namespace.",
-          "line": 120,
+          "line": 200,
           "bases": [
             "_ToolbagHelpersInternal"
           ],
@@ -121,7 +121,7 @@
               "kind": "staticmethod",
               "signature": "(manifest_path)",
               "summary": "Return the ``<base>.toolbag.log`` path next to *manifest_path*.",
-              "line": 124,
+              "line": 204,
               "deprecated": false
             },
             {
@@ -130,7 +130,7 @@
               "kind": "staticmethod",
               "signature": "(reference_path)",
               "summary": "Start a fresh log file alongside *reference_path*.",
-              "line": 138,
+              "line": 218,
               "deprecated": false
             },
             {
@@ -139,7 +139,7 @@
               "kind": "staticmethod",
               "signature": "(msg)",
               "summary": "Print *msg* and (best-effort) append it to the active log file.",
-              "line": 158,
+              "line": 238,
               "deprecated": false
             },
             {
@@ -148,7 +148,7 @@
               "kind": "staticmethod",
               "signature": "(name, scene_mats)",
               "summary": "Return the Toolbag material whose name matches *name*.",
-              "line": 170,
+              "line": 250,
               "deprecated": false
             },
             {
@@ -157,25 +157,25 @@
               "kind": "staticmethod",
               "signature": "(manifest_path)",
               "summary": "Return the ``materials`` dict from a MatManifest JSON sidecar.",
-              "line": 185,
+              "line": 265,
               "deprecated": false
             },
             {
               "name": "wire_materials_from_manifest",
               "qualname": "ToolbagHelpers.wire_materials_from_manifest",
               "kind": "staticmethod",
-              "signature": "(manifest_path, verbose=True)",
+              "signature": "(manifest_path, verbose=True, srgb_colors=True)",
               "summary": "Wire every texture slot in *manifest_path* onto matching Toolbag mats.",
-              "line": 204,
+              "line": 284,
               "deprecated": false
             },
             {
-              "name": "split_high_low",
-              "qualname": "ToolbagHelpers.split_high_low",
+              "name": "split_source_target",
+              "qualname": "ToolbagHelpers.split_source_target",
               "kind": "staticmethod",
-              "signature": "(objects, high_suffix, low_suffix, pre_classified=None)",
-              "summary": "Group *objects* into ``(highs, lows, others)`` by name suffix.",
-              "line": 323,
+              "signature": "(objects, high_suffix, low_suffix, pre_classified=None, include_children=True)",
+              "summary": "Group *objects* into ``(sources, targets, others)`` by name suffix.",
+              "line": 447,
               "deprecated": false
             },
             {
@@ -184,7 +184,7 @@
               "kind": "staticmethod",
               "signature": "(root)",
               "summary": "Recursively gather ``mset.MeshObject`` descendants of *root*.",
-              "line": 407,
+              "line": 544,
               "deprecated": false
             },
             {
@@ -193,7 +193,7 @@
               "kind": "staticmethod",
               "signature": "(preset_path)",
               "summary": "Load a ``.tbsky`` preset onto the scene's existing SkyObject.",
-              "line": 447,
+              "line": 584,
               "deprecated": false
             },
             {
@@ -202,7 +202,7 @@
               "kind": "staticmethod",
               "signature": "()",
               "summary": "Frame the imported scene in the viewport (best-effort).",
-              "line": 473,
+              "line": 610,
               "deprecated": false
             }
           ]
@@ -354,16 +354,25 @@
         {
           "name": "TemplateParams",
           "summary": "TemplateParams — module namespace.",
-          "line": 50,
+          "line": 73,
           "bases": [],
           "members": [
+            {
+              "name": "derive_bake_values",
+              "qualname": "TemplateParams.derive_bake_values",
+              "kind": "staticmethod",
+              "signature": "(values: Dict[str, Any]) -> Dict[str, Any]",
+              "summary": "Return the managed bake tokens derived from *values*.",
+              "line": 101,
+              "deprecated": false
+            },
             {
               "name": "python_literal",
               "qualname": "TemplateParams.python_literal",
               "kind": "staticmethod",
               "signature": "(value: Any) -> str",
               "summary": "Format *value* as a Python source literal for template substitution.",
-              "line": 54,
+              "line": 133,
               "deprecated": false
             },
             {
@@ -372,7 +381,7 @@
               "kind": "staticmethod",
               "signature": "() -> Dict[str, Any]",
               "summary": "Return a copy of :data:`DEFAULTS`.",
-              "line": 65,
+              "line": 144,
               "deprecated": false
             },
             {
@@ -381,7 +390,7 @@
               "kind": "staticmethod",
               "signature": "(values: Dict[str, Any]) -> Dict[str, str]",
               "summary": "Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.",
-              "line": 70,
+              "line": 149,
               "deprecated": false
             }
           ]
@@ -398,7 +407,7 @@
           "kind": "function",
           "signature": "()",
           "summary": "",
-          "line": 32,
+          "line": 35,
           "deprecated": false
         }
       ],
@@ -414,7 +423,7 @@
           "kind": "function",
           "signature": "()",
           "summary": "",
-          "line": 35,
+          "line": 38,
           "deprecated": false
         }
       ],
@@ -3057,7 +3066,7 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin entry point — start the JSON-RPC bridge server.",
-          "line": 61,
+          "line": 107,
           "deprecated": false
         },
         {
@@ -3066,7 +3075,7 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin teardown.",
-          "line": 75,
+          "line": 121,
           "deprecated": false
         }
       ],
@@ -3551,7 +3560,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 647,
+              "line": 648,
               "deprecated": false
             },
             {
@@ -3560,7 +3569,7 @@
               "kind": "method",
               "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 657,
+              "line": 658,
               "deprecated": false
             }
           ]
@@ -3589,7 +3598,7 @@
         {
           "name": "ConverterSlots",
           "summary": "Switchboard slots for ``converter.ui``.",
-          "line": 29,
+          "line": 30,
           "bases": [
             "ImgUtils"
           ],
@@ -3600,7 +3609,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "Get the starting directory for file dialogs.",
-              "line": 64,
+              "line": 65,
               "deprecated": false
             },
             {
@@ -3609,7 +3618,7 @@
               "kind": "property",
               "signature": "(self) -> Tuple[str, ...]",
               "summary": "Scope labels currently offered, in combobox order.",
-              "line": 78,
+              "line": 79,
               "deprecated": false
             },
             {
@@ -3618,7 +3627,7 @@
               "kind": "method",
               "signature": "(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None",
               "summary": "Offer *label* in the Scope combobox, resolved by calling *provider*.",
-              "line": 88,
+              "line": 89,
               "deprecated": false
             },
             {
@@ -3627,7 +3636,7 @@
               "kind": "method",
               "signature": "(self, label: str) -> None",
               "summary": "Drop a previously registered scope (no-op if it isn't registered).",
-              "line": 123,
+              "line": 124,
               "deprecated": false
             },
             {
@@ -3636,7 +3645,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[Callable[[], Iterable[str]]]",
               "summary": "Provider for the plain \"Selected\" scope.",
-              "line": 129,
+              "line": 130,
               "deprecated": false
             },
             {
@@ -3645,7 +3654,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Add the global Scope combobox to the header menu.",
-              "line": 146,
+              "line": 147,
               "deprecated": false
             },
             {
@@ -3653,8 +3662,8 @@
               "qualname": "ConverterSlots.tb000_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Populate the Optimize toolbutton's option menu (format, clamp, modifier).",
-              "line": 252,
+              "summary": "Populate the Optimize toolbutton's option menu.",
+              "line": 260,
               "deprecated": false
             },
             {
@@ -3663,7 +3672,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Optimize a texture map(s)",
-              "line": 346,
+              "line": 381,
               "deprecated": false
             },
             {
@@ -3672,7 +3681,7 @@
               "kind": "staticmethod",
               "signature": "(mode: str, modifier: str) -> Tuple[str, str]",
               "summary": "Resolve the Affix mode against the modifier text.",
-              "line": 414,
+              "line": 479,
               "deprecated": false
             },
             {
@@ -3681,7 +3690,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 629,
+              "line": 740,
               "deprecated": false
             },
             {
@@ -3690,7 +3699,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 639,
+              "line": 750,
               "deprecated": false
             },
             {
@@ -3699,7 +3708,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 695,
+              "line": 806,
               "deprecated": false
             },
             {
@@ -3708,7 +3717,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 721,
+              "line": 832,
               "deprecated": false
             },
             {
@@ -3717,7 +3726,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
-              "line": 777,
+              "line": 888,
               "deprecated": false
             },
             {
@@ -3726,7 +3735,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
-              "line": 806,
+              "line": 917,
               "deprecated": false
             },
             {
@@ -3735,7 +3744,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert DirectX to OpenGL",
-              "line": 881,
+              "line": 992,
               "deprecated": false
             },
             {
@@ -3744,7 +3753,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert OpenGL to DirectX",
-              "line": 898,
+              "line": 1009,
               "deprecated": false
             },
             {
@@ -3753,7 +3762,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 915,
+              "line": 1026,
               "deprecated": false
             },
             {
@@ -3762,7 +3771,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 958,
+              "line": 1069,
               "deprecated": false
             },
             {
@@ -3771,7 +3780,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 985,
+              "line": 1096,
               "deprecated": false
             },
             {
@@ -3780,7 +3789,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 1011,
+              "line": 1122,
               "deprecated": false
             },
             {
@@ -3789,7 +3798,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
-              "line": 1037,
+              "line": 1148,
               "deprecated": false
             }
           ]
@@ -3829,7 +3838,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 138,
+              "line": 143,
               "deprecated": false
             },
             {
@@ -3838,7 +3847,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 141,
+              "line": 146,
               "deprecated": false
             },
             {
@@ -3847,7 +3856,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 144,
+              "line": 149,
               "deprecated": false
             },
             {
@@ -3856,7 +3865,16 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 147,
+              "line": 152,
+              "deprecated": false
+            },
+            {
+              "name": "txtSuffix_init",
+              "qualname": "PackerSlots.txtSuffix_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Output-suffix field — clearable back to the ``_Packed`` default.",
+              "line": 155,
               "deprecated": false
             },
             {
@@ -3865,7 +3883,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the output-format combo and react to format changes.",
-              "line": 150,
+              "line": 159,
               "deprecated": false
             },
             {
@@ -3873,8 +3891,8 @@
               "qualname": "PackerSlots.header_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Build the header menu's Pack/Unpack mode toggle.",
-              "line": 177,
+              "summary": "Build the header menu's Pack/Unpack toggle and Missing Maps policy.",
+              "line": 186,
               "deprecated": false
             },
             {
@@ -3883,7 +3901,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 257,
+              "line": 310,
               "deprecated": false
             },
             {
@@ -3892,7 +3910,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 294,
+              "line": 369,
               "deprecated": false
             },
             {
@@ -3901,7 +3919,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 470,
+              "line": 590,
               "deprecated": false
             }
           ]

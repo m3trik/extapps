@@ -129,7 +129,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the map to pack to the &lt;span style=&quot; font-weight:600;&quot;&gt;Blue Channel&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Specify the map to pack to the Blue Channel.</string>
            </property>
            <property name="maxVisibleItems">
             <number>30</number>
@@ -163,7 +163,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the map to pack to the &lt;span style=&quot; font-weight:600;&quot;&gt;Red Channel&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Specify the map to pack to the Red Channel.</string>
            </property>
            <property name="maxVisibleItems">
             <number>30</number>
@@ -197,7 +197,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the map to pack to the &lt;span style=&quot; font-weight:600;&quot;&gt;Alpha Channel&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Specify the map to pack to the Alpha Channel.</string>
            </property>
            <property name="maxVisibleItems">
             <number>30</number>
@@ -231,7 +231,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the map to pack to the &lt;span style=&quot; font-weight:600;&quot;&gt;Green Channel&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Specify the map to pack to the Green Channel.</string>
            </property>
            <property name="maxVisibleItems">
             <number>30</number>
@@ -371,7 +371,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the map &lt;span style=&quot; font-weight:600;&quot;&gt;output file format&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Specify the map output file format.</string>
            </property>
            <property name="maxVisibleItems">
             <number>30</number>
@@ -405,7 +405,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify a suffix for the packed texture's file name.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Specify a suffix for the packed texture's file name.</string>
            </property>
            <property name="frame">
             <bool>false</bool>

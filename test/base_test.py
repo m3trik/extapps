@@ -6,13 +6,18 @@ Provides common functionality for all extapps.substance_workflow test cases.
 """
 import os
 import shutil
-import sys
 import tempfile
 import unittest
 
-scripts_dir = r"O:\Cloud\Code\_scripts"
-if scripts_dir not in sys.path:
-    sys.path.insert(0, scripts_dir)
+# NOTE: no ``sys.path`` bootstrap here. This used to insert a hardcoded
+# ``O:\Cloud\Code\_scripts`` at position 0 — machine-specific (so it did
+# nothing on any other checkout), unused (nothing in this suite imports a
+# sibling repo by that route), and actively harmful: the monorepo root holds a
+# bare directory per sibling, which Python then resolves as an empty
+# **namespace** package outranking the real installed one. ``import unitytk``
+# "succeeded" with ``__file__`` None and the Unity Workflow panel read its
+# engine as not installed. Sibling packages are installed (editable) or on
+# PYTHONPATH; that is the supported way to reach them.
 
 
 class SubstanceWorkflowTestCase(unittest.TestCase):

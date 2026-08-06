@@ -226,7 +226,13 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Convert Smoothness to Roughness  &lt;/p&gt;&lt;p&gt;Converts a Smoothness map into a Roughness map by inverting its values.  &lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Usage: Select a Smoothness map. Batch processing is supported.  &lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;- If an existing Roughness map of the same name is found, it will be overwritten.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Convert Smoothness to Roughness.
+
+Converts a Smoothness map into a Roughness map by inverting its values.
+
+Usage: Select a Smoothness map. Batch processing is supported.
+
+- If an existing Roughness map of the same name is found, it will be overwritten.</string>
               </property>
               <property name="text">
                <string>Smoothness to Roughness</string>
@@ -257,7 +263,13 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Convert Roughness to Smoothness  &lt;/p&gt;&lt;p&gt;Converts a Roughness map into a Smoothness map by inverting its values.  &lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Usage: Select a Roughness map. Batch processing is supported.  &lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;- If an existing Smoothness map of the same name is found, it will be overwritten.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Convert Roughness to Smoothness.
+
+Converts a Roughness map into a Smoothness map by inverting its values.
+
+Usage: Select a Roughness map. Batch processing is supported.
+
+- If an existing Smoothness map of the same name is found, it will be overwritten.</string>
               </property>
               <property name="text">
                <string>Roughness to Smoothness</string>
@@ -288,7 +300,14 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Convert Specular Glossiness to PBR&lt;/span&gt;&lt;br/&gt;Converts Specular Glossiness map(s) to &lt;span style=&quot; font-weight:600;&quot;&gt;PBR&lt;/span&gt; format.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Usage:&lt;/span&gt; Select &lt;span style=&quot; font-weight:600;&quot;&gt;Diffuse, Specular,&lt;/span&gt; and &lt;span style=&quot; font-weight:600;&quot;&gt;Glossiness&lt;/span&gt; maps.  Select multiple maps from different sets to batch process.&lt;br/&gt;&lt;br/&gt;- If no &lt;span style=&quot; font-weight:600;&quot;&gt;Glossiness&lt;/span&gt; map is provided, it will attempt to extract it from the &lt;span style=&quot; font-weight:600;&quot;&gt;Specular&lt;/span&gt; map.&lt;br/&gt;- If extraction fails, the &lt;span style=&quot; font-weight:600;&quot;&gt;Roughness&lt;/span&gt; map will be approximated using the &lt;span style=&quot; font-weight:600;&quot;&gt;Specular&lt;/span&gt; map.&lt;br/&gt;- If existing &lt;span style=&quot; font-weight:600;&quot;&gt;BaseColor, Metallic,&lt;/span&gt; and &lt;span style=&quot; font-weight:600;&quot;&gt;Roughness&lt;/span&gt; maps of the same name exist, they will be &lt;span style=&quot; font-weight:600;&quot;&gt;overwritten&lt;/span&gt;. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Convert Specular Glossiness to PBR.
+Converts Specular Glossiness map(s) to PBR format.
+
+Usage: Select Diffuse, Specular, and Glossiness maps. Select multiple maps from different sets to batch process.
+
+- If no Glossiness map is provided, it will attempt to extract it from the Specular map.
+- If extraction fails, the Roughness map will be approximated using the Specular map.
+- If existing BaseColor, Metallic, and Roughness maps of the same name exist, they will be overwritten.</string>
               </property>
               <property name="text">
                <string>Spec Gloss to PBR</string>
@@ -319,7 +338,10 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Bump to Normal&lt;/span&gt;&lt;br/&gt;Converts Bump/Height to Normal with options available in the tool menu.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Options:&lt;/span&gt; Choose OpenGL or DirectX format and set intensity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Bump to Normal.
+Converts Bump/Height to Normal with options available in the tool menu.
+
+Options: Choose OpenGL or DirectX format and set intensity.</string>
               </property>
               <property name="text">
                <string>Bump to Normal</string>
@@ -350,7 +372,12 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Optimize Texture&lt;/span&gt;&lt;br/&gt;Optimizes a texture by clamping the maximum size and adjusting the image (such as setting bit depth) according to the map type.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Usage:&lt;/span&gt; Select the texture map(s) to optimize.&lt;br/&gt;&lt;br/&gt;The optimized texture will be created in the same directory, with the original file moved to an &lt;span style=&quot; font-style:italic;&quot;&gt;old&lt;/span&gt; folder. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Optimize Texture.
+Optimizes a texture by clamping the maximum size and adjusting the image (such as setting bit depth) according to the map type.
+
+Usage: Select the texture map(s) to optimize.
+
+The optimized texture will be created in the same directory, with the original file moved to an 'old' folder.</string>
               </property>
               <property name="text">
                <string>Optimize</string>
@@ -381,7 +408,12 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Flip Channels&lt;/span&gt;&lt;br/&gt;Invert, swap, broadcast, or constant-fill an image's R/G/B/A channels.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Options:&lt;/span&gt; Per output channel, choose its source (optionally inverted, or Black/White). Set a suffix to save a copy; empty overwrites the source.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Usage:&lt;/span&gt; Select texture map(s). Batch processing is supported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Flip Channels.
+Invert, swap, broadcast, or constant-fill an image's R/G/B/A channels.
+
+Options: Per output channel, choose its source (optionally inverted, or Black/White). Set a suffix to save a copy; empty overwrites the source.
+
+Usage: Select texture map(s). Batch processing is supported.</string>
               </property>
               <property name="text">
                <string>Flip Channels</string>
@@ -436,7 +468,13 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Pack Transparency into Albedo&lt;/span&gt;&lt;br/&gt;Combines a &lt;span style=&quot; font-weight:600;&quot;&gt;Transparency (Opacity)&lt;/span&gt; map into the &lt;span style=&quot; font-weight:600;&quot;&gt;Albedo&lt;/span&gt; map.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Usage:&lt;/span&gt; Select an &lt;span style=&quot; font-weight:600;&quot;&gt;Albedo&lt;/span&gt; and an &lt;span style=&quot; font-weight:600;&quot;&gt;Opacity&lt;/span&gt; map.  Select multiple maps from different sets to batch process.&lt;br/&gt;&lt;br/&gt;- If an existing &lt;span style=&quot; font-weight:600;&quot;&gt;Albedo Transparency&lt;/span&gt; map of the same name exists, it will be &lt;span style=&quot; font-weight:600;&quot;&gt;overwritten&lt;/span&gt;.&lt;br/&gt;- If a &lt;span style=&quot; font-weight:600;&quot;&gt;BaseColor&lt;/span&gt; map is provided, it will be converted to &lt;span style=&quot; font-weight:600;&quot;&gt;Albedo&lt;/span&gt;. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Pack Transparency into Albedo.
+Combines a Transparency (Opacity) map into the Albedo map.
+
+Usage: Select an Albedo and an Opacity map. Select multiple maps from different sets to batch process.
+
+- If an existing Albedo Transparency map of the same name exists, it will be overwritten.
+- If a BaseColor map is provided, it will be converted to Albedo.</string>
               </property>
               <property name="text">
                <string>Albedo Transparency</string>
@@ -491,7 +529,13 @@ Converts a &lt;b&gt;Normal Map&lt;/b&gt; from &lt;b&gt;OpenGL&lt;/b&gt; format t
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Unpack Specular and Glossiness to separate maps.&lt;/span&gt;&lt;br/&gt;Extracts the Glossiness map from the Specular map's alpha channel.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Usage:&lt;/span&gt; Select a &lt;span style=&quot; font-weight:600;&quot;&gt;Specular &lt;/span&gt;map.&lt;br/&gt;&lt;br/&gt;- If extraction fails, the Glossiness map will be approximated using the &lt;span style=&quot; font-weight:600;&quot;&gt;Specular&lt;/span&gt; map.&lt;br/&gt;- If an existing Specular or Glossiness map of the same name exists, it will be &lt;span style=&quot; font-weight:600;&quot;&gt;overwritten&lt;/span&gt;. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>Unpack Specular and Glossiness to separate maps.
+Extracts the Glossiness map from the Specular map's alpha channel.
+
+Usage: Select a Specular map.
+
+- If extraction fails, the Glossiness map will be approximated using the Specular map.
+- If an existing Specular or Glossiness map of the same name exists, it will be overwritten.</string>
               </property>
               <property name="text">
                <string>Spec Gloss</string>

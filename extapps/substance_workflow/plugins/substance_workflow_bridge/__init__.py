@@ -7,26 +7,72 @@ unset). ``run_batch`` from the client side drives this same server —
 there is no separate batch mode.
 """
 
+import importlib
 import logging
 import os
 import sys
 
 logger = logging.getLogger(__name__)
 
-# Bootstrap: make the ``extapps.substance_workflow`` package (and its
-# ``pythontk`` dependency) importable inside Painter's bundled Python.
-# Layout: _scripts/extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py
+# Bootstrap: make ``extapps.substance_workflow`` and its ``pythontk`` dependency
+# importable inside Painter's bundled Python, where neither is installed.
+# Painter loads this plugin in place from the repo (``plugins_dir()`` goes on
+# ``SUBSTANCE_PAINTER_PLUGINS_PATH``; it is never copied), so the walk-up below
+# is a reliable way back to the checkout.
+#
+# Layout: _scripts/extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/
 #   parent[1] = plugins
 #   parent[2] = substance_workflow
-#   parent[3] = extapps          (the package)
-#   parent[4] = extapps          (the repo)
-#   parent[5] = _scripts         (monorepo root — add to sys.path)
-# Importing ``extapps`` only needs ``pythontk`` (zero-dep, lazy bootstrap);
-# it does NOT pull in qtpy/uitk.
-_here = os.path.abspath(os.path.dirname(__file__))
-_scripts_root = os.path.abspath(os.path.join(_here, "..", "..", "..", "..", ".."))
-if _scripts_root not in sys.path:
-    sys.path.insert(0, _scripts_root)
+#   parent[3] = extapps      (the package)
+#   parent[4] = extapps      (the repo)   <- holds the `extapps` PACKAGE
+#   parent[5] = _scripts     (monorepo root)
+#
+# Add each package's PARENT — never the monorepo root. Two reasons, both proven
+# by probe rather than assumed:
+#
+# 1. The root does not work. It holds only the bare repo dirs, and
+#    ``_scripts/extapps`` has no ``__init__.py``, so ``import extapps`` binds an
+#    empty **namespace** package and ``extapps.substance_workflow`` — one level
+#    deeper — is never found. ``pythontk`` was equally unreachable, and was only
+#    ever importable here because the dev environment already had these dirs on
+#    PYTHONPATH.
+# 2. The root is actively harmful. Every *sibling* repo dir (``unitytk/``,
+#    ``mayatk/``, …) becomes such a namespace too, outranking the real installed
+#    package — even an editable one, whose finder is appended to
+#    ``sys.meta_path`` AFTER the path finder that returns the namespace. That is
+#    what made the Unity Workflow panel read ``unitytk`` as not installed
+#    (``optional_package_available`` documents the trap it triggers).
+#
+# Guarded per package, and skipped entirely when the import already works: this
+# module is not reached only from Painter — ``bootstrap_package`` resolves the
+# package surface with ``pkgutil.walk_packages``, which *imports* every
+# subpackage it walks, so a plain ``import extapps`` lands here too and must not
+# mutate ``sys.path`` (the repo rule: imports have no side effects).
+def _ensure_importable(module_name: str, package_parent: str) -> None:
+    """Put *package_parent* on ``sys.path`` only if *module_name* won't import.
+
+    A module that imports but has no ``__file__`` is the namespace-shadow case
+    above — present in name only, every attribute access ahead of it doomed — so
+    it counts as *not* importable and the real parent still goes on the path,
+    where a regular package outranks the namespace portion. Same rule uitk's
+    ``optional_package_available`` applies on the probe side.
+    """
+    try:
+        if getattr(importlib.import_module(module_name), "__file__", None):
+            return
+    except ImportError:
+        pass
+    if os.path.isdir(package_parent) and package_parent not in sys.path:
+        sys.path.insert(0, package_parent)
+
+
+_extapps_repo = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
+)
+_scripts_root = os.path.dirname(_extapps_repo)
+
+_ensure_importable("extapps", _extapps_repo)
+_ensure_importable("pythontk", os.path.join(_scripts_root, "pythontk"))
 
 
 # Every top-level ``*_utils.py`` op module in ``extapps.substance_workflow``.

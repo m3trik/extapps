@@ -636,6 +636,7 @@ class CompositorSlots:
     def txt002_init(self, widget):
         """Init Map Name"""
         widget.setToolTip(self.tip_mapname)
+        widget.option_box.clear_option = True
         self._recent_map_names = self._bind_recent_values(
             widget,
             "compositor_map_names",

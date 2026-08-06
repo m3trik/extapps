@@ -963,7 +963,16 @@ class TestConverterOptimize(unittest.TestCase):
         ImgUtils.save_image(ImgUtils.create_image("RGB", size, (200, 120, 60)), path)
         return path
 
-    def _widget(self, *, modifier="", affix="auto", clamp=0, dry_run=False, old="old"):
+    def _widget(
+        self,
+        *,
+        modifier="",
+        affix="auto",
+        clamp=0,
+        dry_run=False,
+        new="",
+        old="old",
+    ):
         widget = MagicMock()
         menu = widget.option_box.menu
         menu.cmb001.currentData.return_value = ""
@@ -971,6 +980,7 @@ class TestConverterOptimize(unittest.TestCase):
         menu.cmb_secondary_scale.currentData.return_value = 1.0
         menu.cmb_affix.currentData.return_value = affix
         menu.txt_modifier.text.return_value = modifier
+        menu.txt_new_folder.text.return_value = new
         menu.txt_old_folder.text.return_value = old
         menu.chk_dry_run.isChecked.return_value = dry_run
         return widget
@@ -1041,6 +1051,7 @@ class TestConverterOptimize(unittest.TestCase):
             secondary_scale=1.0,
             mode="suffix",
             modifier="",
+            new_folder="",
             old_folder="",
             registry=MapRegistry(),
             dry_run=True,
@@ -1052,6 +1063,7 @@ class TestConverterOptimize(unittest.TestCase):
             secondary_scale=1.0,
             mode="suffix",
             modifier="",
+            new_folder="",
             old_folder="",
             registry=MapRegistry(),
         )
@@ -1082,6 +1094,42 @@ class TestConverterOptimize(unittest.TestCase):
             if line.startswith(marker):
                 return line[len(marker):].split("  [")[0].strip()
         self.fail(f"No {marker!r} line was printed.")
+
+    def test_one_failing_map_does_not_abandon_the_batch(self):
+        """A map that can't be written is reported; the rest still optimize.
+
+        Regression (2026-08-05): optimizing a Maya selection that included a
+        read-only source (StingrayPBS' preset cube maps live under Program
+        Files) raised PermissionError straight out of the loop — the run
+        stopped mid-batch with no summary and no indication of how far it got.
+        """
+        first = self._texture("a_BaseColor.png", size=(256, 256))
+        doomed = self._texture("b_Roughness.png", size=(256, 256))
+        last = self._texture("c_Metallic.png", size=(256, 256))
+        self.converter._get_texture_paths = Mock(
+            return_value=[first, doomed, last]
+        )
+
+        real_optimize_one = self.converter._optimize_one
+
+        def _fail_on_doomed(texture_path, **kwargs):
+            if texture_path == doomed:
+                raise PermissionError(f"[Errno 13] Permission denied: {doomed!r}")
+            return real_optimize_one(texture_path, **kwargs)
+
+        self.converter._optimize_one = _fail_on_doomed
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertIn("PermissionError", reported)
+        self.assertIn("b_Roughness.png", reported)
+        # The two healthy maps still ran, and the summary counts only those.
+        self.assertIn("// Total (2 map(s)) (1 unmeasured):", reported)
+        for survivor in (first, last):
+            with Image.open(survivor) as im:
+                self.assertEqual(max(im.size), 128, survivor)
 
     def test_dry_run_reports_a_size_transition(self):
         path = self._texture(size=(256, 256))
@@ -1147,6 +1195,112 @@ class TestConverterOptimize(unittest.TestCase):
         self.assertNotIn("overwrites the original in place", reported)
         self.assertIn("Would move the original into: old/", reported)
 
+    # ---- destination folder ---------------------------------------------
+
+    def test_new_folder_receives_the_optimized_map(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(self._widget(clamp=128, new="new", old=""))
+
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.test_dir, "new", "rock_BaseColor.png"))
+        )
+        self.assertTrue(os.path.isfile(path))  # source left where it was
+
+    def test_new_folder_composes_with_the_modifier(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(
+            self._widget(clamp=128, modifier="LD_", new="new", old="")
+        )
+
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.test_dir, "new", "LD_rock_BaseColor.png"))
+        )
+
+    def test_new_folder_archives_the_original_beside_the_source(self):
+        """The archive is relative to the *source* folder, not the new one —
+        otherwise the original is buried inside the output it produced."""
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(self._widget(clamp=128, new="new", old="old"))
+
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.test_dir, "old", "rock_BaseColor.png"))
+        )
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.test_dir, "new", "rock_BaseColor.png"))
+        )
+        self.assertFalse(os.path.isfile(path))
+
+    def test_matching_destination_folders_are_refused(self):
+        """Archiving into the folder just written to drops the original on top
+        of the optimized map — refuse before the first texture is touched."""
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128, new="out", old="/out/"))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertIn("Use different names", reported)
+        self.assertEqual(os.listdir(self.test_dir), [os.path.basename(path)])
+
+    def test_matching_destinations_are_compared_the_way_the_filesystem_would(self):
+        """'out' and 'OUT' are one directory on Windows and two on POSIX, so
+        the guard has to defer to normcase rather than folding case outright."""
+        same_dir = os.path.normcase("out") == os.path.normcase("OUT")
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128, new="out", old="OUT"))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        if same_dir:
+            self.assertIn("Use different names", reported)
+        else:  # two distinct directories — the run proceeds, filling both
+            for folder in ("out", "OUT"):
+                self.assertTrue(
+                    os.path.isfile(
+                        os.path.join(self.test_dir, folder, "rock_BaseColor.png")
+                    )
+                )
+
+    def test_dry_run_reports_the_new_folder_path(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        predicted = self._captured_path(
+            "// Would write: ", self._widget(clamp=128, new="new", dry_run=True)
+        )
+        written = self._captured_path(
+            "// Result: ", self._widget(clamp=128, new="new")
+        )
+
+        self.assertEqual(predicted, written)
+        self.assertEqual(
+            os.path.normcase(os.path.dirname(predicted)),
+            os.path.normcase(os.path.join(self.test_dir, "new")),
+        )
+
+    def test_new_folder_is_not_created_on_a_dry_run(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(self._widget(clamp=128, new="new", dry_run=True))
+
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, "new")))
+
+    def test_folder_name_strips_typed_separators(self):
+        for text in ("/new/", "\\new", "  new  ", "new/"):
+            with self.subTest(text=text):
+                self.assertEqual(ConverterSlots._folder_name(text), "new")
+        self.assertEqual(ConverterSlots._folder_name(""), "")
+
     def test_optimize_one_returns_measured_sizes(self):
         path = self._texture(size=(256, 256))
         size_before = os.path.getsize(path)
@@ -1158,6 +1312,7 @@ class TestConverterOptimize(unittest.TestCase):
             secondary_scale=1.0,
             mode="suffix",
             modifier="",
+            new_folder="",
             old_folder="",
             registry=MapRegistry(),
         )

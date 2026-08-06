@@ -91,9 +91,15 @@ class TestWireMaterialsNullTexturePath(unittest.TestCase):
             )
 
         # Only the valid 'normal' slot got wired; the null 'baseColor' was
-        # skipped rather than aborting the pass.
+        # skipped rather than aborting the pass. The binding is an
+        # ``mset.Texture`` constructed from the path with its colorspace set
+        # at construction (mutating ``sRGB`` on an already-bound texture
+        # severs the binding -- verified on Toolbag 5.02).
         self.assertEqual(wired, 1)
-        self.assertEqual(surface.wired, {"Normal Map": self.normal_path})
+        fake_mset.Texture.assert_called_once_with(self.normal_path)
+        tex_obj = fake_mset.Texture.return_value
+        self.assertEqual(surface.wired, {"Normal Map": tex_obj})
+        self.assertIs(tex_obj.sRGB, False)  # normal maps load Linear
 
 
 if __name__ == "__main__":

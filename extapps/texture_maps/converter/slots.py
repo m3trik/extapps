@@ -25,6 +25,7 @@ from pythontk.core_utils.engines.textures.map_factory import MapFactory
 from pythontk.core_utils.engines.textures.map_registry import MapRegistry
 from pythontk.core_utils.engines.textures.map_optimizer import MapOptimizer
 from pythontk.file_utils._file_utils import FileUtils
+from pythontk.str_utils._str_utils import StrUtils
 
 class ConverterSlots(ImgUtils):
     """Switchboard slots for ``converter.ui``.
@@ -249,10 +250,25 @@ class ConverterSlots(ImgUtils):
             print(f"// Skipping (file not found): {missing}")
         return valid
 
+    #: Longest-side clamp offered by the Optimize menu, and the entry selected
+    #: on a first run. 4K is the practical ceiling for real-time textures — a
+    #: bigger source almost always ships downsampled — so it beats 'None' as
+    #: the default for a tool whose whole purpose is shrinking maps.
+    CLAMP_SIZES = (256, 512, 1024, 2048, 4096, 8192)
+    DEFAULT_CLAMP = 4096
+
     def tb000_init(self, widget):
-        """Populate the Optimize toolbutton's option menu (format, clamp, modifier)."""
-        widget.option_box.menu.setTitle("Optimize")
-        widget.option_box.menu.add(
+        """Populate the Optimize toolbutton's option menu.
+
+        Grouped under titled separators — Output (what gets written), Naming
+        (what it's called), Destination (where it lands), Preview — so the
+        menu reads as sections rather than one flat stack of controls.
+        """
+        menu = widget.option_box.menu
+        menu.setTitle("Optimize")
+
+        menu.add("Separator", setTitle="Output")
+        menu.add(
             "QComboBox",
             setObjectName="cmb001",
             setToolTip="Set the output file type. 'Original' keeps each texture's existing format.",
@@ -261,22 +277,27 @@ class ConverterSlots(ImgUtils):
         # replaces explicit None data with the label string, so use values
         # that still evaluate falsy in the ``if not file_type`` / ``if not
         # max_size`` checks below.
-        widget.option_box.menu.cmb001.add(
+        menu.cmb001.add(
             [("Original", "")] + [(ext.upper(), ext) for ext in self.writable],
             prefix="Format:",
         )
 
-        widget.option_box.menu.add(
+        menu.add(
             "QComboBox",
             setObjectName="cmb000",
             setToolTip="Maximum dimension (longest side). 'None' disables resizing.",
         )
-        widget.option_box.menu.cmb000.add(
-            [("None", 0)] + [(s, int(s)) for s in ("256", "512", "1024", "2048", "4096", "8192")],
+        menu.cmb000.add(
+            [("None", 0)] + [(str(s), s) for s in self.CLAMP_SIZES],
             prefix="Clamp:",
         )
+        # First-run default only: state restore runs after the *_init hooks, so
+        # a previously chosen clamp still wins on later sessions.
+        default_clamp = menu.cmb000.findData(self.DEFAULT_CLAMP)
+        if default_clamp > -1:
+            menu.cmb000.setCurrentIndex(default_clamp)
 
-        widget.option_box.menu.add(
+        menu.add(
             "QComboBox",
             setObjectName="cmb_secondary_scale",
             setToolTip=(
@@ -285,12 +306,13 @@ class ConverterSlots(ImgUtils):
                 "maps (base color, normals, emissive) always use the full clamp."
             ),
         )
-        widget.option_box.menu.cmb_secondary_scale.add(
+        menu.cmb_secondary_scale.add(
             [("Full", 1.0), ("1/2", 0.5), ("1/4", 0.25), ("1/8", 0.125)],
             prefix="Secondary:",
         )
 
-        widget.option_box.menu.add(
+        menu.add("Separator", setTitle="Naming")
+        menu.add(
             "QComboBox",
             setObjectName="cmb_affix",
             setToolTip=(
@@ -301,24 +323,36 @@ class ConverterSlots(ImgUtils):
                 "Suffix / Prefix: force one regardless of how it's typed."
             ),
         )
-        widget.option_box.menu.cmb_affix.add(
+        menu.cmb_affix.add(
             [("Auto", "auto"), ("Suffix", "suffix"), ("Prefix", "prefix")],
             prefix="Affix:",
         )
 
-        widget.option_box.menu.add(
+        menu.add(
             "QLineEdit",
             setObjectName="txt_modifier",
             setPlaceholderText="e.g. LD_ or _LD",
             setToolTip=(
                 "Text inserted into the base name (before the map-type suffix). "
-                "Empty = overwrite the original file.\n"
+                "Empty = keep the original name.\n"
                 "With Affix on Auto, a trailing underscore ('LD_') makes it a "
                 "prefix and a leading one ('_LD') a suffix."
             ),
         )
 
-        widget.option_box.menu.add(
+        menu.add("Separator", setTitle="Destination")
+        menu.add(
+            "QLineEdit",
+            setObjectName="txt_new_folder",
+            setPlaceholderText="e.g. new",
+            setToolTip=(
+                "Subdirectory under the texture's folder to write the optimized "
+                "map into. Empty = write beside the original (which, with no "
+                "modifier, overwrites it)."
+            ),
+        )
+
+        menu.add(
             "QLineEdit",
             setObjectName="txt_old_folder",
             setText="old",
@@ -329,7 +363,8 @@ class ConverterSlots(ImgUtils):
             ),
         )
 
-        widget.option_box.menu.add(
+        menu.add("Separator", setTitle="Preview")
+        menu.add(
             "QCheckBox",
             setText="Dry run",
             setObjectName="chk_dry_run",
@@ -362,10 +397,23 @@ class ConverterSlots(ImgUtils):
             widget.option_box.menu.cmb_affix.currentData(),
             widget.option_box.menu.txt_modifier.text(),
         )
-        old_folder = (
-            widget.option_box.menu.txt_old_folder.text().strip().strip("/").strip("\\")
-        )
+        new_folder = self._folder_name(widget.option_box.menu.txt_new_folder.text())
+        old_folder = self._folder_name(widget.option_box.menu.txt_old_folder.text())
         dry_run = widget.option_box.menu.chk_dry_run.isChecked()
+
+        # Both fields resolve against the *source* folder, so pointing them at
+        # the same subdirectory drops the archived original on top of the map
+        # just written there — the optimization is silently undone. Refuse once,
+        # up front, rather than per texture after the first one is already gone.
+        # normcase, not casefold: on Windows 'out' and 'OUT' are one directory
+        # (so the clobber is real); on POSIX they are two, and refusing there
+        # would block a legitimate pair.
+        if new_folder and os.path.normcase(new_folder) == os.path.normcase(old_folder):
+            print(
+                f"// Both destination folders are '{new_folder}' - the archived "
+                "original would overwrite the optimized map. Use different names."
+            )
+            return
 
         registry = MapRegistry()
         verb = "Assessing" if dry_run else "Optimizing"
@@ -375,21 +423,33 @@ class ConverterSlots(ImgUtils):
 
         total = len(texture_paths)
         saved_before = saved_after = counted = 0
+        failed: List[Tuple[str, str]] = []
         with self.sb.progress(
             total=total, text=f"{verb} 0/{total}"
         ) as update:
             for i, texture_path in enumerate(texture_paths):
-                before, after = self._optimize_one(
-                    texture_path,
-                    file_type=file_type,
-                    max_size=max_size,
-                    secondary_scale=secondary_scale,
-                    mode=mode,
-                    modifier=modifier,
-                    old_folder=old_folder,
-                    registry=registry,
-                    dry_run=dry_run,
-                )
+                # One unwritable / unreadable map must not abandon the rest of
+                # the batch: a read-only source (a DCC's own preset textures
+                # live under Program Files) or a locked file used to raise out
+                # of the loop, leaving the run half-done with no summary.
+                try:
+                    before, after = self._optimize_one(
+                        texture_path,
+                        file_type=file_type,
+                        max_size=max_size,
+                        secondary_scale=secondary_scale,
+                        mode=mode,
+                        modifier=modifier,
+                        new_folder=new_folder,
+                        old_folder=old_folder,
+                        registry=registry,
+                        dry_run=dry_run,
+                    )
+                except Exception as e:
+                    before = after = None
+                    reason = f"{type(e).__name__}: {e}"
+                    failed.append((texture_path, reason))
+                    print(f"// Failed: {texture_path}\n//   {reason}")
                 if before is not None and after is not None:
                     saved_before += before
                     saved_after += after
@@ -398,6 +458,11 @@ class ConverterSlots(ImgUtils):
                     i + 1,
                     f"{done} {i + 1}/{total}: {os.path.basename(texture_path)}",
                 )
+
+        if failed:
+            print(f"// {len(failed)} map(s) failed:")
+            for path, reason in failed:
+                print(f"//   {os.path.basename(path)}: {reason}")
 
         if saved_before:
             # Count the maps that actually contributed a size, not the whole
@@ -431,17 +496,32 @@ class ConverterSlots(ImgUtils):
         """
         text = (modifier or "").strip()
         if mode not in ("prefix", "suffix"):
-            leads, trails = text.startswith("_"), text.endswith("_")
-            mode = "prefix" if (trails and not leads) else "suffix"
+            # Same underscore rule, already a primitive upstream. Its library
+            # default is "prefix" (asset-naming convention); this panel's
+            # pre-Auto default was suffix, so an undecidable modifier keeps
+            # suffixing rather than silently switching sides.
+            mode = StrUtils.infer_affix_mode(text, default="suffix")
         return mode, text.strip("_")
 
-    def _rename_target_path(self, texture_path, *, file_type, mode, modifier):
+    @staticmethod
+    def _folder_name(text: str) -> str:
+        """Normalize a destination field to a bare subdirectory name.
+
+        The fields name a subdirectory of the texture's own folder, so leading
+        or trailing separators (typed, or pasted off a path) are stripped —
+        ``"/new/"`` and ``"new"`` mean the same folder.
+        """
+        return (text or "").strip().strip("/\\").strip()
+
+    def _rename_target_path(
+        self, texture_path, *, file_type, mode, modifier, output_dir
+    ):
         """Output path for rename mode — modifier between base and map-type suffix.
 
-        Shared by the real run and the dry run so the reported path is the one
-        that would actually be written.
+        Only meaningful with a non-empty *modifier*; without one the filename is
+        whatever ``optimize_map`` resolves, which callers read off the run
+        itself rather than re-deriving here.
         """
-        directory = FileUtils.format_path(texture_path, "path")
         base_name = self.get_base_texture_name(texture_path)
         map_type = MapFactory.resolve_map_type(texture_path, key=False) or ""
         out_ext = (
@@ -455,7 +535,7 @@ class ConverterSlots(ImgUtils):
         out_filename = (
             f"{new_base}_{map_type}.{out_ext}" if map_type else f"{new_base}.{out_ext}"
         )
-        return os.path.join(directory, out_filename)
+        return os.path.join(output_dir, out_filename)
 
     def _optimize_one(
         self,
@@ -466,6 +546,7 @@ class ConverterSlots(ImgUtils):
         secondary_scale,
         mode,
         modifier,
+        new_folder,
         old_folder,
         registry,
         dry_run=False,
@@ -491,6 +572,12 @@ class ConverterSlots(ImgUtils):
                     f"{effective_max_size} ({map_type_key or 'unknown type'})"
                 )
 
+        directory = FileUtils.format_path(texture_path, "path")
+        # Where this run writes: the texture's own folder, or the 'New folder'
+        # subdirectory under it. Resolved once so the real run and the dry run
+        # report the same destination.
+        output_dir = os.path.join(directory, new_folder) if new_folder else directory
+
         if dry_run:
             return self._report_optimize_plan(
                 texture_path,
@@ -498,6 +585,7 @@ class ConverterSlots(ImgUtils):
                 max_size=effective_max_size,
                 mode=mode,
                 modifier=modifier,
+                output_dir=output_dir,
                 old_folder=old_folder,
             )
 
@@ -505,9 +593,11 @@ class ConverterSlots(ImgUtils):
             os.path.getsize(texture_path) if os.path.isfile(texture_path) else None
         )
 
-        if not modifier:
-            # Overwrite mode: optimize in place. optimize_map handles
-            # the optional move-to-old-folder for us.
+        if not modifier and not new_folder:
+            # Overwrite mode: optimize in place. The write lands on the source,
+            # so the original has to be archived *first* — which is exactly what
+            # optimize_map's old_files_folder does (relative to the output dir,
+            # here the source's own folder).
             optimized_map_path = MapOptimizer.optimize_map(
                 texture_path,
                 output_type=file_type,
@@ -516,33 +606,47 @@ class ConverterSlots(ImgUtils):
                 optimize_bit_depth=True,
             )
         else:
-            # Rename mode: place the modifier between base name and
-            # map-type suffix and save alongside the original.
-            target_path = self._rename_target_path(
-                texture_path, file_type=file_type, mode=mode, modifier=modifier
-            )
-            directory = FileUtils.format_path(texture_path, "path")
-
-            # Same-drive temp dir so the final os.replace is a fast rename
-            # and overwrites cleanly on re-run. We can't pass
-            # old_files_folder here because optimize_map would archive
-            # the original into the temp dir and lose it on cleanup.
-            with tempfile.TemporaryDirectory(dir=directory) as temp_dir:
-                temp_result = MapOptimizer.optimize_map(
+            os.makedirs(output_dir, exist_ok=True)
+            if modifier:
+                # Rename mode: place the modifier between base name and
+                # map-type suffix. optimize_map names its own output, so it
+                # writes to a temp dir first; same-drive (inside output_dir)
+                # so the final os.replace is a fast rename that overwrites
+                # cleanly on re-run.
+                optimized_map_path = self._rename_target_path(
                     texture_path,
-                    output_dir=temp_dir,
+                    file_type=file_type,
+                    mode=mode,
+                    modifier=modifier,
+                    output_dir=output_dir,
+                )
+                with tempfile.TemporaryDirectory(dir=output_dir) as temp_dir:
+                    temp_result = MapOptimizer.optimize_map(
+                        texture_path,
+                        output_dir=temp_dir,
+                        output_type=file_type,
+                        max_size=effective_max_size,
+                        optimize_bit_depth=True,
+                    )
+                    os.replace(temp_result, optimized_map_path)
+            else:
+                # New folder, original name: the subdirectory can't collide with
+                # the source, so optimize_map writes straight into it.
+                optimized_map_path = MapOptimizer.optimize_map(
+                    texture_path,
+                    output_dir=output_dir,
                     output_type=file_type,
                     max_size=effective_max_size,
                     optimize_bit_depth=True,
                 )
-                os.replace(temp_result, target_path)
 
+            # Archived here rather than by optimize_map, whose old_files_folder
+            # is relative to the *output* dir — that would bury the original in
+            # the new folder, or in the temp dir where cleanup deletes it.
             if old_folder:
                 FileUtils.move_file(
                     texture_path, os.path.join(directory, old_folder)
                 )
-
-            optimized_map_path = target_path
 
         size_after = (
             os.path.getsize(optimized_map_path)
@@ -563,6 +667,7 @@ class ConverterSlots(ImgUtils):
         max_size,
         mode,
         modifier,
+        output_dir,
         old_folder,
     ):
         """Print what optimizing *texture_path* would do, touching nothing.
@@ -585,10 +690,16 @@ class ConverterSlots(ImgUtils):
         current, predicted = report["current"], report["predicted"]
         target = (
             self._rename_target_path(
-                texture_path, file_type=file_type, mode=mode, modifier=modifier
+                texture_path,
+                file_type=file_type,
+                mode=mode,
+                modifier=modifier,
+                output_dir=output_dir,
             )
             if modifier
-            else predicted["path"]  # assess resolves it the way optimize_map does
+            # assess resolves the filename the way optimize_map does; re-root it
+            # into the run's output dir so a 'New folder' is reflected.
+            else os.path.join(output_dir, os.path.basename(predicted["path"]))
         )
 
         dims = f"{current['width']}x{current['height']}"

@@ -11,7 +11,7 @@
         {
           "name": "MarmosetEngine",
           "summary": "Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.",
-          "line": 57,
+          "line": 58,
           "bases": [
             "ptk.Deliverer",
             "ptk.LoggingMixin"
@@ -23,7 +23,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve the Toolbag executable path.",
-              "line": 96,
+              "line": 97,
               "deprecated": false
             },
             {
@@ -32,7 +32,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve Toolbag's application log file (script prints + tracebacks).",
-              "line": 119,
+              "line": 120,
               "deprecated": false
             },
             {
@@ -41,7 +41,7 @@
               "kind": "method",
               "signature": "(self, bridge, request) -> bool",
               "summary": "Validate the (template, mode) before the bridge produces its payload.",
-              "line": 130,
+              "line": 131,
               "deprecated": false
             },
             {
@@ -50,7 +50,7 @@
               "kind": "method",
               "signature": "(self, bridge, payload, request) -> Optional[Dict[str, Any]]",
               "summary": "Hand the produced model + manifests to Toolbag via :meth:`send`.",
-              "line": 146,
+              "line": 147,
               "deprecated": false
             },
             {
@@ -59,7 +59,7 @@
               "kind": "method",
               "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, output_dir: Optional[str] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]",
               "summary": "Render *template* in *mode* against *model_path* and hand off to Toolbag.",
-              "line": 169,
+              "line": 170,
               "deprecated": false
             },
             {
@@ -68,7 +68,7 @@
               "kind": "method",
               "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None) -> Optional[str]",
               "summary": "Return the rendered Toolbag Python script body, or *None* on miss.",
-              "line": 365,
+              "line": 411,
               "deprecated": false
             },
             {
@@ -77,7 +77,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Path]",
               "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
-              "line": 595,
+              "line": 650,
               "deprecated": false
             },
             {
@@ -86,7 +86,7 @@
               "kind": "staticmethod",
               "signature": "(template_path: Path) -> Tuple[str, ...]",
               "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
-              "line": 600,
+              "line": 655,
               "deprecated": false
             },
             {
@@ -95,7 +95,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Tuple[str, str]]",
               "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
-              "line": 609,
+              "line": 664,
               "deprecated": false
             }
           ]
@@ -354,16 +354,25 @@
         {
           "name": "TemplateParams",
           "summary": "TemplateParams — module namespace.",
-          "line": 73,
+          "line": 93,
           "bases": [],
           "members": [
+            {
+              "name": "derive_auto_maps",
+              "qualname": "TemplateParams.derive_auto_maps",
+              "kind": "staticmethod",
+              "signature": "(manifest: Dict[str, Any]) -> Dict[str, bool]",
+              "summary": "Return the ``{MAP_*: bool}`` roster *manifest*'s textures imply.",
+              "line": 147,
+              "deprecated": false
+            },
             {
               "name": "derive_bake_values",
               "qualname": "TemplateParams.derive_bake_values",
               "kind": "staticmethod",
               "signature": "(values: Dict[str, Any]) -> Dict[str, Any]",
               "summary": "Return the managed bake tokens derived from *values*.",
-              "line": 101,
+              "line": 178,
               "deprecated": false
             },
             {
@@ -372,7 +381,7 @@
               "kind": "staticmethod",
               "signature": "(value: Any) -> str",
               "summary": "Format *value* as a Python source literal for template substitution.",
-              "line": 133,
+              "line": 210,
               "deprecated": false
             },
             {
@@ -381,7 +390,7 @@
               "kind": "staticmethod",
               "signature": "() -> Dict[str, Any]",
               "summary": "Return a copy of :data:`DEFAULTS`.",
-              "line": 144,
+              "line": 221,
               "deprecated": false
             },
             {
@@ -390,7 +399,7 @@
               "kind": "staticmethod",
               "signature": "(values: Dict[str, Any]) -> Dict[str, str]",
               "summary": "Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.",
-              "line": 149,
+              "line": 226,
               "deprecated": false
             }
           ]
@@ -540,7 +549,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Set up the FBX -> GLB tool button option box.",
-              "line": 142,
+              "line": 143,
               "deprecated": false
             },
             {
@@ -549,7 +558,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Convert the selected FBX file(s) to GLB beside their source.",
-              "line": 174,
+              "line": 175,
               "deprecated": false
             }
           ]
@@ -3091,7 +3100,7 @@
           "kind": "function",
           "signature": "(func, *args, **kwargs)",
           "summary": "Marshal ``func`` onto Painter's main Qt event loop and block until done.",
-          "line": 26,
+          "line": 46,
           "deprecated": false
         },
         {
@@ -3108,7 +3117,7 @@
         {
           "name": "BridgeServer",
           "summary": "",
-          "line": 106,
+          "line": 108,
           "bases": [],
           "members": [
             {
@@ -3117,7 +3126,7 @@
               "kind": "method",
               "signature": "(self) -> int",
               "summary": "",
-              "line": 113,
+              "line": 115,
               "deprecated": false
             },
             {
@@ -3126,7 +3135,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 125,
+              "line": 127,
               "deprecated": false
             }
           ]
@@ -3533,7 +3542,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 580,
+              "line": 581,
               "deprecated": false
             },
             {
@@ -3542,7 +3551,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Destination Directory",
-              "line": 609,
+              "line": 610,
               "deprecated": false
             },
             {
@@ -3551,7 +3560,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Map Name",
-              "line": 636,
+              "line": 637,
               "deprecated": false
             },
             {
@@ -3560,7 +3569,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 648,
+              "line": 649,
               "deprecated": false
             },
             {
@@ -3569,7 +3578,7 @@
               "kind": "method",
               "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 658,
+              "line": 659,
               "deprecated": false
             }
           ]

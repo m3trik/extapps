@@ -11,7 +11,7 @@ Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.1.10"
+__version__ = "0.1.11"
 
 
 DEFAULT_INCLUDE = {

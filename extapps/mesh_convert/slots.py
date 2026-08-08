@@ -59,11 +59,12 @@ class MeshConvertSlots(MeshConvert):
             setObjectName="chk_use_selection",
             setChecked=False,
             setToolTip=(
-                "When enabled, every tool reads FBX paths from the host DCC's "
-                "currently selected reference nodes (provided by the host "
-                "integration) instead of opening a file browser. Imported "
-                "geometry is ignored — only nodes whose reference filename "
-                "ends in .fbx contribute."
+                "When enabled, tools that take FBX input read their paths from "
+                "the host DCC's currently selected reference nodes (provided by "
+                "the host integration) instead of opening a file browser. Tools "
+                "with other input types are unaffected. Imported geometry is "
+                "ignored — only nodes whose reference filename ends in .fbx "
+                "contribute."
             ),
         )
 

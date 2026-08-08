@@ -1152,6 +1152,10 @@ class ConverterSlots(ImgUtils):
         source of truth the Maya "Update Materials" tool also reads — so a named
         workflow yields identical settings in both tools. (This method used to
         carry its own copy of the configs, which had drifted from the registry.)
+
+        WebXR is not listed separately: its runtime material model is glTF 2.0,
+        so "glTF 2.0" is the preset to choose for WebXR / three.js / Babylon.js
+        delivery.
         """
         # Get texture paths
         texture_paths = self._get_texture_paths(

@@ -546,6 +546,7 @@ class CompositorSlots:
                 "Post-process composited output for a target workflow. "
                 "Packs/renames the files for the chosen engine (e.g. Unity "
                 "HDRP packs Metallic/AO/Smoothness into an MSAO MaskMap). "
+                "glTF 2.0 is also the WebXR delivery profile. "
                 "Original composited files stay on disk alongside the "
                 "workflow output."
             ),

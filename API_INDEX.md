@@ -26,7 +26,7 @@ _Generated: 2026-08-08_
 
 ### `marmoset_workflow/template_params.py` — Plain default values + literal formatting for Marmoset template tokens.
 - `class TemplateParams`
-  - methods: derive_bake_values, python_literal, defaults, to_context
+  - methods: derive_auto_maps, derive_bake_values, python_literal, defaults, to_context
 
 ### `marmoset_workflow/templates/import.py` — Open the model in Toolbag and wire materials from the manifest.
 - `main()`

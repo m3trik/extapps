@@ -81,7 +81,7 @@ _Generated: 2026-08-08_
 
 Drive Marmoset Toolbag from the outside -- launch + templated automation.
 
-- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L57)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
+- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L58)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
   - `MarmosetEngine.toolbag_path(self) -> Optional[str]` *(property)* — Resolve the Toolbag executable path.
   - `MarmosetEngine.toolbag_log_path(self) -> Optional[str]` *(property)* — Resolve Toolbag's application log file (script prints + tracebacks).
   - `MarmosetEngine.preflight(self, bridge, request) -> bool` — Validate the (template, mode) before the bridge produces its payload.
@@ -145,7 +145,8 @@ Slots for the standalone Marmoset Workflow panel.
 
 Plain default values + literal formatting for Marmoset template tokens.
 
-- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L73)** — TemplateParams — module namespace.
+- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L93)** — TemplateParams — module namespace.
+  - `TemplateParams.derive_auto_maps(manifest: Dict[str, Any]) -> Dict[str, bool]` *(static)* — Return the ``{MAP_*: bool}`` roster *manifest*'s textures imply.
   - `TemplateParams.derive_bake_values(values: Dict[str, Any]) -> Dict[str, Any]` *(static)* — Return the managed bake tokens derived from *values*.
   - `TemplateParams.python_literal(value: Any) -> str` *(static)* — Format *value* as a Python source literal for template substitution.
   - `TemplateParams.defaults() -> Dict[str, Any]` *(static)* — Return a copy of :data:`DEFAULTS`.
@@ -691,9 +692,9 @@ substance_workflow_bridge — Painter-side Python plugin.
 
 Live-mode HTTP bridge — runs inside Painter, dispatches ops on the main thread.
 
-- [`call_on_main_thread(func, *args, **kwargs)`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/server.py#L26) — Marshal ``func`` onto Painter's main Qt event loop and block until done.
+- [`call_on_main_thread(func, *args, **kwargs)`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/server.py#L46) — Marshal ``func`` onto Painter's main Qt event loop and block until done.
 - [`dispatch_request(path: str, payload: dict, executor=None) -> tuple`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/server.py#L51) — Pure dispatch: route ``(path, payload)`` and return ``(status, body)``.
-- **[`class BridgeServer`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/server.py#L106)**
+- **[`class BridgeServer`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/server.py#L108)**
   - `BridgeServer.start(self) -> int`
   - `BridgeServer.stop(self) -> None`
 

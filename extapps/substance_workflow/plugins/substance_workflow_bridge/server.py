@@ -1,4 +1,16 @@
-"""Live-mode HTTP bridge — runs inside Painter, dispatches ops on the main thread."""
+"""Live-mode HTTP bridge — runs inside Painter, dispatches ops on the main thread.
+
+The *routing* here is deliberately this app's own: :class:`PainterConnection` and
+this server are a matched pair with a richer ``describe`` shape (parameter
+annotations and return types) than the generic ``pythontk.RpcClient`` contract,
+which the panel's op browser relies on.
+
+The *marshalling* is not app-specific, and is shared —
+:class:`pythontk.MainThreadMarshaller`. This plugin loads in place from the
+checkout and bootstraps ``sys.path`` (see the package ``__init__``), so it can
+import pythontk directly rather than carrying a staged copy like the installed
+mayatk/blendertk plugins do.
+"""
 
 import json
 import logging
@@ -6,55 +18,45 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Optional
 
+from pythontk.net_utils.rpc.plugin_core import MainThreadMarshaller
+
 from extapps.substance_workflow import registry
 
 logger = logging.getLogger(__name__)
 
-
-def _qtimer():
-    """Resolve QTimer from Painter's bundled Qt binding (PySide6 newer, PySide2 older)."""
-    try:
-        from PySide6.QtCore import QTimer
-
-        return QTimer
-    except ImportError:
-        from PySide2.QtCore import QTimer
-
-        return QTimer
+#: Painter's API is main-thread-only, but the HTTP server answers on a worker
+#: thread, so every dispatched op has to hop back. The shared marshaller adds two
+#: things a bare ``QTimer.singleShot`` + ``Event.wait()`` cannot do: a bound on a
+#: wedged event loop, and a direct-call fallback when there is no Qt / no
+#: QApplication / we are already on the main thread — which is what lets tests
+#: exercise the real dispatch path.
+#:
+#: The bound is deliberately an HOUR, not the marshaller's 60 s default. Every op
+#: goes through here, including ``bake.mesh_maps`` / ``bake.all_texture_sets``,
+#: and a multi-texture-set 4K bake legitimately runs for many minutes. The
+#: predecessor here waited forever, so any bound at all is new: it must sit far
+#: above the slowest real op or it converts working bakes into TimeoutErrors,
+#: which is a worse failure than the hang it replaces. An hour still catches a
+#: genuinely deadlocked event loop, which never returns at any bound.
+MARSHALLER = MainThreadMarshaller(
+    "SUBSTANCE_WORKFLOW_DISABLE_MAIN_THREAD", timeout=3600.0
+)
 
 
 def call_on_main_thread(func, *args, **kwargs):
-    """Marshal ``func`` onto Painter's main Qt event loop and block until done.
-
-    Painter's API is main-thread-only; the HTTP server runs on a worker
-    thread, so every dispatched op has to hop back here.
-    """
-    QTimer = _qtimer()
-    done = threading.Event()
-    container: dict = {}
-
-    def runner() -> None:
-        try:
-            container["value"] = func(*args, **kwargs)
-        except Exception as e:
-            container["error"] = e
-        finally:
-            done.set()
-
-    QTimer.singleShot(0, runner)
-    done.wait()
-    if "error" in container:
-        raise container["error"]
-    return container.get("value")
+    """Marshal ``func`` onto Painter's main Qt event loop and block until done."""
+    return MARSHALLER.run(func, *args, **kwargs)
 
 
 def dispatch_request(path: str, payload: dict, executor=None) -> tuple:
     """Pure dispatch: route ``(path, payload)`` and return ``(status, body)``.
 
-    Decoupled from the HTTP layer so the routing logic is testable without
-    Qt or a real socket. ``executor`` is the function that runs an op —
-    defaults to :func:`call_on_main_thread` (Qt-dependent); tests pass a
-    synchronous direct-call.
+    Decoupled from the HTTP layer so the routing logic is testable without a
+    real socket. ``executor`` is the function that runs an op, defaulting to
+    :func:`call_on_main_thread`; the shared marshaller behind it already
+    degrades to a direct call with no Qt / no QApplication / on the main
+    thread, so the override is a seam for asserting *how* an op was run rather
+    than a requirement for running one at all.
     """
     if executor is None:
         executor = call_on_main_thread

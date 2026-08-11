@@ -1301,6 +1301,138 @@ class TestConverterOptimize(unittest.TestCase):
                 self.assertEqual(ConverterSlots._folder_name(text), "new")
         self.assertEqual(ConverterSlots._folder_name(""), "")
 
+    # ---- absolute destinations ------------------------------------------
+
+    def test_folder_name_keeps_a_full_path_intact(self):
+        """A drive-rooted (or POSIX-rooted) entry names one shared destination,
+        so it must survive the separator stripping that bare names get."""
+        full = os.path.join(self.test_dir, "collected")
+        self.assertEqual(ConverterSlots._folder_name(full), os.path.normpath(full))
+        self.assertEqual(ConverterSlots._folder_name(f"  {full}  "), os.path.normpath(full))
+
+    def test_absolute_new_folder_collects_maps_from_several_source_folders(self):
+        """The capability the Material Updater's Output Folder used to carry:
+        one destination for a batch whose sources live in different folders."""
+        out = os.path.join(self.test_dir, "collected")
+        sources = []
+        for sub in ("a", "b"):
+            os.makedirs(os.path.join(self.test_dir, sub), exist_ok=True)
+            sources.append(
+                self._texture(name=os.path.join(sub, f"{sub}_BaseColor.png"), size=(256, 256))
+            )
+        self.converter._get_texture_paths = Mock(return_value=sources)
+
+        self.converter.tb000(self._widget(clamp=128, new=out, old=""))
+
+        for sub in ("a", "b"):
+            self.assertTrue(os.path.isfile(os.path.join(out, f"{sub}_BaseColor.png")))
+
+    def test_absolute_old_folder_collects_the_originals(self):
+        archive = os.path.join(self.test_dir, "archive")
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(
+            self._widget(clamp=128, new=os.path.join(self.test_dir, "out"), old=archive)
+        )
+
+        self.assertTrue(os.path.isfile(os.path.join(archive, "rock_BaseColor.png")))
+        self.assertFalse(os.path.isfile(path))  # original moved out of the source dir
+
+    def test_absolute_old_folder_works_in_overwrite_mode(self):
+        """Overwrite mode archives via ``optimize_map``'s own old_files_folder,
+        which resolves against the output dir — a full path must still win."""
+        archive = os.path.join(self.test_dir, "archive")
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(self._widget(clamp=128, new="", old=archive))
+
+        self.assertTrue(os.path.isfile(os.path.join(archive, "rock_BaseColor.png")))
+        self.assertTrue(os.path.isfile(path))  # optimized map written in place
+
+    def test_absolute_new_folder_naming_the_source_dir_is_overwrite_mode(self):
+        """A full path can name the texture's OWN folder. Treated as a new
+        folder it would write over the source and then archive the *optimized*
+        map, leaving nothing behind — so it has to take the in-place branch."""
+        archive = os.path.join(self.test_dir, "archive")
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(self._widget(clamp=128, new=self.test_dir, old=archive))
+
+        self.assertTrue(os.path.isfile(path), "optimized map must remain in place")
+        self.assertTrue(os.path.isfile(os.path.join(archive, "rock_BaseColor.png")))
+        self.assertEqual(ImgUtils.get_image_size(path), (128, 128))
+
+    def test_shared_destination_refuses_same_named_maps(self):
+        """Collapsing several source folders into one destination makes two
+        same-stem maps resolve to the same output path, and both writers
+        default to overwrite - refuse before the first one is destroyed."""
+        out = os.path.join(self.test_dir, "collected")
+        sources = []
+        for sub in ("a", "b"):
+            os.makedirs(os.path.join(self.test_dir, sub), exist_ok=True)
+            sources.append(
+                self._texture(name=os.path.join(sub, "rock_BaseColor.png"), size=(256, 256))
+            )
+        self.converter._get_texture_paths = Mock(return_value=sources)
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128, new=out, old=""))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertIn("same-named maps", reported)
+        self.assertFalse(os.path.exists(out), "nothing may be written after a refusal")
+        for src in sources:  # every source left exactly as it was
+            self.assertEqual(ImgUtils.get_image_size(src), (256, 256))
+
+    def test_stem_collisions_ignore_the_extension(self):
+        """A format conversion merges 'x.tga' and 'x.png' into one output name.
+        Grouping is case-insensitive, but the stem is reported as spelled."""
+        clashes = ConverterSlots._stem_collisions(
+            [
+                "a/rock_BaseColor.tga",
+                "b/ROCK_basecolor.png",
+                "a/rock_Normal.png",
+            ]
+        )
+        self.assertEqual([stem for stem, _ in clashes], ["rock_BaseColor"])
+        self.assertEqual(len(clashes[0][1]), 2)
+
+    def test_subdirectory_destination_allows_same_named_maps(self):
+        """Per-texture subdirectories keep each source in its own folder, so
+        the guard must not block what has always worked."""
+        sources = []
+        for sub in ("a", "b"):
+            os.makedirs(os.path.join(self.test_dir, sub), exist_ok=True)
+            sources.append(
+                self._texture(name=os.path.join(sub, "rock_BaseColor.png"), size=(256, 256))
+            )
+        self.converter._get_texture_paths = Mock(return_value=sources)
+
+        self.converter.tb000(self._widget(clamp=128, new="new", old=""))
+
+        for sub in ("a", "b"):
+            self.assertTrue(
+                os.path.isfile(
+                    os.path.join(self.test_dir, sub, "new", "rock_BaseColor.png")
+                )
+            )
+
+    def test_dry_run_reports_a_full_archive_path_as_typed(self):
+        """A subdirectory reads as 'old/'; a full path is echoed verbatim."""
+        archive = os.path.join(self.test_dir, "archive")
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(clamp=128, dry_run=True, old=archive))
+        reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
+
+        self.assertIn(f"Would move the original into: {archive}", reported)
+        self.assertNotIn(f"{archive}/", reported)
+
     def test_optimize_one_returns_measured_sizes(self):
         path = self._texture(size=(256, 256))
         size_before = os.path.getsize(path)

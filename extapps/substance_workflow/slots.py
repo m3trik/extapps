@@ -8,9 +8,10 @@ the JSON-RPC bridge. Engine/domain logic lives in the op modules — these
 slots only collect widget state and invoke ops by name.
 """
 
+import logging
 import os
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
@@ -526,21 +527,37 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
 
         self._busy = True
         self.ui.b000.setEnabled(False)
+        # Per-stage detail accrues here and goes out as ONE grouped record:
+        # every log record renders as its own paragraph in the output panel,
+        # so a four-stage run read as six blank-line-separated sections.
+        stage_log: List[str] = []
+        report = self.logger.isEnabledFor(logging.INFO)
         try:
-            self.logger.info(
-                f"Starting workflow — stages: {[k for k, v in stages.items() if v]}"
-            )
+            if report:
+                self.logger.log_box(
+                    "SUBSTANCE WORKFLOW",
+                    [
+                        f"Mesh    : {os.path.basename(mesh) or '(none)'}",
+                        f"Project : {os.path.basename(save_path) or '(unsaved)'}",
+                        f"Stages  : {', '.join(k for k, v in stages.items() if v)}",
+                    ],
+                )
             with self.sb.progress(text="Working: Substance Workflow") as tick:
                 if stages["stage_open"]:
                     if save_path and os.path.isfile(save_path):
-                        self.logger.info(
-                            self.conn.invoke("project.open", path=save_path)
+                        stage_log.append(
+                            f"Opened : {self.conn.invoke('project.open', path=save_path)}"
                         )
                         tick(text="Project opened")
                     else:
-                        self.logger.info(
-                            self.conn.invoke(
-                                "project.create", mesh_path=mesh, template_path=template
+                        stage_log.append(
+                            "Created: "
+                            + str(
+                                self.conn.invoke(
+                                    "project.create",
+                                    mesh_path=mesh,
+                                    template_path=template,
+                                )
                             )
                         )
                         tick(text="Project created")
@@ -549,7 +566,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
                     result = self.conn.invoke(
                         "bake.lighting_to_diffuse", **self._collect_bake_params()
                     )
-                    self.logger.info(f"Bake result: {result}")
+                    stage_log.append(f"Baked  : {result}")
                     tick(text="Lighting baked")
 
                 if stages["stage_save"]:
@@ -557,6 +574,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
                         self.conn.invoke("project.save_as", path=save_path)
                     else:
                         self.conn.invoke("project.save")
+                    stage_log.append("Saved  : project written")
                     tick(text="Project saved")
 
                 if stages["stage_export"]:
@@ -565,13 +583,35 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
                             os.path.dirname(save_path) or os.getcwd(), "export"
                         )
                         self.conn.invoke("export.textures", output_path=out, preset="")
+                        stage_log.append(f"Exported: {out}")
                         tick(text="Textures exported")
                     except Exception as e:
+                        # Warnings stay their own record — they're the
+                        # actionable line, and must not inherit the group's
+                        # muted item colour.
                         self.logger.warning(f"Export skipped (not implemented): {e}")
 
-            self.logger.info("Workflow completed successfully.")
+            if report:
+                # Guarded: nothing is checked in the stage menu is a legal (if
+                # pointless) run, and log_group degrades an empty list to a
+                # bare orphan title.
+                if stage_log:
+                    self.logger.log_group("Stages", stage_log)
+                self.logger.log_box(
+                    "WORKFLOW COMPLETE",
+                    [f"Stages run : {len(stage_log)}"],
+                    level="SUCCESS",
+                )
         except Exception as e:
+            # Whatever completed before the failure still gets reported —
+            # otherwise a late error hides every stage that did succeed.
+            if report and stage_log:
+                self.logger.log_group("Stages completed before the failure", stage_log)
             self.logger.error(f"Workflow failed: {e}")
+            # Stays at debug (as it always was): the panel's Log Level combo
+            # defaults to INFO, and promoting the traceback would dump a full
+            # stack on every failure for users who never asked for one. It is
+            # a single multi-line string, so it is already one record.
             self.logger.debug(traceback.format_exc())
         finally:
             self._busy = False

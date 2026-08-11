@@ -777,15 +777,28 @@ class CompositorSlots:
                 "Mask creation failed — see message panel for details."
             )
         else:
-            self.engine.logger.success("COMPLETED.")
             # Clickable link (LoggingMixin.log_link) so the user can jump
             # straight to the results; routed to the explorer by
-            # _on_log_link_clicked.
-            link = self.engine.logger.log_link(output_dir, "open", path=output_dir)
+            # _on_log_link_clicked. Truncate the *label*, not the href —
+            # _wrap_text never hard-wraps a word containing a tag, so an
+            # untruncated path would force the box wider than the panel.
+            link = self.engine.logger.log_link(
+                ptk.truncate(output_dir, 60), "open", path=output_dir
+            )
             # Report what the engine actually wrote, not the pre-flight
             # estimate — total_maps counts an auto-generated normal complement
             # the engine skips when the batch already carries that format, so
             # it over-reports. written_paths is the post-run ground truth.
             written = len(self.engine.written_paths)
-            self.engine.logger.info(f"Wrote {written} map(s) to {link}")
+            # ONE closing record: "COMPLETED." plus a separate "Wrote N…" line
+            # rendered as two paragraphs saying one thing.
+            self.engine.logger.log_box(
+                "COMPLETED",
+                [
+                    f"Maps written : {written}",
+                    f"Layers       : {total_layers}",
+                    f"Output       : {link}",
+                ],
+                level="SUCCESS",
+            )
             self.ui.footer.finish_progress(f"Wrote {written} map(s) to {output_dir}")

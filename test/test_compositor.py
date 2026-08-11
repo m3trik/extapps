@@ -332,8 +332,13 @@ class TestCompositorOutputLink(unittest.TestCase):
         qds.openUrl.assert_called_once_with(url)
 
     def test_success_logs_clickable_output_link(self):
-        """On success, a completion message embeds a clickable action://open
-        link to the output dir (so a click reveals the results folder)."""
+        """On success, the completion box embeds a clickable action://open
+        link to the output dir (so a click reveals the results folder).
+
+        Captured at ``log_box`` rather than ``info``: the completion is one
+        boxed record (every log record renders as its own paragraph in the
+        panel, so the count and the link must not be two of them).
+        """
         inst = self._bare_slots()
         out = tempfile.mkdtemp(prefix="compositor_out_")
         self.addCleanup(shutil.rmtree, out, ignore_errors=True)
@@ -342,13 +347,14 @@ class TestCompositorOutputLink(unittest.TestCase):
         # Skip the real compositing; any non-MASK_FAILURE result is "success".
         inst.engine.process_batch = Mock(return_value=Mock())
 
-        with mock.patch.object(inst.engine.logger, "info") as info:
+        with mock.patch.object(inst.engine.logger, "log_box") as box:
             inst.process({}, src, out, "mymap")
 
         link_msgs = [
-            c.args[0]
-            for c in info.call_args_list
-            if c.args and "action://open" in c.args[0]
+            line
+            for c in box.call_args_list
+            for line in (c.args[1] if len(c.args) > 1 else [])
+            if "action://open" in str(line)
         ]
         self.assertTrue(link_msgs, "no action:// output link logged on success")
         url = urlparse(re.search(r'href="(action://[^"]+)"', link_msgs[-1]).group(1))
@@ -423,16 +429,19 @@ class TestCompositorOutputLink(unittest.TestCase):
 
         inst.engine.process_batch = _fake_batch
 
-        with mock.patch.object(inst.engine.logger, "info") as info:
+        # Captured at ``log_box``: the completion is one boxed record, not an
+        # info line.
+        with mock.patch.object(inst.engine.logger, "log_box") as box:
             inst.process({}, src, out, "mymap")
 
-        wrote = [
-            c.args[0]
-            for c in info.call_args_list
-            if c.args and "map(s) to" in str(c.args[0])
+        lines = [
+            str(line)
+            for c in box.call_args_list
+            for line in (c.args[1] if len(c.args) > 1 else [])
+            if "Maps written" in str(line)
         ]
-        self.assertTrue(wrote, "no completion count logged on success")
-        self.assertIn(f"Wrote {len(written)} map(s)", wrote[-1])
+        self.assertTrue(lines, "no completion count logged on success")
+        self.assertIn(f"Maps written : {len(written)}", lines[-1])
 
 
 if __name__ == "__main__":

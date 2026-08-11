@@ -344,11 +344,14 @@ class ConverterSlots(ImgUtils):
         menu.add(
             "QLineEdit",
             setObjectName="txt_new_folder",
-            setPlaceholderText="e.g. new",
+            setPlaceholderText="e.g. new, or D:/out",
             setToolTip=(
-                "Subdirectory under the texture's folder to write the optimized "
-                "map into. Empty = write beside the original (which, with no "
-                "modifier, overwrites it)."
+                "Where the optimized map is written.\n"
+                "A bare name is a subdirectory under each texture's own folder; "
+                "an absolute path collects every map from the run into that one "
+                "folder.\n"
+                "Empty = write beside the original (which, with no modifier, "
+                "overwrites it)."
             ),
         )
 
@@ -356,9 +359,11 @@ class ConverterSlots(ImgUtils):
             "QLineEdit",
             setObjectName="txt_old_folder",
             setText="old",
-            setPlaceholderText="e.g. old",
+            setPlaceholderText="e.g. old, or D:/archive",
             setToolTip=(
-                "Subdirectory under the texture's folder to move the original into. "
+                "Where the original is moved to. A bare name is a subdirectory "
+                "under each texture's own folder; an absolute path collects every "
+                "original into that one folder.\n"
                 "Empty = don't move the original."
             ),
         )
@@ -414,6 +419,31 @@ class ConverterSlots(ImgUtils):
                 "original would overwrite the optimized map. Use different names."
             )
             return
+
+        # A full-path destination collapses every source folder into one, so two
+        # maps sharing a stem resolve to the SAME output (or archive) path and
+        # the later one silently destroys the earlier — both optimize_map's
+        # writer and FileUtils.move_file default to overwrite=True. Per-texture
+        # subdirectories cannot hit this (each source keeps its own folder), so
+        # the check is scoped to the shared case, and refuses up front for the
+        # same reason as the guard above.
+        shared = [
+            label
+            for label, folder in (("output", new_folder), ("archive", old_folder))
+            if self._is_abs_dest(folder)
+        ]
+        if shared:
+            clashes = self._stem_collisions(texture_paths)
+            if clashes:
+                print(
+                    f"// A shared {' and '.join(shared)} folder would collect "
+                    f"{len(clashes)} set(s) of same-named maps onto one path - "
+                    "each would overwrite the last. Use a subdirectory name, or "
+                    "run the clashing sources separately."
+                )
+                for stem, clashing in clashes:
+                    print(f"//   {stem}: " + ", ".join(clashing))
+                return
 
         registry = MapRegistry()
         verb = "Assessing" if dry_run else "Optimizing"
@@ -504,14 +534,69 @@ class ConverterSlots(ImgUtils):
         return mode, text.strip("_")
 
     @staticmethod
-    def _folder_name(text: str) -> str:
-        """Normalize a destination field to a bare subdirectory name.
+    def _is_abs_dest(text: str) -> bool:
+        """True when *text* names a full destination rather than a subdirectory.
 
-        The fields name a subdirectory of the texture's own folder, so leading
-        or trailing separators (typed, or pasted off a path) are stripped —
-        ``"/new/"`` and ``"new"`` mean the same folder.
+        Deliberately stricter than ``os.path.isabs``, which calls a rooted but
+        driveless ``"/new"`` absolute on Windows. These fields have always
+        accepted ``"/new/"`` as a typed-with-separators spelling of the
+        subdirectory ``"new"``, so a destination counts as absolute only with a
+        drive or UNC share (Windows), or a leading ``/`` (POSIX).
+
+        One definition, shared with every other "subdirectory or full path"
+        field in the ecosystem (the lightmap bakers' Output Directory among
+        them) -- a second copy is a second chance to get the driveless case
+        wrong.
         """
-        return (text or "").strip().strip("/\\").strip()
+        return FileUtils.is_rooted_path(text)
+
+    @classmethod
+    def _folder_name(cls, text: str) -> str:
+        """Normalize a destination field to a subdirectory name or full path.
+
+        A bare entry names a subdirectory of the texture's own folder, so
+        leading or trailing separators (typed, or pasted off a path) are
+        stripped — ``"/new/"`` and ``"new"`` mean the same folder.
+
+        A full path (see :meth:`_is_abs_dest`) is kept intact and normalized:
+        it names one shared destination for the whole run, which is how a batch
+        spread across several source folders gets collected into a single
+        output (or archive) folder — the capability the Material Updater's
+        Output / Archive fields carried before optimization consolidated here.
+        """
+        text = (text or "").strip()
+        if cls._is_abs_dest(text):
+            return os.path.normpath(text)
+        return text.strip("/\\").strip()
+
+    @staticmethod
+    def _stem_collisions(paths) -> List[Tuple[str, List[str]]]:
+        """``[(stem, [path, ...]), ...]`` for stems claimed by more than one input.
+
+        Compared without the extension, because a format conversion merges
+        them: ``rock_BaseColor.tga`` and ``rock_BaseColor.png`` both write
+        ``rock_BaseColor.png`` under ``Format: PNG``. Grouped case-insensitively
+        (the filesystems these land on are), but reported with the stem as the
+        first input actually spells it — a lower-cased name in the message
+        reads as a second, non-existent problem.
+        """
+        by_stem: Dict[str, Tuple[str, List[str]]] = {}
+        for path in paths:
+            stem = FileUtils.format_path(path, "name")
+            _, hits = by_stem.setdefault(os.path.normcase(stem), (stem, []))
+            hits.append(path)
+        return [entry for entry in by_stem.values() if len(entry[1]) > 1]
+
+    @classmethod
+    def _resolve_dest(cls, directory: str, folder: str) -> str:
+        """Destination directory for a *folder* field against a texture's *directory*.
+
+        Bare names resolve per texture (a subdirectory of its own folder); full
+        paths resolve to themselves, shared by the whole run.
+        """
+        if not folder:
+            return directory
+        return folder if cls._is_abs_dest(folder) else os.path.join(directory, folder)
 
     def _rename_target_path(
         self, texture_path, *, file_type, mode, modifier, output_dir
@@ -573,10 +658,11 @@ class ConverterSlots(ImgUtils):
                 )
 
         directory = FileUtils.format_path(texture_path, "path")
-        # Where this run writes: the texture's own folder, or the 'New folder'
-        # subdirectory under it. Resolved once so the real run and the dry run
+        # Where this run writes: the texture's own folder, the 'New folder'
+        # subdirectory under it, or — for an absolute entry — one shared folder
+        # for the whole batch. Resolved once so the real run and the dry run
         # report the same destination.
-        output_dir = os.path.join(directory, new_folder) if new_folder else directory
+        output_dir = self._resolve_dest(directory, new_folder)
 
         if dry_run:
             return self._report_optimize_plan(
@@ -593,7 +679,15 @@ class ConverterSlots(ImgUtils):
             os.path.getsize(texture_path) if os.path.isfile(texture_path) else None
         )
 
-        if not modifier and not new_folder:
+        # Branch on the resolved destination, not on whether the field was
+        # filled: an absolute 'New folder' can name the texture's OWN folder,
+        # and taking the new-folder path there would write over the source and
+        # then archive the *optimized* map, leaving nothing behind.
+        writes_in_place = os.path.normcase(os.path.normpath(output_dir)) == (
+            os.path.normcase(os.path.normpath(directory))
+        )
+
+        if not modifier and writes_in_place:
             # Overwrite mode: optimize in place. The write lands on the source,
             # so the original has to be archived *first* — which is exactly what
             # optimize_map's old_files_folder does (relative to the output dir,
@@ -630,8 +724,9 @@ class ConverterSlots(ImgUtils):
                     )
                     os.replace(temp_result, optimized_map_path)
             else:
-                # New folder, original name: the subdirectory can't collide with
-                # the source, so optimize_map writes straight into it.
+                # New folder, original name: a distinct destination (the
+                # in-place case branched above), so optimize_map writes
+                # straight into it.
                 optimized_map_path = MapOptimizer.optimize_map(
                     texture_path,
                     output_dir=output_dir,
@@ -645,7 +740,7 @@ class ConverterSlots(ImgUtils):
             # the new folder, or in the temp dir where cleanup deletes it.
             if old_folder:
                 FileUtils.move_file(
-                    texture_path, os.path.join(directory, old_folder)
+                    texture_path, self._resolve_dest(directory, old_folder)
                 )
 
         size_after = (
@@ -730,10 +825,16 @@ class ConverterSlots(ImgUtils):
         clobbers = os.path.normcase(os.path.normpath(target)) == os.path.normcase(
             os.path.normpath(texture_path)
         )
-        note = " (overwrites the original in place)" if clobbers and not old_folder else ""
+        note = (
+            " (overwrites the original in place)" if clobbers and not old_folder else ""
+        )
         print(f"// Would write: {target}{note}  [{dims}, {depth}, {sizes}]")
         if old_folder:
-            print(f"// Would move the original into: {old_folder}/")
+            # A subdirectory reads as "old/"; a full path is shown as typed.
+            shown = (
+                old_folder if self._is_abs_dest(old_folder) else f"{old_folder}/"
+            )
+            print(f"// Would move the original into: {shown}")
 
         return size_before, size_after
 

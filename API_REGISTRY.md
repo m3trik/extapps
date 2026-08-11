@@ -81,7 +81,7 @@ _Generated: 2026-08-11_
 
 Drive Marmoset Toolbag from the outside -- launch + templated automation.
 
-- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L58)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
+- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L66)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
   - `MarmosetEngine.toolbag_path(self) -> Optional[str]` *(property)* — Resolve the Toolbag executable path.
   - `MarmosetEngine.toolbag_log_path(self) -> Optional[str]` *(property)* — Resolve Toolbag's application log file (script prints + tracebacks).
   - `MarmosetEngine.preflight(self, bridge, request) -> bool` — Validate the (template, mode) before the bridge produces its payload.
@@ -735,7 +735,7 @@ Shelf / resource operations — query and import shelf assets.
 
 Switchboard slots for the Substance Workflow UI.
 
-- **[`class SubstanceWorkflowSlots(ptk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L191)** — Switchboard slots for the Substance Workflow UI.
+- **[`class SubstanceWorkflowSlots(ptk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L192)** — Switchboard slots for the Substance Workflow UI.
   - `SubstanceWorkflowSlots.header_init(self, widget) -> None`
   - `SubstanceWorkflowSlots.txt000_init(self, widget) -> None` — Mesh File
   - `SubstanceWorkflowSlots.txt001_init(self, widget) -> None` — Template (optional)

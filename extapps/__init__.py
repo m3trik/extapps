@@ -1,17 +1,17 @@
-# !/usr/bin/python
+﻿# !/usr/bin/python
 # coding=utf-8
-"""extapps — standalone Switchboard panels for content-pipeline workflows.
+"""extapps â€” standalone Switchboard panels for content-pipeline workflows.
 
 Each subpackage is a self-contained app registered via the
 ``uitk.external_apps.in_process`` entry-point group (see ``pyproject.toml``).
 Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
-``ExternalAppHandler`` — no host-side knowledge required.
+``ExternalAppHandler`` â€” no host-side knowledge required.
 """
 
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 
 DEFAULT_INCLUDE = {
@@ -43,7 +43,7 @@ DEFAULT_INCLUDE = {
 
 
 # ``bootstrap_package`` derives ``__all__`` from the resolved panel surface
-# (DEFAULT_INCLUDE) and unions in anything declared here first — so only the
+# (DEFAULT_INCLUDE) and unions in anything declared here first â€” so only the
 # non-derivable ``__version__`` needs listing by hand.
 __all__ = ["__version__"]
 

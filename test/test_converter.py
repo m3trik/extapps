@@ -9,7 +9,9 @@ Tests cover:
 - All 7 workflow templates
 - Error handling and fallback behavior
 """
+import io
 import os
+import contextlib
 import tempfile
 import shutil
 import unittest
@@ -972,13 +974,24 @@ class TestConverterOptimize(unittest.TestCase):
         dry_run=False,
         new="",
         old="old",
+        target="",
+        lossy=0,
+        file_type="",
+        secondary=1.0,
     ):
         widget = MagicMock()
         menu = widget.option_box.menu
-        menu.cmb001.currentData.return_value = ""
+        menu.cmb001.currentData.return_value = file_type
         menu.cmb000.currentData.return_value = clamp
-        menu.cmb_secondary_scale.currentData.return_value = 1.0
-        menu.cmb_affix.currentData.return_value = affix
+        # Explicit, not left to MagicMock: an auto-mocked currentData() returns a
+        # truthy Mock, which reads as "a target is selected" and silently routes
+        # every optimize test through the target-filter path.
+        menu.cmb_target.currentData.return_value = target
+        menu.cmb_lossy.currentData.return_value = lossy
+        menu.cmb_secondary_scale.currentData.return_value = secondary
+        # Affix mode lives on the modifier field's option box (an icon button
+        # beside it), not a sibling combobox.
+        menu.txt_modifier.option_box.affix_mode = affix
         menu.txt_modifier.text.return_value = modifier
         menu.txt_new_folder.text.return_value = new
         menu.txt_old_folder.text.return_value = old
@@ -1026,6 +1039,136 @@ class TestConverterOptimize(unittest.TestCase):
         )
 
     # ---- dry run --------------------------------------------------------
+
+    # ---- target template / lossy ---------------------------------------
+
+    def test_clamp_target_uses_the_profiles_budget(self):
+        """'Clamp: Target' must resolve to a real number in the slot.
+
+        Deferring the whole ceiling to enforce_budget would leave max_size None,
+        and the secondary scale only engages when it has a max_size to scale —
+        so the control would silently do nothing.
+        """
+        path = self._texture(name="rock_BaseColor.png", size=(4096, 4096))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(
+            self._widget(clamp=ConverterSlots.CLAMP_TARGET, target=WF.GLTF, old="")
+        )
+        written = os.path.join(self.test_dir, "rock_BaseColor.png")
+        self.assertEqual(ImgUtils.ensure_image(written).size, (2048, 2048))
+
+    def test_clamp_target_still_scales_secondary_maps(self):
+        """The regression: with Clamp:Target the secondary scale was ignored."""
+        path = self._texture(name="rock_Roughness.png", size=(4096, 4096))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(
+            self._widget(
+                clamp=ConverterSlots.CLAMP_TARGET,
+                target=WF.GLTF,
+                secondary=0.5,
+                old="",
+            )
+        )
+        written = os.path.join(self.test_dir, "rock_Roughness.png")
+        self.assertEqual(ImgUtils.ensure_image(written).size, (1024, 1024))
+
+    def test_unbudgeted_target_says_so_rather_than_silently_not_clamping(self):
+        path = self._texture(size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(
+                self._widget(clamp=ConverterSlots.CLAMP_TARGET, target=WF.STD)
+            )
+        self.assertIn("unbudgeted", out.getvalue())
+
+    def test_target_never_skips_a_loose_map(self):
+        """foreign_packings is restricted to PACKED maps on purpose: a loose
+        map's `workflows` lists the presets that EMIT it, so a general form
+        would flag an ordinary AO map as an engine mismatch."""
+        loose = [
+            self._texture(name="rock_Ambient_Occlusion.png"),
+            self._texture(name="rock_Roughness.png"),
+            self._texture(name="rock_Emissive.png"),
+        ]
+        self.converter._get_texture_paths = Mock(return_value=loose)
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(self._widget(target=WF.GLTF, dry_run=True))
+        self.assertNotIn("Skipping (", out.getvalue())
+
+    def test_target_keeps_an_undeclared_packing(self):
+        """MRAO declares no workflows; an absent declaration is not an
+        incompatible one, so it must never be accused."""
+        path = self._texture(name="rock_MRAO.png")
+        self.converter._get_texture_paths = Mock(return_value=[path])
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(self._widget(target=WF.GLTF, dry_run=True))
+        self.assertNotIn("Skipping (", out.getvalue())
+
+    def test_target_skips_maps_it_cannot_consume(self):
+        keep = self._texture(name="rock_BaseColor.png")
+        drop = self._texture(name="rock_MSAO.png")
+        self.converter._get_texture_paths = Mock(return_value=[keep, drop])
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(self._widget(target=WF.GLTF, dry_run=True))
+        printed = out.getvalue()
+
+        self.assertIn("rock_MSAO.png", printed)
+        self.assertIn("another engine's packing", printed)
+
+    def test_no_target_processes_everything(self):
+        keep = self._texture(name="rock_BaseColor.png")
+        also = self._texture(name="rock_MSAO.png")
+        self.converter._get_texture_paths = Mock(return_value=[keep, also])
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(self._widget(dry_run=True))
+        self.assertNotIn("Skipping (", out.getvalue())
+
+    def test_target_filter_runs_before_the_collision_guard(self):
+        """A map the target drops is never written, so it must not count
+        toward the same-stem clash that refuses the whole batch."""
+        shared = os.path.join(self.test_dir, "out")
+        a = os.path.join(self.test_dir, "setA")
+        b = os.path.join(self.test_dir, "setB")
+        for d in (a, b):
+            os.makedirs(d, exist_ok=True)
+            ImgUtils.save_image(
+                ImgUtils.create_image("RGB", (64, 64), (1, 2, 3)),
+                os.path.join(d, "rock_MSAO.png"),
+            )
+        paths = [os.path.join(a, "rock_MSAO.png"), os.path.join(b, "rock_MSAO.png")]
+        self.converter._get_texture_paths = Mock(return_value=paths)
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(
+                self._widget(target=WF.GLTF, new=shared, old="", dry_run=True)
+            )
+        printed = out.getvalue()
+        self.assertNotIn("would collect", printed)
+        self.assertIn("another engine's packing", printed)
+
+    def test_lossy_is_refused_for_a_normal_map(self):
+        path = self._texture(name="rock_Normal.png")
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(
+                self._widget(file_type="webp", lossy=90, dry_run=True)
+            )
+        self.assertIn("refused", out.getvalue())
+
+    def test_lossy_is_allowed_for_base_color(self):
+        path = self._texture(name="rock_BaseColor.png")
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.converter.tb000(
+                self._widget(file_type="webp", lossy=90, dry_run=True)
+            )
+        self.assertNotIn("refused", out.getvalue())
 
     def test_dry_run_writes_nothing(self):
         path = self._texture(size=(256, 256))

@@ -19,11 +19,14 @@ import os
 import tempfile
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
+from qtpy import QtCore
+
 # From this package:
 from pythontk.img_utils._img_utils import ImgUtils
 from pythontk.core_utils.engines.textures.map_factory import MapFactory
 from pythontk.core_utils.engines.textures.map_registry import MapRegistry
 from pythontk.core_utils.engines.textures.map_optimizer import MapOptimizer
+from pythontk.core_utils.engines.textures.output_template import OutputTemplates
 from pythontk.file_utils._file_utils import FileUtils
 from pythontk.str_utils._str_utils import StrUtils
 
@@ -257,6 +260,16 @@ class ConverterSlots(ImgUtils):
     CLAMP_SIZES = (256, 512, 1024, 2048, 4096, 8192)
     DEFAULT_CLAMP = 4096
 
+    #: Clamp sentinel meaning "defer to the selected target's DeliveryBudget".
+    #: Negative so it stays truthy (0 already means "no clamp") and can never
+    #: collide with a real pixel dimension.
+    CLAMP_TARGET = -1
+    CLAMP_TARGET_LABEL = "Target"
+
+    #: Lossy-quality choices for the Optimize menu. Off is first and default —
+    #: lossy is opt-in, and the safety gate still refuses it per map type.
+    LOSSY_CHOICES = (("Off", 0), ("q95", 95), ("q90", 90), ("q80", 80))
+
     def tb000_init(self, widget):
         """Populate the Optimize toolbutton's option menu.
 
@@ -270,25 +283,74 @@ class ConverterSlots(ImgUtils):
         menu.add("Separator", setTitle="Output")
         menu.add(
             "QComboBox",
+            setObjectName="cmb_target",
+            setToolTip=(
+                "Delivery target. Drives each map's container and bit depth "
+                "from the profile's output template, and lets 'Clamp: Target' "
+                "use the profile's size budget.\n"
+                "Also skips packed maps belonging to another engine — an MSAO "
+                "mask map when targeting glTF. Loose maps are never skipped.\n"
+                "'None' processes every selected map with no target rules.\n"
+                "For WebXR pick 'glTF 2.0' — that is the WebXR material model."
+            ),
+        )
+        # Profile list + tooltips come from OutputTemplates (SSoT shared with
+        # game_shader / mat_updater / the compositor), so a profile added to the
+        # registry appears in every panel without touching any of them.
+        #
+        # The prefix is baked into the label rather than passed as prefix=:
+        # that kwarg re-cases each label (`.replace("_"," ").title()`), which is
+        # right for the bare tokens the sibling combos carry but renders
+        # "glTF 2.0" as "Gltf 2.0" and "PBR Metallic/Roughness" as "Pbr ...".
+        # Profile names are proper nouns matched against the registry by string.
+        profiles = OutputTemplates.profile_choices()
+        menu.cmb_target.add(
+            [("Target:\tNone", "")] + [(f"Target:\t{n}", n) for n, _ in profiles]
+        )
+        for i, (_name, description) in enumerate(profiles):
+            if description:  # +1 for the leading "None" entry
+                menu.cmb_target.setItemData(
+                    i + 1, description, QtCore.Qt.ToolTipRole
+                )
+
+        menu.add(
+            "QComboBox",
             setObjectName="cmb001",
-            setToolTip="Set the output file type. 'Original' keeps each texture's existing format.",
+            setToolTip=(
+                "Set the output file type. 'Original' keeps each texture's "
+                "existing format; with a Target selected, WEBP is the web/XR "
+                "choice (lossless WebP is 10-30% under PNG at identical pixels)."
+            ),
         )
         # Falsy sentinels (empty string / 0) — the prefix-mode combobox
         # replaces explicit None data with the label string, so use values
         # that still evaluate falsy in the ``if not file_type`` / ``if not
-        # max_size`` checks below.
+        # max_size`` checks below. 'Original' stays at index 0: this combo's
+        # selection is persisted by index (see format_choices' sentinel_first).
         menu.cmb001.add(
-            [("Original", "")] + [(ext.upper(), ext) for ext in self.writable],
+            OutputTemplates.format_choices(
+                sentinel=OutputTemplates.ORIGINAL_LABEL,
+                writable=self.writable,
+                sentinel_first=True,
+            ),
             prefix="Format:",
         )
 
         menu.add(
             "QComboBox",
             setObjectName="cmb000",
-            setToolTip="Maximum dimension (longest side). 'None' disables resizing.",
+            setToolTip=(
+                "Maximum dimension (longest side). 'None' disables resizing; "
+                "'Target' uses the selected target's own size budget "
+                "(glTF/Godot/URP 2048, HDRP/Unreal 4096)."
+            ),
         )
+        # 'Target' appended LAST for the same index-persistence reason as the
+        # format sentinel — prepending it would re-point every saved clamp.
         menu.cmb000.add(
-            [("None", 0)] + [(str(s), s) for s in self.CLAMP_SIZES],
+            [("None", 0)]
+            + [(str(s), s) for s in self.CLAMP_SIZES]
+            + [(self.CLAMP_TARGET_LABEL, self.CLAMP_TARGET)],
             prefix="Clamp:",
         )
         # First-run default only: state restore runs after the *_init hooks, so
@@ -311,23 +373,22 @@ class ConverterSlots(ImgUtils):
             prefix="Secondary:",
         )
 
-        menu.add("Separator", setTitle="Naming")
         menu.add(
             "QComboBox",
-            setObjectName="cmb_affix",
+            setObjectName="cmb_lossy",
             setToolTip=(
-                "Where the modifier attaches to the base name (either way it "
-                "sits before the map-type suffix).\n"
-                "Auto: read it off the modifier's own underscore — 'LD_' is a "
-                "prefix, '_LD' a suffix, bare 'LD' a suffix.\n"
-                "Suffix / Prefix: force one regardless of how it's typed."
+                "Lossy compression for WEBP / JPG output. Applied ONLY to "
+                "unpacked sRGB maps (base color, emissive) — normals, ORM/mask "
+                "maps and every linear map are written lossless regardless, "
+                "and each refusal is reported.\n"
+                "At q95 a base color deviates by at most 9/255; a normal map "
+                "deviates by 122/255, which is why the gate exists.\n"
+                "Off = lossless everywhere."
             ),
         )
-        menu.cmb_affix.add(
-            [("Auto", "auto"), ("Suffix", "suffix"), ("Prefix", "prefix")],
-            prefix="Affix:",
-        )
+        menu.cmb_lossy.add(list(self.LOSSY_CHOICES), prefix="Lossy:")
 
+        menu.add("Separator", setTitle="Naming")
         menu.add(
             "QLineEdit",
             setObjectName="txt_modifier",
@@ -335,8 +396,28 @@ class ConverterSlots(ImgUtils):
             setToolTip=(
                 "Text inserted into the base name (before the map-type suffix). "
                 "Empty = keep the original name.\n"
-                "With Affix on Auto, a trailing underscore ('LD_') makes it a "
-                "prefix and a leading one ('_LD') a suffix."
+                "The first button beside the field picks where it attaches "
+                "(click to cycle Auto → Suffix → Prefix). On Auto the modifier's "
+                "own underscore decides: 'LD_' prefixes, '_LD' suffixes, bare "
+                "'LD' suffixes."
+            ),
+        )
+        # Affix picker + disable, inline on the field rather than as sibling
+        # combos: the mode is a property OF the modifier, and an icon button
+        # keeps a one-line menu row instead of two full-width controls.
+        menu.txt_modifier.option_box.set_affix(default="auto")
+        # Disable = the field reads empty to every consumer (the value is held
+        # aside and handed back on re-enable), so a run without the modifier is
+        # one click away and cannot be half-applied.
+        menu.txt_modifier.option_box.set_disable(
+            settings_key="converter_optimize_modifier",
+            tooltip_on=(
+                "Modifier applied. Click to disable — the output keeps the "
+                "original name (your text is held until you re-enable)."
+            ),
+            tooltip_off=(
+                "Modifier disabled — the output keeps the original name. "
+                "Click to re-apply."
             ),
         )
 
@@ -354,6 +435,17 @@ class ConverterSlots(ImgUtils):
                 "overwrites it)."
             ),
         )
+        menu.txt_new_folder.option_box.set_disable(
+            settings_key="converter_optimize_new_folder",
+            tooltip_on=(
+                "Output folder in use. Click to disable — the map is written "
+                "beside the original (your path is held until you re-enable)."
+            ),
+            tooltip_off=(
+                "Output folder disabled — the map is written beside the "
+                "original. Click to re-apply."
+            ),
+        )
 
         menu.add(
             "QLineEdit",
@@ -365,6 +457,18 @@ class ConverterSlots(ImgUtils):
                 "under each texture's own folder; an absolute path collects every "
                 "original into that one folder.\n"
                 "Empty = don't move the original."
+            ),
+        )
+        menu.txt_old_folder.option_box.set_disable(
+            settings_key="converter_optimize_old_folder",
+            tooltip_on=(
+                "Originals archived. Click to disable — the original is left "
+                "where it is, and is overwritten when nothing else moves the "
+                "output off it."
+            ),
+            tooltip_off=(
+                "Archiving disabled — the original is left where it is. Click "
+                "to re-enable."
             ),
         )
 
@@ -398,13 +502,90 @@ class ConverterSlots(ImgUtils):
         secondary_scale = (
             widget.option_box.menu.cmb_secondary_scale.currentData() or 1.0
         )
+        target = widget.option_box.menu.cmb_target.currentData() or None
+        lossy_quality = widget.option_box.menu.cmb_lossy.currentData() or None
+
+        target_profile, file_type = OutputTemplates.resolve_selection(
+            target, file_type
+        )
+
+        # 'Clamp: Target' takes the ceiling from the profile's DeliveryBudget.
+        # The number is resolved HERE rather than left to enforce_budget alone:
+        # downstream, the secondary scale only engages when it has a max_size to
+        # scale (`if max_size and secondary_scale != 1.0`), so deferring the
+        # whole ceiling into optimize_map would silently disable that control.
+        # enforce_budget stays on so the budget's POT rule still applies; an
+        # explicit max_size outranks the budget's, and here they are the same.
+        enforce_budget = max_size == self.CLAMP_TARGET
+        if enforce_budget:
+            max_size = (
+                OutputTemplates.budget(target_profile).max_size
+                if target_profile
+                else None
+            )
+            if not target_profile:
+                print(
+                    "// Clamp is 'Target' but no Target is selected - no size "
+                    "budget to apply. Pick a Target, or choose an explicit clamp."
+                )
+            elif max_size is None:
+                print(
+                    f"// '{target_profile}' is unbudgeted (an authoring target) - "
+                    "no clamp applied. Choose an explicit clamp to resize."
+                )
+        # Affix mode rides on the modifier field's own option box (the icon
+        # button beside it), so a disabled field reports no modifier at all
+        # rather than an orphaned mode.
+        modifier_field = widget.option_box.menu.txt_modifier
         mode, modifier = self.resolve_affix(
-            widget.option_box.menu.cmb_affix.currentData(),
-            widget.option_box.menu.txt_modifier.text(),
+            modifier_field.option_box.affix_mode, modifier_field.text()
         )
         new_folder = self._folder_name(widget.option_box.menu.txt_new_folder.text())
         old_folder = self._folder_name(widget.option_box.menu.txt_old_folder.text())
         dry_run = widget.option_box.menu.chk_dry_run.isChecked()
+
+        registry = MapRegistry()
+
+        # Target filter — drop packed maps belonging to another engine (an MSAO
+        # when writing for glTF). Delegated to MapFactory.foreign_packings, the
+        # pipeline's single answer to "is this source right for what I'm
+        # writing?", already shared by the GLB writer, pack_orm_texture and both
+        # DCCs' Scene Exporter gates. Its restrictions are the contract, not an
+        # optimisation: only PACKED maps are eligible (a loose map's
+        # ``workflows`` means "presets that emit it", so a general form would
+        # flag ordinary AO as foreign), and an unknown workflow reports nothing
+        # rather than everything.
+        #
+        # Deliberately NOT extended to loose maps a present pack supersedes:
+        # MapFactory.filter_redundant_maps owns that question and resolves it
+        # losslessly, extracting any channel the pack does not cover before
+        # dropping its components. Optimize writes each file independently with
+        # no extraction step, so the same rule here could drop a Roughness whose
+        # data the surviving ORM never carried.
+        #
+        # Runs BEFORE the destination guards below: those refuse the whole batch
+        # over same-stem collisions, and a map this filter drops is never
+        # written, so counting it would block a run that has no real clash.
+        skipped_by_target = 0
+        if target_profile:
+            foreign = MapFactory.foreign_packings(
+                texture_paths, workflow=target_profile
+            )
+            if foreign:
+                for path, map_type in foreign.items():
+                    print(
+                        f"// Skipping ({target_profile}): {os.path.basename(path)} - "
+                        f"{map_type} is another engine's packing"
+                    )
+                skipped_by_target = len(foreign)
+                texture_paths = [p for p in texture_paths if p not in foreign]
+            if not texture_paths:
+                print(
+                    f"// Every selected map is another engine's packing for "
+                    f"'{target_profile}' - nothing to do. Check the Target, or "
+                    "set it to 'None'."
+                )
+                return
 
         # Both fields resolve against the *source* folder, so pointing them at
         # the same subdirectory drops the archived original on top of the map
@@ -445,7 +626,6 @@ class ConverterSlots(ImgUtils):
                     print(f"//   {stem}: " + ", ".join(clashing))
                 return
 
-        registry = MapRegistry()
         verb = "Assessing" if dry_run else "Optimizing"
         done = "Assessed" if dry_run else "Optimized"
         if dry_run:
@@ -474,6 +654,9 @@ class ConverterSlots(ImgUtils):
                         old_folder=old_folder,
                         registry=registry,
                         dry_run=dry_run,
+                        output_profile=target_profile,
+                        enforce_budget=enforce_budget,
+                        lossy_quality=lossy_quality,
                     )
                 except Exception as e:
                     before = after = None
@@ -499,8 +682,13 @@ class ConverterSlots(ImgUtils):
             # batch — a total labelled "5 map(s)" that summed 3 of them is a
             # wrong number, and size is the number being trusted here.
             skipped = f" ({total - counted} unmeasured)" if counted < total else ""
+            filtered = (
+                f", {skipped_by_target} skipped for '{target_profile}'"
+                if skipped_by_target
+                else ""
+            )
             print(
-                f"// Total ({counted} map(s)){skipped}: "
+                f"// Total ({counted} map(s)){skipped}{filtered}: "
                 f"{FileUtils.format_bytes_delta(saved_before, saved_after)}"
             )
         self.source_dir = FileUtils.format_path(texture_paths[0], "path")
@@ -511,7 +699,7 @@ class ConverterSlots(ImgUtils):
 
         In ``auto`` mode the modifier's own underscore says where it attaches —
         the way the name is typed is already the intent, so it doesn't have to
-        be restated in the combobox: ``"LD_"`` prefixes, ``"_LD"`` suffixes,
+        be restated on the picker: ``"LD_"`` prefixes, ``"_LD"`` suffixes,
         and an unmarked (or doubly-marked) ``"LD"`` suffixes, matching the
         pre-Auto default.
 
@@ -635,6 +823,9 @@ class ConverterSlots(ImgUtils):
         old_folder,
         registry,
         dry_run=False,
+        output_profile=None,
+        enforce_budget=False,
+        lossy_quality=None,
     ):
         """Helper for ``tb000`` — optimize (or, when *dry_run*, assess) one path.
 
@@ -664,6 +855,15 @@ class ConverterSlots(ImgUtils):
         # report the same destination.
         output_dir = self._resolve_dest(directory, new_folder)
 
+        # The target-driven arguments are identical across the dry run and all
+        # three write branches below, so they are resolved once — a branch that
+        # quietly missed one would make the run disagree with its own preview.
+        target_kwargs = {
+            "output_profile": output_profile,
+            "enforce_budget": enforce_budget,
+            "lossy_quality": lossy_quality,
+        }
+
         if dry_run:
             return self._report_optimize_plan(
                 texture_path,
@@ -673,6 +873,7 @@ class ConverterSlots(ImgUtils):
                 modifier=modifier,
                 output_dir=output_dir,
                 old_folder=old_folder,
+                **target_kwargs,
             )
 
         size_before = (
@@ -698,6 +899,7 @@ class ConverterSlots(ImgUtils):
                 max_size=effective_max_size,
                 old_files_folder=old_folder or None,
                 optimize_bit_depth=True,
+                **target_kwargs,
             )
         else:
             os.makedirs(output_dir, exist_ok=True)
@@ -707,13 +909,6 @@ class ConverterSlots(ImgUtils):
                 # writes to a temp dir first; same-drive (inside output_dir)
                 # so the final os.replace is a fast rename that overwrites
                 # cleanly on re-run.
-                optimized_map_path = self._rename_target_path(
-                    texture_path,
-                    file_type=file_type,
-                    mode=mode,
-                    modifier=modifier,
-                    output_dir=output_dir,
-                )
                 with tempfile.TemporaryDirectory(dir=output_dir) as temp_dir:
                     temp_result = MapOptimizer.optimize_map(
                         texture_path,
@@ -721,6 +916,21 @@ class ConverterSlots(ImgUtils):
                         output_type=file_type,
                         max_size=effective_max_size,
                         optimize_bit_depth=True,
+                        **target_kwargs,
+                    )
+                    # Name the destination AFTER the run, from the extension
+                    # optimize_map actually wrote. Deriving it from *file_type*
+                    # was a second guess at a decision made elsewhere: an output
+                    # profile resolves the container from its own OutputSpec, so
+                    # with Format "Original" and a TGA-producing target this
+                    # renamed TGA bytes onto a .png name -- a file whose content
+                    # and extension disagree.
+                    optimized_map_path = self._rename_target_path(
+                        texture_path,
+                        file_type=FileUtils.format_path(temp_result, "ext"),
+                        mode=mode,
+                        modifier=modifier,
+                        output_dir=output_dir,
                     )
                     os.replace(temp_result, optimized_map_path)
             else:
@@ -733,6 +943,7 @@ class ConverterSlots(ImgUtils):
                     output_type=file_type,
                     max_size=effective_max_size,
                     optimize_bit_depth=True,
+                    **target_kwargs,
                 )
 
             # Archived here rather than by optimize_map, whose old_files_folder
@@ -764,6 +975,9 @@ class ConverterSlots(ImgUtils):
         modifier,
         output_dir,
         old_folder,
+        output_profile=None,
+        enforce_budget=False,
+        lossy_quality=None,
     ):
         """Print what optimizing *texture_path* would do, touching nothing.
 
@@ -777,6 +991,9 @@ class ConverterSlots(ImgUtils):
             optimize_bit_depth=True,
             output_type=file_type,
             predict_size=True,
+            output_profile=output_profile,
+            enforce_budget=enforce_budget,
+            lossy_quality=lossy_quality,
         )
         if report.get("error"):
             print(f"// {report['error']}")
@@ -786,7 +1003,11 @@ class ConverterSlots(ImgUtils):
         target = (
             self._rename_target_path(
                 texture_path,
-                file_type=file_type,
+                # Same rule as the real run: the extension comes from what the
+                # optimizer resolved (an output profile picks its own
+                # container), never from *file_type*. Re-deriving it here made
+                # the preview contradict the no-modifier branch beside it.
+                file_type=FileUtils.format_path(predicted["path"], "ext"),
                 mode=mode,
                 modifier=modifier,
                 output_dir=output_dir,
@@ -819,6 +1040,11 @@ class ConverterSlots(ImgUtils):
             print("// No changes needed - already optimal for these settings.")
         for reason in report["reasons"]:
             print(f"// {reason}")
+        # Warnings are what the run would NOT do (a declined lossy request, an
+        # over-budget result) — the half of the preview a caller is most likely
+        # to be surprised by later, so it cannot be reasons-only.
+        for warning in report.get("warnings", ()):
+            print(f"// ! {warning}")
         # Naming what gets clobbered is the main thing a dry run is asked for:
         # with no modifier and no archive folder the source is overwritten,
         # which the (identical) path alone states only implicitly.

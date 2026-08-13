@@ -537,8 +537,11 @@ class CompositorSlots:
         # only (no post-pass). When set, after compositing finishes the
         # engine runs MapFactory.prepare_maps with the matching workflow
         # preset to pack/rename files for the target engine.
-        presets = ptk.MapRegistry().get_workflow_presets()
-        self._template_choices = (self._NO_TEMPLATE_LABEL, *presets.keys())
+        profiles = ptk.OutputTemplates.profile_choices()
+        self._template_choices = (
+            self._NO_TEMPLATE_LABEL,
+            *(name for name, _ in profiles),
+        )
         widget.menu.add(
             "QComboBox",
             setObjectName="cmb_output_template",
@@ -638,6 +641,20 @@ class CompositorSlots:
         """Init Map Name"""
         widget.setToolTip(self.tip_mapname)
         widget.option_box.clear_option = True
+        # Disable holds the typed prefix aside and empties the field, so one run
+        # falls back to the source folder's name without losing (or having to
+        # retype) the prefix. Clear throws the value away; this parks it.
+        widget.option_box.set_disable(
+            settings_key="compositor_map_name",
+            tooltip_on=(
+                "Prefix applied. Click to disable — the combined maps take the "
+                "source folder's name (your prefix is held until you re-enable)."
+            ),
+            tooltip_off=(
+                "Prefix disabled — the combined maps take the source folder's "
+                "name. Click to re-apply."
+            ),
+        )
         self._recent_map_names = self._bind_recent_values(
             widget,
             "compositor_map_names",

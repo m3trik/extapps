@@ -796,7 +796,7 @@ Application shell for the Map Converter UI.
 
 Map Converter UI — slot file for ``converter.ui``.
 
-- **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L30)** — Switchboard slots for ``converter.ui``.
+- **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L33)** — Switchboard slots for ``converter.ui``.
   - `ConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
   - `ConverterSlots.scopes(self) -> Tuple[str, ...]` *(property)* — Scope labels currently offered, in combobox order.
   - `ConverterSlots.register_scope(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None` — Offer *label* in the Scope combobox, resolved by calling *provider*.

@@ -1713,6 +1713,98 @@ class TestMapConverterFlipChannels(unittest.TestCase):
             self.assertEqual(img.getpixel((0, 0)), 155)  # 255-100
 
 
+class TestRenameModeExtension(unittest.TestCase):
+    """The name the converter writes must match the bytes it wrote.
+
+    Rename mode (a non-empty Modifier) is the one path where the slot builds
+    the destination itself and ``os.replace``s the optimizer's output onto it,
+    so it is the one path that can disagree with the optimizer about the
+    container.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="rename_ext_")
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.src = os.path.join(self.tmp, "rock_BaseColor.png")
+        ImgUtils.save_image(
+            ImgUtils.create_image("RGB", (64, 64), (128, 96, 64)), self.src
+        )
+        sb = Mock()
+        sb.file_dialog = Mock(return_value=None)
+        self.slots = ConverterSlots(sb)
+
+    def _run(self, **kwargs):
+        base = dict(
+            file_type=None,  # "Original" -- the profile picks the container
+            max_size=None,
+            secondary_scale=1.0,
+            mode="suffix",
+            modifier="LD",
+            new_folder="out",
+            old_folder=None,
+            registry=MapRegistry(),
+            output_profile="Unreal Engine",  # resolves Base_Color -> .tga
+        )
+        base.update(kwargs)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.slots._optimize_one(self.src, **base)
+        out_dir = os.path.join(self.tmp, "out")
+        return [
+            os.path.join(out_dir, f)
+            for f in sorted(os.listdir(out_dir))
+            if os.path.isfile(os.path.join(out_dir, f))
+        ]
+
+    def test_rename_mode_extension_matches_the_bytes_written(self):
+        """Regression: the destination name came from *file_type*, not the run.
+
+        ``optimize_map`` resolves the container from the output profile's
+        ``OutputSpec``; the slot derived the extension from ``file_type``
+        instead, which is ``None`` here ("Original"). Measured before the fix:
+        a "Unreal Engine" target wrote TGA bytes (magic ``00 00 02 00``) into
+        ``rock_LD_BaseColor.png``. Downstream tools resolve by extension, so a
+        file whose name and content disagree is worse than a failed convert.
+        """
+        from pythontk.core_utils.engines.textures.output_template import (
+            OutputTemplates,
+        )
+
+        # Stated, not assumed: the whole test rests on this profile choosing a
+        # container the source does not use. If the registry ever changes it,
+        # fail here with the reason rather than on a baffling extension match.
+        self.assertEqual(
+            OutputTemplates.resolve("Base_Color", "Unreal Engine").ext,
+            "tga",
+            "premise: the profile must differ from the source's .png",
+        )
+
+        written = self._run()
+        self.assertEqual(len(written), 1, f"expected one output, got {written}")
+        out = written[0]
+
+        # The profile's container, not the source's.
+        self.assertTrue(out.lower().endswith(".tga"), f"named wrong: {out}")
+        # And the name is the one rename mode promises.
+        self.assertIn("rock_LD_BaseColor", os.path.basename(out))
+
+        # Pillow identifies by CONTENT, so this is the name-vs-bytes assertion.
+        with Image.open(out) as img:
+            self.assertEqual(
+                (img.format or "").upper(),
+                "TGA",
+                f"{os.path.basename(out)} does not hold the format it is named for",
+            )
+
+    def test_an_explicit_file_type_still_wins(self):
+        """The profile only fills a container the caller did not name."""
+        written = self._run(file_type="png")
+        self.assertEqual(len(written), 1, written)
+        out = written[0]
+        self.assertTrue(out.lower().endswith(".png"), f"named wrong: {out}")
+        with Image.open(out) as img:
+            self.assertEqual((img.format or "").upper(), "PNG")
+
+
 if __name__ == "__main__":
     # Run tests with verbose output
     unittest.main(verbosity=2)

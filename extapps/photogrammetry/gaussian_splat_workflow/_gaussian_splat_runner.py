@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Optional
 
 from .._process_runner import PyModuleRunner
-from ._gaussian_splat_workflow import find_brush_exe, is_brush_available
+from ._gaussian_splat_workflow import GaussianSplatWorkflow
 
 
 class GaussianSplatRunner(PyModuleRunner):
@@ -25,11 +25,11 @@ class GaussianSplatRunner(PyModuleRunner):
 
     @property
     def exe(self) -> Optional[str]:
-        return find_brush_exe()
+        return GaussianSplatWorkflow.find_brush_exe()
 
     def is_available(self) -> bool:
         """True when a Brush executable was found (set BRUSH_EXE or install)."""
-        return is_brush_available()
+        return GaussianSplatWorkflow.is_brush_available()
 
     def _unavailable_message(self) -> str:
         return (
@@ -44,7 +44,7 @@ class BrushInstallRunner(PyModuleRunner):
     Always reports *available* — running it is what *makes* Brush available —
     so it bypasses the engine-discovery gate the training runner enforces. The
     download lands in pythontk's managed-install catalog, which the parent's
-    next :func:`find_brush_exe` then discovers (the catalog persists to disk, so
+    next :meth:`GaussianSplatWorkflow.find_brush_exe` then discovers (the catalog persists to disk, so
     the cross-process re-discovery needs no extra wiring).
     """
 

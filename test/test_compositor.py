@@ -274,7 +274,6 @@ class TestCompositorOptionMenus(unittest.TestCase):
     def test_source_choose_folder_sets_directory_mode(self):
         """Choosing a folder for the source stores a plain directory value
         (clearing any prior file-selection payload) so it resolves as a dir."""
-        import os
         from unittest import mock as umock
 
         slots = self.ui.slots

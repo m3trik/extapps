@@ -22,7 +22,7 @@ from typing import List, Tuple
 from .._panel_slots import FramesSourceMixin, PhotogrammetryPanelSlots
 from . import parameters as _params
 from ._realityscan_runner import RealityScanRunner
-from ..profile import get_profile
+from ..profile import Profile
 
 # RealityScan has no --stop-after; besides the full pipeline it offers only
 # the shared curation-preview dry-run (its runner executes in the panel's own
@@ -115,7 +115,7 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
 
     def default_output_dir(self) -> str:
         try:
-            return get_profile()["realityscan_scratch_root"]
+            return Profile.get_profile()["realityscan_scratch_root"]
         except Exception:  # noqa: BLE001
             return ""
 

@@ -148,56 +148,66 @@ PREPROCESSING_KNOB_KEYS = frozenset(PREPROCESSING_PARAMS) - {
 }
 
 
-def render_flag_argv(
-    values: "Dict[str, Any]",
-    value_flags: "Dict[str, str]",
-    store_true_flags: "Optional[Dict[str, str]]" = None,
-    bool_flags: "Optional[Dict[str, str]]" = None,
-) -> "List[str]":
-    """Render *values* into CLI flags — the shared loop behind every engine's
-    ``to_argv`` (and :func:`preprocessing_argv`), so the emit rules stay
-    identical everywhere.
+class SharedParams:
+    """Argv renderers shared by the image-in engines' ``parameters`` modules.
 
-    ``value_flags`` always emit their argument when the key is present and the
-    value isn't ``None`` / empty (the widget always holds a concrete value);
-    ``store_true_flags`` emit their bare flag only when the value is truthy.
-    ``bool_flags`` map to argparse ``BooleanOptionalAction`` flags and always
-    emit — ``--flag`` when truthy, ``--no-flag`` when falsy — which is what
-    lets a panel checkbox turn OFF a runner default that is on (a store_true
-    flag can only ever push toward true). Keys absent from *values* are
-    skipped, so a partial dict (e.g. a preset overlay) renders cleanly.
+    A class rather than module functions per the encapsulation standard. The
+    module still exposes the ``PARAMS``/key **data** flat, because that half is
+    merged into each engine's ``parameters.PARAMS`` dict, which uitk's
+    ``BridgeSlotsBase`` reads as a module attribute.
     """
-    argv: List[str] = []
-    for key, flag in value_flags.items():
-        if key not in values:
-            continue
-        val = values[key]
-        if val is None or str(val) == "":
-            continue
-        argv += [flag, str(val)]
-    for key, flag in (store_true_flags or {}).items():
-        if values.get(key):
-            argv.append(flag)
-    for key, flag in (bool_flags or {}).items():
-        if key not in values:
-            continue
-        argv.append(flag if values[key] else "--no-" + flag.lstrip("-"))
-    return argv
 
+    @staticmethod
+    def render_flag_argv(
+        values: "Dict[str, Any]",
+        value_flags: "Dict[str, str]",
+        store_true_flags: "Optional[Dict[str, str]]" = None,
+        bool_flags: "Optional[Dict[str, str]]" = None,
+    ) -> "List[str]":
+        """Render *values* into CLI flags — the shared loop behind every engine's
+        ``to_argv`` (and :func:`preprocessing_argv`), so the emit rules stay
+        identical everywhere.
 
-def preprocessing_argv(values: "Dict[str, Any]") -> "List[str]":
-    """Render the input pre-processing CLI flags from collected *values*.
+        ``value_flags`` always emit their argument when the key is present and the
+        value isn't ``None`` / empty (the widget always holds a concrete value);
+        ``store_true_flags`` emit their bare flag only when the value is truthy.
+        ``bool_flags`` map to argparse ``BooleanOptionalAction`` flags and always
+        emit — ``--flag`` when truthy, ``--no-flag`` when falsy — which is what
+        lets a panel checkbox turn OFF a runner default that is on (a store_true
+        flag can only ever push toward true). Keys absent from *values* are
+        skipped, so a partial dict (e.g. a preset overlay) renders cleanly.
+        """
+        argv: List[str] = []
+        for key, flag in value_flags.items():
+            if key not in values:
+                continue
+            val = values[key]
+            if val is None or str(val) == "":
+                continue
+            argv += [flag, str(val)]
+        for key, flag in (store_true_flags or {}).items():
+            if values.get(key):
+                argv.append(flag)
+        for key, flag in (bool_flags or {}).items():
+            if key not in values:
+                continue
+            argv.append(flag if values[key] else "--no-" + flag.lstrip("-"))
+        return argv
 
-    Single source of truth for the pre-processing argv across the image-in
-    engines (each engine's ``to_argv`` appends this). The master
-    ``preprocess_input`` toggle gates the whole stage: when present and falsey,
-    the stage is skipped wholesale (``--skip-curate --skip-equalize``) and the
-    per-stage knobs are moot, so only those two flags emit. Otherwise the
-    per-stage skips (store-true) + value knobs render normally (an absent master
-    key defaults to enabled).
-    """
-    if PREPROCESS_MASTER_KEY in values and not values[PREPROCESS_MASTER_KEY]:
-        return ["--skip-curate", "--skip-equalize"]
-    return render_flag_argv(
-        values, PREPROCESSING_VALUE_FLAGS, PREPROCESSING_STORE_TRUE_FLAGS
-    )
+    @staticmethod
+    def preprocessing_argv(values: "Dict[str, Any]") -> "List[str]":
+        """Render the input pre-processing CLI flags from collected *values*.
+
+        Single source of truth for the pre-processing argv across the image-in
+        engines (each engine's ``to_argv`` appends this). The master
+        ``preprocess_input`` toggle gates the whole stage: when present and falsey,
+        the stage is skipped wholesale (``--skip-curate --skip-equalize``) and the
+        per-stage knobs are moot, so only those two flags emit. Otherwise the
+        per-stage skips (store-true) + value knobs render normally (an absent master
+        key defaults to enabled).
+        """
+        if PREPROCESS_MASTER_KEY in values and not values[PREPROCESS_MASTER_KEY]:
+            return ["--skip-curate", "--skip-equalize"]
+        return SharedParams.render_flag_argv(
+            values, PREPROCESSING_VALUE_FLAGS, PREPROCESSING_STORE_TRUE_FLAGS
+        )

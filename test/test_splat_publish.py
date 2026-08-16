@@ -15,7 +15,6 @@ import unittest
 
 from extapps.photogrammetry.gaussian_splat_workflow._splat_publish import (
     SplatPublishWorkflow,
-    find_splat_transform,
 )
 from extapps.photogrammetry.gaussian_splat_workflow import run_combined as gs_run
 
@@ -38,7 +37,7 @@ class FindSplatTransformTest(unittest.TestCase):
             tempfile.gettempdir(), "nope-splat-transform.cmd"
         )
         try:
-            self.assertIsNone(find_splat_transform())
+            self.assertIsNone(SplatPublishWorkflow.find_splat_transform())
         finally:
             if prev is None:
                 os.environ.pop("SPLAT_TRANSFORM_EXE", None)

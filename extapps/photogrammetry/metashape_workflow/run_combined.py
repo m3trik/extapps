@@ -35,6 +35,7 @@ import argparse
 import json
 import os
 import sys
+from typing import Optional
 
 # Machine-readable result line a ``--prep-only`` run prints last (parsed by the
 # panel's MetashapeRunner to feed the prepared dir into the metashape.exe
@@ -63,34 +64,12 @@ if __package__ in (None, ""):
     from extapps.photogrammetry.metashape_workflow._metashape_workflow import (
         MetashapeWorkflow,
     )
-    from extapps.photogrammetry.profile import (
-        IMAGE_EXTS,
-        QUALITY_TIERS,
-        discover_source_dirs,
-        get_preset,
-        get_profile,
-        init_user_profile,
-    )
-    from extapps.photogrammetry.prep_stages import (
-        derive_texture_size,
-        extract_videos_to_dir,
-        first_image_in_dirs,
-    )
+    from extapps.photogrammetry.profile import (IMAGE_EXTS, Profile, QUALITY_TIERS)
+    from extapps.photogrammetry.prep_stages import PrepStagesMixin
 else:
     from ._metashape_workflow import MetashapeWorkflow
-    from ..profile import (
-        IMAGE_EXTS,
-        QUALITY_TIERS,
-        discover_source_dirs,
-        get_preset,
-        get_profile,
-        init_user_profile,
-    )
-    from ..prep_stages import (
-        derive_texture_size,
-        extract_videos_to_dir,
-        first_image_in_dirs,
-    )
+    from ..profile import (IMAGE_EXTS, Profile, QUALITY_TIERS)
+    from ..prep_stages import PrepStagesMixin
 
 
 def _stop_after(label, mp) -> int:
@@ -221,6 +200,74 @@ def _run_prep_only(args, sources, project_dir) -> int:
     return 0
 
 
+def _run_mesh_stages(mp, args, model_path=None) -> Optional[str]:
+    """CLI-args adapter over ``MeshStagesMixin.run_mesh_stages`` (the shared
+    pipeline-order composition). Each stage self-skips with a QC ``fallback``
+    marker when pymeshlab or its input is missing — which is exactly what
+    happens inside metashape.exe's bundled Python, so the real work runs via
+    ``--post-only`` under the panel venv instead (mirroring the
+    ``--prep-only`` split, in the other direction).
+
+    Returns the furthest-derived mesh path. That is NOT the advertised
+    ``<name>.obj``: each stage writes a derived file (``_clean``, then
+    ``_refined``), so the caller has to name the real deliverable rather
+    than leave it unreported beside the untouched export."""
+    return mp.run_mesh_stages(
+        model_path=model_path,
+        remesh_target_pct=args.mesh_remesh_pct,
+        decimate_target_faces=args.mesh_decimate_faces,
+        bake_texture_size=args.bake_vertex_color,
+    )
+
+
+def _run_post_only(args, project_dir) -> int:
+    """``--post-only``: run ONLY the PyMeshLab mesh stages on the already-
+    exported model, in *this* interpreter, then exit.
+
+    The export-side twin of ``--prep-only``: metashape.exe's bundled Python
+    can never import pymeshlab, so the panel's MetashapeRunner chains this
+    under the panel venv after the engine stage exports the model. Also
+    usable manually against any prior run's output.
+
+    QC lands in its own ``<name>_post_qc.json`` sidecar (the engine run's
+    ``<name>_qc.json`` is already finalized by the time this runs)."""
+    mp = MetashapeWorkflow(
+        project_path=project_dir,
+        name=f"{args.name}_post",
+        mock_mode=True,  # mesh stages are file-level; never touch Metashape here
+        gate_mode=args.gate_mode,
+        checkpoint_each_stage=False,
+        save_project=False,
+    )
+    # The suffixed QC name shifts _default_model_path; aim at the real export.
+    model_path = os.path.join(project_dir, f"{args.name}.obj")
+    # The workflow above is mock-constructed purely to keep the Metashape SDK
+    # out of this interpreter -- but this pass is the ONE path that does real
+    # work, and MeshStagesMixin._mesh_input reads mock_mode as "a missing input
+    # is expected here", downgrading it to a quiet [mock] skip. Without this
+    # check a missing export runs no stage at all and still finalizes green.
+    if not os.path.isfile(model_path):
+        print(
+            f"\n--post-only: exported model not found: {model_path}",
+            file=sys.stderr,
+        )
+        mp.finalize_run(success=False)
+        return 1
+    try:
+        final_mesh = _run_mesh_stages(mp, args, model_path=model_path)
+    except Exception as e:
+        print(f"\nMesh post-processing failed: {e}", file=sys.stderr)
+        mp.finalize_run(success=False)
+        return 1
+    sidecar = mp.finalize_run(success=True)
+    print(f"\nMesh post-processing done. QC sidecar: {sidecar}")
+    # Name the derived file explicitly: the stages write <stem>_clean /
+    # _refined beside the export, so the deliverable is not <name>.obj.
+    if final_mesh and os.path.normpath(final_mesh) != os.path.normpath(model_path):
+        print(f"Final mesh: {final_mesh}")
+    return 0
+
+
 def main(argv=None) -> int:
     # Windows consoles default to cp1252; pipeline status lines and paths
     # may contain non-ASCII. Force UTF-8 so a stray char never aborts a run.
@@ -252,16 +299,16 @@ def main(argv=None) -> int:
                           "Omit for plain defaults. See TUNING.md.")
     preargs, _ = pre.parse_known_args(argv)
     if preargs.init_profile:
-        ready = init_user_profile(preargs.profile)
+        ready = Profile.init_user_profile(preargs.profile)
         print(f"Profile ready at: {ready}  (edit it, or point --profile / "
               "$PHOTOGRAMMETRY_PROFILE elsewhere; existing files are left intact)")
         return 0
-    prof = get_profile(preargs.profile)
+    prof = Profile.get_profile(preargs.profile)
     cur = prof.get("curate", {})
     eq = prof.get("equalize", {})
     rec = prof.get("reconstruct", {})
     try:
-        preset = get_preset(preargs.preset, "metashape")
+        preset = Profile.get_preset(preargs.preset, "metashape")
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
@@ -335,6 +382,15 @@ def main(argv=None) -> int:
                         "its metashape.exe stage; manually, feed the printed "
                         "dir to a later run via --frames-dir with "
                         "--skip-curate --skip-equalize.")
+    p.add_argument("--post-only", action="store_true",
+                   help="Run ONLY the PyMeshLab mesh post-processing stages "
+                        "(repair, optional remesh/decimate, optional vertex-"
+                        "color bake, QC gate) on the already-exported model, "
+                        "in THIS interpreter, then exit. Run it under a Python "
+                        "with pymeshlab - the stages can never run inside "
+                        "metashape.exe's bundled Python. The panel's runner "
+                        "invokes this automatically after its metashape.exe "
+                        "stage exports the model.")
     p.add_argument("--skip-equalize", action=argparse.BooleanOptionalAction,
                    default=bool(preset.get("skip_equalize", False)
                                 or _preset_prep_off),
@@ -505,6 +561,23 @@ def main(argv=None) -> int:
                    default=preset.get("close_holes", 30),
                    help="Close mesh holes up to this percent of the total mesh "
                         "size (closeHoles). 0 disables.")
+    p.add_argument("--mesh-decimate-faces", type=int,
+                   default=preset.get("mesh_decimate_faces", 0),
+                   help="PyMeshLab curvature-weighted quadric decimation of the "
+                        "exported mesh to N faces (0 = off). Runs in a Python "
+                        "with pymeshlab (the panel chains a --post-only pass; "
+                        "inside metashape.exe it records a QC skip).")
+    p.add_argument("--mesh-remesh-pct", type=float,
+                   default=preset.get("mesh_remesh_pct", 0.0),
+                   help="PyMeshLab isotropic remesh of the exported mesh toward "
+                        "a uniform edge length, as a percent of the bbox "
+                        "diagonal (0 = off). The evenness pass before "
+                        "--mesh-decimate-faces on unevenly dense scans.")
+    p.add_argument("--bake-vertex-color", type=int,
+                   default=preset.get("bake_vertex_color", 0),
+                   help="Bake per-vertex color to an N-px texture on "
+                        "auto-generated UVs (PyMeshLab; 0 = off). For "
+                        "vertex-colored meshes with no texture pass.")
     p.add_argument("--calibrate-colors", action=argparse.BooleanOptionalAction,
                    default=bool(preset.get("calibrate_colors", False)),
                    help="Run Metashape's calibrateColors (incl. white balance) "
@@ -539,6 +612,14 @@ def main(argv=None) -> int:
     )
     args = p.parse_args(argv)
 
+    if args.post_only:
+        # Before source resolution on purpose: a post pass needs only the
+        # exported model under --output-root/--name — re-extracting video
+        # frames or failing on a since-moved frames dir here would be wrong.
+        project_dir = os.path.join(args.output_root, args.name)
+        os.makedirs(project_dir, exist_ok=True)
+        return _run_post_only(args, project_dir)
+
     if args.video and args.frames_dir:
         print("error: --video and --frames-dir are mutually exclusive "
               "(both name the single source capture).", file=sys.stderr)
@@ -548,7 +629,7 @@ def main(argv=None) -> int:
         # treat that dir as the single prepared capture.
         frames_dir = os.path.join(args.output_root, args.name, "_extracted_frames")
         print(f"Extracting frames from {len(args.video)} video(s) -> {frames_dir}")
-        frames = extract_videos_to_dir(
+        frames = PrepStagesMixin.extract_videos_to_dir(
             args.video, frames_dir, window_sec=args.video_window_sec, log=print
         )
         if not frames:
@@ -566,7 +647,7 @@ def main(argv=None) -> int:
             return 1
         sources = [args.frames_dir]
     else:
-        sources = discover_source_dirs(args.input_root)
+        sources = Profile.discover_source_dirs(args.input_root)
         if not sources:
             print(f"No image-bearing subdirs under {args.input_root}", file=sys.stderr)
             return 1
@@ -616,8 +697,8 @@ def main(argv=None) -> int:
     # from the original frames now). cv2/PIL may be absent in Metashape's
     # bundled Python -> derive_texture_size falls back to 8192.
     if str(args.texture_size).lower() == "auto":
-        sample = first_image_in_dirs(sources)
-        texture_size = derive_texture_size(sample)
+        sample = PrepStagesMixin.first_image_in_dirs(sources)
+        texture_size = PrepStagesMixin.derive_texture_size(sample)
         print(f"Texture size: {texture_size} (auto, from {sample})")
     else:
         texture_size = int(args.texture_size)
@@ -736,7 +817,10 @@ def main(argv=None) -> int:
         if args.save_project:
             mp.save_project()  # final save of the reopenable project
         mp.export_model()
-        mp.clean_mesh_advanced()  # PyMeshLab if installed
+        # PyMeshLab file-level stages: real work only in a Python that has
+        # pymeshlab (direct venv runs); inside metashape.exe they record an
+        # honest QC skip and the panel runner chains a --post-only venv pass.
+        _run_mesh_stages(mp, args)
         mp.export_qc()
         sidecar = mp.finalize_run(success=True)
         print(f"\nDone. QC sidecar: {sidecar}")

@@ -59,36 +59,44 @@ from typing import Callable, Dict, List, Optional, Sequence, Union
 
 from pythontk import QcLog
 
-from ._gaussian_splat_workflow import read_splat_count
+from ..profile import Profile
+from ._gaussian_splat_workflow import GaussianSplatWorkflow
 
 
-def find_splat_transform() -> Optional[str]:
-    """Return the ``splat-transform`` executable path or None.
+class _SplatPublishWorkflowInternal:
+    """Discovery + argv helpers for :class:`SplatPublishWorkflow` (encapsulation
+    standard: helpers on a ``_<Class>Internal`` base the public class inherits)."""
 
-    Lookup order: ``SPLAT_TRANSFORM_EXE`` env override (honored strictly — empty
-    or a nonexistent path returns None so the caller enters mock mode), then
-    PATH. Unlike Brush/SuGaR (folder installs), splat-transform is an npm global
-    on PATH — on Windows ``shutil.which`` resolves the ``.cmd`` shim.
-    """
-    env = os.environ.get("SPLAT_TRANSFORM_EXE")
-    if env is not None:
-        return env if env and os.path.isfile(env) else None
-    return shutil.which("splat-transform")
+    @staticmethod
+    def _csv(value: "Union[str, Sequence[float]]") -> str:
+        """Normalize a crop/box arg to the comma-joined string the CLI expects."""
+        if isinstance(value, str):
+            return value
+        return ",".join(str(v) for v in value)
 
 
-def is_splat_transform_available() -> bool:
-    return find_splat_transform() is not None
-
-
-def _csv(value: Union[str, Sequence[float]]) -> str:
-    """Normalize a crop/box arg to the comma-joined string the CLI expects."""
-    if isinstance(value, str):
-        return value
-    return ",".join(str(v) for v in value)
-
-
-class SplatPublishWorkflow:
+class SplatPublishWorkflow(_SplatPublishWorkflowInternal):
     """Clean a trained 3DGS ``.ply`` and convert it to engine-ready formats."""
+    @staticmethod
+    def find_splat_transform() -> "Optional[str]":
+        """Return the ``splat-transform`` executable path or None.
+
+        Runs the shared :func:`resolve_app` chain: the ``SPLAT_TRANSFORM_EXE``
+        env override (terminal — empty or a nonexistent path returns None so the
+        caller enters mock mode), then PATH. Unlike Brush/SuGaR (folder
+        installs), splat-transform is an npm global on PATH — on Windows
+        ``shutil.which`` resolves the ``.cmd`` shim. It has **no profile key**:
+        there is no network-install story for an npm global, hence the ``None``
+        config key.
+        """
+        return Profile.resolve_app(
+            "SPLAT_TRANSFORM_EXE",
+            None,
+            fallbacks=(lambda: shutil.which("splat-transform"),),
+        )
+    @staticmethod
+    def is_splat_transform_available() -> bool:
+        return SplatPublishWorkflow.find_splat_transform() is not None
 
     def __init__(
         self,
@@ -104,7 +112,7 @@ class SplatPublishWorkflow:
         self.progress = progress
         self.timeout_sec = timeout_sec
 
-        self.exe = splat_transform_exe or find_splat_transform()
+        self.exe = splat_transform_exe or self.find_splat_transform()
         if mock_mode is None:
             mock_mode = self.exe is None
         self.mock_mode = bool(mock_mode)
@@ -195,7 +203,7 @@ class SplatPublishWorkflow:
         """
         actions: List[str] = []
         if rotate is not None:
-            actions += ["-r", _csv(rotate)]
+            actions += ["-r", _SplatPublishWorkflowInternal._csv(rotate)]
         if filter_nan:
             actions.append("-N")
         if filter_floaters:
@@ -203,9 +211,9 @@ class SplatPublishWorkflow:
         if min_opacity is not None:
             actions += ["-V", f"opacity,gt,{min_opacity}"]
         if crop_box is not None:
-            actions += ["-B", _csv(crop_box)]
+            actions += ["-B", _SplatPublishWorkflowInternal._csv(crop_box)]
         if crop_sphere is not None:
-            actions += ["-S", _csv(crop_sphere)]
+            actions += ["-S", _SplatPublishWorkflowInternal._csv(crop_sphere)]
         if decimate is not None:
             actions += ["-F", str(decimate)]
         return actions
@@ -247,10 +255,10 @@ class SplatPublishWorkflow:
             st["actions"] = actions
             if not self.mock_mode and not os.path.isfile(in_ply):
                 raise ValueError(f"Input splat .ply not found: {in_ply}")
-            st["gaussians_in"] = read_splat_count(in_ply) if not self.mock_mode else None
+            st["gaussians_in"] = GaussianSplatWorkflow.read_splat_count(in_ply) if not self.mock_mode else None
             self._run_transform(in_ply, actions, out_ply, label="clean")
             if not self.mock_mode:
-                count = read_splat_count(out_ply)
+                count = GaussianSplatWorkflow.read_splat_count(out_ply)
                 st["gaussians_out"] = count
                 if count and st["gaussians_in"]:
                     print(f"Cleaned splat: {st['gaussians_in']:,} -> {count:,} "

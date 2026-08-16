@@ -40,7 +40,7 @@ from pathlib import Path
 
 from ._gaussian_splat_workflow import GaussianSplatWorkflow
 from ._splat_publish import SplatPublishWorkflow
-from ..profile import QUALITY_TIERS, get_preset, get_profile, init_user_profile
+from ..profile import Profile, QUALITY_TIERS
 
 
 def main(argv=None) -> int:
@@ -71,15 +71,15 @@ def main(argv=None) -> int:
                           "explicit flags still win. See TUNING.md.")
     preargs, _ = pre.parse_known_args(argv)
     if preargs.init_profile:
-        ready = init_user_profile(preargs.profile)
+        ready = Profile.init_user_profile(preargs.profile)
         print(f"Profile ready at: {ready}  (edit it, or point --profile / "
               "$PHOTOGRAMMETRY_PROFILE elsewhere; existing files are left intact)")
         return 0
-    prof = get_profile(preargs.profile)
+    prof = Profile.get_profile(preargs.profile)
     gs_cfg = prof.get("gsplat", {})
     publish_cfg = prof.get("publish", {})
     try:
-        preset = get_preset(preargs.preset, "gaussian_splat")
+        preset = Profile.get_preset(preargs.preset, "gaussian_splat")
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

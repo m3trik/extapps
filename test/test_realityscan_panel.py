@@ -150,7 +150,7 @@ class TestRCRunCombinedFramesDir(unittest.TestCase):
         os.environ.pop(pp.PROFILE_ENV, None)
         self.ver = mock.patch(
             "extapps.photogrammetry.realityscan_workflow._realityscan_workflow."
-            "get_realitycapture_version",
+            "RealityCaptureWorkflow.get_realitycapture_version",
             return_value="test",
         )
         self.ver.start()

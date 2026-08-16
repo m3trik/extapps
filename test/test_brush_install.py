@@ -53,7 +53,7 @@ class TestBrushDownloadTemplate(unittest.TestCase):
         with mock.patch(
             "pythontk.AppInstaller.ensure", return_value="/fake/brush"
         ) as ens:
-            path = gsw.install_brush()
+            path = gsw.GaussianSplatWorkflow.install_brush()
         self.assertEqual(path, "/fake/brush")
         self.assertEqual(ens.call_args.args[0], "brush")
         kw = ens.call_args.kwargs
@@ -71,13 +71,18 @@ class TestFindBrushExeCatalog(unittest.TestCase):
         gsw = _gsw()
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("BRUSH_EXE", None)
-            with mock.patch.object(gsw, "configured_app_path", return_value=None), \
+            # The profile stage now lives in the shared profile.resolve_app
+            # chain, so patch it there rather than on this engine module.
+            with mock.patch(
+                     "extapps.photogrammetry.profile.Profile.configured_app_path",
+                     return_value=None,
+                 ), \
                  mock.patch("shutil.which", return_value=None), \
                  mock.patch(
                      "pythontk.AppInstaller.get_path",
                      return_value="/managed/brush.exe",
                  ) as gp:
-                self.assertEqual(gsw.find_brush_exe(), "/managed/brush.exe")
+                self.assertEqual(gsw.GaussianSplatWorkflow.find_brush_exe(), "/managed/brush.exe")
                 gp.assert_called_once_with("brush", executable="brush")
 
     def test_env_override_still_wins_over_catalog(self) -> None:
@@ -86,7 +91,7 @@ class TestFindBrushExeCatalog(unittest.TestCase):
              mock.patch("pythontk.AppInstaller.get_path") as gp:
             # An empty/invalid BRUSH_EXE is honored strictly (-> None), and the
             # catalog is NOT consulted (env is an explicit, deliberate signal).
-            self.assertIsNone(gsw.find_brush_exe())
+            self.assertIsNone(gsw.GaussianSplatWorkflow.find_brush_exe())
             gp.assert_not_called()
 
 

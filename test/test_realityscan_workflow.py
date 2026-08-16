@@ -17,7 +17,6 @@ from unittest import mock
 WF = "extapps.photogrammetry.realityscan_workflow._realityscan_workflow"
 from extapps.photogrammetry.realityscan_workflow._realityscan_workflow import (  # noqa: E402
     RealityCaptureWorkflow,
-    find_realitycapture_exe,
 )
 from extapps.photogrammetry.realityscan_workflow._realityscan_connection import (  # noqa: E402
     RealityScanConnection,
@@ -40,20 +39,20 @@ class FindExeVersionTest(unittest.TestCase):
         with mock.patch.dict(os.environ), mock.patch("glob.glob", return_value=fakes):
             os.environ.pop("RC_EXE", None)
             self.assertEqual(
-                find_realitycapture_exe(),
+                RealityCaptureWorkflow.find_realitycapture_exe(),
                 r"C:\Program Files\RealityScan_2.10\RealityScan.exe",
             )
 
     def test_env_override_empty_forces_none(self):
         with mock.patch.dict(os.environ, {"RC_EXE": ""}):
-            self.assertIsNone(find_realitycapture_exe())
+            self.assertIsNone(RealityCaptureWorkflow.find_realitycapture_exe())
 
 
 class AddImagesCommandTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         # Don't touch a real RC install during construction.
-        ver = mock.patch(f"{WF}.get_realitycapture_version", return_value="test")
+        ver = mock.patch(f"{WF}.RealityCaptureWorkflow.get_realitycapture_version", return_value="test")
         ver.start()
         self.addCleanup(ver.stop)
         self.imgs = os.path.join(self.tmp, "imgs")
@@ -69,7 +68,7 @@ class AddImagesCommandTest(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_add_image_dirs_uses_addFolder(self):
-        with mock.patch(f"{WF}.get_image_filepaths", return_value=["a.jpg", "b.jpg"]), \
+        with mock.patch(f"{WF}.RealityCaptureWorkflow.get_image_filepaths", return_value=["a.jpg", "b.jpg"]), \
              mock.patch.object(self.wf, "_run_rc", return_value=0) as run:
             self.wf.add_image_dirs([self.imgs])
         run.assert_called_once()
@@ -79,7 +78,7 @@ class AddImagesCommandTest(unittest.TestCase):
         self.assertIn(self.imgs, args)
 
     def test_add_images_with_dir_uses_addFolder(self):
-        with mock.patch(f"{WF}.get_image_filepaths", return_value=["a.jpg"]), \
+        with mock.patch(f"{WF}.RealityCaptureWorkflow.get_image_filepaths", return_value=["a.jpg"]), \
              mock.patch.object(self.wf, "_run_rc", return_value=0) as run:
             self.wf.add_images(self.imgs)
         run.assert_called_once()
@@ -104,7 +103,7 @@ class ConnectionSelectionTest(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        ver = mock.patch(f"{WF}.get_realitycapture_version", return_value="test")
+        ver = mock.patch(f"{WF}.RealityCaptureWorkflow.get_realitycapture_version", return_value="test")
         ver.start()
         self.addCleanup(ver.stop)
         env = mock.patch.dict(os.environ)
@@ -247,7 +246,7 @@ class ReportMetricsTest(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        ver = mock.patch(f"{WF}.get_realitycapture_version", return_value="test")
+        ver = mock.patch(f"{WF}.RealityCaptureWorkflow.get_realitycapture_version", return_value="test")
         ver.start()
         self.addCleanup(ver.stop)
         self.wf = RealityCaptureWorkflow(
@@ -334,7 +333,7 @@ class CleanMeshCommandTest(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        ver = mock.patch(f"{WF}.get_realitycapture_version", return_value="test")
+        ver = mock.patch(f"{WF}.RealityCaptureWorkflow.get_realitycapture_version", return_value="test")
         ver.start()
         self.addCleanup(ver.stop)
         self.wf = RealityCaptureWorkflow(
@@ -371,7 +370,7 @@ class PresetRunOverlayTest(unittest.TestCase):
         # Isolate from any personal profile so the *packaged* preset is exercised.
         os.environ[CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
         os.environ.pop(pp.PROFILE_ENV, None)
-        ver = mock.patch(f"{WF}.get_realitycapture_version", return_value="test")
+        ver = mock.patch(f"{WF}.RealityCaptureWorkflow.get_realitycapture_version", return_value="test")
         ver.start()
         self.addCleanup(ver.stop)
         # One image-bearing capture subdir (extension-only; never opened in mock).
@@ -387,7 +386,7 @@ class PresetRunOverlayTest(unittest.TestCase):
         # Writes under the temp config root set in setUp (PresetStore user tier).
         import extapps.photogrammetry.profile as pp
 
-        pp.preset_store("realityscan").save(name, data)
+        pp.Profile.preset_store("realityscan").save(name, data)
 
     def _run(self, *extra):
         from extapps.photogrammetry.realityscan_workflow import run_combined as rc_run

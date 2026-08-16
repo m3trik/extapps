@@ -27,8 +27,7 @@ from ..profile import QUALITY_TIERS
 from .._shared_params import (
     PREPROCESSING_KEYS,
     PREPROCESSING_PARAMS,
-    preprocessing_argv,
-    render_flag_argv,
+    SharedParams,
 )
 
 
@@ -97,18 +96,62 @@ PARAMS.update(
             "Texture quality is unaffected (bakes from the photos). 0 = no "
             "simplify. Maps to --simplify.",
         ),
+        # --- Mesh processing (PyMeshLab, post-export) ---------------------------
+        "mesh_remesh_pct": AttributeSpec(
+            key="mesh_remesh_pct",
+            label="Remesh Edge %",
+            kind="float",
+            section="Mesh Processing",
+            default=0.0,
+            minimum=0.0,
+            maximum=10.0,
+            decimals=2,
+            tooltip="PyMeshLab isotropic remesh of the exported mesh toward a "
+            "uniform edge length, as a percent of the bbox diagonal (0 = "
+            "off). The evenness pass before decimation on unevenly dense "
+            "scans. Needs extapps[mesh]. Maps to --mesh-remesh-pct.",
+        ),
+        "mesh_decimate_faces": AttributeSpec(
+            key="mesh_decimate_faces",
+            label="Decimate To Faces",
+            kind="int",
+            section="Mesh Processing",
+            default=0,
+            minimum=0,
+            maximum=20000000,
+            tooltip="PyMeshLab curvature-weighted quadric decimation of the "
+            "exported mesh to this face count (0 = off) - adaptive density, "
+            "distinct from the RC-native pre-unwrap Simplify Target. Needs "
+            "extapps[mesh]. Maps to --mesh-decimate-faces.",
+        ),
+        "bake_vertex_color": AttributeSpec(
+            key="bake_vertex_color",
+            label="Bake Vertex Color px",
+            kind="int",
+            section="Mesh Processing",
+            default=0,
+            minimum=0,
+            maximum=8192,
+            tooltip="Bake per-vertex color to a texture of this size on "
+            "auto-generated UVs (PyMeshLab; 0 = off). For vertex-colored "
+            "meshes with no texture pass. Maps to --bake-vertex-color.",
+        ),
     }
 )
 
 
 # Value params -> CLI flags that take an argument (always emitted). The shared
-# input-pre-processing flags are rendered separately via ``preprocessing_argv``
+# input-pre-processing flags are rendered separately via ``SharedParams.preprocessing_argv``
 # (its master toggle gates them).
 _VALUE_FLAGS: "Dict[str, str]" = {
     "quality": "--quality",
     "gate_mode": "--gate-mode",
     "min_component_size": "--clean-min-component",
     "simplify_target": "--simplify",
+    # Mesh processing (PyMeshLab, post-export).
+    "mesh_remesh_pct": "--mesh-remesh-pct",
+    "mesh_decimate_faces": "--mesh-decimate-faces",
+    "bake_vertex_color": "--bake-vertex-color",
 }
 
 # Bool params -> store_true flags (emitted only when truthy).
@@ -121,9 +164,9 @@ def to_argv(values: "Dict[str, Any]") -> "List[str]":
     """Render collected param *values* into ``run_combined`` CLI flags (via the
     shared :func:`render_flag_argv` emit rules), then append the shared input
     pre-processing flags (curate + equalize), which its master toggle gates."""
-    argv = render_flag_argv(values, _VALUE_FLAGS, _STORE_TRUE_FLAGS)
+    argv = SharedParams.render_flag_argv(values, _VALUE_FLAGS, _STORE_TRUE_FLAGS)
     # Shared input pre-processing (curate + equalize), gated by its master toggle.
-    argv += preprocessing_argv(values)
+    argv += SharedParams.preprocessing_argv(values)
     return argv
 
 

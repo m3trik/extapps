@@ -30,11 +30,10 @@ __package__ = "extapps.photogrammetry.gaussian_splat_workflow"
 
 
 DEFAULT_INCLUDE = {
-    "_gaussian_splat_workflow": [
-        "GaussianSplatWorkflow",
-        "find_brush_exe",
-        "is_brush_available",
-    ],
+    # Only the class: find_brush_exe / is_brush_available moved onto it, and
+    # re-exporting them flat would recreate the module-level surface the
+    # encapsulation standard removes. Call GaussianSplatWorkflow.<name>.
+    "_gaussian_splat_workflow": ["GaussianSplatWorkflow"],
     "launcher": ["GaussianSplatWorkflowUI"],
     "slots": ["GaussianSplatWorkflowSlots"],
 }
@@ -47,6 +46,4 @@ __all__ = [
     "GaussianSplatWorkflow",
     "GaussianSplatWorkflowUI",
     "GaussianSplatWorkflowSlots",
-    "find_brush_exe",
-    "is_brush_available",
 ]

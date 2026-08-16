@@ -9,9 +9,6 @@ import unittest
 
 from extapps.photogrammetry.gaussian_splat_workflow._gaussian_splat_workflow import (
     GaussianSplatWorkflow,
-    find_brush_exe,
-    is_brush_available,
-    read_splat_count,
 )
 from extapps.photogrammetry.gaussian_splat_workflow import run_combined as gs_run
 
@@ -41,13 +38,13 @@ class GaussianSplatWorkflowTest(unittest.TestCase):
         prev = os.environ.get("BRUSH_EXE")
         try:
             os.environ["BRUSH_EXE"] = os.path.join(self.tmp, "nope.exe")
-            self.assertIsNone(find_brush_exe())
-            self.assertFalse(is_brush_available())
+            self.assertIsNone(GaussianSplatWorkflow.find_brush_exe())
+            self.assertFalse(GaussianSplatWorkflow.is_brush_available())
             # existing file -> returned
             fake = os.path.join(self.tmp, "brush_app.exe")
             open(fake, "w").close()
             os.environ["BRUSH_EXE"] = fake
-            self.assertEqual(find_brush_exe(), fake)
+            self.assertEqual(GaussianSplatWorkflow.find_brush_exe(), fake)
         finally:
             if prev is None:
                 os.environ.pop("BRUSH_EXE", None)
@@ -77,7 +74,7 @@ class GaussianSplatWorkflowTest(unittest.TestCase):
         with open(ply, "wb") as fh:
             fh.write(b"ply\nformat binary_little_endian 1.0\n"
                      b"element vertex 12345\nproperty float x\nend_header\n")
-        self.assertEqual(read_splat_count(ply), 12345)
+        self.assertEqual(GaussianSplatWorkflow.read_splat_count(ply), 12345)
 
 
 class RunnerQualityTest(unittest.TestCase):

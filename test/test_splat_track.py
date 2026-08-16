@@ -43,7 +43,7 @@ class GsplatPresetOverlayTest(unittest.TestCase):
         os.environ[CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
         os.environ.pop(pp.PROFILE_ENV, None)
         # A user preset in the gaussian_splat store sets splat-training knobs.
-        pp.preset_store("gaussian_splat").save("t_splat", {
+        pp.Profile.preset_store("gaussian_splat").save("t_splat", {
             "total_steps": 12345, "max_splats": 7, "max_resolution": 999, "sh_degree": 2,
         })
         self.colmap = os.path.join(self.tmp, "ds")

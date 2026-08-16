@@ -22,11 +22,6 @@ if REPO_ROOT not in sys.path:
 
 from pythontk import NetUtils
 from extapps.substance_workflow import PainterConnection
-from extapps.substance_workflow.env_utils.painter_connection import (
-    build_painter_env,
-    launch_painter,
-    plugins_dir,
-)
 
 
 class TestForceNewInstanceHardBlock(SubstanceWorkflowTestCase):
@@ -66,7 +61,7 @@ class TestSingleton(SubstanceWorkflowTestCase):
 class TestPluginsDir(SubstanceWorkflowTestCase):
 
     def test_returns_absolute_path_to_plugins(self) -> None:
-        p = plugins_dir()
+        p = PainterConnection.plugins_dir()
         self.assertTrue(os.path.isabs(p))
         self.assertTrue(p.endswith("plugins") or p.endswith("plugins" + os.sep))
         self.assertTrue(os.path.isdir(p))
@@ -75,30 +70,30 @@ class TestPluginsDir(SubstanceWorkflowTestCase):
 class TestBuildPainterEnv(SubstanceWorkflowTestCase):
 
     def test_prepends_plugins_path(self) -> None:
-        env = build_painter_env()
+        env = PainterConnection.build_painter_env()
         self.assertTrue(
-            env["SUBSTANCE_PAINTER_PLUGINS_PATH"].startswith(plugins_dir())
+            env["SUBSTANCE_PAINTER_PLUGINS_PATH"].startswith(PainterConnection.plugins_dir())
         )
 
     def test_preserves_existing_plugins_path(self) -> None:
         existing = "/some/other/plugins"
         with patch.dict(os.environ, {"SUBSTANCE_PAINTER_PLUGINS_PATH": existing}):
-            env = build_painter_env()
+            env = PainterConnection.build_painter_env()
         parts = env["SUBSTANCE_PAINTER_PLUGINS_PATH"].split(os.pathsep)
-        self.assertEqual(parts[0], plugins_dir())
+        self.assertEqual(parts[0], PainterConnection.plugins_dir())
         self.assertEqual(parts[1], existing)
 
     def test_no_port_var_when_port_is_zero(self) -> None:
-        env = build_painter_env(port=0)
+        env = PainterConnection.build_painter_env(port=0)
         self.assertNotIn("SUBSTANCE_WORKFLOW_PORT", env)
 
     def test_port_var_set_when_nonzero(self) -> None:
-        env = build_painter_env(port=5555)
+        env = PainterConnection.build_painter_env(port=5555)
         self.assertEqual(env["SUBSTANCE_WORKFLOW_PORT"], "5555")
 
     def test_does_not_mutate_os_environ(self) -> None:
         before = dict(os.environ)
-        build_painter_env(port=9999)
+        PainterConnection.build_painter_env(port=9999)
         self.assertEqual(dict(os.environ), before)
 
 
@@ -145,7 +140,7 @@ class TestLaunchPainter(SubstanceWorkflowTestCase):
             "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
         ) as MockAL:
             MockAL.launch.return_value = MagicMock()
-            launch_painter("/fake/painter.exe", env={}, gui=False)
+            PainterConnection.launch_painter("/fake/painter.exe", env={}, gui=False)
         args = MockAL.launch.call_args.kwargs["args"]
         self.assertIn("--no-display", args)
 
@@ -154,7 +149,7 @@ class TestLaunchPainter(SubstanceWorkflowTestCase):
             "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
         ) as MockAL:
             MockAL.launch.return_value = MagicMock()
-            launch_painter("/fake/painter.exe", env={}, gui=True)
+            PainterConnection.launch_painter("/fake/painter.exe", env={}, gui=True)
         args = MockAL.launch.call_args.kwargs["args"]
         self.assertNotIn("--no-display", args)
 
@@ -163,7 +158,7 @@ class TestLaunchPainter(SubstanceWorkflowTestCase):
             "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
         ) as MockAL:
             MockAL.launch.return_value = MagicMock()
-            launch_painter(
+            PainterConnection.launch_painter(
                 "/x.exe", env={}, gui=True, extra_args=["--foo", "bar"]
             )
         args = MockAL.launch.call_args.kwargs["args"]
@@ -174,7 +169,7 @@ class TestLaunchPainter(SubstanceWorkflowTestCase):
             "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
         ) as MockAL:
             MockAL.launch.return_value = MagicMock()
-            launch_painter("/x.exe", env={"FOO": "bar"})
+            PainterConnection.launch_painter("/x.exe", env={"FOO": "bar"})
         self.assertEqual(MockAL.launch.call_args.kwargs["env"], {"FOO": "bar"})
 
     def test_raises_when_app_launcher_fails(self) -> None:
@@ -183,7 +178,7 @@ class TestLaunchPainter(SubstanceWorkflowTestCase):
         ) as MockAL:
             MockAL.launch.return_value = None
             with self.assertRaises(RuntimeError):
-                launch_painter("/x.exe", env={})
+                PainterConnection.launch_painter("/x.exe", env={})
 
 
 class TestInvokeNotConnected(SubstanceWorkflowTestCase):

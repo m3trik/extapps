@@ -52,9 +52,13 @@ extapps/<tool>/
 Tools that share a domain layer group under an umbrella subpackage
 (docstring-only `__init__.py`): `texture_maps/` (compositor / converter /
 packer) and `photogrammetry/` (metashape / realityscan / gaussian_splat +
-the CLI-only, experimental sugar_mesh — sharing `profile` / `prep_stages` /
-`_panel_slots` / `_process_runner` / `_shared_params` and `presets/`).
-Single tools stay flat. The root `extapps/__init__.py` re-exports every
+the CLI-only, experimental sugar_mesh — sharing `Profile` / `PrepStagesMixin`
+/ `_panel_slots` / `_process_runner` / `SharedParams` and `presets/`).
+Single tools stay flat. Discovery is one chain, `Profile.resolve_app`:
+terminal env override (set-but-invalid ⇒ mock), `apps.<key>`, per-engine
+fallbacks. Behaviour lives on classes (helpers on `_<Class>Internal`); config
+data stays flat. Exempt: `@register` ops, `run_combined`, `parameters.py`
+(uitk reads those as *module* attrs). The root `extapps/__init__.py` re-exports every
 panel's UI + Slots pair (guarded by `test_imports.py`). `<tool>_ui.py`
 files are uitk load-time compile caches — gitignored, never edited.
 

@@ -24,83 +24,93 @@ from pythontk import BatchResult, MapCompositor, NormalOutputMode
 _DOCS_URL = "https://github.com/m3trik/extapps#readme"
 
 
-def _build_intro() -> str:
-    """One-time intro panel: minimal quickstart + link to full docs.
+class _CompositorSlotsInternal:
+    """Tooltip/intro copy builders for :class:`CompositorSlots`.
 
-    The full filename-suffix table used to live here but dwarfed the
-    actual instructions — readers had to scroll past ~30 rows of alias
-    lists to find the basic export settings. Moved to the GitHub README;
-    this panel now stays a single screen.
+    Kept off the public class per the encapsulation standard (helpers live on a
+    ``_<Class>Internal`` base the public class inherits). They run at class-body
+    evaluation time to fill the ``msg_*``/``tip_*`` attributes, so this base must
+    be defined before ``CompositorSlots``.
     """
-    return (
-        "<u>Quickstart</u><br>"
-        "&nbsp;&nbsp;1. Set the <b>source</b> (a directory of maps, or specific "
-        "image files) and the <b>destination</b> directory.<br>"
-        "&nbsp;&nbsp;2. (Optional) Set a <b>map name</b> prefix.<br>"
-        "&nbsp;&nbsp;3. Click <b>Combine Maps</b>.<br><br>"
-        "<u>Required Substance Painter Export Settings</u><br>"
-        "&nbsp;&nbsp;Output Template: <b>Document channels</b><br>"
-        "&nbsp;&nbsp;Padding: <b>Dilation + transparent</b> or "
-        "<b>Dilation + default background color</b><br><br>"
-        f'<span style="color:#888888">'
-        f"Full filename-suffix table and detailed docs: "
-        f'<a href="{_DOCS_URL}" style="color:#88AACC">{_DOCS_URL}</a>'
-        "</span>"
-    )
+
+    @staticmethod
+    def _build_intro() -> str:
+        """One-time intro panel: minimal quickstart + link to full docs.
+
+        The full filename-suffix table used to live here but dwarfed the
+        actual instructions — readers had to scroll past ~30 rows of alias
+        lists to find the basic export settings. Moved to the GitHub README;
+        this panel now stays a single screen.
+        """
+        return (
+            "<u>Quickstart</u><br>"
+            "&nbsp;&nbsp;1. Set the <b>source</b> (a directory of maps, or specific "
+            "image files) and the <b>destination</b> directory.<br>"
+            "&nbsp;&nbsp;2. (Optional) Set a <b>map name</b> prefix.<br>"
+            "&nbsp;&nbsp;3. Click <b>Combine Maps</b>.<br><br>"
+            "<u>Required Substance Painter Export Settings</u><br>"
+            "&nbsp;&nbsp;Output Template: <b>Document channels</b><br>"
+            "&nbsp;&nbsp;Padding: <b>Dilation + transparent</b> or "
+            "<b>Dilation + default background color</b><br><br>"
+            f'<span style="color:#888888">'
+            f"Full filename-suffix table and detailed docs: "
+            f'<a href="{_DOCS_URL}" style="color:#88AACC">{_DOCS_URL}</a>'
+            "</span>"
+        )
+
+    @staticmethod
+    def _build_source_tooltip() -> str:
+        """Rich-text tooltip for the source field's resting (empty) state.
+
+        Built with uitk's :func:`fmt`/:func:`hl` so the colors match the rest of
+        the ecosystem's tooltips. Shown while the field is empty; once a valid
+        source is entered the validator swaps in :meth:`_source_valid_tooltip`.
+        """
+        return TooltipFormat.fmt(
+            title="Source maps to combine",
+            body="A folder of texture maps, or specific image files.",
+            bullets=[
+                f"{TooltipFormat.hl('Add files…')} — pick one or more image files.",
+                f"{TooltipFormat.hl('Choose folder…')} — use every image in a folder.",
+                "Or type / paste a folder path directly.",
+                "Recent sources are in the option box (clock icon).",
+            ],
+            notes=[
+                "Maps are matched by filename suffix — e.g. "
+                "<i>_BaseColor</i>, <i>_Normal</i>, <i>_Roughness</i>."
+            ],
+        )
+
+    @staticmethod
+    def _build_dest_tooltip() -> str:
+        """Rich-text tooltip for the destination-directory field."""
+        return TooltipFormat.fmt(
+            title="Destination directory",
+            body="The folder where your combined maps are written.",
+            bullets=[
+                f"{TooltipFormat.hl('Choose folder…')} — pick the output folder.",
+                "Or type / paste a folder path directly.",
+                "Recent destinations are in the option box (clock icon).",
+            ],
+        )
+
+    @staticmethod
+    def _build_mapname_tooltip() -> str:
+        """Rich-text tooltip for the map-name (filename prefix) field."""
+        return TooltipFormat.fmt(
+            title="Map name prefix",
+            body="Optional filename prefix for the combined maps.",
+            notes=["Leave empty to use the source folder's name."],
+        )
 
 
-def _build_source_tooltip() -> str:
-    """Rich-text tooltip for the source field's resting (empty) state.
-
-    Built with uitk's :func:`fmt`/:func:`hl` so the colors match the rest of
-    the ecosystem's tooltips. Shown while the field is empty; once a valid
-    source is entered the validator swaps in :meth:`_source_valid_tooltip`.
-    """
-    return TooltipFormat.fmt(
-        title="Source maps to combine",
-        body="A folder of texture maps, or specific image files.",
-        bullets=[
-            f"{TooltipFormat.hl('Add files…')} — pick one or more image files.",
-            f"{TooltipFormat.hl('Choose folder…')} — use every image in a folder.",
-            "Or type / paste a folder path directly.",
-            "Recent sources are in the option box (clock icon).",
-        ],
-        notes=[
-            "Maps are matched by filename suffix — e.g. "
-            "<i>_BaseColor</i>, <i>_Normal</i>, <i>_Roughness</i>."
-        ],
-    )
-
-
-def _build_dest_tooltip() -> str:
-    """Rich-text tooltip for the destination-directory field."""
-    return TooltipFormat.fmt(
-        title="Destination directory",
-        body="The folder where your combined maps are written.",
-        bullets=[
-            f"{TooltipFormat.hl('Choose folder…')} — pick the output folder.",
-            "Or type / paste a folder path directly.",
-            "Recent destinations are in the option box (clock icon).",
-        ],
-    )
-
-
-def _build_mapname_tooltip() -> str:
-    """Rich-text tooltip for the map-name (filename prefix) field."""
-    return TooltipFormat.fmt(
-        title="Map name prefix",
-        body="Optional filename prefix for the combined maps.",
-        notes=["Leave empty to use the source folder's name."],
-    )
-
-
-class CompositorSlots:
+class CompositorSlots(_CompositorSlotsInternal):
     """UI slot handler. Composes a :class:`MapCompositor` via ``self.engine``."""
 
-    msg_intro = _build_intro()
-    tip_source = _build_source_tooltip()
-    tip_dest = _build_dest_tooltip()
-    tip_mapname = _build_mapname_tooltip()
+    msg_intro = _CompositorSlotsInternal._build_intro()
+    tip_source = _CompositorSlotsInternal._build_source_tooltip()
+    tip_dest = _CompositorSlotsInternal._build_dest_tooltip()
+    tip_mapname = _CompositorSlotsInternal._build_mapname_tooltip()
 
     # (display label, NormalOutputMode) — order shown in the header combo.
     NORMAL_MODE_CHOICES = (

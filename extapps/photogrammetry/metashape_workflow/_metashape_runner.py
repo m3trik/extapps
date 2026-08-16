@@ -11,16 +11,26 @@ launch (the driver runs *inside* Metashape's bundled Python, which is why it
 doesn't use the :class:`~extapps.photogrammetry._process_runner.PyModuleRunner`
 variant the RealityScan / Brush panels do).
 
-**Two-stage prep chain.** Metashape's bundled Python (3.9, no cv2/PIL/rembg)
-can never run the input pre-processing stages — a plain ``metashape.exe -r``
-run silently skips curation, equalization, and rembg masking. So when a run
-wants pre-processing, :meth:`start` first executes ``run_combined --prep-only``
-under **this** interpreter (the panel venv, where cv2 lives), parses the
-``PREP_RESULT_JSON`` line it prints, and then launches ``metashape.exe`` on the
-prepared frames with ``--skip-curate --skip-equalize``. A ``--curate-preview``
-run is venv-only (Metashape is never launched). Both stages stream into the
-same panel log; cancel kills whichever stage is in flight (a cancelled prep
-stage does **not** launch Metashape).
+**Venv stage chain.** Metashape's bundled Python (3.9, no cv2/PIL/rembg,
+no pymeshlab) can never run the input pre-processing stages *or* the
+PyMeshLab mesh post-processing — a plain ``metashape.exe -r`` run silently
+skips both. So the runner brackets the engine stage with venv stages under
+**this** interpreter:
+
+- **prep** (before): when a run wants pre-processing, :meth:`start` first
+  executes ``run_combined --prep-only`` (cv2 lives here), parses the
+  ``PREP_RESULT_JSON`` line it prints, and launches ``metashape.exe`` on
+  the prepared frames with ``--skip-curate --skip-equalize``. A
+  ``--curate-preview`` run is venv-only (Metashape is never launched).
+- **post** (after): every full-pipeline run chains ``run_combined
+  --post-only`` once the engine stage exits 0 — the PyMeshLab repair /
+  refine / measure stages plus the ``"mesh"`` QC gate, written to their
+  own ``<name>_post_qc.json`` sidecar. Skipped for ``--stop-after`` /
+  prep-only / preview runs (no export exists) and after a failed or
+  cancelled engine stage.
+
+All stages stream into the same panel log; cancel kills whichever stage is
+in flight and never launches the next one.
 """
 from __future__ import annotations
 
@@ -97,6 +107,18 @@ class MetashapeRunner(ProcessRunner):
         (a DCC-hosted panel can't exec a script path via its own binary)."""
         exe = sys.executable or ""
         return exe if _PYTHON_EXE_RE.match(os.path.basename(exe)) else None
+
+    @staticmethod
+    def _wants_post(argv: Sequence[str]) -> bool:
+        """True when this argv describes a run that exports a model — the
+        only runs a ``--post-only`` mesh stage can follow. Stop-after /
+        prep-only / preview runs never export; an explicit ``--post-only``
+        argv IS the post stage and must not chain another."""
+        argv = list(argv)
+        return not any(
+            flag in argv
+            for flag in ("--post-only", "--prep-only", "--curate-preview", "--stop-after")
+        )
 
     @staticmethod
     def _argv_with_prepped_source(
@@ -194,6 +216,48 @@ class MetashapeRunner(ProcessRunner):
 
         return done
 
+    def _post_continuation(
+        self,
+        argv: List[str],
+        on_line: Optional[Callable[[str], None]],
+        on_done: Optional[Callable[[int], None]],
+        cwd: Optional[str],
+        python: str,
+    ) -> Callable[[int], None]:
+        """The engine-stage completion handler: on success, run the PyMeshLab
+        mesh post-processing (``--post-only``) under the venv Python. A failed
+        or user-cancelled engine stage reports its own code and never chains
+        (there is no export to process)."""
+
+        def done(code: int) -> None:
+            if self._cancelled or code != 0:
+                if on_done is not None:
+                    on_done(code)
+                return
+
+            def launch() -> None:
+                self._on_line = on_line
+                self._on_done = on_done
+                if on_line is not None:
+                    on_line(
+                        f"[post] running mesh post-processing under {python} ...\n"
+                    )
+                # Same PYTHONPATH propagation (and same venv-only scoping
+                # rationale) as the prep stage.
+                self._launch(
+                    python,
+                    [_RUNNER, "--post-only", *argv],
+                    cwd,
+                    extra_env={
+                        "PYTHONPATH": os.pathsep.join(p for p in sys.path if p)
+                    },
+                )
+
+            # Deferred for the same last-QProcess-ref reason as the prep chain.
+            QtCore.QTimer.singleShot(0, launch)
+
+        return done
+
     # ------------------------------------------------------------ run
     def start(
         self,
@@ -203,8 +267,14 @@ class MetashapeRunner(ProcessRunner):
         cwd: Optional[str] = None,
     ) -> None:
         argv = list(argv)
+        # Post chain first: wrapping on_done here covers BOTH launch paths
+        # below (direct engine launch and the prep-chain continuation, whose
+        # engine stage inherits this wrapped on_done).
+        post_python = self._venv_python()
+        if post_python is not None and self._wants_post(argv):
+            on_done = self._post_continuation(argv, on_line, on_done, cwd, post_python)
         mode = self._prep_mode(argv)
-        python = self._venv_python() if mode else None
+        python = post_python if mode else None
         if mode is None or python is None:
             if mode is not None and python is None and on_line is not None:
                 on_line(

@@ -1,0 +1,110 @@
+name: Tests
+
+# extapps is a main-only standalone: publish.yml fires on every push to main
+# that touches package source. So a PR-only gate would let a red commit reach
+# PyPI. This runs on BOTH the PR and the push, and publish.yml calls it via
+# workflow_call so the upload waits on a green suite.
+on:
+  pull_request:
+    branches: [main]
+  # Only the paths publish.yml does NOT watch. A push touching extapps/** or
+  # pyproject.toml already reaches the suite through publish.yml's gate, so
+  # listing them here too would run it twice per push.
+  push:
+    branches: [main]
+    paths:
+      - 'test/**'
+      - '.github/workflows/tests.yml'
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Backstop: a hung Qt test would otherwise run to GitHub's 6h job cap with
+    # no output. The full suite is ~1m locally; cap well above that.
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        # Qt offscreen still links these even with no display.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libopengl0 libxkbcommon0 libdbus-1-3 libfontconfig1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # PySide6 pinned <6.11 for the same reason uitk pins it: 6.11
+          # segfaults during pytest cleanup on the offscreen QPA.
+          pip install pytest pytest-timeout qtpy 'PySide6<6.11'
+          # opencv + numpy are HARD imports in test_runner_quality.py and
+          # test_splat_track.py (frame curation / splat tracking); headless
+          # build because the runner has no display.
+          pip install opencv-python-headless numpy Pillow
+          # unitytk is an OPTIONAL runtime extra, but
+          # test_unity_workflow.py::test_script_checklist_populates_from_unitytk
+          # imports it unguarded to assert the panel's checklist matches the
+          # installed release — so CI needs it present or that test errors.
+          #
+          # --no-cache-dir + --upgrade forces a fresh resolution for in-house
+          # deps: pip's wheel cache can otherwise return a stale pythontk/uitk
+          # missing an API the current extapps source expects.
+          pip install --no-cache-dir --upgrade pythontk uitk unitytk
+          # pymeshlab backs the MeshStagesMixin photogrammetry stages (via
+          # pythontk.MeshOps). Installed so the real-work stage tests run
+          # rather than skip; the dep-missing branch stays covered via
+          # patch.object(MeshOps, "available").
+          pip install pymeshlab
+          pip install -e . --no-deps
+
+      - name: Run tests
+        # Live-DCC integration tests stay opt-in and are NOT enabled here:
+        # SUBSTANCE_WORKFLOW_RUN_INTEGRATION / METASHAPE_RUN_INTEGRATION are
+        # left unset, so those cases skip (they need a real Painter/Metashape).
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set +e
+          # Stream via tee, not $(...) capture: a buffered capture shows NOTHING
+          # in the log while hung. With -v the last streamed line names the
+          # hanging test; --timeout dumps its thread stacks and force-exits.
+          pytest --tb=short -v --timeout=300 --timeout-method=thread test/ 2>&1 | tee pytest_out.txt
+          # PIPESTATUS, not $?: piping through tee would otherwise report tee's
+          # exit code (always 0) and turn every failure green.
+          RC=${PIPESTATUS[0]}
+          # ERE (-oE), not PCRE (-oP): parsed identically by any grep, and the
+          # logic stays verifiable outside the runner.
+          # Read the counts off pytest's FINAL summary line only ("== 1 failed,
+          # 2 passed, 3 errors in 4.5s =="), never the whole log: a test that
+          # prints "0 failed" in its own output would otherwise decide the gate.
+          SUMMARY=$(grep -E '^=+ .* in [0-9.]+s.*=+$' pytest_out.txt | tail -1)
+          FAILED=$(echo "$SUMMARY" | grep -oE '[0-9]+ failed' | head -1 | cut -d' ' -f1)
+          PASSED=$(echo "$SUMMARY" | grep -oE '[0-9]+ passed' | head -1 | cut -d' ' -f1)
+          # errors, NOT just failures: a collection or fixture error reports as
+          # "N errors" and leaves the failed count at 0, so counting failures
+          # alone let "100 passed, 4 errors" through as green -- and publish.yml
+          # gates the PyPI upload on this job.
+          ERRORS=$(echo "$SUMMARY" | grep -oE '[0-9]+ errors?' | head -1 | cut -d' ' -f1)
+          FAILED=${FAILED:-0}
+          PASSED=${PASSED:-0}
+          ERRORS=${ERRORS:-0}
+          if [ "$FAILED" -gt 0 ] || [ "$ERRORS" -gt 0 ]; then
+            echo "::error::$FAILED test(s) failed, $ERRORS error(s)"
+            exit 1
+          fi
+          if [ "$PASSED" -eq 0 ]; then
+            echo "::error::No tests passed (collection error, or pytest died before printing a summary)"
+            exit 1
+          fi
+          if [ "$RC" -ne 0 ]; then
+            echo "::warning::pytest exited $RC after $PASSED passing tests with no failures or errors (PySide6+pytest teardown SIGSEGV - known, not a test failure)"
+          fi
+          echo "$PASSED passed, $FAILED failed, $ERRORS errors"
+          exit 0

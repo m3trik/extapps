@@ -52,29 +52,12 @@ if __package__ in (None, ""):
     from extapps.photogrammetry.realityscan_workflow._realityscan_workflow import (
         RealityCaptureWorkflow,
     )
-    from extapps.photogrammetry.profile import (
-        IMAGE_EXTS,
-        QUALITY_TIERS,
-        discover_source_dirs,
-        get_preset,
-        get_profile,
-        init_user_profile,
-    )
-    from extapps.photogrammetry.prep_stages import (
-        derive_texture_size,
-        first_image_in_dirs,
-    )
+    from extapps.photogrammetry.profile import (IMAGE_EXTS, Profile, QUALITY_TIERS)
+    from extapps.photogrammetry.prep_stages import PrepStagesMixin
 else:
     from ._realityscan_workflow import RealityCaptureWorkflow
-    from ..profile import (
-        IMAGE_EXTS,
-        QUALITY_TIERS,
-        discover_source_dirs,
-        get_preset,
-        get_profile,
-        init_user_profile,
-    )
-    from ..prep_stages import derive_texture_size, first_image_in_dirs
+    from ..profile import (IMAGE_EXTS, Profile, QUALITY_TIERS)
+    from ..prep_stages import PrepStagesMixin
 
 
 # Intermediate working dirs the prep stages write inside the project dir —
@@ -160,16 +143,16 @@ def main(argv=None) -> int:
                           "with --blockout.")
     preargs, _ = pre.parse_known_args(argv)
     if preargs.init_profile:
-        ready = init_user_profile(preargs.profile)
+        ready = Profile.init_user_profile(preargs.profile)
         print(f"Profile ready at: {ready}  (edit it, or point --profile / "
               "$PHOTOGRAMMETRY_PROFILE elsewhere; existing files are left intact)")
         return 0
-    prof = get_profile(preargs.profile)
+    prof = Profile.get_profile(preargs.profile)
     cur = prof.get("curate", {})
     eq = prof.get("equalize", {})
     rec = prof.get("reconstruct", {})
     try:
-        preset = get_preset(preargs.preset, "realityscan")
+        preset = Profile.get_preset(preargs.preset, "realityscan")
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
@@ -239,6 +222,29 @@ def main(argv=None) -> int:
              "against speckle / 'snow' floaters; raise it hard on specular / "
              "low-texture captures. Default from the profile's "
              "reconstruct.min_component_size (or --preset). 0 disables.",
+    )
+    p.add_argument(
+        "--mesh-decimate-faces", type=int,
+        default=preset.get("mesh_decimate_faces", 0),
+        help="PyMeshLab curvature-weighted quadric decimation of the exported "
+             "mesh to N faces (0 = off). Runs inline (this interpreter is the "
+             "panel venv); distinct from --simplify, which is RC-native and "
+             "pre-unwrap.",
+    )
+    p.add_argument(
+        "--mesh-remesh-pct", type=float,
+        default=preset.get("mesh_remesh_pct", 0.0),
+        help="PyMeshLab isotropic remesh of the exported mesh toward a uniform "
+             "edge length, as a percent of the bbox diagonal (0 = off). The "
+             "evenness pass before --mesh-decimate-faces on unevenly dense "
+             "scans.",
+    )
+    p.add_argument(
+        "--bake-vertex-color", type=int,
+        default=preset.get("bake_vertex_color", 0),
+        help="Bake per-vertex color to an N-px texture on auto-generated UVs "
+             "(PyMeshLab; 0 = off). For vertex-colored meshes with no texture "
+             "pass.",
     )
     # Panel-saved presets snapshot every widget, including the stage toggles —
     # honor them so a preset replayed via --preset reproduces the panel run
@@ -360,7 +366,7 @@ def main(argv=None) -> int:
             return 1
         sources = [args.frames_dir]
     else:
-        sources = discover_source_dirs(args.input_root)
+        sources = Profile.discover_source_dirs(args.input_root)
         if not sources:
             print(f"No image-bearing subdirs under {args.input_root}", file=sys.stderr)
             return 1
@@ -370,8 +376,8 @@ def main(argv=None) -> int:
         print(f"  - {s}  ({count} images)")
 
     if str(args.texture_size).lower() == "auto":
-        sample = first_image_in_dirs(sources)
-        texture_size = derive_texture_size(sample)
+        sample = PrepStagesMixin.first_image_in_dirs(sources)
+        texture_size = PrepStagesMixin.derive_texture_size(sample)
         print(f"Texture size: {texture_size} (auto, from {sample}; "
               f"RC bake size is GUI-set - recorded only)")
     else:
@@ -474,6 +480,14 @@ def main(argv=None) -> int:
         if args.save_project:
             rc.save_project()
         rc.export_model()
+        # PyMeshLab file-level stages (repair -> refine/measure -> gate ->
+        # optional bake). This interpreter is the panel venv, so unlike the
+        # Metashape driver they run inline for real — no post-chain needed.
+        rc.run_mesh_stages(
+            remesh_target_pct=args.mesh_remesh_pct,
+            decimate_target_faces=args.mesh_decimate_faces,
+            bake_texture_size=args.bake_vertex_color,
+        )
         rc.export_qc()
         sidecar = rc.finalize_run(success=True)
         if not args.save_project:

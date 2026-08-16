@@ -727,27 +727,35 @@
     {
       "relpath": "photogrammetry/_shared_params.py",
       "summary": "Input pre-processing parameter specs shared by the image-in engines.",
-      "functions": [
+      "functions": [],
+      "classes": [
         {
-          "name": "render_flag_argv",
-          "qualname": "render_flag_argv",
-          "kind": "function",
-          "signature": "(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'",
-          "summary": "Render *values* into CLI flags — the shared loop behind every engine's",
+          "name": "SharedParams",
+          "summary": "Argv renderers shared by the image-in engines' ``parameters`` modules.",
           "line": 151,
-          "deprecated": false
-        },
-        {
-          "name": "preprocessing_argv",
-          "qualname": "preprocessing_argv",
-          "kind": "function",
-          "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
-          "summary": "Render the input pre-processing CLI flags from collected *values*.",
-          "line": 188,
-          "deprecated": false
+          "bases": [],
+          "members": [
+            {
+              "name": "render_flag_argv",
+              "qualname": "SharedParams.render_flag_argv",
+              "kind": "staticmethod",
+              "signature": "(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'",
+              "summary": "Render *values* into CLI flags — the shared loop behind every engine's",
+              "line": 161,
+              "deprecated": false
+            },
+            {
+              "name": "preprocessing_argv",
+              "qualname": "SharedParams.preprocessing_argv",
+              "kind": "staticmethod",
+              "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
+              "summary": "Render the input pre-processing CLI flags from collected *values*.",
+              "line": 198,
+              "deprecated": false
+            }
+          ]
         }
-      ],
-      "classes": []
+      ]
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py",
@@ -815,58 +823,59 @@
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py",
       "summary": "Brush gaussian-splat workflow engine.",
-      "functions": [
-        {
-          "name": "find_brush_exe",
-          "qualname": "find_brush_exe",
-          "kind": "function",
-          "signature": "() -> Optional[str]",
-          "summary": "Return the Brush executable path or None.",
-          "line": 57,
-          "deprecated": false
-        },
-        {
-          "name": "is_brush_available",
-          "qualname": "is_brush_available",
-          "kind": "function",
-          "signature": "() -> bool",
-          "summary": "",
-          "line": 89,
-          "deprecated": false
-        },
-        {
-          "name": "install_brush",
-          "qualname": "install_brush",
-          "kind": "function",
-          "signature": "(progress_callback: Optional[Callable[[int, int], None]] = None) -> str",
-          "summary": "Download + install Brush via :class:`pythontk.AppInstaller`;",
-          "line": 117,
-          "deprecated": false
-        },
-        {
-          "name": "read_splat_count",
-          "qualname": "read_splat_count",
-          "kind": "function",
-          "signature": "(ply_path: str) -> Optional[int]",
-          "summary": "Gaussian count from a splat ``.ply`` header (``element vertex N``).",
-          "line": 140,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "GaussianSplatWorkflow",
           "summary": "Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``.",
-          "line": 155,
-          "bases": [],
+          "line": 89,
+          "bases": [
+            "_GaussianSplatWorkflowInternal"
+          ],
           "members": [
+            {
+              "name": "find_brush_exe",
+              "qualname": "GaussianSplatWorkflow.find_brush_exe",
+              "kind": "staticmethod",
+              "signature": "() -> Optional[str]",
+              "summary": "Return the Brush executable path or None.",
+              "line": 92,
+              "deprecated": false
+            },
+            {
+              "name": "is_brush_available",
+              "qualname": "GaussianSplatWorkflow.is_brush_available",
+              "kind": "staticmethod",
+              "signature": "() -> bool",
+              "summary": "",
+              "line": 121,
+              "deprecated": false
+            },
+            {
+              "name": "install_brush",
+              "qualname": "GaussianSplatWorkflow.install_brush",
+              "kind": "staticmethod",
+              "signature": "(progress_callback: Optional[Callable[[int, int], None]] = None) -> str",
+              "summary": "Download + install Brush via :class:`pythontk.AppInstaller`;",
+              "line": 124,
+              "deprecated": false
+            },
+            {
+              "name": "read_splat_count",
+              "qualname": "GaussianSplatWorkflow.read_splat_count",
+              "kind": "staticmethod",
+              "signature": "(ply_path: str) -> Optional[int]",
+              "summary": "Gaussian count from a splat ``.ply`` header (``element vertex N``).",
+              "line": 147,
+              "deprecated": false
+            },
             {
               "name": "get_brush_info",
               "qualname": "GaussianSplatWorkflow.get_brush_info",
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 188,
+              "line": 191,
               "deprecated": false
             },
             {
@@ -875,7 +884,7 @@
               "kind": "method",
               "signature": "(self, colmap_dir: str, total_steps: int = 30000, max_resolution: int = 1920, max_splats: int = 10000000, sh_degree: int = 3, growth_grad_threshold: Optional[float] = None, growth_select_fraction: Optional[float] = None, export_path: Optional[str] = None, export_name: Optional[str] = None, export_every: Optional[int] = None, eval_split_every: Optional[int] = None, eval_every: Optional[int] = None, eval_save_to_disk: bool = False) -> Optional[str]",
               "summary": "Train a splat from a COLMAP dataset;",
-              "line": 230,
+              "line": 233,
               "deprecated": false
             },
             {
@@ -884,7 +893,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "",
-              "line": 331,
+              "line": 334,
               "deprecated": false
             }
           ]
@@ -910,40 +919,41 @@
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/_splat_publish.py",
       "summary": "Engine-delivery stage for the splat track — clean + convert to engine formats.",
-      "functions": [
-        {
-          "name": "find_splat_transform",
-          "qualname": "find_splat_transform",
-          "kind": "function",
-          "signature": "() -> Optional[str]",
-          "summary": "Return the ``splat-transform`` executable path or None.",
-          "line": 65,
-          "deprecated": false
-        },
-        {
-          "name": "is_splat_transform_available",
-          "qualname": "is_splat_transform_available",
-          "kind": "function",
-          "signature": "() -> bool",
-          "summary": "",
-          "line": 79,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "SplatPublishWorkflow",
           "summary": "Clean a trained 3DGS ``.ply`` and convert it to engine-ready formats.",
-          "line": 90,
-          "bases": [],
+          "line": 78,
+          "bases": [
+            "_SplatPublishWorkflowInternal"
+          ],
           "members": [
+            {
+              "name": "find_splat_transform",
+              "qualname": "SplatPublishWorkflow.find_splat_transform",
+              "kind": "staticmethod",
+              "signature": "() -> 'Optional[str]'",
+              "summary": "Return the ``splat-transform`` executable path or None.",
+              "line": 81,
+              "deprecated": false
+            },
+            {
+              "name": "is_splat_transform_available",
+              "qualname": "SplatPublishWorkflow.is_splat_transform_available",
+              "kind": "staticmethod",
+              "signature": "() -> bool",
+              "summary": "",
+              "line": 98,
+              "deprecated": false
+            },
             {
               "name": "get_publish_info",
               "qualname": "SplatPublishWorkflow.get_publish_info",
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 123,
+              "line": 131,
               "deprecated": false
             },
             {
@@ -952,7 +962,7 @@
               "kind": "method",
               "signature": "(self, in_ply: str, out_ply: Optional[str] = None, rotate: Optional[Union[str, Sequence[float]]] = None, filter_floaters: bool = True, filter_nan: bool = True, min_opacity: Optional[float] = None, crop_box: Optional[Union[str, Sequence[float]]] = None, crop_sphere: Optional[Union[str, Sequence[float]]] = None, decimate: Optional[Union[str, int]] = None) -> str",
               "summary": "Clean a trained splat ``.ply``;",
-              "line": 215,
+              "line": 223,
               "deprecated": false
             },
             {
@@ -961,7 +971,7 @@
               "kind": "method",
               "signature": "(self, clean_ply: str, out_path: Optional[str] = None, spz_version: int = 4) -> str",
               "summary": "Convert a (cleaned) ``.ply`` to Unity-ready ``.spz``;",
-              "line": 260,
+              "line": 268,
               "deprecated": false
             },
             {
@@ -970,7 +980,7 @@
               "kind": "method",
               "signature": "(self, clean_ply: str, out_dir: Optional[str] = None, web_format: str = 'sog', with_viewer: bool = True) -> Dict[str, Optional[str]]",
               "summary": "Convert a (cleaned) ``.ply`` for the browser;",
-              "line": 284,
+              "line": 292,
               "deprecated": false
             },
             {
@@ -979,7 +989,7 @@
               "kind": "method",
               "signature": "(self, in_ply: str, targets: Sequence[str] = ('unity', 'web'), out_dir: Optional[str] = None, spz_version: int = 4, web_format: str = 'sog', with_viewer: bool = True, **clean_kwargs) -> Dict[str, object]",
               "summary": "Clean *in_ply* once, then emit each requested target from the result.",
-              "line": 315,
+              "line": 323,
               "deprecated": false
             },
             {
@@ -988,7 +998,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "",
-              "line": 357,
+              "line": 365,
               "deprecated": false
             }
           ]
@@ -1185,6 +1195,66 @@
       ]
     },
     {
+      "relpath": "photogrammetry/mesh_stages.py",
+      "summary": "Shared, SDK-agnostic mesh post-processing stages (PyMeshLab-backed).",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MeshStagesMixin",
+          "summary": "Measure / refine / bake / repair stages shared by both photogrammetry engines.",
+          "line": 31,
+          "bases": [],
+          "members": [
+            {
+              "name": "measure_mesh",
+              "qualname": "MeshStagesMixin.measure_mesh",
+              "kind": "method",
+              "signature": "(self, model_path: Optional[str] = None) -> Optional[Dict[str, Any]]",
+              "summary": "QC metrics for the exported mesh file, evaluated against the",
+              "line": 81,
+              "deprecated": false
+            },
+            {
+              "name": "refine_mesh",
+              "qualname": "MeshStagesMixin.refine_mesh",
+              "kind": "method",
+              "signature": "(self, model_path: Optional[str] = None, output_path: Optional[str] = None, remesh_target_pct: float = 0.0, decimate_target_faces: int = 0, curvature_weighted: bool = True, compare_deviation: bool = True) -> Optional[str]",
+              "summary": "Isotropic remesh and/or curvature-weighted decimation on the",
+              "line": 110,
+              "deprecated": false
+            },
+            {
+              "name": "bake_vertex_color",
+              "qualname": "MeshStagesMixin.bake_vertex_color",
+              "kind": "method",
+              "signature": "(self, model_path: Optional[str] = None, output_path: Optional[str] = None, texture_size: int = 1024) -> Optional[Tuple[str, str]]",
+              "summary": "Bake per-vertex color to a texture on auto-generated UVs",
+              "line": 195,
+              "deprecated": false
+            },
+            {
+              "name": "run_mesh_stages",
+              "qualname": "MeshStagesMixin.run_mesh_stages",
+              "kind": "method",
+              "signature": "(self, model_path: Optional[str] = None, remesh_target_pct: float = 0.0, decimate_target_faces: int = 0, bake_texture_size: int = 0) -> Optional[str]",
+              "summary": "The file-level stages in pipeline order: repair → refine (when a",
+              "line": 229,
+              "deprecated": false
+            },
+            {
+              "name": "clean_mesh_advanced",
+              "qualname": "MeshStagesMixin.clean_mesh_advanced",
+              "kind": "method",
+              "signature": "(self, exported_model_path: Optional[str] = None, decimate_target_faces: int = 0) -> Optional[str]",
+              "summary": "PyMeshLab repair pass on the exported mesh file (duplicate/close",
+              "line": 256,
+              "deprecated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "relpath": "photogrammetry/metashape_workflow/_metashape_connection.py",
       "summary": "Headless launch connection for Agisoft Metashape.",
       "functions": [],
@@ -1200,7 +1270,7 @@
               "qualname": "MetashapeConnection.find_exe",
               "kind": "staticmethod",
               "signature": "() -> Optional[str]",
-              "summary": "Locate ``metashape.exe``: ``$METASHAPE_EXE`` → the profile's",
+              "summary": "Locate ``metashape.exe`` via the shared :func:`resolve_app` chain:",
               "line": 43,
               "deprecated": false
             },
@@ -1210,7 +1280,7 @@
               "kind": "method",
               "signature": "(self) -> bool",
               "summary": "True if a metashape.exe was found (i.e.",
-              "line": 62,
+              "line": 59,
               "deprecated": false
             },
             {
@@ -1219,7 +1289,7 @@
               "kind": "method",
               "signature": "(self, script_path: str, args: Optional[Sequence[str]] = None, cwd: Optional[str] = None, timeout: Optional[float] = None, log_file: Optional[str] = None, env: Optional[dict] = None)",
               "summary": "Run a Python *script* inside Metashape headless via ``-r``.",
-              "line": 66,
+              "line": 63,
               "deprecated": false
             },
             {
@@ -1228,7 +1298,7 @@
               "kind": "method",
               "signature": "(self, args: Optional[Sequence[str]] = None, **kwargs)",
               "summary": "Convenience: drive this package's ``run_combined`` workflow headless.",
-              "line": 93,
+              "line": 90,
               "deprecated": false
             }
           ]
@@ -1243,7 +1313,7 @@
         {
           "name": "MetashapeRunner",
           "summary": "Discover + asynchronously drive ``run_combined`` in the local Metashape.",
-          "line": 48,
+          "line": 58,
           "bases": [
             "ProcessRunner"
           ],
@@ -1254,7 +1324,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "",
-              "line": 57,
+              "line": 67,
               "deprecated": false
             },
             {
@@ -1263,7 +1333,7 @@
               "kind": "method",
               "signature": "(self) -> bool",
               "summary": "True when a local ``metashape.exe`` was found (a real run is possible).",
-              "line": 60,
+              "line": 70,
               "deprecated": false
             },
             {
@@ -1272,7 +1342,7 @@
               "kind": "method",
               "signature": "(self, argv: Sequence[str], on_line: Optional[Callable[[str], None]] = None, on_done: Optional[Callable[[int], None]] = None, cwd: Optional[str] = None) -> None",
               "summary": "",
-              "line": 198,
+              "line": 262,
               "deprecated": false
             }
           ]
@@ -1287,9 +1357,10 @@
         {
           "name": "MetashapeWorkflow",
           "summary": "Wrapper around Agisoft Metashape's Python API for the standard",
-          "line": 38,
+          "line": 48,
           "bases": [
-            "PrepStagesMixin"
+            "PrepStagesMixin",
+            "MeshStagesMixin"
           ],
           "members": [
             {
@@ -1298,7 +1369,7 @@
               "kind": "staticmethod",
               "signature": "() -> bool",
               "summary": "True if the Metashape Python module imported successfully.",
-              "line": 51,
+              "line": 64,
               "deprecated": false
             },
             {
@@ -1307,7 +1378,7 @@
               "kind": "staticmethod",
               "signature": "() -> bool",
               "summary": "True if a valid Metashape license is reachable.",
-              "line": 56,
+              "line": 69,
               "deprecated": false
             },
             {
@@ -1316,7 +1387,7 @@
               "kind": "staticmethod",
               "signature": "() -> str",
               "summary": "",
-              "line": 66,
+              "line": 79,
               "deprecated": false
             },
             {
@@ -1325,7 +1396,7 @@
               "kind": "staticmethod",
               "signature": "(directory: str) -> List[str]",
               "summary": "Return absolute paths to all images in `directory` (non-recursive).",
-              "line": 75,
+              "line": 88,
               "deprecated": false
             },
             {
@@ -1334,7 +1405,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 148,
+              "line": 161,
               "deprecated": false
             },
             {
@@ -1343,7 +1414,7 @@
               "kind": "method",
               "signature": "(self, label: str = 'New Chunk')",
               "summary": "",
-              "line": 208,
+              "line": 221,
               "deprecated": false
             },
             {
@@ -1352,7 +1423,7 @@
               "kind": "method",
               "signature": "(self, image_sources: Union[str, Sequence[str]])",
               "summary": "Add images from a directory path (non-recursive) or list of paths.",
-              "line": 226,
+              "line": 239,
               "deprecated": false
             },
             {
@@ -1361,16 +1432,7 @@
               "kind": "method",
               "signature": "(self, dirs: Sequence[str])",
               "summary": "Add images from multiple directories — flattens to one chunk.",
-              "line": 260,
-              "deprecated": false
-            },
-            {
-              "name": "clean_mesh_advanced",
-              "qualname": "MetashapeWorkflow.clean_mesh_advanced",
-              "kind": "method",
-              "signature": "(self, exported_model_path: Optional[str] = None, decimate_target_faces: int = 0) -> Optional[str]",
-              "summary": "PyMeshLab post-export polish on the exported mesh file.",
-              "line": 293,
+              "line": 273,
               "deprecated": false
             },
             {
@@ -1379,7 +1441,7 @@
               "kind": "method",
               "signature": "(self, quality_threshold: float = 0.5)",
               "summary": "Run ``analyzePhotos`` and disable cameras below ``quality_threshold``.",
-              "line": 326,
+              "line": 308,
               "deprecated": false
             },
             {
@@ -1388,7 +1450,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "",
-              "line": 379,
+              "line": 361,
               "deprecated": false
             },
             {
@@ -1397,7 +1459,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0, filter_mask: bool = False)",
               "summary": "Run ``align_photos``;",
-              "line": 468,
+              "line": 450,
               "deprecated": false
             },
             {
@@ -1406,7 +1468,7 @@
               "kind": "method",
               "signature": "(self, uncertainty_threshold: float = 15.0, reprojection_threshold: float = 0.5, projection_accuracy_threshold: float = 3.0)",
               "summary": "Gradual-selection cleanup: iteratively filter tie points by",
-              "line": 537,
+              "line": 519,
               "deprecated": false
             },
             {
@@ -1415,7 +1477,7 @@
               "kind": "method",
               "signature": "(self, translation_threshold: float = 0.02, rotation_threshold_deg: float = 2.0)",
               "summary": "Cluster aligned cameras by pose and disable redundants.",
-              "line": 679,
+              "line": 661,
               "deprecated": false
             },
             {
@@ -1424,7 +1486,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, white_balance: bool = True)",
               "summary": "Run ``chunk.calibrateColors`` to equalize white-balance across",
-              "line": 756,
+              "line": 738,
               "deprecated": false
             },
             {
@@ -1433,7 +1495,7 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 778,
+              "line": 760,
               "deprecated": false
             },
             {
@@ -1442,7 +1504,7 @@
               "kind": "method",
               "signature": "(self, tolerance: int = 10) -> bool",
               "summary": "Background-mask every camera with Metashape's built-in AI masking",
-              "line": 818,
+              "line": 800,
               "deprecated": false
             },
             {
@@ -1451,7 +1513,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'file', template: str = '{filename}_mask.png')",
               "summary": "Import per-camera masks from a directory.",
-              "line": 880,
+              "line": 862,
               "deprecated": false
             },
             {
@@ -1460,7 +1522,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, filter_mode=None)",
               "summary": "",
-              "line": 966,
+              "line": 948,
               "deprecated": false
             },
             {
@@ -1469,7 +1531,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count=None)",
               "summary": "",
-              "line": 1002,
+              "line": 984,
               "deprecated": false
             },
             {
@@ -1478,7 +1540,7 @@
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
               "summary": "Mesh cleanup chain: ``removeComponents → closeHoles → smoothModel``.",
-              "line": 1085,
+              "line": 1067,
               "deprecated": false
             },
             {
@@ -1487,7 +1549,7 @@
               "kind": "method",
               "signature": "(self, target_overlap: int = 9)",
               "summary": "Thin redundant cameras for texture bake while preserving",
-              "line": 1131,
+              "line": 1113,
               "deprecated": false
             },
             {
@@ -1496,7 +1558,7 @@
               "kind": "method",
               "signature": "(self, texture_size: int = 8192, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "",
-              "line": 1157,
+              "line": 1139,
               "deprecated": false
             },
             {
@@ -1505,7 +1567,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "",
-              "line": 1215,
+              "line": 1197,
               "deprecated": false
             },
             {
@@ -1514,7 +1576,7 @@
               "kind": "method",
               "signature": "(self, export_format=None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)",
               "summary": "",
-              "line": 1228,
+              "line": 1210,
               "deprecated": false
             },
             {
@@ -1523,7 +1585,7 @@
               "kind": "method",
               "signature": "(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]",
               "summary": "Export the aligned chunk as a COLMAP dataset to feed the splat track.",
-              "line": 1298,
+              "line": 1280,
               "deprecated": false
             },
             {
@@ -1532,7 +1594,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Write Metashape's processing report PDF + finalize the JSON sidecar.",
-              "line": 1400,
+              "line": 1382,
               "deprecated": false
             },
             {
@@ -1541,7 +1603,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Write the QC JSON sidecar.",
-              "line": 1422,
+              "line": 1404,
               "deprecated": false
             }
           ]
@@ -1572,7 +1634,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-          "line": 289,
+          "line": 334,
           "deprecated": false
         },
         {
@@ -1581,7 +1643,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 336,
+          "line": 381,
           "deprecated": false
         },
         {
@@ -1590,7 +1652,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 353,
+          "line": 398,
           "deprecated": false
         }
       ],
@@ -1606,7 +1668,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 224,
+          "line": 271,
           "deprecated": false
         }
       ],
@@ -1687,51 +1749,50 @@
     {
       "relpath": "photogrammetry/prep_stages.py",
       "summary": "Shared, SDK-agnostic pipeline stages for the photogrammetry engines.",
-      "functions": [
-        {
-          "name": "image_long_edge",
-          "qualname": "image_long_edge",
-          "kind": "function",
-          "signature": "(image_path: str) -> Optional[int]",
-          "summary": "Long edge (px) of an image, or ``None`` if unreadable.",
-          "line": 30,
-          "deprecated": false
-        },
-        {
-          "name": "extract_videos_to_dir",
-          "qualname": "extract_videos_to_dir",
-          "kind": "function",
-          "signature": "(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]",
-          "summary": "Extract frames from one or more videos into a single ``output_dir``.",
-          "line": 49,
-          "deprecated": false
-        },
-        {
-          "name": "first_image_in_dirs",
-          "qualname": "first_image_in_dirs",
-          "kind": "function",
-          "signature": "(dirs: Sequence[str]) -> Optional[str]",
-          "summary": "First image file (sorted) across ``dirs``, or ``None``.",
-          "line": 162,
-          "deprecated": false
-        },
-        {
-          "name": "derive_texture_size",
-          "qualname": "derive_texture_size",
-          "kind": "function",
-          "signature": "(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int",
-          "summary": "Texture page size from a source image: next power-of-two ≥ its long edge,",
-          "line": 173,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "PrepStagesMixin",
           "summary": "Curate / equalize / export-sidecar stages shared by both photogrammetry engines.",
-          "line": 196,
+          "line": 25,
           "bases": [],
           "members": [
+            {
+              "name": "image_long_edge",
+              "qualname": "PrepStagesMixin.image_long_edge",
+              "kind": "staticmethod",
+              "signature": "(image_path: str) -> Optional[int]",
+              "summary": "Long edge (px) of an image, or ``None`` if unreadable.",
+              "line": 34,
+              "deprecated": false
+            },
+            {
+              "name": "extract_videos_to_dir",
+              "qualname": "PrepStagesMixin.extract_videos_to_dir",
+              "kind": "staticmethod",
+              "signature": "(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]",
+              "summary": "Extract frames from one or more videos into a single ``output_dir``.",
+              "line": 53,
+              "deprecated": false
+            },
+            {
+              "name": "first_image_in_dirs",
+              "qualname": "PrepStagesMixin.first_image_in_dirs",
+              "kind": "staticmethod",
+              "signature": "(dirs: Sequence[str]) -> Optional[str]",
+              "summary": "First image file (sorted) across ``dirs``, or ``None``.",
+              "line": 166,
+              "deprecated": false
+            },
+            {
+              "name": "derive_texture_size",
+              "qualname": "PrepStagesMixin.derive_texture_size",
+              "kind": "staticmethod",
+              "signature": "(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int",
+              "summary": "Texture page size from a source image: next power-of-two ≥ its long edge,",
+              "line": 177,
+              "deprecated": false
+            },
             {
               "name": "curate_input_set",
               "qualname": "PrepStagesMixin.curate_input_set",
@@ -1766,63 +1827,82 @@
     {
       "relpath": "photogrammetry/profile.py",
       "summary": "Photogrammetry I/O + tuning **profile** — site/personal config kept out of source.",
-      "functions": [
+      "functions": [],
+      "classes": [
         {
-          "name": "get_profile",
-          "qualname": "get_profile",
-          "kind": "function",
-          "signature": "(path=None) -> dict",
-          "summary": "Resolve the active photogrammetry profile (fully interpolated).",
-          "line": 240,
-          "deprecated": false
-        },
-        {
-          "name": "configured_app_path",
-          "qualname": "configured_app_path",
-          "kind": "function",
-          "signature": "(key: str, path=None) -> Optional[str]",
-          "summary": "Return the profile-configured install path for an engine, or ``None``.",
-          "line": 258,
-          "deprecated": false
-        },
-        {
-          "name": "preset_store",
-          "qualname": "preset_store",
-          "kind": "function",
-          "signature": "(engine: str) -> PresetStore",
-          "summary": "The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)",
-          "line": 281,
-          "deprecated": false
-        },
-        {
-          "name": "get_preset",
-          "qualname": "get_preset",
-          "kind": "function",
-          "signature": "(name: Optional[str], engine: str) -> dict",
-          "summary": "Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).",
-          "line": 302,
-          "deprecated": false
-        },
-        {
-          "name": "init_user_profile",
-          "qualname": "init_user_profile",
-          "kind": "function",
-          "signature": "(path: Optional[str] = None, force: bool = False) -> str",
-          "summary": "Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).",
-          "line": 325,
-          "deprecated": false
-        },
-        {
-          "name": "discover_source_dirs",
-          "qualname": "discover_source_dirs",
-          "kind": "function",
-          "signature": "(input_root: str) -> List[str]",
-          "summary": "Return immediate subdirs of ``input_root`` that contain images.",
-          "line": 343,
-          "deprecated": false
+          "name": "Profile",
+          "summary": "Resolution + lookup entry points for the photogrammetry profile.",
+          "line": 230,
+          "bases": [
+            "_ProfileInternal"
+          ],
+          "members": [
+            {
+              "name": "get_profile",
+              "qualname": "Profile.get_profile",
+              "kind": "staticmethod",
+              "signature": "(path=None) -> dict",
+              "summary": "Resolve the active photogrammetry profile (fully interpolated).",
+              "line": 240,
+              "deprecated": false
+            },
+            {
+              "name": "configured_app_path",
+              "qualname": "Profile.configured_app_path",
+              "kind": "staticmethod",
+              "signature": "(key: str, path=None) -> Optional[str]",
+              "summary": "Return the profile-configured install path for an engine, or ``None``.",
+              "line": 258,
+              "deprecated": false
+            },
+            {
+              "name": "resolve_app",
+              "qualname": "Profile.resolve_app",
+              "kind": "staticmethod",
+              "signature": "(env_var: str, config_key: Optional[str] = None, *, validate: Optional[Callable[[str], bool]] = None, fallbacks: Sequence[Callable[[], Optional[str]]] = (), path=None) -> Optional[str]",
+              "summary": "Resolve an engine's install location; the first hit wins.",
+              "line": 281,
+              "deprecated": false
+            },
+            {
+              "name": "preset_store",
+              "qualname": "Profile.preset_store",
+              "kind": "staticmethod",
+              "signature": "(engine: str) -> PresetStore",
+              "summary": "The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)",
+              "line": 334,
+              "deprecated": false
+            },
+            {
+              "name": "get_preset",
+              "qualname": "Profile.get_preset",
+              "kind": "staticmethod",
+              "signature": "(name: Optional[str], engine: str) -> dict",
+              "summary": "Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).",
+              "line": 355,
+              "deprecated": false
+            },
+            {
+              "name": "init_user_profile",
+              "qualname": "Profile.init_user_profile",
+              "kind": "staticmethod",
+              "signature": "(path: Optional[str] = None, force: bool = False) -> str",
+              "summary": "Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).",
+              "line": 378,
+              "deprecated": false
+            },
+            {
+              "name": "discover_source_dirs",
+              "qualname": "Profile.discover_source_dirs",
+              "kind": "staticmethod",
+              "signature": "(input_root: str) -> List[str]",
+              "summary": "Return immediate subdirs of ``input_root`` that contain images.",
+              "line": 396,
+              "deprecated": false
+            }
+          ]
         }
-      ],
-      "classes": []
+      ]
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/_realityscan_connection.py",
@@ -1922,60 +2002,61 @@
     {
       "relpath": "photogrammetry/realityscan_workflow/_realityscan_workflow.py",
       "summary": "RealityCapture / RealityScan workflow engine.",
-      "functions": [
-        {
-          "name": "find_realitycapture_exe",
-          "qualname": "find_realitycapture_exe",
-          "kind": "function",
-          "signature": "() -> Optional[str]",
-          "summary": "Return the RealityCapture.exe path or None.",
-          "line": 85,
-          "deprecated": false
-        },
-        {
-          "name": "is_realitycapture_available",
-          "qualname": "is_realitycapture_available",
-          "kind": "function",
-          "signature": "() -> bool",
-          "summary": "",
-          "line": 114,
-          "deprecated": false
-        },
-        {
-          "name": "get_realitycapture_version",
-          "qualname": "get_realitycapture_version",
-          "kind": "function",
-          "signature": "() -> str",
-          "summary": "Read RC's FileVersion from Windows binary metadata.",
-          "line": 136,
-          "deprecated": false
-        },
-        {
-          "name": "get_image_filepaths",
-          "qualname": "get_image_filepaths",
-          "kind": "function",
-          "signature": "(directory: str) -> List[str]",
-          "summary": "Return absolute paths to all images in ``directory`` (non-recursive).",
-          "line": 148,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "RealityCaptureWorkflow",
           "summary": "Wrapper around RealityCapture's CLI for the standard photogrammetry",
-          "line": 162,
+          "line": 117,
           "bases": [
-            "PrepStagesMixin"
+            "PrepStagesMixin",
+            "MeshStagesMixin",
+            "_RealityCaptureWorkflowInternal"
           ],
           "members": [
+            {
+              "name": "find_realitycapture_exe",
+              "qualname": "RealityCaptureWorkflow.find_realitycapture_exe",
+              "kind": "staticmethod",
+              "signature": "() -> Optional[str]",
+              "summary": "Return the RealityCapture.exe path or None.",
+              "line": 131,
+              "deprecated": false
+            },
+            {
+              "name": "is_realitycapture_available",
+              "qualname": "RealityCaptureWorkflow.is_realitycapture_available",
+              "kind": "staticmethod",
+              "signature": "() -> bool",
+              "summary": "",
+              "line": 162,
+              "deprecated": false
+            },
+            {
+              "name": "get_realitycapture_version",
+              "qualname": "RealityCaptureWorkflow.get_realitycapture_version",
+              "kind": "staticmethod",
+              "signature": "() -> str",
+              "summary": "Read RC's FileVersion from Windows binary metadata.",
+              "line": 165,
+              "deprecated": false
+            },
+            {
+              "name": "get_image_filepaths",
+              "qualname": "RealityCaptureWorkflow.get_image_filepaths",
+              "kind": "staticmethod",
+              "signature": "(directory: str) -> List[str]",
+              "summary": "Return absolute paths to all images in ``directory`` (non-recursive).",
+              "line": 180,
+              "deprecated": false
+            },
             {
               "name": "get_license_info",
               "qualname": "RealityCaptureWorkflow.get_license_info",
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 273,
+              "line": 292,
               "deprecated": false
             },
             {
@@ -1984,7 +2065,7 @@
               "kind": "method",
               "signature": "(self, label: str = 'New Chunk')",
               "summary": "Start a fresh RC scene.",
-              "line": 559,
+              "line": 578,
               "deprecated": false
             },
             {
@@ -1993,7 +2074,7 @@
               "kind": "method",
               "signature": "(self, image_sources: Union[str, Sequence[str]])",
               "summary": "Add images from a directory (non-recursive) or list of paths.",
-              "line": 577,
+              "line": 596,
               "deprecated": false
             },
             {
@@ -2002,7 +2083,7 @@
               "kind": "method",
               "signature": "(self, dirs: Sequence[str])",
               "summary": "Add images from multiple directories — RC keeps them in one scene.",
-              "line": 616,
+              "line": 635,
               "deprecated": false
             },
             {
@@ -2011,7 +2092,7 @@
               "kind": "method",
               "signature": "(self, quality_threshold: float = 0.5)",
               "summary": "No direct RC equivalent.",
-              "line": 640,
+              "line": 659,
               "deprecated": false
             },
             {
@@ -2020,7 +2101,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "Run RC alignment (SfM).",
-              "line": 654,
+              "line": 673,
               "deprecated": false
             },
             {
@@ -2029,7 +2110,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
               "summary": "Run alignment;",
-              "line": 705,
+              "line": 724,
               "deprecated": false
             },
             {
@@ -2038,7 +2119,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC performs alignment refinement internally during ``-align``;",
-              "line": 751,
+              "line": 770,
               "deprecated": false
             },
             {
@@ -2047,7 +2128,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No direct RC equivalent.",
-              "line": 764,
+              "line": 783,
               "deprecated": false
             },
             {
@@ -2056,7 +2137,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC applies color correction inside ``-calculateTexture`` via",
-              "line": 772,
+              "line": 791,
               "deprecated": false
             },
             {
@@ -2065,7 +2146,7 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 782,
+              "line": 801,
               "deprecated": false
             },
             {
@@ -2074,7 +2155,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'alpha')",
               "summary": "RC accepts per-image masks named ``<image>.png`` next to the",
-              "line": 815,
+              "line": 834,
               "deprecated": false
             },
             {
@@ -2083,7 +2164,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC does not expose depth maps as a separate stage — mesh calc",
-              "line": 829,
+              "line": 848,
               "deprecated": false
             },
             {
@@ -2092,7 +2173,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count: Optional[str] = None)",
               "summary": "Build a polygon mesh.",
-              "line": 840,
+              "line": 859,
               "deprecated": false
             },
             {
@@ -2101,7 +2182,7 @@
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
               "summary": "Mesh cleanup via ``-setMinComponentSize N`` + ``-cleanModel``.",
-              "line": 886,
+              "line": 905,
               "deprecated": false
             },
             {
@@ -2110,7 +2191,7 @@
               "kind": "method",
               "signature": "(self, target_face_count: int = 20000000)",
               "summary": "Simplify the densest model to ~``target_face_count`` triangles.",
-              "line": 928,
+              "line": 947,
               "deprecated": false
             },
             {
@@ -2119,7 +2200,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No RC equivalent.",
-              "line": 967,
+              "line": 986,
               "deprecated": false
             },
             {
@@ -2128,7 +2209,7 @@
               "kind": "method",
               "signature": "(self, mesh_path: str)",
               "summary": "Import an external low-poly mesh into the project (Maya-authored",
-              "line": 975,
+              "line": 994,
               "deprecated": false
             },
             {
@@ -2137,7 +2218,7 @@
               "kind": "method",
               "signature": "(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "Unwrap (when no mesh was imported) + bake texture from solved",
-              "line": 995,
+              "line": 1014,
               "deprecated": false
             },
             {
@@ -2146,7 +2227,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "RC saves on every CLI call (``-save`` is appended);",
-              "line": 1040,
+              "line": 1059,
               "deprecated": false
             },
             {
@@ -2155,7 +2236,7 @@
               "kind": "method",
               "signature": "(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)",
               "summary": "Export the current model.",
-              "line": 1049,
+              "line": 1068,
               "deprecated": false
             },
             {
@@ -2164,7 +2245,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Export RC's processing report XML and append to the QC log.",
-              "line": 1098,
+              "line": 1117,
               "deprecated": false
             },
             {
@@ -2173,7 +2254,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Flush the QC JSON sidecar + release the transport.",
-              "line": 1126,
+              "line": 1145,
               "deprecated": false
             }
           ]
@@ -2183,17 +2264,7 @@
     {
       "relpath": "photogrammetry/realityscan_workflow/_rsnode_client.py",
       "summary": "RSNode REST client — drive a running RealityScan 2.1 over its REST API (headless).",
-      "functions": [
-        {
-          "name": "normalize_commands",
-          "qualname": "normalize_commands",
-          "kind": "function",
-          "signature": "(commands: Sequence[CommandLike]) -> List[Dict[str, Any]]",
-          "summary": "Translate CLI-style command specs into RSNode ``commandCall`` dicts.",
-          "line": 48,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "RsNodeError",
@@ -2207,9 +2278,18 @@
         {
           "name": "RsNodeClient",
           "summary": "Minimal stdlib REST client for the RSNode API of a running RealityScan.",
-          "line": 84,
+          "line": 48,
           "bases": [],
           "members": [
+            {
+              "name": "normalize_commands",
+              "qualname": "RsNodeClient.normalize_commands",
+              "kind": "staticmethod",
+              "signature": "(commands: Sequence[CommandLike]) -> List[Dict[str, Any]]",
+              "summary": "Translate CLI-style command specs into RSNode ``commandCall`` dicts.",
+              "line": 52,
+              "deprecated": false
+            },
             {
               "name": "connect",
               "qualname": "RsNodeClient.connect",
@@ -2366,7 +2446,7 @@
         {
           "name": "RsNodeConnection",
           "summary": "Run RealityScan CLI command tails over the RSNode REST API.",
-          "line": 89,
+          "line": 76,
           "bases": [],
           "members": [
             {
@@ -2424,7 +2504,7 @@
           "kind": "function",
           "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
           "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-          "line": 120,
+          "line": 163,
           "deprecated": false
         },
         {
@@ -2433,7 +2513,7 @@
           "kind": "function",
           "signature": "(source: str = '') -> 'set[str]'",
           "summary": "Params relevant to the panel's current input — drives row visibility.",
-          "line": 130,
+          "line": 173,
           "deprecated": false
         },
         {
@@ -2442,7 +2522,7 @@
           "kind": "function",
           "signature": "() -> 'Dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 144,
+          "line": 187,
           "deprecated": false
         }
       ],
@@ -2458,7 +2538,7 @@
           "kind": "function",
           "signature": "(project_dir: str, publish_dir: str)",
           "summary": "Copy finished deliverables from local scratch to the synced output root.",
-          "line": 85,
+          "line": 68,
           "deprecated": false
         },
         {
@@ -2467,7 +2547,7 @@
           "kind": "function",
           "signature": "(argv=None) -> int",
           "summary": "",
-          "line": 133,
+          "line": 116,
           "deprecated": false
         }
       ],
@@ -2548,40 +2628,41 @@
     {
       "relpath": "photogrammetry/sugar_mesh_workflow/_sugar_mesh.py",
       "summary": "SuGaR mesh-extraction workflow engine.",
-      "functions": [
-        {
-          "name": "find_sugar_dir",
-          "qualname": "find_sugar_dir",
-          "kind": "function",
-          "signature": "() -> Optional[str]",
-          "summary": "Return the SuGaR repo dir or None.",
-          "line": 50,
-          "deprecated": false
-        },
-        {
-          "name": "is_sugar_available",
-          "qualname": "is_sugar_available",
-          "kind": "function",
-          "signature": "() -> bool",
-          "summary": "",
-          "line": 66,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "SugarMeshWorkflow",
           "summary": "COLMAP dataset → SuGaR refined textured ``.obj`` mesh.",
-          "line": 70,
-          "bases": [],
+          "line": 59,
+          "bases": [
+            "_SugarMeshWorkflowInternal"
+          ],
           "members": [
+            {
+              "name": "find_sugar_dir",
+              "qualname": "SugarMeshWorkflow.find_sugar_dir",
+              "kind": "staticmethod",
+              "signature": "() -> 'Optional[str]'",
+              "summary": "Return the SuGaR repo dir or None.",
+              "line": 62,
+              "deprecated": false
+            },
+            {
+              "name": "is_sugar_available",
+              "qualname": "SugarMeshWorkflow.is_sugar_available",
+              "kind": "staticmethod",
+              "signature": "() -> bool",
+              "summary": "",
+              "line": 81,
+              "deprecated": false
+            },
             {
               "name": "get_sugar_info",
               "qualname": "SugarMeshWorkflow.get_sugar_info",
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 113,
+              "line": 124,
               "deprecated": false
             },
             {
@@ -2590,7 +2671,7 @@
               "kind": "method",
               "signature": "(self, colmap_dir: str, regularization: str = 'dn_consistency', high_poly: bool = True, refinement_time: str = 'medium', surface_level: float = 0.3, export_obj: bool = True, export_ply: bool = False, use_eval_split: bool = False, gpu: int = 0, white_background: bool = False) -> Optional[str]",
               "summary": "Run SuGaR's full pipeline on a COLMAP dataset;",
-              "line": 139,
+              "line": 150,
               "deprecated": false
             },
             {
@@ -2599,7 +2680,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "",
-              "line": 279,
+              "line": 290,
               "deprecated": false
             }
           ]
@@ -2711,49 +2792,48 @@
     {
       "relpath": "substance_workflow/env_utils/painter_connection.py",
       "summary": "Painter Connection Module.",
-      "functions": [
-        {
-          "name": "plugins_dir",
-          "qualname": "plugins_dir",
-          "kind": "function",
-          "signature": "() -> str",
-          "summary": "Absolute path to the ``substance_workflow/plugins`` directory.",
-          "line": 36,
-          "deprecated": false
-        },
-        {
-          "name": "build_painter_env",
-          "qualname": "build_painter_env",
-          "kind": "function",
-          "signature": "(port: int = 0) -> dict",
-          "summary": "Compose the environment block passed to a Painter launch.",
-          "line": 47,
-          "deprecated": false
-        },
-        {
-          "name": "launch_painter",
-          "qualname": "launch_painter",
-          "kind": "function",
-          "signature": "(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen",
-          "summary": "Spawn a detached Painter process via ``pythontk.AppLauncher``.",
-          "line": 65,
-          "deprecated": false
-        }
-      ],
+      "functions": [],
       "classes": [
         {
           "name": "PainterConnection",
           "summary": "Live JSON-RPC connection to a Substance 3D Painter session.",
-          "line": 86,
+          "line": 36,
           "bases": [],
           "members": [
+            {
+              "name": "plugins_dir",
+              "qualname": "PainterConnection.plugins_dir",
+              "kind": "staticmethod",
+              "signature": "() -> str",
+              "summary": "Absolute path to the ``substance_workflow/plugins`` directory.",
+              "line": 45,
+              "deprecated": false
+            },
+            {
+              "name": "build_painter_env",
+              "qualname": "PainterConnection.build_painter_env",
+              "kind": "staticmethod",
+              "signature": "(port: int = 0) -> dict",
+              "summary": "Compose the environment block passed to a Painter launch.",
+              "line": 56,
+              "deprecated": false
+            },
+            {
+              "name": "launch_painter",
+              "qualname": "PainterConnection.launch_painter",
+              "kind": "staticmethod",
+              "signature": "(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen",
+              "summary": "Spawn a detached Painter process via ``pythontk.AppLauncher``.",
+              "line": 74,
+              "deprecated": false
+            },
             {
               "name": "get_instance",
               "qualname": "PainterConnection.get_instance",
               "kind": "classmethod",
               "signature": "(cls) -> 'PainterConnection'",
               "summary": "",
-              "line": 92,
+              "line": 97,
               "deprecated": false
             },
             {
@@ -2762,7 +2842,7 @@
               "kind": "staticmethod",
               "signature": "(start_port: int = 5050, max_check: int = 100) -> int",
               "summary": "Return the lowest TCP port a NEW bridge server could bind on localhost.",
-              "line": 106,
+              "line": 111,
               "deprecated": false
             },
             {
@@ -2771,7 +2851,7 @@
               "kind": "method",
               "signature": "(self, force_new_instance: bool = True, gui: bool = False, port: int = 5050, app_path: Optional[str] = None, launch_args: Optional[List[str]] = None, timeout: float = 180.0) -> bool",
               "summary": "Launch a fresh Painter and connect over the bridge HTTP server.",
-              "line": 124,
+              "line": 129,
               "deprecated": false
             },
             {
@@ -2780,7 +2860,7 @@
               "kind": "method",
               "signature": "(self, op: str, timeout: float = 60.0, **kwargs: Any) -> Any",
               "summary": "Call a registered op over the bridge and return its value.",
-              "line": 196,
+              "line": 203,
               "deprecated": false
             },
             {
@@ -2789,7 +2869,7 @@
               "kind": "method",
               "signature": "(self, op: str = '') -> dict",
               "summary": "Fetch the registry's signature description for agent self-discovery.",
-              "line": 223,
+              "line": 230,
               "deprecated": false
             },
             {
@@ -2798,7 +2878,7 @@
               "kind": "method",
               "signature": "(self, force: bool = False) -> None",
               "summary": "Close the bridge and terminate the Painter process we launched.",
-              "line": 243,
+              "line": 250,
               "deprecated": false
             }
           ]
@@ -3506,8 +3586,10 @@
         {
           "name": "CompositorSlots",
           "summary": "UI slot handler.",
-          "line": 97,
-          "bases": [],
+          "line": 107,
+          "bases": [
+            "_CompositorSlotsInternal"
+          ],
           "members": [
             {
               "name": "output_dir",
@@ -3515,7 +3597,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 173,
+              "line": 183,
               "deprecated": false
             },
             {
@@ -3524,7 +3606,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 177,
+              "line": 187,
               "deprecated": false
             },
             {
@@ -3533,7 +3615,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the header menu with global options.",
-              "line": 501,
+              "line": 511,
               "deprecated": false
             },
             {
@@ -3542,7 +3624,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 584,
+              "line": 594,
               "deprecated": false
             },
             {
@@ -3551,7 +3633,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Destination Directory",
-              "line": 613,
+              "line": 623,
               "deprecated": false
             },
             {
@@ -3560,7 +3642,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Map Name",
-              "line": 640,
+              "line": 650,
               "deprecated": false
             },
             {
@@ -3569,7 +3651,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 666,
+              "line": 676,
               "deprecated": false
             },
             {
@@ -3578,7 +3660,7 @@
               "kind": "method",
               "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 676,
+              "line": 686,
               "deprecated": false
             }
           ]
@@ -3910,7 +3992,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 310,
+              "line": 309,
               "deprecated": false
             },
             {
@@ -3919,7 +4001,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 369,
+              "line": 368,
               "deprecated": false
             },
             {
@@ -3928,7 +4010,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 590,
+              "line": 589,
               "deprecated": false
             }
           ]

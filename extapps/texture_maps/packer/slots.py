@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-from typing import List, Dict, Optional, Any
+from typing import List
 from pythontk.img_utils._img_utils import ImgUtils
 from pythontk.core_utils.engines.textures.map_factory import MapFactory
 from pythontk.file_utils._file_utils import FileUtils
@@ -290,7 +290,6 @@ class PackerSlots(ImgUtils):
         """
         import json
 
-        preset_dir = preset_mgr.preset_dir
         for name, preset in self.BUILTIN_PRESETS.items():
             filepath = preset_mgr._preset_path(name)
             if not filepath.exists():

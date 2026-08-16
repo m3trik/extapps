@@ -57,8 +57,8 @@ _Generated: 2026-08-16_
 - `class PyModuleRunner(ProcessRunner)`
 
 ### `photogrammetry/_shared_params.py` — Input pre-processing parameter specs shared by the image-in engines.
-- `render_flag_argv(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'`
-- `preprocessing_argv(values: 'Dict[str, Any]') -> 'List[str]'`
+- `class SharedParams`
+  - methods: render_flag_argv, preprocessing_argv
 
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py` — Local, async runner the Brush (gaussian-splat) panel dispatches to.
 - `class GaussianSplatRunner(PyModuleRunner)`
@@ -67,21 +67,15 @@ _Generated: 2026-08-16_
   - methods: exe, is_available
 
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py` — Brush gaussian-splat workflow engine.
-- `find_brush_exe() -> Optional[str]`
-- `is_brush_available() -> bool`
-- `install_brush(progress_callback: Optional[Callable[[int, int], None]] = None) -> str`
-- `read_splat_count(ply_path: str) -> Optional[int]`
-- `class GaussianSplatWorkflow`
-  - methods: get_brush_info, train, finalize_run
+- `class GaussianSplatWorkflow(_GaussianSplatWorkflowInternal)`
+  - methods: find_brush_exe, is_brush_available, install_brush, read_splat_count, get_brush_info, train, finalize_run
 
 ### `photogrammetry/gaussian_splat_workflow/_install_brush.py` — Headless entry point: download + install Brush via pythontk.AppInstaller.
 - `main() -> int`
 
 ### `photogrammetry/gaussian_splat_workflow/_splat_publish.py` — Engine-delivery stage for the splat track — clean + convert to engine formats.
-- `find_splat_transform() -> Optional[str]`
-- `is_splat_transform_available() -> bool`
-- `class SplatPublishWorkflow`
-  - methods: get_publish_info, clean, to_unity, to_web, publish, finalize_run
+- `class SplatPublishWorkflow(_SplatPublishWorkflowInternal)`
+  - methods: find_splat_transform, is_splat_transform_available, get_publish_info, clean, to_unity, to_web, publish, finalize_run
 
 ### `photogrammetry/gaussian_splat_workflow/launcher.py` — Application shell for the Brush (gaussian-splat) Workflow UI.
 - `class GaussianSplatWorkflowUI`
@@ -98,6 +92,10 @@ _Generated: 2026-08-16_
 - `class GaussianSplatWorkflowSlots(PhotogrammetryPanelSlots)`
   - methods: resolved_colmap_dir, params_module, template_dir, make_bridge, header_init, open_brush_viewer, open_result_in_brush, install_brush, cancel_run, list_template_modes, default_output_dir, help_spec
 
+### `photogrammetry/mesh_stages.py` — Shared, SDK-agnostic mesh post-processing stages (PyMeshLab-backed).
+- `class MeshStagesMixin`
+  - methods: measure_mesh, refine_mesh, bake_vertex_color, run_mesh_stages, clean_mesh_advanced
+
 ### `photogrammetry/metashape_workflow/_metashape_connection.py` — Headless launch connection for Agisoft Metashape.
 - `class MetashapeConnection`
   - methods: find_exe, is_available, run_script, run_combined
@@ -107,8 +105,8 @@ _Generated: 2026-08-16_
   - methods: exe, is_available, start
 
 ### `photogrammetry/metashape_workflow/_metashape_workflow.py`
-- `class MetashapeWorkflow(PrepStagesMixin)`
-  - methods: is_metashape_available, is_license_valid, get_metashape_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, clean_mesh_advanced, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, generate_masks_native, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
+- `class MetashapeWorkflow(PrepStagesMixin, MeshStagesMixin)`
+  - methods: is_metashape_available, is_license_valid, get_metashape_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, generate_masks_native, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
 
 ### `photogrammetry/metashape_workflow/launcher.py` — Application shell for the Metashape Workflow UI.
 - `class MetashapeWorkflowUI`
@@ -126,20 +124,12 @@ _Generated: 2026-08-16_
   - methods: params_module, template_dir, make_bridge, list_template_modes, default_output_dir, help_spec
 
 ### `photogrammetry/prep_stages.py` — Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
-- `image_long_edge(image_path: str) -> Optional[int]`
-- `extract_videos_to_dir(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]`
-- `first_image_in_dirs(dirs: Sequence[str]) -> Optional[str]`
-- `derive_texture_size(image_path: Optional[str], floor: int = 2048, cap: int = 8192, default: int = 8192) -> int`
 - `class PrepStagesMixin`
-  - methods: curate_input_set, preview_curation, equalize_exposures
+  - methods: image_long_edge, extract_videos_to_dir, first_image_in_dirs, derive_texture_size, curate_input_set, preview_curation, equalize_exposures
 
 ### `photogrammetry/profile.py` — Photogrammetry I/O + tuning **profile** — site/personal config kept out of source.
-- `get_profile(path=None) -> dict`
-- `configured_app_path(key: str, path=None) -> Optional[str]`
-- `preset_store(engine: str) -> PresetStore`
-- `get_preset(name: Optional[str], engine: str) -> dict`
-- `init_user_profile(path: Optional[str] = None, force: bool = False) -> str`
-- `discover_source_dirs(input_root: str) -> List[str]`
+- `class Profile(_ProfileInternal)`
+  - methods: get_profile, configured_app_path, resolve_app, preset_store, get_preset, init_user_profile, discover_source_dirs
 
 ### `photogrammetry/realityscan_workflow/_realityscan_connection.py` — Launch connection for RealityScan / RealityCapture.
 - `class RealityScanInteractiveError(RuntimeError)`
@@ -151,18 +141,13 @@ _Generated: 2026-08-16_
   - methods: exe, is_available
 
 ### `photogrammetry/realityscan_workflow/_realityscan_workflow.py` — RealityCapture / RealityScan workflow engine.
-- `find_realitycapture_exe() -> Optional[str]`
-- `is_realitycapture_available() -> bool`
-- `get_realitycapture_version() -> str`
-- `get_image_filepaths(directory: str) -> List[str]`
-- `class RealityCaptureWorkflow(PrepStagesMixin)`
-  - methods: get_license_info, create_chunk, add_images, add_image_dirs, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, import_masks, generate_depth_maps, build_model, clean_mesh, simplify_model, reduce_overlap, import_model, build_texture, save_project, export_model, export_qc, finalize_run
+- `class RealityCaptureWorkflow(PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal)`
+  - methods: find_realitycapture_exe, is_realitycapture_available, get_realitycapture_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, import_masks, generate_depth_maps, build_model, clean_mesh, simplify_model, reduce_overlap, import_model, build_texture, save_project, export_model, export_qc, finalize_run
 
 ### `photogrammetry/realityscan_workflow/_rsnode_client.py` — RSNode REST client — drive a running RealityScan 2.1 over its REST API (headless).
-- `normalize_commands(commands: Sequence[CommandLike]) -> List[Dict[str, Any]]`
 - `class RsNodeError(RuntimeError)`
 - `class RsNodeClient`
-  - methods: connect, node_status, create_session, run_commands, upload_file, list_files, download_file, project_status, tags, has_tag, wait_for_tag, tasks, wait_for_task, save_project, open_project, close_project
+  - methods: normalize_commands, connect, node_status, create_session, run_commands, upload_file, list_files, download_file, project_status, tags, has_tag, wait_for_tag, tasks, wait_for_task, save_project, open_project, close_project
 
 ### `photogrammetry/realityscan_workflow/_rsnode_connection.py` — RSNode-backed connection — drive a running RealityScan 2.1 over REST.
 - `class RsNodeConnection`
@@ -185,10 +170,8 @@ _Generated: 2026-08-16_
   - methods: params_module, template_dir, make_bridge, list_template_modes, default_output_dir, help_spec
 
 ### `photogrammetry/sugar_mesh_workflow/_sugar_mesh.py` — SuGaR mesh-extraction workflow engine.
-- `find_sugar_dir() -> Optional[str]`
-- `is_sugar_available() -> bool`
-- `class SugarMeshWorkflow`
-  - methods: get_sugar_info, extract_mesh, finalize_run
+- `class SugarMeshWorkflow(_SugarMeshWorkflowInternal)`
+  - methods: find_sugar_dir, is_sugar_available, get_sugar_info, extract_mesh, finalize_run
 
 ### `photogrammetry/sugar_mesh_workflow/run_combined.py` — Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``.obj``.
 - `main(argv=None) -> int`
@@ -206,11 +189,8 @@ _Generated: 2026-08-16_
 - `export_path(texture_set: str, channel: str) -> str`
 
 ### `substance_workflow/env_utils/painter_connection.py` — Painter Connection Module.
-- `plugins_dir() -> str`
-- `build_painter_env(port: int = 0) -> dict`
-- `launch_painter(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen`
 - `class PainterConnection`
-  - methods: get_instance, get_available_port, connect, invoke, describe, shutdown
+  - methods: plugins_dir, build_painter_env, launch_painter, get_instance, get_available_port, connect, invoke, describe, shutdown
 
 ### `substance_workflow/env_utils/painter_finder.py` — Locate installed Substance 3D Painter.
 - `class PainterFinder`
@@ -290,7 +270,7 @@ _Generated: 2026-08-16_
 - `class CompositorUI`
 
 ### `texture_maps/compositor/slots.py` — UI slot bindings for the compositor window.
-- `class CompositorSlots`
+- `class CompositorSlots(_CompositorSlotsInternal)`
   - methods: output_dir, map_name, header_init, txt000_init, txt001_init, txt002_init, b002, process
 
 ### `texture_maps/converter/launcher.py` — Application shell for the Map Converter UI.

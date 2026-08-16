@@ -115,6 +115,16 @@ preset; a preset beats `--quality`-derived values.
 - `save_project()`
 - `export_model(export_format=None, binary=True, precision=6, texture_format=None, save_texture=True, save_normals=True, save_colors=True, save_cameras=False, overwrite=True)` — accepts `Metashape.ModelFormatOBJ/PLY/STL/FBX`
 
+PyMeshLab file-level stages (from the shared `MeshStagesMixin`, also on the
+RealityScan engine): `measure_mesh` / `refine_mesh` / `bake_vertex_color` /
+`clean_mesh_advanced` / `run_mesh_stages` — they operate on the exported
+file via `pythontk.MeshOps` and feed the `"mesh"` QC gate. pymeshlab can
+never import inside `metashape.exe`'s bundled Python, so panel runs chain a
+`run_combined --post-only` pass under the panel venv after the engine stage
+(the export-side twin of `--prep-only`), writing its own
+`<name>_post_qc.json` sidecar. Requires the `extapps[mesh]` extra; without
+it the stages record an honest QC skip.
+
 `FrameExtractor`
 - `extract_frames(video_path, output_folder, step=5, quality=95, prefix="frame", max_frames=None) -> List[str]`
 - `get_video_info(video_path) -> dict`

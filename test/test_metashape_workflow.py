@@ -19,6 +19,7 @@ import os
 import shutil
 import sys
 import tempfile
+import types
 import unittest
 
 from qtpy import QtCore
@@ -397,9 +398,11 @@ class TestBuiltinPresets(unittest.TestCase):
     well-formed, and consistent between the panel store and the CLI get_preset."""
 
     def _profile(self):
-        from extapps.photogrammetry import profile
+        # The preset/profile entry points live on the Profile class now; the
+        # module still carries the flat config DATA (IMAGE_EXTS, QUALITY_TIERS).
+        from extapps.photogrammetry.profile import Profile
 
-        return profile
+        return Profile
 
     def test_quality_presets_available_and_well_formed(self) -> None:
         P = self._profile()
@@ -790,15 +793,90 @@ class TestMetashapeWorkflowPhase3(unittest.TestCase):
             "implies curation happened",
         )
 
-    def test_clean_mesh_advanced_unavailable_is_noop(self) -> None:
+    def test_clean_mesh_advanced_dep_missing_records_fallback(self) -> None:
+        """A missing pymeshlab is a *dependency* skip — the stage must say so
+        explicitly ('pymeshlab_missing'), never masquerade as a [mock] skip
+        or an input problem (the pre-mixin test here was ambiguous between
+        the two by its own admission)."""
+        from unittest import mock as umock
+
+        from pythontk import MeshOps
+
         mp = self._new_workflow()
+        with umock.patch.object(MeshOps, "available", return_value=False):
+            result = mp.clean_mesh_advanced(
+                exported_model_path=os.path.join(self.tmp, "missing.obj")
+            )
+        self.assertIsNone(result)
+        stage = mp.qc.data["stages"]["clean_mesh_advanced"]
+        self.assertEqual(stage.get("fallback"), "pymeshlab_missing")
+
+    def test_clean_mesh_advanced_input_missing_is_mock_skip(self) -> None:
+        """With the dep present but no exported file, a mock-mode run records
+        the distinct 'mock_no_input' marker (a dry pipeline run has no export
+        by design — not an error, not a dep problem)."""
+        from pythontk import MeshOps
+
+        if not MeshOps.available():
+            self.skipTest("pymeshlab not installed")
+        mp = self._new_workflow()
+        self.assertTrue(mp.mock_mode)
         result = mp.clean_mesh_advanced(
             exported_model_path=os.path.join(self.tmp, "missing.obj")
         )
-        # When pymeshlab is missing OR the input doesn't exist, returns
-        # None; in either case the stage is logged for diagnostic value.
         self.assertIsNone(result)
-        self.assertIn("clean_mesh_advanced", mp.qc.data["stages"])
+        stage = mp.qc.data["stages"]["clean_mesh_advanced"]
+        self.assertEqual(stage.get("fallback"), "mock_no_input")
+
+    def test_mesh_stages_do_real_work_on_real_file_in_mock_mode(self) -> None:
+        """File-level stages must NOT gate on mock_mode: a mock-constructed
+        workflow (exactly what --post-only builds) still measures/refines a
+        real exported file, and the 'mesh' gate is evaluated."""
+        from pythontk import MeshOps
+
+        if not MeshOps.available():
+            self.skipTest("pymeshlab not installed")
+        pml = MeshOps.resolve()
+        ms = pml.MeshSet()
+        ms.create_sphere(radius=1.0, subdiv=4)
+        model = os.path.join(self.tmp, "phase3.obj")
+        ms.save_current_mesh(model)
+
+        mp = self._new_workflow()
+        self.assertTrue(mp.mock_mode)
+        metrics = mp.measure_mesh()
+        self.assertEqual(metrics["faces"], 5120)
+        self.assertIn("mesh", mp.qc.data["gates"])
+        out = mp.refine_mesh(decimate_target_faces=800)
+        st = mp.qc.data["stages"]["mesh_refine"]
+        self.assertEqual(st["before"]["faces"], 5120)
+        self.assertEqual(st["after"]["faces"], 800)
+        self.assertIsNotNone(st["deviation"]["hausdorff_peak_pct"])
+        self.assertTrue(os.path.isfile(out))
+
+    def test_run_mesh_stages_sequence_records_expected_stages(self) -> None:
+        """The shared composition: repair always; refine when a target is
+        set (and it owns the gate); measure only when no refine ran."""
+        from pythontk import MeshOps
+
+        if not MeshOps.available():
+            self.skipTest("pymeshlab not installed")
+        pml = MeshOps.resolve()
+        ms = pml.MeshSet()
+        ms.create_sphere(radius=1.0, subdiv=3)
+        ms.save_current_mesh(os.path.join(self.tmp, "phase3.obj"))
+
+        mp = self._new_workflow()
+        mp.run_mesh_stages(decimate_target_faces=300)
+        stages = mp.qc.data["stages"]
+        self.assertIn("clean_mesh_advanced", stages)
+        self.assertIn("mesh_refine", stages)
+        self.assertNotIn("mesh_measure", stages)
+
+        mp2 = self._new_workflow()
+        mp2.run_mesh_stages()  # no targets -> measure/gate path
+        self.assertIn("mesh_measure", mp2.qc.data["stages"])
+        self.assertNotIn("mesh_refine", mp2.qc.data["stages"])
 
 
 class TestMetashapePanelDispatch(unittest.TestCase):
@@ -1095,6 +1173,128 @@ class TestMetashapeRunnerPrepChain(unittest.TestCase):
         launched, done_codes, _ = self._continuation_case(62097, "", cancelled=True)
         self.assertEqual(launched, [])
         self.assertEqual(done_codes, [62097])
+
+
+class TestMetashapeRunnerPostChain(unittest.TestCase):
+    """The venv post stage: pymeshlab can never run inside metashape.exe, so
+    after a successful engine stage the runner chains ``run_combined
+    --post-only`` under the panel's Python (the export-side twin of the prep
+    chain). Mode routing + continuation, no real processes."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = _ensure_app()
+
+    def _runner(self):
+        from extapps.photogrammetry._process_runner import ProcessRunner
+        from extapps.photogrammetry.metashape_workflow._metashape_runner import (
+            MetashapeRunner,
+        )
+
+        r = MetashapeRunner.__new__(MetashapeRunner)  # skip exe discovery
+        ProcessRunner.__init__(r)
+        r._prep_text = ""
+        return r
+
+    def test_wants_post_routing(self) -> None:
+        from extapps.photogrammetry.metashape_workflow._metashape_runner import (
+            MetashapeRunner as R,
+        )
+
+        # A plain full-pipeline run exports a model -> post chains.
+        self.assertTrue(R._wants_post(["--name", "n", "--frames-dir", "x"]))
+        # Runs that never export -> no post stage.
+        self.assertFalse(R._wants_post(["--stop-after", "align"]))
+        self.assertFalse(R._wants_post(["--curate-preview"]))
+        self.assertFalse(R._wants_post(["--prep-only"]))
+        # An explicit post-only argv IS the post stage; never chain another.
+        self.assertFalse(R._wants_post(["--post-only", "--name", "n"]))
+
+    def _post_case(self, code, cancelled=False):
+        r = self._runner()
+        r._cancelled = cancelled
+        launched, done_codes, lines = [], [], []
+        r._launch = lambda prog, args, cwd=None, extra_env=None: launched.append(
+            (prog, list(args))
+        )
+        argv = ["--name", "n", "--frames-dir", "orig"]
+        cont = r._post_continuation(
+            argv, lines.append, done_codes.append, None, "python.exe"
+        )
+        cont(code)
+        self.app.processEvents()  # flush the deferred post launch
+        return launched, done_codes, lines
+
+    def test_successful_engine_stage_chains_post_only(self) -> None:
+        launched, done_codes, lines = self._post_case(0)
+        self.assertEqual(len(launched), 1)
+        prog, args = launched[0]
+        self.assertEqual(prog, "python.exe")
+        self.assertIn("--post-only", args)
+        self.assertIn("--name", args)  # original argv rides along
+        self.assertEqual(done_codes, [])  # on_done fires after the post stage
+        self.assertTrue(any("[post]" in ln for ln in lines))
+
+    def test_failed_engine_stage_skips_post(self) -> None:
+        launched, done_codes, _ = self._post_case(1)
+        self.assertEqual(launched, [])
+        self.assertEqual(done_codes, [1])  # failure surfaces unchanged
+
+    def test_cancelled_engine_stage_skips_post(self) -> None:
+        launched, done_codes, _ = self._post_case(62097, cancelled=True)
+        self.assertEqual(launched, [])
+        self.assertEqual(done_codes, [62097])
+
+
+class TestRunCombinedPostOnlyInputGuard(unittest.TestCase):
+    """``--post-only`` is the one path that does real mesh work, yet it builds
+    its workflow with ``mock_mode=True`` (to keep the Metashape SDK out of the
+    venv interpreter). ``MeshStagesMixin._mesh_input`` reads ``mock_mode`` as
+    "a missing input is expected here" and downgrades it to a quiet ``[mock]``
+    skip -- so before the guard, a missing export ran no stage at all and still
+    finalized green, reporting success for a run that did nothing."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.mkdtemp(prefix="mw_postonly_")
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _args(self, name="scan"):
+        return types.SimpleNamespace(
+            name=name,
+            gate_mode="warn",
+            mesh_remesh_pct=0.0,
+            mesh_decimate_faces=0,
+            bake_vertex_color=0,
+        )
+
+    def test_post_only_fails_when_the_export_is_missing(self) -> None:
+        from extapps.photogrammetry.metashape_workflow import run_combined
+
+        rc = run_combined._run_post_only(self._args(), self.tmp)
+
+        self.assertEqual(rc, 1, "a missing export must not report success")
+
+    def test_post_only_succeeds_when_the_export_exists(self) -> None:
+        """The guard must reject only a MISSING export -- a real one still
+        runs the stages and finalizes green."""
+        from pythontk import MeshOps
+
+        if not MeshOps.available():
+            self.skipTest("pymeshlab not installed")
+        from extapps.photogrammetry.metashape_workflow import run_combined
+
+        # A real mesh, not a touched file: the stages load it for real, and an
+        # empty .obj raises "Mesh source is empty" out of pymeshlab.
+        ms = MeshOps.resolve().MeshSet()
+        ms.create_sphere(radius=1.0, subdiv=3)
+        ms.save_current_mesh(os.path.join(self.tmp, "scan.obj"))
+
+        rc = run_combined._run_post_only(self._args(), self.tmp)
+
+        self.assertEqual(rc, 0)
+
 
 
 class TestRunCombinedStopAfter(unittest.TestCase):
@@ -1472,7 +1672,7 @@ class TestRunCombinedAlignmentLevers(unittest.TestCase):
         import extapps.photogrammetry.profile as pp
         from extapps.photogrammetry.metashape_workflow import run_combined
 
-        store = pp.preset_store("metashape")
+        store = pp.Profile.preset_store("metashape")
         store.save("t_badg", {"gate_mode": "Halt"})
         self.addCleanup(lambda: getattr(store, "delete", lambda n: None)("t_badg"))
         rc = run_combined.main(
@@ -1577,7 +1777,7 @@ class TestMetashapeVideoInput(unittest.TestCase):
         # The single '...' browser returns BOTH video clips -> extraction path.
         with (
             umock.patch.object(self.slots.sb, "file_dialog", lambda **kw: [v1, v2]),
-            umock.patch.object(prep_stages, "extract_videos_to_dir", fake_extract),
+            umock.patch.object(prep_stages.PrepStagesMixin, "extract_videos_to_dir", fake_extract),
         ):
             self.slots._pick_source()
 
@@ -1638,7 +1838,7 @@ class TestExtractVideosToDir(unittest.TestCase):
             os.path.join(self.tmp, "sub", "clip.mp4"),
         ]
         with umock.patch.object(pythontk, "FrameExtractor", _FakeFE):
-            written = prep_stages.extract_videos_to_dir(videos, out)
+            written = prep_stages.PrepStagesMixin.extract_videos_to_dir(videos, out)
 
         self.assertEqual(len(written), 2)
         self.assertEqual(len(set(calls)), 2, "prefixes must be unique per clip")
@@ -1654,7 +1854,7 @@ class TestExtractVideosToDir(unittest.TestCase):
                 return []  # FrameExtractor returns [] when cv2 is missing
 
         with umock.patch.object(pythontk, "FrameExtractor", _NoCV2FE):
-            written = prep_stages.extract_videos_to_dir(
+            written = prep_stages.PrepStagesMixin.extract_videos_to_dir(
                 [os.path.join(self.tmp, "a.mp4")], os.path.join(self.tmp, "f")
             )
         self.assertEqual(written, [])
@@ -1688,7 +1888,7 @@ class TestRunCombinedVideo(unittest.TestCase):
             return paths
 
         # run_combined binds the name at import time -> patch it there.
-        with umock.patch.object(run_combined, "extract_videos_to_dir", fake_extract):
+        with umock.patch.object(run_combined.PrepStagesMixin, "extract_videos_to_dir", fake_extract):
             rc = run_combined.main(
                 [
                     "--video",
@@ -1731,7 +1931,7 @@ class TestRunCombinedVideo(unittest.TestCase):
         vid = os.path.join(self.tmp, "clip.mp4")
         open(vid, "w").close()
         with umock.patch.object(
-            run_combined, "extract_videos_to_dir", lambda *a, **k: []
+            run_combined.PrepStagesMixin, "extract_videos_to_dir", lambda *a, **k: []
         ):
             rc = run_combined.main(
                 [
@@ -1779,12 +1979,14 @@ class TestExtractVideosPurgesStaleFrames(unittest.TestCase):
     def _extract(self, videos, index, logs):
         from unittest import mock as umock
         import pythontk
-        from extapps.photogrammetry.prep_stages import extract_videos_to_dir
+        from extapps.photogrammetry.prep_stages import PrepStagesMixin
 
         with umock.patch.object(
             pythontk, "FrameExtractor", self._fake_extractor(index)
         ):
-            return extract_videos_to_dir(videos, self.out, log=logs.append)
+            return PrepStagesMixin.extract_videos_to_dir(
+                videos, self.out, log=logs.append
+            )
 
     def test_reextraction_purges_only_this_clips_frames(self) -> None:
         vid = os.path.join(self.tmp, "clip.mp4")

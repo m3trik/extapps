@@ -33,58 +33,63 @@ _HARD_BLOCK = (
 )
 
 
-def plugins_dir() -> str:
-    """Absolute path to the ``substance_workflow/plugins`` directory.
-
-    Painter's ``SUBSTANCE_PAINTER_PLUGINS_PATH`` should be set to this so
-    the ``substance_workflow_bridge`` plugin is discovered without a global
-    install.
-    """
-    here = Path(__file__).resolve().parent
-    return str((here.parent / "plugins").resolve())
-
-
-def build_painter_env(port: int = 0) -> dict:
-    """Compose the environment block passed to a Painter launch.
-
-    Prepends the bridge plugin directory to ``SUBSTANCE_PAINTER_PLUGINS_PATH``
-    and pins ``SUBSTANCE_WORKFLOW_PORT`` so the plugin's HTTP server binds
-    where the client expects it.
-    """
-    env = os.environ.copy()
-    existing = env.get("SUBSTANCE_PAINTER_PLUGINS_PATH", "")
-    plug = plugins_dir()
-    env["SUBSTANCE_PAINTER_PLUGINS_PATH"] = (
-        f"{plug}{os.pathsep}{existing}" if existing else plug
-    )
-    if port:
-        env["SUBSTANCE_WORKFLOW_PORT"] = str(port)
-    return env
-
-
-def launch_painter(
-    exe: str,
-    env: dict,
-    gui: bool = False,
-    extra_args: Optional[List[str]] = None,
-) -> subprocess.Popen:
-    """Spawn a detached Painter process via ``pythontk.AppLauncher``."""
-    args: List[str] = []
-    if not gui:
-        # TODO: verify the correct headless flag for the installed Painter version.
-        args.append("--no-display")
-    if extra_args:
-        args.extend(extra_args)
-
-    logger.info(f"[PainterConnection] Launching: {exe} {args}")
-    process = AppLauncher.launch(exe, args=args, env=env, detached=True)
-    if process is None:
-        raise RuntimeError(f"AppLauncher failed to launch Painter at {exe!r}")
-    return process
-
-
 class PainterConnection:
-    """Live JSON-RPC connection to a Substance 3D Painter session."""
+    """Live JSON-RPC connection to a Substance 3D Painter session.
+
+    Launch stays routed through ``pythontk.AppLauncher`` (never raw subprocess)
+    and the caller is always ``connect(force_new_instance=True)`` — see the
+    module docstring's session-safety block.
+    """
+
+    @staticmethod
+    def plugins_dir() -> str:
+        """Absolute path to the ``substance_workflow/plugins`` directory.
+
+        Painter's ``SUBSTANCE_PAINTER_PLUGINS_PATH`` should be set to this so
+        the ``substance_workflow_bridge`` plugin is discovered without a global
+        install.
+        """
+        here = Path(__file__).resolve().parent
+        return str((here.parent / "plugins").resolve())
+
+    @staticmethod
+    def build_painter_env(port: int = 0) -> dict:
+        """Compose the environment block passed to a Painter launch.
+
+        Prepends the bridge plugin directory to ``SUBSTANCE_PAINTER_PLUGINS_PATH``
+        and pins ``SUBSTANCE_WORKFLOW_PORT`` so the plugin's HTTP server binds
+        where the client expects it.
+        """
+        env = os.environ.copy()
+        existing = env.get("SUBSTANCE_PAINTER_PLUGINS_PATH", "")
+        plug = PainterConnection.plugins_dir()
+        env["SUBSTANCE_PAINTER_PLUGINS_PATH"] = (
+            f"{plug}{os.pathsep}{existing}" if existing else plug
+        )
+        if port:
+            env["SUBSTANCE_WORKFLOW_PORT"] = str(port)
+        return env
+
+    @staticmethod
+    def launch_painter(
+        exe: str,
+        env: dict,
+        gui: bool = False,
+        extra_args: Optional[List[str]] = None,
+    ) -> subprocess.Popen:
+        """Spawn a detached Painter process via ``pythontk.AppLauncher``."""
+        args: List[str] = []
+        if not gui:
+            # TODO: verify the correct headless flag for the installed Painter version.
+            args.append("--no-display")
+        if extra_args:
+            args.extend(extra_args)
+
+        logger.info(f"[PainterConnection] Launching: {exe} {args}")
+        process = AppLauncher.launch(exe, args=args, env=env, detached=True)
+        if process is None:
+            raise RuntimeError(f"AppLauncher failed to launch Painter at {exe!r}")
+        return process
 
     _instance: "PainterConnection | None" = None
 
@@ -153,9 +158,11 @@ class PainterConnection:
             )
 
         chosen_port = self.get_available_port(start_port=port)
-        env = build_painter_env(port=chosen_port)
+        env = self.build_painter_env(port=chosen_port)
 
-        self.process = launch_painter(exe, env, gui=gui, extra_args=launch_args)
+        self.process = self.launch_painter(
+            exe, env, gui=gui, extra_args=launch_args
+        )
         self.host = "localhost"
         self.port = chosen_port
 

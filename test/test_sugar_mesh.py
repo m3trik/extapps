@@ -15,7 +15,6 @@ import unittest
 
 from extapps.photogrammetry.sugar_mesh_workflow._sugar_mesh import (
     SugarMeshWorkflow,
-    find_sugar_dir,
 )
 from extapps.photogrammetry.sugar_mesh_workflow import run_combined as sugar_run
 
@@ -33,7 +32,7 @@ class SugarMeshTest(unittest.TestCase):
         prev = os.environ.get("SUGAR_DIR")
         os.environ["SUGAR_DIR"] = os.path.join(self.tmp, "nope")
         try:
-            self.assertIsNone(find_sugar_dir())
+            self.assertIsNone(SugarMeshWorkflow.find_sugar_dir())
         finally:
             if prev is None:
                 os.environ.pop("SUGAR_DIR", None)
@@ -91,7 +90,7 @@ class SugarPresetOverlayTest(unittest.TestCase):
         self.addCleanup(env.stop)
         os.environ[CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
         os.environ.pop(pp.PROFILE_ENV, None)
-        pp.preset_store("sugar").save("t_mesh", {
+        pp.Profile.preset_store("sugar").save("t_mesh", {
             "refinement_time": "long", "regularization": "sdf",
             "surface_level": 0.5, "high_poly": False,
         })

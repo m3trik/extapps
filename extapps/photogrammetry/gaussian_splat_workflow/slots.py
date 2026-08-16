@@ -26,7 +26,7 @@ from qtpy import QtWidgets
 from .._panel_slots import PhotogrammetryPanelSlots
 from . import parameters as _params
 from ._gaussian_splat_runner import BrushInstallRunner, GaussianSplatRunner
-from ..profile import get_profile
+from ..profile import Profile
 
 _RUN_MODES: List[Tuple[str, str]] = [
     ("Train only", ""),
@@ -209,7 +209,7 @@ class GaussianSplatWorkflowSlots(PhotogrammetryPanelSlots):
 
         Streams pythontk's downloader in a child process into the log pane; on
         success the bridge re-discovers Brush via the install catalog (its
-        ``exe`` / ``is_available`` re-query :func:`find_brush_exe` each call, so
+        ``exe`` / ``is_available`` re-query :meth:`GaussianSplatWorkflow.find_brush_exe` each call, so
         no further wiring is needed)."""
         if self.bridge.is_available():
             self.bridge.logger.info(f"Brush already available: {self.bridge.exe}")
@@ -252,7 +252,7 @@ class GaussianSplatWorkflowSlots(PhotogrammetryPanelSlots):
 
     def default_output_dir(self) -> str:
         try:
-            return get_profile()["gsplat_scratch_root"]
+            return Profile.get_profile()["gsplat_scratch_root"]
         except Exception:  # noqa: BLE001
             return ""
 

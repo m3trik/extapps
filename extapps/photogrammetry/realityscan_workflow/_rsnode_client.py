@@ -45,44 +45,44 @@ class RsNodeError(RuntimeError):
         self.code = code
 
 
-def normalize_commands(commands: Sequence[CommandLike]) -> List[Dict[str, Any]]:
-    """Translate CLI-style command specs into RSNode ``commandCall`` dicts.
-
-    Accepts, per item:
-      * ``"-align"`` or ``"align"``                  -> {commandName: "align", parameters: []}
-      * ``("addFolder", ["C:/imgs"])``               -> {commandName: "addFolder", parameters: ["C:/imgs"]}
-      * a flat token list spanning multiple commands (``["-addFolder", "C:/imgs",
-        "-align"]``) is split on tokens beginning with ``-``.
-    """
-    out: List[Dict[str, Any]] = []
-
-    def _emit(name: str, params: Sequence[str]) -> None:
-        out.append({"commandName": name.lstrip("-"), "parameters": [str(p) for p in params]})
-
-    for item in commands:
-        if isinstance(item, tuple) and len(item) == 2 and not isinstance(item[1], str):
-            _emit(str(item[0]), item[1])
-        elif isinstance(item, str):
-            _emit(item, [])
-        else:  # a token sequence, possibly several "-cmd arg arg" runs
-            name: Optional[str] = None
-            params: List[str] = []
-            for tok in item:
-                if isinstance(tok, str) and tok.startswith("-"):
-                    if name is not None:
-                        _emit(name, params)
-                    name, params = tok, []
-                else:
-                    if name is None:
-                        raise ValueError(f"command token list must start with a -flag: {item!r}")
-                    params.append(tok)
-            if name is not None:
-                _emit(name, params)
-    return out
-
-
 class RsNodeClient:
     """Minimal stdlib REST client for the RSNode API of a running RealityScan."""
+
+    @staticmethod
+    def normalize_commands(commands: Sequence[CommandLike]) -> List[Dict[str, Any]]:
+        """Translate CLI-style command specs into RSNode ``commandCall`` dicts.
+
+        Accepts, per item:
+          * ``"-align"`` or ``"align"``                  -> {commandName: "align", parameters: []}
+          * ``("addFolder", ["C:/imgs"])``               -> {commandName: "addFolder", parameters: ["C:/imgs"]}
+          * a flat token list spanning multiple commands (``["-addFolder", "C:/imgs",
+            "-align"]``) is split on tokens beginning with ``-``.
+        """
+        out: List[Dict[str, Any]] = []
+
+        def _emit(name: str, params: Sequence[str]) -> None:
+            out.append({"commandName": name.lstrip("-"), "parameters": [str(p) for p in params]})
+
+        for item in commands:
+            if isinstance(item, tuple) and len(item) == 2 and not isinstance(item[1], str):
+                _emit(str(item[0]), item[1])
+            elif isinstance(item, str):
+                _emit(item, [])
+            else:  # a token sequence, possibly several "-cmd arg arg" runs
+                name: Optional[str] = None
+                params: List[str] = []
+                for tok in item:
+                    if isinstance(tok, str) and tok.startswith("-"):
+                        if name is not None:
+                            _emit(name, params)
+                        name, params = tok, []
+                    else:
+                        if name is None:
+                            raise ValueError(f"command token list must start with a -flag: {item!r}")
+                        params.append(tok)
+                if name is not None:
+                    _emit(name, params)
+        return out
 
     def __init__(
         self,
@@ -186,7 +186,7 @@ class RsNodeClient:
 
     def run_commands(self, commands: Sequence[CommandLike]) -> str:
         """``POST /project/commandgroup`` — run a CLI command sequence; return taskID."""
-        payload = normalize_commands(commands)
+        payload = self.normalize_commands(commands)
         _, _, body = self._request(
             "POST", "/project/commandgroup", body=payload, headers=self._headers(session=True)
         )

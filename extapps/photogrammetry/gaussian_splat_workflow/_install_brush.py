@@ -17,11 +17,11 @@ import sys
 
 
 def main() -> int:
-    from ._gaussian_splat_workflow import install_brush
+    from ._gaussian_splat_workflow import GaussianSplatWorkflow
 
     print("Downloading Brush from github.com/ArthurBrussee/brush ...", flush=True)
     try:
-        path = install_brush()
+        path = GaussianSplatWorkflow.install_brush()
     except Exception as e:  # noqa: BLE001 — surface any failure to the log
         print(f"Brush install failed: {e}", flush=True)
         return 1

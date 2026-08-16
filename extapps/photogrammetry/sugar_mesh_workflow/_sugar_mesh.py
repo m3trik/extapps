@@ -37,38 +37,49 @@ from typing import Callable, List, Optional
 
 from pythontk import QcLog
 
-from ..profile import configured_app_path
+from ..profile import Profile
 
 
-def _is_sugar_dir(path: Optional[str]) -> bool:
-    """True if *path* is a SuGaR repo dir (holds ``train_full_pipeline.py``)."""
-    return bool(path) and os.path.isfile(
-        os.path.join(path, "train_full_pipeline.py")
-    )
+class _SugarMeshWorkflowInternal:
+    """Discovery helpers for :class:`SugarMeshWorkflow`.
 
-
-def find_sugar_dir() -> Optional[str]:
-    """Return the SuGaR repo dir or None.
-
-    SuGaR is a cloned repo (its root holds ``train_full_pipeline.py``) with no
-    canonical install location, so discovery is the ``SUGAR_DIR`` env override
-    (honored strictly: set-but-invalid returns None so the caller enters mock
-    mode), then the profile's ``apps.sugar_dir`` (network / non-standard repo).
-    Point ``SUGAR_DIR`` at the repo, or set ``apps.sugar_dir`` in the profile.
+    On a ``_<Class>Internal`` base per the encapsulation standard; the public
+    class inherits them, so ``SugarMeshWorkflow.find_sugar_dir()`` is the
+    supported call.
     """
-    env = os.environ.get("SUGAR_DIR")
-    if env:
-        return env if _is_sugar_dir(env) else None
-    configured = configured_app_path("sugar_dir")
-    return configured if _is_sugar_dir(configured) else None
+
+    @staticmethod
+    def _is_sugar_dir(path: "Optional[str]") -> bool:
+        """True if *path* is a SuGaR repo dir (holds ``train_full_pipeline.py``)."""
+        return bool(path) and os.path.isfile(
+            os.path.join(path, "train_full_pipeline.py")
+        )
 
 
-def is_sugar_available() -> bool:
-    return find_sugar_dir() is not None
-
-
-class SugarMeshWorkflow:
+class SugarMeshWorkflow(_SugarMeshWorkflowInternal):
     """COLMAP dataset → SuGaR refined textured ``.obj`` mesh."""
+    @staticmethod
+    def find_sugar_dir() -> "Optional[str]":
+        """Return the SuGaR repo dir or None.
+
+        SuGaR is a cloned repo (its root holds ``train_full_pipeline.py``) with
+        no canonical install location, so discovery runs the shared
+        :func:`resolve_app` chain: the ``SUGAR_DIR`` env override (terminal —
+        set-but-invalid returns None so the caller enters mock mode), then the
+        profile's ``apps.sugar_dir`` (network / non-standard repo). Point
+        ``SUGAR_DIR`` at the repo, or set ``apps.sugar_dir`` in the profile.
+
+        Validated as a **directory** holding the train script, not as a file —
+        hence the explicit *validate*.
+        """
+        return Profile.resolve_app(
+            "SUGAR_DIR",
+            "sugar_dir",
+            validate=_SugarMeshWorkflowInternal._is_sugar_dir,
+        )
+    @staticmethod
+    def is_sugar_available() -> bool:
+        return SugarMeshWorkflow.find_sugar_dir() is not None
 
     def __init__(
         self,
@@ -85,7 +96,7 @@ class SugarMeshWorkflow:
         self.progress = progress
         self.timeout_sec = timeout_sec
 
-        self.sugar_dir = sugar_dir or find_sugar_dir()
+        self.sugar_dir = sugar_dir or self.find_sugar_dir()
         # The env activator (sets the MSVC toolset + activates the conda env);
         # nvdiffrast JIT-compiles at the textured-mesh step, so the build env
         # must be live for the whole run.

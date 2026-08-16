@@ -11,7 +11,6 @@ from urllib.parse import urlsplit, parse_qs
 from extapps.photogrammetry.realityscan_workflow._rsnode_client import (  # noqa: E402
     RsNodeClient,
     RsNodeError,
-    normalize_commands,
 )
 
 
@@ -52,12 +51,12 @@ def _io(obj):
 
 class NormalizeCommandsTest(unittest.TestCase):
     def test_string_and_tuple_and_tokenlist(self):
-        self.assertEqual(normalize_commands(["-align"]),
+        self.assertEqual(RsNodeClient.normalize_commands(["-align"]),
                          [{"commandName": "align", "parameters": []}])
-        self.assertEqual(normalize_commands([("addFolder", ["C:/i"])]),
+        self.assertEqual(RsNodeClient.normalize_commands([("addFolder", ["C:/i"])]),
                          [{"commandName": "addFolder", "parameters": ["C:/i"]}])
         self.assertEqual(
-            normalize_commands([["-addFolder", "C:/i", "-align", "-exportModel", "C:/o.obj"]]),
+            RsNodeClient.normalize_commands([["-addFolder", "C:/i", "-align", "-exportModel", "C:/o.obj"]]),
             [{"commandName": "addFolder", "parameters": ["C:/i"]},
              {"commandName": "align", "parameters": []},
              {"commandName": "exportModel", "parameters": ["C:/o.obj"]}],
@@ -65,7 +64,7 @@ class NormalizeCommandsTest(unittest.TestCase):
 
     def test_tokenlist_must_start_with_flag(self):
         with self.assertRaises(ValueError):
-            normalize_commands([["oops", "-align"]])
+            RsNodeClient.normalize_commands([["oops", "-align"]])
 
 
 class RsNodeClientFlowTest(unittest.TestCase):

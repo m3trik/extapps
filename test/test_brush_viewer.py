@@ -37,7 +37,7 @@ class TestBrushViewerActions(unittest.TestCase):
         # the panel sees a known install without a real Brush on the machine.
         p = mock.patch(
             "extapps.photogrammetry.gaussian_splat_workflow."
-            "_gaussian_splat_runner.find_brush_exe",
+            "_gaussian_splat_runner.GaussianSplatWorkflow.find_brush_exe",
             return_value="/fake/brush.exe",
         )
         self.find_brush = p.start()

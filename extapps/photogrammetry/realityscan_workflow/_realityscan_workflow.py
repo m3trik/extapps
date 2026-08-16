@@ -22,9 +22,10 @@ import subprocess
 import xml.etree.ElementTree as ET
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from pythontk import QcGate, QcLog
+from pythontk import ImgUtils, QcGate, QcLog
 
-from ..profile import configured_app_path
+from ..profile import Profile
+from ..mesh_stages import MeshStagesMixin
 from ..prep_stages import PrepStagesMixin
 from ._realityscan_connection import (
     RealityScanConnection,
@@ -56,14 +57,6 @@ _RC_DEFAULT_EXES = (
 )
 
 
-def _rc_install_version_key(path: str):
-    """Numeric sort key from the version in a ``RealityScan_<ver>`` path."""
-    m = re.search(r"RealityScan_([0-9][0-9.]*)", path)
-    if not m:
-        return (0,)
-    return tuple(int(x) for x in m.group(1).split(".") if x.isdigit())
-
-
 # Acceptance-gate defaults. RC's report metric names differ from Metashape's;
 # the metric keys below match what _alignment_metrics() / _mesh_metrics() emit.
 DEFAULT_GATES: Dict[str, Dict[str, float]] = {
@@ -76,97 +69,123 @@ DEFAULT_GATES: Dict[str, Dict[str, float]] = {
     "texture": {
         # RC reports don't expose per-texel coverage; gate left empty.
     },
+    # File-level gate fed by MeshStagesMixin (measure_mesh / refine_mesh).
+    # None thresholds are documented placeholders: QcGate skips them until
+    # a caller enables one via the ``gates=`` ctor override.
+    "mesh": {
+        "max_non_two_manifold_edges": 0.0,
+        "max_components": None,
+        "max_hausdorff_peak_pct": None,
+    },
 }
 
 
-# ---------------------------------------------------------------------------
-# Module-level helpers
-# ---------------------------------------------------------------------------
-def find_realitycapture_exe() -> Optional[str]:
-    """Return the RealityCapture.exe path or None.
+class _RealityCaptureWorkflowInternal:
+    """Discovery / version / image-listing helpers for
+    :class:`RealityCaptureWorkflow` (encapsulation standard: helpers on a
+    ``_<Class>Internal`` base the public class inherits)."""
 
-    Lookup order:
-        * ``RC_EXE`` env override — honored strictly. If set to an empty
-          string or a path that does not exist, returns None (caller will
-          enter mock mode) instead of falling through to the default. This
-          lets users force mock mode by setting ``RC_EXE=`` or to a
-          nonexistent path.
-        * The profile's ``apps.realityscan_exe`` (network / non-standard
-          install), if it exists.
-        * Default install path.
-        * PATH.
-    """
-    env = os.environ.get("RC_EXE")
-    if env is not None:
-        return env if env and os.path.isfile(env) else None
-    configured = configured_app_path("realityscan_exe")
-    if configured and os.path.isfile(configured):
-        return configured
-    installs = sorted(glob.glob(_RC_INSTALL_GLOB), key=_rc_install_version_key, reverse=True)
-    if installs:
-        return installs[0]
-    for exe in _RC_DEFAULT_EXES:
-        if os.path.isfile(exe):
-            return exe
-    return shutil.which("RealityScan.exe") or shutil.which("RealityCapture.exe")
-
-
-def is_realitycapture_available() -> bool:
-    return find_realitycapture_exe() is not None
-
-
-@functools.lru_cache(maxsize=8)
-def _version_from_exe(exe_path: str) -> str:
-    try:
-        out = subprocess.check_output(
-            [
-                "powershell",
-                "-NoProfile",
-                "-Command",
-                f'(Get-Item -LiteralPath "{exe_path}").VersionInfo.FileVersion',
-            ],
-            text=True,
-            timeout=10,
-        ).strip()
-        return out or "unknown"
-    except Exception:
-        return "unknown"
-
-
-def get_realitycapture_version() -> str:
-    """Read RC's FileVersion from Windows binary metadata.
-
-    RC's CLI is silent on ``-getVersion`` from non-interactive shells, so
-    we fall back to ``Get-Item.VersionInfo``. Cached per exe path so
-    repeated calls (e.g. from ``__init__`` + ``get_license_info``) don't
-    re-spawn PowerShell.
-    """
-    exe = find_realitycapture_exe()
-    return "n/a" if exe is None else _version_from_exe(exe)
-
-
-def get_image_filepaths(directory: str) -> List[str]:
-    """Return absolute paths to all images in ``directory`` (non-recursive)."""
-    if not os.path.isdir(directory):
-        raise ValueError(f"Directory does not exist: {directory}")
-    return [
-        os.path.join(directory, f)
-        for f in sorted(os.listdir(directory))
-        if f.lower().endswith(IMAGE_EXTS)
-    ]
+    @staticmethod
+    def _rc_install_version_key(path: str):
+        """Numeric sort key from the version in a ``RealityScan_<ver>`` path."""
+        m = re.search(r"RealityScan_([0-9][0-9.]*)", path)
+        if not m:
+            return (0,)
+        return tuple(int(x) for x in m.group(1).split(".") if x.isdigit())
+    @staticmethod
+    @functools.lru_cache(maxsize=8)
+    def _version_from_exe(exe_path: str) -> str:
+        try:
+            out = subprocess.check_output(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f'(Get-Item -LiteralPath "{exe_path}").VersionInfo.FileVersion',
+                ],
+                text=True,
+                timeout=10,
+            ).strip()
+            return out or "unknown"
+        except Exception:
+            return "unknown"
 
 
 # ---------------------------------------------------------------------------
 # Workflow
 # ---------------------------------------------------------------------------
-class RealityCaptureWorkflow(PrepStagesMixin):
+class RealityCaptureWorkflow(
+    PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal
+):
     """Wrapper around RealityCapture's CLI for the standard photogrammetry
     pipeline. Mirrors :class:`MetashapeWorkflow`'s public method shape.
 
     The SDK-agnostic input-prep stages (``curate_input_set`` /
-    ``equalize_exposures``) come from :class:`PrepStagesMixin`, shared with
-    ``MetashapeWorkflow`` so the two engines can't drift apart.
+    ``equalize_exposures``) come from :class:`PrepStagesMixin`, and the
+    PyMeshLab file-level stages (``measure_mesh`` / ``refine_mesh`` /
+    ``bake_vertex_color`` / ``clean_mesh_advanced``) from
+    :class:`MeshStagesMixin` — both shared with ``MetashapeWorkflow`` so
+    the two engines can't drift apart.
     """
+    @staticmethod
+    def find_realitycapture_exe() -> Optional[str]:
+        """Return the RealityCapture.exe path or None.
+
+        Runs the shared :func:`resolve_app` chain: the ``RC_EXE`` env override
+        (terminal — an empty string or a nonexistent path returns None so the
+        caller enters mock mode, rather than falling through to the real install),
+        then the profile's ``apps.realityscan_exe`` (network / non-standard
+        install), then the versioned install dirs (newest first), the default
+        install paths, and finally PATH.
+        """
+
+        def _versioned_install() -> Optional[str]:
+            installs = sorted(
+                glob.glob(_RC_INSTALL_GLOB),
+                key=_RealityCaptureWorkflowInternal._rc_install_version_key,
+                reverse=True,
+            )
+            return installs[0] if installs else None
+
+        def _default_paths() -> Optional[str]:
+            return next((exe for exe in _RC_DEFAULT_EXES if os.path.isfile(exe)), None)
+
+        def _on_path() -> Optional[str]:
+            return shutil.which("RealityScan.exe") or shutil.which("RealityCapture.exe")
+
+        return Profile.resolve_app(
+            "RC_EXE",
+            "realityscan_exe",
+            fallbacks=(_versioned_install, _default_paths, _on_path),
+        )
+    @staticmethod
+    def is_realitycapture_available() -> bool:
+        return RealityCaptureWorkflow.find_realitycapture_exe() is not None
+    @staticmethod
+    def get_realitycapture_version() -> str:
+        """Read RC's FileVersion from Windows binary metadata.
+
+        RC's CLI is silent on ``-getVersion`` from non-interactive shells, so
+        we fall back to ``Get-Item.VersionInfo``. Cached per exe path so
+        repeated calls (e.g. from ``__init__`` + ``get_license_info``) don't
+        re-spawn PowerShell.
+        """
+        exe = RealityCaptureWorkflow.find_realitycapture_exe()
+        return (
+            "n/a"
+            if exe is None
+            else _RealityCaptureWorkflowInternal._version_from_exe(exe)
+        )
+    @staticmethod
+    def get_image_filepaths(directory: str) -> List[str]:
+        """Return absolute paths to all images in ``directory`` (non-recursive)."""
+        if not os.path.isdir(directory):
+            raise ValueError(f"Directory does not exist: {directory}")
+        # Scan delegated to pythontk (same contract: non-recursive, sorted,
+        # extension-filtered). This engine's own IMAGE_EXTS is passed rather
+        # than the pythontk default, since the two engines do not agree on the
+        # accepted set -- see the backlog entry on that divergence.
+        return ImgUtils.list_image_files(directory, exts=IMAGE_EXTS, full_paths=True)
 
     PROJECT_EXT = "rcproj"
 
@@ -220,7 +239,7 @@ class RealityCaptureWorkflow(PrepStagesMixin):
         self.checkpoint_each_stage = bool(checkpoint_each_stage)
         self.rc_timeout_sec = rc_timeout_sec
 
-        self.rc_exe = rc_exe or find_realitycapture_exe()
+        self.rc_exe = rc_exe or self.find_realitycapture_exe()
         if mock_mode is None:
             mock_mode = self.rc_exe is None
         self.mock_mode = bool(mock_mode)
@@ -258,7 +277,7 @@ class RealityCaptureWorkflow(PrepStagesMixin):
         self.qc.set("project_name", name)
         self.qc.set("project_path", project_path)
         self.qc.set("rc_exe", self.rc_exe or "")
-        self.qc.set("rc_version", get_realitycapture_version())
+        self.qc.set("rc_version", self.get_realitycapture_version())
         self.qc.set("mock_mode", self.mock_mode)
 
         # True once the .rcproj has been written; subsequent _run_rc calls
@@ -278,7 +297,7 @@ class RealityCaptureWorkflow(PrepStagesMixin):
             if "realityscan" in os.path.basename(self.rc_exe).lower()
             else "RealityCapture"
         )
-        return f"{product} {get_realitycapture_version()} ({self.rc_exe})"
+        return f"{product} {self.get_realitycapture_version()} ({self.rc_exe})"
 
     def _notify(self, stage: str, fraction: float = 0.0) -> None:
         if self.progress is None:
@@ -583,7 +602,7 @@ class RealityCaptureWorkflow(PrepStagesMixin):
                 st["source_dir"] = src_dir
                 if not os.path.isdir(src_dir):
                     raise ValueError(f"Directory not found: {src_dir}")
-                files = get_image_filepaths(src_dir)
+                files = self.get_image_filepaths(src_dir)
                 if not files:
                     raise ValueError(
                         f"No images found in directory: {src_dir}"
@@ -623,7 +642,7 @@ class RealityCaptureWorkflow(PrepStagesMixin):
             for d in dirs:
                 if not os.path.isdir(d):
                     raise ValueError(f"Directory not found: {d}")
-                here = get_image_filepaths(d)
+                here = self.get_image_filepaths(d)
                 total += len(here)
                 per_dir.append({"dir": d, "count": len(here)})
                 if self.mock_mode:

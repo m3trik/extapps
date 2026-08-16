@@ -40,9 +40,9 @@ class RealityScanConnection:
     def __init__(self, exe: Optional[str] = None):
         if exe is None:
             # Deferred import avoids a module-load cycle with the engine.
-            from ._realityscan_workflow import find_realitycapture_exe
+            from ._realityscan_workflow import RealityCaptureWorkflow
 
-            exe = find_realitycapture_exe()
+            exe = RealityCaptureWorkflow.find_realitycapture_exe()
         self.exe = exe
 
     def is_available(self) -> bool:

@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 
 from uitk.bridge import AttributeSpec, Parameters as _BridgeParams
 
-from .._shared_params import render_flag_argv
+from .._shared_params import SharedParams
 
 
 # Display order is iteration order over this dict. Keys mirror the run_combined
@@ -112,7 +112,7 @@ def to_argv(values: "Dict[str, Any]") -> "List[str]":
     """Render collected param *values* into ``run_combined`` CLI flags via the
     shared :func:`render_flag_argv` emit rules (Brush has no store-true flags or
     input pre-processing). Keys absent from *values* are skipped."""
-    return render_flag_argv(values, _VALUE_FLAGS)
+    return SharedParams.render_flag_argv(values, _VALUE_FLAGS)
 
 
 # Which params apply per run mode: training knobs always; the Publish-section

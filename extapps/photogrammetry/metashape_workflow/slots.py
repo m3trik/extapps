@@ -25,7 +25,7 @@ from typing import List, Tuple
 from .._panel_slots import FramesSourceMixin, PhotogrammetryPanelSlots
 from . import parameters as _params
 from ._metashape_runner import MetashapeRunner
-from ..profile import get_profile
+from ..profile import Profile
 
 # Pipeline run modes shown in the template combo (cmb000). The label is the
 # display stem; the second element is the ``--stop-after`` value ("" = full).
@@ -98,7 +98,7 @@ class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
 
     def default_output_dir(self) -> str:
         try:
-            return get_profile()["metashape_output_root"]
+            return Profile.get_profile()["metashape_output_root"]
         except Exception:  # noqa: BLE001
             return ""
 

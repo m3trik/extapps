@@ -1543,7 +1543,7 @@ class ConverterSlots(ImgUtils):
             print(f"Error during batch processing: {e}")
 
         print(f"{'='*60}")
-        print(f"Workflow preparation complete!")
+        print("Workflow preparation complete!")
         print(f"{'='*60}\n")
 
         try:

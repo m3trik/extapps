@@ -51,7 +51,7 @@ import subprocess
 from typing import Any, Dict, List, Optional, Sequence
 
 from ..profile import IMAGE_EXTS
-from ._rsnode_client import RsNodeClient, RsNodeError, normalize_commands
+from ._rsnode_client import RsNodeClient, RsNodeError
 
 DEFAULT_RSNODE_URL = "http://127.0.0.1:8000"
 
@@ -73,21 +73,21 @@ _INPUT_CMDS = frozenset({"addFolder", "add"})
 _EXPORT_CMDS = frozenset({"exportSelectedModel", "exportModel", "exportReport"})
 
 
-def _list_images(directory: str) -> List[str]:
-    """Image files directly under *directory* (non-recursive), sorted.
-
-    Extensions come from the photogrammetry SSoT (``profile.IMAGE_EXTS``) so the
-    set uploaded matches what the workflow's ``add_image_dirs`` counts.
-    """
-    return [
-        os.path.join(directory, f)
-        for f in sorted(os.listdir(directory))
-        if f.lower().endswith(IMAGE_EXTS)
-    ]
-
-
 class RsNodeConnection:
     """Run RealityScan CLI command tails over the RSNode REST API."""
+
+    @staticmethod
+    def _list_images(directory: str) -> List[str]:
+        """Image files directly under *directory* (non-recursive), sorted.
+
+        Extensions come from the photogrammetry SSoT (``profile.IMAGE_EXTS``) so the
+        set uploaded matches what the workflow's ``add_image_dirs`` counts.
+        """
+        return [
+            os.path.join(directory, f)
+            for f in sorted(os.listdir(directory))
+            if f.lower().endswith(IMAGE_EXTS)
+        ]
 
     def __init__(
         self,
@@ -176,7 +176,7 @@ class RsNodeConnection:
         stage: List[Dict[str, Any]] = []
         save_path: Optional[str] = None
         had_save = False
-        for cmd in normalize_commands([list(commands)]):
+        for cmd in RsNodeClient.normalize_commands([list(commands)]):
             name = cmd["commandName"]
             if name == "save":
                 had_save = True
@@ -244,7 +244,7 @@ class RsNodeConnection:
             p = cmd["parameters"][0]
             if os.path.isdir(p):
                 rel = os.path.basename(os.path.normpath(p))
-                for img in _list_images(p):
+                for img in self._list_images(p):
                     with open(img, "rb") as fh:
                         self.client.upload_file(f"{rel}/{os.path.basename(img)}", fh.read())
                 cmd["parameters"] = [rel]

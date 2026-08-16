@@ -5,8 +5,10 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 # QC primitives live upstream now — see pythontk.core_utils.qc_log.
 # Re-exported below for back-compat with extapps.photogrammetry.metashape_workflow imports.
-from pythontk import GateError, QcGate, QcLog
+from pythontk import GateError, ImgUtils, QcGate, QcLog  # noqa: F401 — GateError is a
+# pure re-export (no local use); pinned by test_metashape_workflow.py.
 
+from ..mesh_stages import MeshStagesMixin
 from ..prep_stages import PrepStagesMixin
 
 try:
@@ -32,17 +34,28 @@ DEFAULT_GATES: Dict[str, Dict[str, float]] = {
     "texture": {
         "min_coverage_pct": 90.0,
     },
+    # File-level gate fed by MeshStagesMixin (measure_mesh / refine_mesh).
+    # None thresholds are documented placeholders: QcGate skips them until
+    # a caller enables one via the ``gates=`` ctor override.
+    "mesh": {
+        "max_non_two_manifold_edges": 0.0,
+        "max_components": None,
+        "max_hausdorff_peak_pct": None,
+    },
 }
 
 
-class MetashapeWorkflow(PrepStagesMixin):
+class MetashapeWorkflow(PrepStagesMixin, MeshStagesMixin):
     """Wrapper around Agisoft Metashape's Python API for the standard
     photogrammetry pipeline. Supports a `mock_mode` for dry-runs without a
     valid license, and a `progress` callback for UI integration.
 
     The SDK-agnostic input-prep stages (``curate_input_set`` /
-    ``equalize_exposures``) come from :class:`PrepStagesMixin`, shared with
-    ``RealityCaptureWorkflow`` so the two engines can't drift apart.
+    ``equalize_exposures``) come from :class:`PrepStagesMixin`, and the
+    PyMeshLab file-level stages (``measure_mesh`` / ``refine_mesh`` /
+    ``bake_vertex_color`` / ``clean_mesh_advanced``) from
+    :class:`MeshStagesMixin` — both shared with ``RealityCaptureWorkflow``
+    so the two engines can't drift apart.
     """
 
     PROJECT_EXT = "psx"
@@ -76,11 +89,11 @@ class MetashapeWorkflow(PrepStagesMixin):
         """Return absolute paths to all images in `directory` (non-recursive)."""
         if not os.path.isdir(directory):
             raise ValueError(f"Directory does not exist: {directory}")
-        return [
-            os.path.join(directory, f)
-            for f in sorted(os.listdir(directory))
-            if f.lower().endswith(IMAGE_EXTS)
-        ]
+        # Scan delegated to pythontk (same contract: non-recursive, sorted,
+        # extension-filtered). This engine's own IMAGE_EXTS is passed rather
+        # than the pythontk default, since the two engines do not agree on the
+        # accepted set -- see the backlog entry on that divergence.
+        return ImgUtils.list_image_files(directory, exts=IMAGE_EXTS, full_paths=True)
 
     def __init__(
         self,
@@ -288,40 +301,9 @@ class MetashapeWorkflow(PrepStagesMixin):
             self.chunk.addPhotos(filenames=files)
             print(f"Added {len(files)} images from {len(dirs)} directories.")
 
-    # curate_input_set / equalize_exposures are inherited from PrepStagesMixin.
-
-    def clean_mesh_advanced(
-        self,
-        exported_model_path: Optional[str] = None,
-        decimate_target_faces: int = 0,
-    ) -> Optional[str]:
-        """PyMeshLab post-export polish on the exported mesh file. Returns
-        the cleaned mesh path (or None when PyMeshLab unavailable)."""
-        self._notify("clean_mesh_advanced", 0.0)
-        with self.qc.stage("clean_mesh_advanced") as st:
-            if exported_model_path is None:
-                exported_model_path = os.path.join(
-                    self.project_path, f"{self.name}.obj"
-                )
-            st["input"] = exported_model_path
-            try:
-                from pythontk import MeshCleaner
-            except ImportError:
-                self.qc.warn("MeshCleaner not importable")
-                return None
-            cleaner = MeshCleaner()
-            if not cleaner.is_available():
-                self.qc.warn("pymeshlab not installed; skipping advanced cleanup.")
-                print("pymeshlab not installed; skipping clean_mesh_advanced.")
-                return None
-            if self.mock_mode and not os.path.exists(exported_model_path):
-                print(f"[mock] clean_mesh_advanced('{exported_model_path}')")
-                return None
-            result = cleaner.clean(
-                exported_model_path, decimate_target_faces=decimate_target_faces
-            )
-            st["output"] = result
-            return result
+    # curate_input_set / equalize_exposures are inherited from PrepStagesMixin;
+    # measure_mesh / refine_mesh / bake_vertex_color / clean_mesh_advanced
+    # (the PyMeshLab file-level stages) from MeshStagesMixin.
 
     def triage_images(self, quality_threshold: float = 0.5):
         """Run ``analyzePhotos`` and disable cameras below ``quality_threshold``.

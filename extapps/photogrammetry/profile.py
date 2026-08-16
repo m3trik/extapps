@@ -30,7 +30,7 @@ import copy
 import json
 import os
 import tempfile
-from typing import List, Optional
+from typing import Callable, List, Optional, Sequence
 
 from pythontk import PresetStore, UserConfig
 
@@ -175,19 +175,236 @@ _TUNING = {
 }
 
 
-def _skeleton(graphics_root: str, scratch_root: str) -> dict:
-    """A full profile dict for the given bases — derived roots + tuning (deep
-    copies, so callers never share nested state)."""
-    prof = {"graphics_root": graphics_root, "scratch_root": scratch_root}
-    prof.update(_DERIVED_ROOTS)
-    # deepcopy (not dict(v)): tuning blocks now nest dicts/lists (presets,
-    # publish.targets), so a shallow copy would share that nested state across
-    # every profile instance.
-    prof.update({k: copy.deepcopy(v) for k, v in _TUNING.items()})
-    # Reconstruction quality preset, mapped per-engine by the runners:
-    # draft (fast preview) / balanced (default) / max (highest quality).
-    prof["quality"] = "balanced"
-    return prof
+class _ProfileInternal:
+    """Profile-construction helpers for :class:`Profile`.
+
+    Private helpers live on a ``_<Class>Internal`` base the public class
+    inherits (gold standard: mayatk ``core_utils/_core_utils.py``).
+    """
+
+    @staticmethod
+    def _skeleton(graphics_root: str, scratch_root: str) -> dict:
+        """A full profile dict for the given bases — derived roots + tuning (deep
+        copies, so callers never share nested state)."""
+        prof = {"graphics_root": graphics_root, "scratch_root": scratch_root}
+        prof.update(_DERIVED_ROOTS)
+        # deepcopy (not dict(v)): tuning blocks now nest dicts/lists (presets,
+        # publish.targets), so a shallow copy would share that nested state across
+        # every profile instance.
+        prof.update({k: copy.deepcopy(v) for k, v in _TUNING.items()})
+        # Reconstruction quality preset, mapped per-engine by the runners:
+        # draft (fast preview) / balanced (default) / max (highest quality).
+        prof["quality"] = "balanced"
+        return prof
+
+    @staticmethod
+    def _packaged_default() -> dict:
+        """Generic, non-personal fallback profile.
+
+        Lands under the user's own config dir + system temp so a clone with no
+        profile still runs without touching any specific machine's drives.
+        """
+        base = str(UserConfig.user_config_root() / PROFILE_PACKAGE / "photogrammetry")
+        scratch = os.path.join(tempfile.gettempdir(), "photogrammetry")
+        return _ProfileInternal._skeleton(base, scratch)
+
+    @staticmethod
+    def _interpolate_roots(cfg: dict) -> dict:
+        """Expand ``~``/``${ENV}`` and the ``{graphics_root}`` / ``{scratch_root}``
+        tokens in the derived root values. Returns a new dict (input untouched)."""
+        out = dict(cfg)
+        graphics = UserConfig.expand(str(out.get("graphics_root", "")))
+        scratch = UserConfig.expand(str(out.get("scratch_root", "")))
+        out["graphics_root"] = graphics
+        out["scratch_root"] = scratch
+        tokens = {"graphics_root": graphics, "scratch_root": scratch}
+        for key in _DERIVED_ROOT_KEYS:
+            val = out.get(key)
+            if isinstance(val, str):
+                for tk, tv in tokens.items():
+                    val = val.replace("{" + tk + "}", tv)
+                out[key] = UserConfig.expand(val)
+        return out
+
+
+class Profile(_ProfileInternal):
+    """Resolution + lookup entry points for the photogrammetry profile.
+
+    A class rather than module functions per the encapsulation standard. The
+    module-level **data** (``IMAGE_EXTS``, ``QUALITY_TIERS``, ``EXAMPLE_PROFILE``,
+    the ``PROFILE_*`` names) stays flat — it is configuration constants, not
+    behaviour, and the headless runners import it directly.
+    """
+
+    @staticmethod
+    def get_profile(path=None) -> dict:
+        """Resolve the active photogrammetry profile (fully interpolated).
+
+        Discovery (via :meth:`pythontk.UserConfig.resolve`): explicit *path* →
+        ``$PHOTOGRAMMETRY_PROFILE`` → ``<user-config>/uitk/extapps/photogrammetry.json``
+        → packaged default; deep-merged so a partial user profile only overrides
+        what it names.
+        """
+        cfg = UserConfig.resolve(
+            PROFILE_NAME,
+            package=PROFILE_PACKAGE,
+            env=PROFILE_ENV,
+            default=Profile._packaged_default(),
+            path=path,
+        )
+        return Profile._interpolate_roots(cfg)
+
+    @staticmethod
+    def configured_app_path(key: str, path=None) -> Optional[str]:
+        """Return the profile-configured install path for an engine, or ``None``.
+
+        Reads ``apps.<key>`` from the active profile (resolved like
+        :func:`get_profile`; pass *path* to read a specific profile) and expands
+        ``~`` / ``${ENV}``. This is the **network-install** hook: a user sets e.g.
+        ``apps.metashape_exe`` to a UNC path and every front-end (the panel's
+        availability check + the headless runners) finds it. Each engine's discovery
+        consults this after its env var and before standard discovery, and validates
+        existence itself (an exe is a file; ``sugar_dir`` is a dir holding
+        ``train_full_pipeline.py``), so an unset / offline path simply falls through.
+
+        Robust by design: a malformed / unreadable profile returns ``None`` (the
+        caller falls through to standard discovery) rather than breaking app
+        discovery — the availability check must never crash on a bad profile.
+        """
+        try:
+            val = Profile.get_profile(path).get("apps", {}).get(key)
+        except Exception:  # noqa: BLE001 - bad profile must not break discovery
+            return None
+        return UserConfig.expand(str(val)) if val else None
+
+    @staticmethod
+    def resolve_app(
+        env_var: str,
+        config_key: Optional[str] = None,
+        *,
+        validate: Optional[Callable[[str], bool]] = None,
+        fallbacks: Sequence[Callable[[], Optional[str]]] = (),
+        path=None,
+    ) -> Optional[str]:
+        """Resolve an engine's install location; the first hit wins. ``None`` = not found.
+
+        The one discovery chain every photogrammetry engine uses, so the stages and
+        their precedence are declared per engine instead of hand-rolled five times:
+
+        1. **env override** (``$BRUSH_EXE``, ``$METASHAPE_EXE``, …) — **terminal**.
+           If the variable is set *at all*, this call decides here: the value is
+           returned when it is non-empty and passes *validate*, and ``None``
+           otherwise. It never falls through. That is what lets ``FOO_EXE=`` (or a
+           deliberately bogus path) force mock mode on a machine where the real app
+           *is* installed and *is* named in the profile — the property the panels'
+           mock modes and this suite both rely on.
+        2. **profile** ``apps.<config_key>`` — the network / non-standard install
+           hook (see :func:`configured_app_path`). Skipped when *config_key* is
+           ``None`` (an engine with no profile key, e.g. splat-transform).
+        3. **fallbacks** — per-engine standard discovery (PATH, known install dirs,
+           a managed-install catalog), tried in order. Each returns a usable path or
+           ``None`` and is responsible for its own validation, since what counts as
+           valid differs (an exe is a file; a SuGaR checkout is a dir holding
+           ``train_full_pipeline.py``).
+
+        :param validate: Predicate applied to stages 1-2. Defaults to
+            :func:`os.path.isfile`, resolved per call rather than bound at import
+            (so a patched ``os.path.isfile`` is honoured); pass a dir predicate
+            for checkout-style engines.
+        :param path: Forwarded to :func:`configured_app_path` to read a specific
+            profile rather than the active one (tests).
+        """
+        validate = validate or os.path.isfile
+        if env_var in os.environ:  # set at all -> terminal, per the contract above
+            env = os.environ[env_var]
+            return env if env and validate(env) else None
+
+        if config_key:
+            configured = Profile.configured_app_path(config_key, path)
+            if configured and validate(configured):
+                return configured
+
+        for fallback in fallbacks:
+            found = fallback()
+            if found:
+                return found
+        return None
+
+    @staticmethod
+    def preset_store(engine: str) -> PresetStore:
+        """The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)
+        layered under a writable user tier at
+        ``<user_config_root>/extapps/photogrammetry_presets/<engine>/``.
+
+        Presets are **engine-scoped** — a Metashape tuning preset (align/depth
+        downscale, matchPhotos limits, depth filter, ...) means nothing to RealityScan
+        and vice-versa — so each engine keeps its own presets and nothing is shared
+        (duplicate a template per engine to use it on both). The same per-engine store
+        backs that engine's headless runner and (for Metashape) the UI panel, so a
+        user-saved preset is reachable both ways yet never leaks into another engine's
+        list. *engine* is the short id: ``"metashape"`` / ``"realityscan"`` /
+        ``"gaussian_splat"`` / ``"sugar"``.
+        """
+        return PresetStore(
+            f"{PRESETS_NAME}/{engine}",
+            PROFILE_PACKAGE,
+            builtin_dir=os.path.join(PRESETS_DIR, engine),
+        )
+
+    @staticmethod
+    def get_preset(name: Optional[str], engine: str) -> dict:
+        """Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).
+
+        Resolves via :func:`preset_store` (user tier shadows the built-in of the same
+        name). A runner pre-parses ``--preset`` and lays the returned knobs over its
+        argparse defaults so explicit CLI flags still win; an absent / ``"none"`` /
+        ``"default"`` preset is a no-op (``{}``). Each runner applies only the keys it
+        understands. Unknown *name* raises ``ValueError`` (a typo shouldn't silently
+        run with plain defaults).
+        """
+        if not name or str(name).lower() in ("none", "default"):
+            return {}
+        store = Profile.preset_store(engine)
+        try:
+            data = store.load(name)
+        except KeyError:
+            raise ValueError(
+                f"unknown preset {name!r} for {engine!r}; "
+                f"available: {store.list() or '(none)'}"
+            )
+        return {k: v for k, v in data.items() if not str(k).startswith("_")}
+
+    @staticmethod
+    def init_user_profile(path: Optional[str] = None, force: bool = False) -> str:
+        """Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).
+
+        The repo ships **no** profile file; this scaffolds an editable one on demand
+        at ``<user-config>/uitk/extapps/photogrammetry.json`` (or *path*). Existing
+        files are left intact unless *force*. Returns the path.
+        """
+        target = path or str(UserConfig.path_for(PROFILE_NAME, PROFILE_PACKAGE))
+        if os.path.exists(target) and not force:
+            return target
+        parent = os.path.dirname(target)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(target, "w", encoding="utf-8") as fh:
+            json.dump(EXAMPLE_PROFILE, fh, indent=4)
+        return target
+
+    @staticmethod
+    def discover_source_dirs(input_root: str) -> List[str]:
+        """Return immediate subdirs of ``input_root`` that contain images."""
+        if not os.path.isdir(input_root):
+            raise ValueError(f"input-root does not exist: {input_root}")
+        results: List[str] = []
+        for name in sorted(os.listdir(input_root)):
+            full = os.path.join(input_root, name)
+            if not os.path.isdir(full):
+                continue
+            if any(f.lower().endswith(IMAGE_EXTS) for f in os.listdir(full)):
+                results.append(full)
+        return results
 
 
 # Copy-me template written by :func:`init_user_profile`. Friendly ``~`` /
@@ -204,151 +421,5 @@ EXAMPLE_PROFILE = {
         "engine install, set the matching path under 'apps' (e.g. apps."
         "metashape_exe); empty = auto-discover."
     ),
-    **_skeleton("~/photogrammetry", "${TEMP}/photogrammetry"),
+    **Profile._skeleton("~/photogrammetry", "${TEMP}/photogrammetry"),
 }
-
-
-def _packaged_default() -> dict:
-    """Generic, non-personal fallback profile.
-
-    Lands under the user's own config dir + system temp so a clone with no
-    profile still runs without touching any specific machine's drives.
-    """
-    base = str(UserConfig.user_config_root() / PROFILE_PACKAGE / "photogrammetry")
-    scratch = os.path.join(tempfile.gettempdir(), "photogrammetry")
-    return _skeleton(base, scratch)
-
-
-def _interpolate_roots(cfg: dict) -> dict:
-    """Expand ``~``/``${ENV}`` and the ``{graphics_root}`` / ``{scratch_root}``
-    tokens in the derived root values. Returns a new dict (input untouched)."""
-    out = dict(cfg)
-    graphics = UserConfig.expand(str(out.get("graphics_root", "")))
-    scratch = UserConfig.expand(str(out.get("scratch_root", "")))
-    out["graphics_root"] = graphics
-    out["scratch_root"] = scratch
-    tokens = {"graphics_root": graphics, "scratch_root": scratch}
-    for key in _DERIVED_ROOT_KEYS:
-        val = out.get(key)
-        if isinstance(val, str):
-            for tk, tv in tokens.items():
-                val = val.replace("{" + tk + "}", tv)
-            out[key] = UserConfig.expand(val)
-    return out
-
-
-def get_profile(path=None) -> dict:
-    """Resolve the active photogrammetry profile (fully interpolated).
-
-    Discovery (via :meth:`pythontk.UserConfig.resolve`): explicit *path* →
-    ``$PHOTOGRAMMETRY_PROFILE`` → ``<user-config>/uitk/extapps/photogrammetry.json``
-    → packaged default; deep-merged so a partial user profile only overrides
-    what it names.
-    """
-    cfg = UserConfig.resolve(
-        PROFILE_NAME,
-        package=PROFILE_PACKAGE,
-        env=PROFILE_ENV,
-        default=_packaged_default(),
-        path=path,
-    )
-    return _interpolate_roots(cfg)
-
-
-def configured_app_path(key: str, path=None) -> Optional[str]:
-    """Return the profile-configured install path for an engine, or ``None``.
-
-    Reads ``apps.<key>`` from the active profile (resolved like
-    :func:`get_profile`; pass *path* to read a specific profile) and expands
-    ``~`` / ``${ENV}``. This is the **network-install** hook: a user sets e.g.
-    ``apps.metashape_exe`` to a UNC path and every front-end (the panel's
-    availability check + the headless runners) finds it. Each engine's discovery
-    consults this after its env var and before standard discovery, and validates
-    existence itself (an exe is a file; ``sugar_dir`` is a dir holding
-    ``train_full_pipeline.py``), so an unset / offline path simply falls through.
-
-    Robust by design: a malformed / unreadable profile returns ``None`` (the
-    caller falls through to standard discovery) rather than breaking app
-    discovery — the availability check must never crash on a bad profile.
-    """
-    try:
-        val = get_profile(path).get("apps", {}).get(key)
-    except Exception:  # noqa: BLE001 - bad profile must not break discovery
-        return None
-    return UserConfig.expand(str(val)) if val else None
-
-
-def preset_store(engine: str) -> PresetStore:
-    """The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)
-    layered under a writable user tier at
-    ``<user_config_root>/extapps/photogrammetry_presets/<engine>/``.
-
-    Presets are **engine-scoped** — a Metashape tuning preset (align/depth
-    downscale, matchPhotos limits, depth filter, ...) means nothing to RealityScan
-    and vice-versa — so each engine keeps its own presets and nothing is shared
-    (duplicate a template per engine to use it on both). The same per-engine store
-    backs that engine's headless runner and (for Metashape) the UI panel, so a
-    user-saved preset is reachable both ways yet never leaks into another engine's
-    list. *engine* is the short id: ``"metashape"`` / ``"realityscan"`` /
-    ``"gaussian_splat"`` / ``"sugar"``.
-    """
-    return PresetStore(
-        f"{PRESETS_NAME}/{engine}",
-        PROFILE_PACKAGE,
-        builtin_dir=os.path.join(PRESETS_DIR, engine),
-    )
-
-
-def get_preset(name: Optional[str], engine: str) -> dict:
-    """Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).
-
-    Resolves via :func:`preset_store` (user tier shadows the built-in of the same
-    name). A runner pre-parses ``--preset`` and lays the returned knobs over its
-    argparse defaults so explicit CLI flags still win; an absent / ``"none"`` /
-    ``"default"`` preset is a no-op (``{}``). Each runner applies only the keys it
-    understands. Unknown *name* raises ``ValueError`` (a typo shouldn't silently
-    run with plain defaults).
-    """
-    if not name or str(name).lower() in ("none", "default"):
-        return {}
-    store = preset_store(engine)
-    try:
-        data = store.load(name)
-    except KeyError:
-        raise ValueError(
-            f"unknown preset {name!r} for {engine!r}; "
-            f"available: {store.list() or '(none)'}"
-        )
-    return {k: v for k, v in data.items() if not str(k).startswith("_")}
-
-
-def init_user_profile(path: Optional[str] = None, force: bool = False) -> str:
-    """Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).
-
-    The repo ships **no** profile file; this scaffolds an editable one on demand
-    at ``<user-config>/uitk/extapps/photogrammetry.json`` (or *path*). Existing
-    files are left intact unless *force*. Returns the path.
-    """
-    target = path or str(UserConfig.path_for(PROFILE_NAME, PROFILE_PACKAGE))
-    if os.path.exists(target) and not force:
-        return target
-    parent = os.path.dirname(target)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
-    with open(target, "w", encoding="utf-8") as fh:
-        json.dump(EXAMPLE_PROFILE, fh, indent=4)
-    return target
-
-
-def discover_source_dirs(input_root: str) -> List[str]:
-    """Return immediate subdirs of ``input_root`` that contain images."""
-    if not os.path.isdir(input_root):
-        raise ValueError(f"input-root does not exist: {input_root}")
-    results: List[str] = []
-    for name in sorted(os.listdir(input_root)):
-        full = os.path.join(input_root, name)
-        if not os.path.isdir(full):
-            continue
-        if any(f.lower().endswith(IMAGE_EXTS) for f in os.listdir(full)):
-            results.append(full)
-    return results

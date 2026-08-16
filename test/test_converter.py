@@ -16,7 +16,6 @@ import tempfile
 import shutil
 import unittest
 from unittest.mock import Mock, MagicMock, patch
-from pathlib import Path
 from PIL import Image
 
 from pythontk import ImgUtils, FileUtils

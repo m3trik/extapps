@@ -24,7 +24,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Gate: the suite must be green before anything reaches PyPI. extapps
+  # publishes straight off a push to main (no dev/main flow), so this is the
+  # only thing standing between a red commit and a release.
+  test:
+    uses: ./.github/workflows/tests.yml
+
   publish:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -24,7 +24,7 @@ from typing import List, Optional, Sequence
 
 from pythontk import AppLauncher
 
-from ..profile import configured_app_path
+from ..profile import Profile
 
 # Fallbacks if neither $METASHAPE_EXE nor AppLauncher discovery resolves it.
 _KNOWN_PATHS = [
@@ -41,23 +41,20 @@ class MetashapeConnection:
 
     @staticmethod
     def find_exe() -> Optional[str]:
-        """Locate ``metashape.exe``: ``$METASHAPE_EXE`` → the profile's
-        ``apps.metashape_exe`` (network / non-standard install) →
-        :meth:`AppLauncher.find_app` → known Agisoft install paths. Returns the
-        path or ``None``."""
-        env = os.environ.get("METASHAPE_EXE")
-        if env and os.path.isfile(env):
-            return env
-        configured = configured_app_path("metashape_exe")
-        if configured and os.path.isfile(configured):
-            return configured
-        found = AppLauncher.find_app("metashape")
-        if found:
-            return found
-        for p in _KNOWN_PATHS:
-            if os.path.isfile(p):
-                return p
-        return None
+        """Locate ``metashape.exe`` via the shared :func:`resolve_app` chain:
+        ``$METASHAPE_EXE`` (terminal — set-but-invalid returns ``None`` so the
+        caller enters mock mode) → the profile's ``apps.metashape_exe``
+        (network / non-standard install) → :meth:`AppLauncher.find_app` → known
+        Agisoft install paths. Returns the path or ``None``."""
+
+        def _known_paths() -> Optional[str]:
+            return next((p for p in _KNOWN_PATHS if os.path.isfile(p)), None)
+
+        return Profile.resolve_app(
+            "METASHAPE_EXE",
+            "metashape_exe",
+            fallbacks=(lambda: AppLauncher.find_app("metashape"), _known_paths),
+        )
 
     def is_available(self) -> bool:
         """True if a metashape.exe was found (i.e. a headless run is possible)."""

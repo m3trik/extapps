@@ -29,7 +29,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 from uitk.bridge import BridgeSlotsBase
 
-from .profile import IMAGE_EXTS, preset_store
+from .profile import IMAGE_EXTS, Profile
 from ._shared_params import PREPROCESS_MASTER_KEY, PREPROCESSING_KNOB_KEYS
 
 # File-dialog patterns for the frames/video Source browser. Videos extract to
@@ -117,7 +117,7 @@ class PhotogrammetryPanelSlots(BridgeSlotsBase):
         """Semantic-preset mode: the engine-scoped store the headless runner uses
         — so a preset saved here is *that engine's* preset (it never appears in
         another engine's list)."""
-        return preset_store(self.PRESET_ENGINE)
+        return Profile.preset_store(self.PRESET_ENGINE)
 
     def _apply_param_dict(self, data) -> int:
         """Apply a preset as **defaults + overlay**, exactly like the CLI.
@@ -452,7 +452,7 @@ class FramesSourceMixin:
             if self._frames_edit is not None:
                 self._frames_edit.setText(out_dir)
 
-        from .prep_stages import extract_videos_to_dir
+        from .prep_stages import PrepStagesMixin
 
         # Honor the panel's Video Window knob (shared pre-processing spec);
         # fall back to the extractor default when the widget is absent (Brush
@@ -470,7 +470,7 @@ class FramesSourceMixin:
                 f"Extracting frames from {len(videos)} video(s) → '{out_dir}' "
                 f"(window {window_sec:g}s)"
             )
-            frames = extract_videos_to_dir(
+            frames = PrepStagesMixin.extract_videos_to_dir(
                 videos, out_dir, window_sec=window_sec, log=self.bridge.logger.info
             )
             self.bridge.logger.info(

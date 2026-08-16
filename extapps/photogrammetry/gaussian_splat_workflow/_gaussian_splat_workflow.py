@@ -19,7 +19,6 @@ Validated defaults (indoor scene dataset, 8 GB VRAM class GPU):
   OOM-crashed the GPU mid-run in testing, so the growth knobs default to
   brush's stock values; only push them on a larger-VRAM card.
 """
-import functools
 import os
 import shutil
 import subprocess
@@ -27,7 +26,7 @@ from typing import Callable, Dict, List, Optional
 
 from pythontk import QcLog
 
-from ..profile import configured_app_path
+from ..profile import Profile
 
 # Prebuilt Brush release binaries (github.com/ArthurBrussee/brush). cargo-dist
 # publishes one archive per platform with stable asset names, so the version-
@@ -54,106 +53,110 @@ BRUSH_DOWNLOAD: Dict[str, dict] = {
 BRUSH_EXE_NAME = "brush"
 
 
-def find_brush_exe() -> Optional[str]:
-    """Return the Brush executable path or None.
+class _GaussianSplatWorkflowInternal:
+    """Brush discovery / install / ply-introspection helpers.
 
-    Brush ships as a single binary (``brush.exe`` — the unified app; the viewer
-    is opt-in via ``--with-viewer``) with no canonical install location, so
-    discovery is the ``BRUSH_EXE`` env override (honored strictly — empty or a
-    nonexistent path returns None so the caller enters mock mode), then the
-    profile's ``apps.brush_exe`` (network / non-standard install), then ``PATH``,
-    then pythontk's managed-install catalog (where the panel's "Download Brush"
-    action installs it — that dir isn't on ``PATH`` across sessions). Point
-    ``BRUSH_EXE`` at the binary, set ``apps.brush_exe``, put it on ``PATH``, or
-    install it via :func:`install_brush`.
+    On a ``_<Class>Internal`` base per the encapsulation standard; the public
+    :class:`GaussianSplatWorkflow` inherits them, so
+    ``GaussianSplatWorkflow.find_brush_exe()`` is the supported call.
     """
-    env = os.environ.get("BRUSH_EXE")
-    if env is not None:
-        return env if env and os.path.isfile(env) else None
-    configured = configured_app_path("brush_exe")
-    if configured and os.path.isfile(configured):
-        return configured
-    # Probe the shipped binary name first; brush_app.exe is a legacy name kept
-    # as a fallback for old manual installs.
-    on_path = shutil.which("brush") or shutil.which("brush_app.exe")
-    if on_path:
-        return on_path
-    try:
+
+    @staticmethod
+    def _make_progress_printer() -> Callable[[int, int], None]:
+        """A download progress callback that prints one line per ~10%.
+
+        The panel streams the installer's stdout into its log pane, which appends
+        rather than honoring ``\\r`` overwrite, so emit discrete newline updates
+        instead of a single rewritten line.
+        """
+        state = {"next": 0}
+
+        def _printer(downloaded: int, total: int) -> None:
+            if not total:
+                return
+            pct = downloaded * 100 // total
+            if pct >= state["next"]:
+                state["next"] = (pct // 10 + 1) * 10
+                print(
+                    f"  downloading Brush... {pct}% "
+                    f"({downloaded // 1048576} / {total // 1048576} MB)",
+                    flush=True,
+                )
+
+        return _printer
+
+
+class GaussianSplatWorkflow(_GaussianSplatWorkflowInternal):
+    """Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``."""
+    @staticmethod
+    def find_brush_exe() -> Optional[str]:
+        """Return the Brush executable path or None.
+
+        Brush ships as a single binary (``brush.exe`` — the unified app; the viewer
+        is opt-in via ``--with-viewer``) with no canonical install location, so
+        discovery runs the shared :func:`resolve_app` chain: the ``BRUSH_EXE`` env
+        override (terminal — empty or nonexistent returns None so the caller enters
+        mock mode), then the profile's ``apps.brush_exe`` (network / non-standard
+        install), then ``PATH``, then pythontk's managed-install catalog (where the
+        panel's "Download Brush" action installs it — that dir isn't on ``PATH``
+        across sessions). Point ``BRUSH_EXE`` at the binary, set ``apps.brush_exe``,
+        put it on ``PATH``, or install it via :meth:`install_brush`.
+        """
+
+        def _on_path() -> Optional[str]:
+            # Probe the shipped binary name first; brush_app.exe is a legacy name
+            # kept as a fallback for old manual installs.
+            return shutil.which("brush") or shutil.which("brush_app.exe")
+
+        def _managed() -> Optional[str]:
+            try:
+                from pythontk import AppInstaller
+
+                return AppInstaller.get_path("brush", executable=BRUSH_EXE_NAME)
+            except Exception:  # noqa: BLE001 — discovery must never raise
+                return None
+
+        return Profile.resolve_app("BRUSH_EXE", "brush_exe", fallbacks=(_on_path, _managed))
+    @staticmethod
+    def is_brush_available() -> bool:
+        return GaussianSplatWorkflow.find_brush_exe() is not None
+    @staticmethod
+    def install_brush(
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> str:
+        """Download + install Brush via :class:`pythontk.AppInstaller`; return the
+        executable path.
+
+        Fetches the prebuilt release binary for this platform into pythontk's
+        per-user managed tools dir (``~/.pythontk/tools``) and records it in the
+        install catalog, so subsequent :meth:`find_brush_exe` calls discover it.
+        Re-runs are cheap — ``AppInstaller`` returns the cached path if Brush is
+        already present. Raises ``LookupError`` on an unsupported platform and
+        ``RuntimeError`` on a download / extraction failure.
+        """
         from pythontk import AppInstaller
 
-        return AppInstaller.get_path("brush", executable=BRUSH_EXE_NAME)
-    except Exception:  # noqa: BLE001 — discovery must never raise
+        return AppInstaller.ensure(
+            "brush",
+            platforms=BRUSH_DOWNLOAD,
+            executable=BRUSH_EXE_NAME,
+            progress_callback=progress_callback
+            or _GaussianSplatWorkflowInternal._make_progress_printer(),
+        )
+    @staticmethod
+    def read_splat_count(ply_path: str) -> Optional[int]:
+        """Gaussian count from a splat ``.ply`` header (``element vertex N``)."""
+        try:
+            with open(ply_path, "rb") as fh:
+                for _ in range(60):
+                    line = fh.readline().decode("ascii", "replace").strip()
+                    if line.startswith("element vertex"):
+                        return int(line.split()[-1])
+                    if line == "end_header":
+                        break
+        except Exception:
+            pass
         return None
-
-
-def is_brush_available() -> bool:
-    return find_brush_exe() is not None
-
-
-def _make_progress_printer() -> Callable[[int, int], None]:
-    """A download progress callback that prints one line per ~10%.
-
-    The panel streams the installer's stdout into its log pane, which appends
-    rather than honoring ``\\r`` overwrite, so emit discrete newline updates
-    instead of a single rewritten line.
-    """
-    state = {"next": 0}
-
-    def _printer(downloaded: int, total: int) -> None:
-        if not total:
-            return
-        pct = downloaded * 100 // total
-        if pct >= state["next"]:
-            state["next"] = (pct // 10 + 1) * 10
-            print(
-                f"  downloading Brush... {pct}% "
-                f"({downloaded // 1048576} / {total // 1048576} MB)",
-                flush=True,
-            )
-
-    return _printer
-
-
-def install_brush(
-    progress_callback: Optional[Callable[[int, int], None]] = None,
-) -> str:
-    """Download + install Brush via :class:`pythontk.AppInstaller`; return the
-    executable path.
-
-    Fetches the prebuilt release binary for this platform into pythontk's
-    per-user managed tools dir (``~/.pythontk/tools``) and records it in the
-    install catalog, so subsequent :func:`find_brush_exe` calls discover it.
-    Re-runs are cheap — ``AppInstaller`` returns the cached path if Brush is
-    already present. Raises ``LookupError`` on an unsupported platform and
-    ``RuntimeError`` on a download / extraction failure.
-    """
-    from pythontk import AppInstaller
-
-    return AppInstaller.ensure(
-        "brush",
-        platforms=BRUSH_DOWNLOAD,
-        executable=BRUSH_EXE_NAME,
-        progress_callback=progress_callback or _make_progress_printer(),
-    )
-
-
-def read_splat_count(ply_path: str) -> Optional[int]:
-    """Gaussian count from a splat ``.ply`` header (``element vertex N``)."""
-    try:
-        with open(ply_path, "rb") as fh:
-            for _ in range(60):
-                line = fh.readline().decode("ascii", "replace").strip()
-                if line.startswith("element vertex"):
-                    return int(line.split()[-1])
-                if line == "end_header":
-                    break
-    except Exception:
-        pass
-    return None
-
-
-class GaussianSplatWorkflow:
-    """Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``."""
 
     def __init__(
         self,
@@ -169,7 +172,7 @@ class GaussianSplatWorkflow:
         self.progress = progress
         self.timeout_sec = timeout_sec
 
-        self.brush_exe = brush_exe or find_brush_exe()
+        self.brush_exe = brush_exe or self.find_brush_exe()
         if mock_mode is None:
             mock_mode = self.brush_exe is None
         self.mock_mode = bool(mock_mode)
@@ -320,7 +323,7 @@ class GaussianSplatWorkflow:
                     final_ply = max(candidates, key=os.path.getmtime)
                     st["export_ply"] = final_ply
                     print(f"(export name differed; using {final_ply})")
-            count = read_splat_count(final_ply)
+            count = self.read_splat_count(final_ply)
             st["gaussian_count"] = count
             if count:
                 print(f"Trained splat: {count:,} gaussians -> {final_ply}")

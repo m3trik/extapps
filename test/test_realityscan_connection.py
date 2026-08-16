@@ -50,6 +50,11 @@ class RealityScanConnectionTest(unittest.TestCase):
             with self.assertRaises(RealityScanInteractiveError):
                 self.conn.run(["-quit"], log_path=self.log)
 
+    @unittest.skipUnless(
+        os.name == "nt",
+        "the cross-session path writes a cmd .bat in the console OEM codepage; "
+        "the 'oem' codec and psexec session launching are Windows-only",
+    )
     def test_non_interactive_launches_in_session_and_reads_marker(self):
         def fake_launch(app, args=None, session=None, **kw):
             # Simulate the wrapper bat running in the console session.
@@ -74,6 +79,11 @@ class RealityScanConnectionTest(unittest.TestCase):
         self.assertNotIn("%errorlevel%>", text)
         self.assertIn("echo %errorlevel%", text)
 
+    @unittest.skipUnless(
+        os.name == "nt",
+        "the cross-session path writes a cmd .bat in the console OEM codepage; "
+        "the 'oem' codec and psexec session launching are Windows-only",
+    )
     def test_non_interactive_bat_preserves_non_ascii_path(self):
         # Regression: the cross-session .bat was written encoding="ascii",
         # errors="replace", so a non-ASCII output path (e.g. C:\Users\José\...)

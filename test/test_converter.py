@@ -1385,7 +1385,12 @@ class TestConverterOptimize(unittest.TestCase):
         self.converter._get_texture_paths = Mock(return_value=[path])
 
         with patch("builtins.print") as mock_print:
-            self.converter.tb000(self._widget(clamp=128, new="out", old="/out/"))
+            # "out/" not "/out/": a trailing separator is a typed spelling of
+            # the same subdirectory everywhere, while a LEADING one roots the
+            # path on POSIX by design (see _is_abs_dest), so the two fields
+            # would name different folders and the guard under test could
+            # never fire on that platform.
+            self.converter.tb000(self._widget(clamp=128, new="out", old="out/"))
         reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
 
         self.assertIn("Use different names", reported)
@@ -1438,9 +1443,19 @@ class TestConverterOptimize(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.test_dir, "new")))
 
     def test_folder_name_strips_typed_separators(self):
+        """A bare entry keeps only the name. What counts as "bare" is
+        platform-dependent by design (see ``_is_abs_dest``): a leading ``/`` is
+        a typed separator on Windows but a real root on POSIX, where the entry
+        names one shared destination and must survive intact."""
         for text in ("/new/", "\\new", "  new  ", "new/"):
             with self.subTest(text=text):
-                self.assertEqual(ConverterSlots._folder_name(text), "new")
+                stripped = text.strip()
+                expected = (
+                    os.path.normpath(stripped)
+                    if ConverterSlots._is_abs_dest(stripped)
+                    else "new"
+                )
+                self.assertEqual(ConverterSlots._folder_name(text), expected)
         self.assertEqual(ConverterSlots._folder_name(""), "")
 
     # ---- absolute destinations ------------------------------------------
@@ -1539,8 +1554,14 @@ class TestConverterOptimize(unittest.TestCase):
                 "a/rock_Normal.png",
             ]
         )
-        self.assertEqual([stem for stem, _ in clashes], ["rock_BaseColor"])
-        self.assertEqual(len(clashes[0][1]), 2)
+        # Grouping defers to normcase for the same reason the destination guard
+        # does: 'rock' and 'ROCK' are one file on Windows and two on POSIX, so
+        # the collision is only real where the filesystem would fold them.
+        if os.path.normcase("A") == os.path.normcase("a"):
+            self.assertEqual([stem for stem, _ in clashes], ["rock_BaseColor"])
+            self.assertEqual(len(clashes[0][1]), 2)
+        else:
+            self.assertEqual(clashes, [])
 
     def test_subdirectory_destination_allows_same_named_maps(self):
         """Per-texture subdirectories keep each source in its own folder, so

@@ -15,7 +15,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-dependencies = ["pythontk", "uitk>=1.3.76", "qtpy"]
+dependencies = ["pythontk>=0.9.20", "uitk>=1.3.78", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

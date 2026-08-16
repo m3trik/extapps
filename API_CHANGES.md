@@ -1,6 +1,6 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ 1a61c4e). Generated 2026-08-16._
+_Diff vs the last release (origin/main @ 9c263b5). Generated 2026-08-16._
 
 ## Removed (29)
 

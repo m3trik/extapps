@@ -22,6 +22,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Tuple
 
+from extapps import DOCS_BASE_URL
 from .._panel_slots import FramesSourceMixin, PhotogrammetryPanelSlots
 from . import parameters as _params
 from ._metashape_runner import MetashapeRunner
@@ -79,6 +80,12 @@ class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
         "(--output-root). Leave blank to use the active photogrammetry "
         "profile's metashape_output_root."
     )
+
+    # Metashape has a full page of its own (install, GUI controls, two-stage
+    # runs, presets, API) that links on to the shared TUNING.md, so it
+    # overrides the base's TUNING.md link.
+    DOCS_URL = DOCS_BASE_URL + "docs/metashape_workflow.md"
+    DOCS_LABEL = "Detailed docs (install, controls, presets, API)"
 
     # ------------------------------------------------------------------ hooks
     @property

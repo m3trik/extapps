@@ -200,14 +200,14 @@ Application shell for the Mesh Convert UI.
 
 Shared scaffolding for the photogrammetry workflow panels.
 
-- **[`class PhotogrammetryPanelSlots(BridgeSlotsBase)`](extapps/extapps/photogrammetry/_panel_slots.py#L44)** — Base for the photogrammetry workflow panels (engine-agnostic scaffolding).
+- **[`class PhotogrammetryPanelSlots(BridgeSlotsBase)`](extapps/extapps/photogrammetry/_panel_slots.py#L45)** — Base for the photogrammetry workflow panels (engine-agnostic scaffolding).
   - `PhotogrammetryPanelSlots.header_menu_items(self)` — Process-runner header menu: Cancel Run / Open Output Folder / Clear
   - `PhotogrammetryPanelSlots.make_preset_store(self)` — Semantic-preset mode: the engine-scoped store the headless runner uses
   - `PhotogrammetryPanelSlots.resolved_project_name(self) -> str`
   - `PhotogrammetryPanelSlots.cancel_run(self) -> None`
   - `PhotogrammetryPanelSlots.open_output_folder(self) -> None` — Reveal the output folder.
   - `PhotogrammetryPanelSlots.b000(self) -> None` — Run Workflow.
-- **[`class FramesSourceMixin`](extapps/extapps/photogrammetry/_panel_slots.py#L377)** — A single 'Source' row + browser for image-in panels (Metashape, RC).
+- **[`class FramesSourceMixin`](extapps/extapps/photogrammetry/_panel_slots.py#L386)** — A single 'Source' row + browser for image-in panels (Metashape, RC).
   - `FramesSourceMixin.resolved_frames_dir(self) -> str`
 
 <a id="photogrammetry--_process_runner"></a>
@@ -415,7 +415,7 @@ Driver script for multi-session combined runs.
 
 Slots for the Metashape Workflow panel.
 
-- **[`class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/metashape_workflow/slots.py#L40)** — Switchboard slots wired to ``metashape_workflow.ui``.
+- **[`class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/metashape_workflow/slots.py#L41)** — Switchboard slots wired to ``metashape_workflow.ui``.
   - `MetashapeWorkflowSlots.params_module(self)` *(property)*
   - `MetashapeWorkflowSlots.template_dir(self) -> Path` *(property)*
   - `MetashapeWorkflowSlots.make_bridge(self) -> MetashapeRunner`
@@ -750,7 +750,7 @@ Shelf / resource operations — query and import shelf assets.
 
 Switchboard slots for the Substance Workflow UI.
 
-- **[`class SubstanceWorkflowSlots(ptk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L192)** — Switchboard slots for the Substance Workflow UI.
+- **[`class SubstanceWorkflowSlots(ptk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L194)** — Switchboard slots for the Substance Workflow UI.
   - `SubstanceWorkflowSlots.header_init(self, widget) -> None`
   - `SubstanceWorkflowSlots.txt000_init(self, widget) -> None` — Mesh File
   - `SubstanceWorkflowSlots.txt001_init(self, widget) -> None` — Template (optional)
@@ -789,7 +789,7 @@ Application shell for the Map Compositor UI.
 
 UI slot bindings for the compositor window.
 
-- **[`class CompositorSlots(_CompositorSlotsInternal)`](extapps/extapps/texture_maps/compositor/slots.py#L107)** — UI slot handler.
+- **[`class CompositorSlots(_CompositorSlotsInternal)`](extapps/extapps/texture_maps/compositor/slots.py#L108)** — UI slot handler.
   - `CompositorSlots.output_dir(self) -> str` *(property)*
   - `CompositorSlots.map_name(self) -> str` *(property)*
   - `CompositorSlots.header_init(self, widget)` — Populate the header menu with global options.

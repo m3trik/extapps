@@ -573,7 +573,7 @@
         {
           "name": "PhotogrammetryPanelSlots",
           "summary": "Base for the photogrammetry workflow panels (engine-agnostic scaffolding).",
-          "line": 44,
+          "line": 45,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -584,7 +584,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Process-runner header menu: Cancel Run / Open Output Folder / Clear",
-              "line": 99,
+              "line": 108,
               "deprecated": false
             },
             {
@@ -593,7 +593,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Semantic-preset mode: the engine-scoped store the headless runner uses",
-              "line": 116,
+              "line": 125,
               "deprecated": false
             },
             {
@@ -602,7 +602,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 258,
+              "line": 267,
               "deprecated": false
             },
             {
@@ -611,7 +611,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 279,
+              "line": 288,
               "deprecated": false
             },
             {
@@ -620,7 +620,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Reveal the output folder.",
-              "line": 293,
+              "line": 302,
               "deprecated": false
             },
             {
@@ -629,7 +629,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run Workflow.",
-              "line": 301,
+              "line": 310,
               "deprecated": false
             }
           ]
@@ -637,7 +637,7 @@
         {
           "name": "FramesSourceMixin",
           "summary": "A single 'Source' row + browser for image-in panels (Metashape, RC).",
-          "line": 377,
+          "line": 386,
           "bases": [],
           "members": [
             {
@@ -646,7 +646,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 409,
+              "line": 418,
               "deprecated": false
             }
           ]
@@ -1682,7 +1682,7 @@
         {
           "name": "MetashapeWorkflowSlots",
           "summary": "Switchboard slots wired to ``metashape_workflow.ui``.",
-          "line": 40,
+          "line": 41,
           "bases": [
             "FramesSourceMixin",
             "PhotogrammetryPanelSlots"
@@ -1694,7 +1694,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 85,
+              "line": 92,
               "deprecated": false
             },
             {
@@ -1703,7 +1703,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 89,
+              "line": 96,
               "deprecated": false
             },
             {
@@ -1712,7 +1712,7 @@
               "kind": "method",
               "signature": "(self) -> MetashapeRunner",
               "summary": "",
-              "line": 93,
+              "line": 100,
               "deprecated": false
             },
             {
@@ -1721,7 +1721,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 96,
+              "line": 103,
               "deprecated": false
             },
             {
@@ -1730,7 +1730,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 99,
+              "line": 106,
               "deprecated": false
             },
             {
@@ -1739,7 +1739,7 @@
               "kind": "method",
               "signature": "(self) -> dict",
               "summary": "",
-              "line": 111,
+              "line": 118,
               "deprecated": false
             }
           ]
@@ -3377,7 +3377,7 @@
         {
           "name": "SubstanceWorkflowSlots",
           "summary": "Switchboard slots for the Substance Workflow UI.",
-          "line": 192,
+          "line": 194,
           "bases": [
             "ptk.LoggingMixin"
           ],
@@ -3388,7 +3388,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "",
-              "line": 227,
+              "line": 252,
               "deprecated": false
             },
             {
@@ -3397,7 +3397,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Mesh File",
-              "line": 262,
+              "line": 287,
               "deprecated": false
             },
             {
@@ -3406,7 +3406,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Template (optional)",
-              "line": 276,
+              "line": 301,
               "deprecated": false
             },
             {
@@ -3415,7 +3415,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Project Save Path",
-              "line": 291,
+              "line": 316,
               "deprecated": false
             },
             {
@@ -3424,7 +3424,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Painter install picker",
-              "line": 305,
+              "line": 330,
               "deprecated": false
             },
             {
@@ -3433,7 +3433,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Stages popup — QMenu of checkboxes attached to the button.",
-              "line": 312,
+              "line": 337,
               "deprecated": false
             },
             {
@@ -3442,7 +3442,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Advanced-params popup — labeled form inside a QMenu via QWidgetAction.",
-              "line": 329,
+              "line": 354,
               "deprecated": false
             },
             {
@@ -3451,7 +3451,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Log level changed",
-              "line": 371,
+              "line": 396,
               "deprecated": false
             },
             {
@@ -3460,7 +3460,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Toggle the Painter session.",
-              "line": 375,
+              "line": 400,
               "deprecated": false
             },
             {
@@ -3469,7 +3469,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run Workflow",
-              "line": 385,
+              "line": 410,
               "deprecated": false
             },
             {
@@ -3478,7 +3478,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the mesh field (e.g.",
-              "line": 394,
+              "line": 419,
               "deprecated": false
             },
             {
@@ -3487,7 +3487,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 401,
+              "line": 426,
               "deprecated": false
             },
             {
@@ -3496,7 +3496,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 412,
+              "line": 437,
               "deprecated": false
             },
             {
@@ -3505,7 +3505,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 423,
+              "line": 448,
               "deprecated": false
             }
           ]
@@ -3586,7 +3586,7 @@
         {
           "name": "CompositorSlots",
           "summary": "UI slot handler.",
-          "line": 107,
+          "line": 108,
           "bases": [
             "_CompositorSlotsInternal"
           ],
@@ -3597,7 +3597,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 183,
+              "line": 185,
               "deprecated": false
             },
             {
@@ -3606,7 +3606,7 @@
               "kind": "property",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 187,
+              "line": 189,
               "deprecated": false
             },
             {
@@ -3615,7 +3615,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the header menu with global options.",
-              "line": 511,
+              "line": 508,
               "deprecated": false
             },
             {
@@ -3624,7 +3624,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 594,
+              "line": 591,
               "deprecated": false
             },
             {
@@ -3633,7 +3633,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Destination Directory",
-              "line": 623,
+              "line": 620,
               "deprecated": false
             },
             {
@@ -3642,7 +3642,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Init Map Name",
-              "line": 650,
+              "line": 647,
               "deprecated": false
             },
             {
@@ -3651,7 +3651,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Combine Maps",
-              "line": 676,
+              "line": 673,
               "deprecated": false
             },
             {
@@ -3660,7 +3660,7 @@
               "kind": "method",
               "signature": "(self, images, source_dir, output_dir, map_name=None)",
               "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 686,
+              "line": 683,
               "deprecated": false
             }
           ]

@@ -317,18 +317,32 @@ class TestCompositorOutputLink(unittest.TestCase):
         self.assertEqual(opened, [target])
 
     def test_http_link_opens_in_browser_not_explorer(self):
-        """A plain http(s) anchor opens in the browser (QDesktopServices), and
-        is never mistaken for a filesystem path. QDesktopServices is mocked so
-        the test never actually spawns a browser (openUrl hits the OS shell
-        even under the offscreen platform)."""
+        """A plain http(s) anchor (the intro's docs link) opens in the browser
+        exactly once, and is never mistaken for a filesystem path.
+
+        The opener is uitk's ``TextEditLogHandler.route_links`` (wired when
+        the pane's log handler is built, as ``_initialize_ui`` does) -- NOT
+        this panel's ``_on_log_link_clicked``, which shares the signal and
+        must leave web links alone or a click would open two tabs. So the
+        pane is wired exactly like the real panel and the *signal* is fired.
+        QDesktopServices is mocked so no browser is spawned (openUrl hits the
+        OS shell even under the offscreen platform).
+        """
+        from qtpy import QtGui
+        from uitk.widgets.textEditLogHandler import TextEditLogHandler
+
+        _ensure_app()
         inst = self._bare_slots()
         opened = []
         inst._open_dir = lambda p: opened.append(p)  # type: ignore[method-assign]
+        pane = QTextBrowser()
+        TextEditLogHandler(pane, monospace=False)
+        pane.anchorClicked.connect(inst._on_log_link_clicked)
         url = QUrl("https://github.com/m3trik/extapps#readme")
-        with mock.patch("qtpy.QtGui.QDesktopServices") as qds:
-            inst._on_log_link_clicked(url)
+        with mock.patch.object(QtGui.QDesktopServices, "openUrl") as opener:
+            pane.anchorClicked.emit(url)
         self.assertEqual(opened, [])  # not routed to the file explorer
-        qds.openUrl.assert_called_once_with(url)
+        opener.assert_called_once_with(url)  # once: the panel doesn't re-open it
 
     def test_success_logs_clickable_output_link(self):
         """On success, the completion box embeds a clickable action://open

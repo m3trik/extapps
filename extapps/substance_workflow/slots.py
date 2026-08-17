@@ -16,6 +16,8 @@ from typing import Any, Dict, List, Optional
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
 from uitk import AttributeSpec, KindFactory
+from uitk.widgets.textEditLogHandler import TextEditLogHandler
+from extapps import DOCS_BASE_URL
 from .env_utils.painter_connection import PainterConnection
 from .env_utils.painter_finder import PainterFinder
 
@@ -192,6 +194,12 @@ _LOG_LEVELS = {
 class SubstanceWorkflowSlots(ptk.LoggingMixin):
     """Switchboard slots for the Substance Workflow UI."""
 
+    # Logged once at panel open as a clickable anchor (the compositor's intro
+    # and the BridgeSlotsBase panels do the same). Not a bridge panel, so the
+    # line is emitted here rather than by ``BridgeSlotsBase._show_docs_link``.
+    DOCS_URL = DOCS_BASE_URL + "docs/substance_workflow.md"
+    DOCS_LABEL = "Detailed docs (bridge, op registry, batch API)"
+
     def __init__(self, switchboard, log_level: int = 20):
         self.sb = switchboard
         self.ui = self.sb.loaded_ui.substance_workflow
@@ -206,6 +214,23 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
         self._installs: Dict[str, str] = PainterFinder.find_installs()
 
         self._log_status()
+        # Route anchors BEFORE logging the docs line. setup_logging_redirect
+        # attaches pythontk's DefaultTextLogHandler -- pythontk is Qt-free, so
+        # it cannot wire Qt link handling -- which leaves openExternalLinks
+        # False and the anchor inert. BridgeSlotsBase does this for its own
+        # panels; this one is a plain LoggingMixin panel, so it must do it
+        # itself or the link renders and does nothing when clicked.
+        try:
+            TextEditLogHandler.route_links(self.ui.txt003)
+        except Exception as e:  # noqa: BLE001 - cosmetic wiring, never fatal
+            # Same posture as BridgeSlotsBase's log wiring: an older uitk
+            # without route_links leaves the docs link inert, which is a
+            # cosmetic loss. Letting it raise here would take the whole panel
+            # down at construction over a link.
+            print(f"[SubstanceWorkflow] log link wiring failed (ignored): {e}")
+        self.logger.info(
+            f'{self.DOCS_LABEL}: <a href="{self.DOCS_URL}">{self.DOCS_URL}</a>'
+        )
 
     # ------------------------------------------------------------------ status
 

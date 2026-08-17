@@ -29,6 +29,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 from uitk.bridge import BridgeSlotsBase
 
+from extapps import DOCS_BASE_URL
 from .profile import IMAGE_EXTS, Profile
 from ._shared_params import PREPROCESS_MASTER_KEY, PREPROCESSING_KNOB_KEYS
 
@@ -53,6 +54,14 @@ class PhotogrammetryPanelSlots(BridgeSlotsBase):
     OUTPUT_FOLDER_TOOLTIP = "Open <output-root>/<name>/ — this run's outputs land here."
     # mode value -> one-line description logged when the run-mode combo changes.
     MODE_DESC: dict = {}
+
+    # Docs link logged at panel open (see BridgeSlotsBase._show_docs_link).
+    # TUNING.md is the one page all three engines share -- the noise-control
+    # levers, where each lives (CLI-reachable vs GUI-only), and the shipped
+    # presets -- so it is the base's default; an engine with a page of its own
+    # (Metashape) overrides.
+    DOCS_URL = DOCS_BASE_URL + "extapps/photogrammetry/TUNING.md"
+    DOCS_LABEL = "Tuning guide + shipped presets (TUNING.md)"
 
     PRESETS_ROOT = None  # semantic presets supply their own dirs via the store
 

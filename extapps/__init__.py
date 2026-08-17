@@ -13,6 +13,12 @@ from pythontk.core_utils.module_resolver import bootstrap_package
 __package__ = "extapps"
 __version__ = "0.1.14"
 
+# Base of every panel's "detailed docs" link (``BridgeSlotsBase.DOCS_URL`` on
+# the bridge panels, the compositor's intro, Substance's startup line): the
+# public repo at ``main``, so each panel appends only its repo-relative doc
+# path -- one place to repoint at a fork, a docs site, or a release tag.
+DOCS_BASE_URL = "https://github.com/m3trik/extapps/blob/main/"
+
 
 DEFAULT_INCLUDE = {
     "texture_maps.compositor.launcher": ["CompositorUI"],
@@ -45,6 +51,6 @@ DEFAULT_INCLUDE = {
 # ``bootstrap_package`` derives ``__all__`` from the resolved panel surface
 # (DEFAULT_INCLUDE) and unions in anything declared here first — so only the
 # non-derivable ``__version__`` needs listing by hand.
-__all__ = ["__version__"]
+__all__ = ["__version__", "DOCS_BASE_URL"]
 
 bootstrap_package(globals(), include=DEFAULT_INCLUDE)

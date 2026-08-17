@@ -7,6 +7,7 @@ classes; the SDK-specific engines (substance Painter, Marmoset Toolbag) are
 bundled with their panels. This test only guards the extapps surface.
 """
 import importlib
+from pathlib import Path
 
 import pytest
 
@@ -40,10 +41,37 @@ PANEL_CLASSES = [
     ("UnityWorkflowUI", "UnityWorkflowSlots"),
 ]
 
+# Panels that log a docs link at open (a clickable anchor in the log pane —
+# the compositor's "detailed docs" line, generalised as
+# ``BridgeSlotsBase.DOCS_URL`` / ``SubstanceWorkflowSlots.DOCS_URL``). Each is
+# a GitHub blob URL into THIS repo, so a doc rename fails here rather than
+# 404-ing for users. RealityScan / Gaussian Splat inherit the photogrammetry
+# base's TUNING.md link; Metashape and Substance point at their own pages.
+DOCS_LINKED_SLOTS = [
+    "MetashapeWorkflowSlots",
+    "RealityscanWorkflowSlots",
+    "GaussianSplatWorkflowSlots",
+    "SubstanceWorkflowSlots",
+]
+_DOCS_URL_PREFIX = "https://github.com/m3trik/extapps/blob/main/"
+
 
 @pytest.mark.parametrize("modname", TOOLS)
 def test_tool_imports(modname):
     importlib.import_module(modname)
+
+
+@pytest.mark.parametrize("slots_name", DOCS_LINKED_SLOTS)
+def test_docs_url_points_at_a_file_in_this_repo(slots_name):
+    import extapps
+
+    cls = getattr(extapps, slots_name)
+    url = cls.DOCS_URL
+    assert url.startswith(_DOCS_URL_PREFIX), url
+    assert cls.DOCS_LABEL.strip(), f"{slots_name}.DOCS_LABEL is empty"
+    repo_root = Path(extapps.__file__).resolve().parents[1]
+    target = repo_root / url[len(_DOCS_URL_PREFIX):]
+    assert target.is_file(), f"{slots_name}.DOCS_URL -> missing {target}"
 
 
 @pytest.mark.parametrize("ui_name,slots_name", PANEL_CLASSES)

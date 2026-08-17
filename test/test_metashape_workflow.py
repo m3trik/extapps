@@ -56,6 +56,19 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
 
     # ------------------------------------------------------------------
 
+    def test_docs_link_logged_at_open(self) -> None:
+        """The panel opens with its docs URL in the log pane as a clickable
+        anchor (``BridgeSlotsBase.DOCS_URL`` -> ``_show_docs_link``), and the
+        pane never navigates on click (uitk's handler routes web anchors to
+        the browser instead)."""
+        self.app.processEvents()
+        url = self.slots.DOCS_URL
+        self.assertTrue(url.endswith("docs/metashape_workflow.md"), url)
+        html = self.ui.txt000.toHtml()
+        self.assertIn(f'href="{url}"', html)
+        self.assertIn(self.slots.DOCS_LABEL, self.ui.txt000.toPlainText())
+        self.assertFalse(self.ui.txt000.openLinks())
+
     def test_ui_builds(self) -> None:
         self.assertEqual(self.ui.objectName(), "metashape_workflow")
 

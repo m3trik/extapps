@@ -20,8 +20,9 @@ from uitk.widgets.textEditLogHandler import TextEditLogHandler
 from uitk.widgets.mixins.tooltip_mixin import TooltipFormat
 
 from pythontk import BatchResult, MapCompositor, NormalOutputMode
+from extapps import DOCS_BASE_URL
 
-_DOCS_URL = "https://github.com/m3trik/extapps#readme"
+_DOCS_URL = DOCS_BASE_URL + "README.md"
 
 
 class _CompositorSlotsInternal:
@@ -156,9 +157,10 @@ class CompositorSlots(_CompositorSlotsInternal):
         handler.setFormatter(LevelAwareFormatter(logger=logger, strip_html=False))
         logger.addHandler(handler)
 
-        # txt003 is a QTextBrowser; TextEditLogHandler already turned its
-        # openLinks/openExternalLinks off, so every anchor (the intro's docs
-        # link, the completion output-dir link) routes through anchorClicked.
+        # txt003 is a QTextBrowser; TextEditLogHandler already routed its
+        # links (no internal navigation; web anchors -- the intro's docs link
+        # -- open in the browser), so anchorClicked here only needs to serve
+        # the completion message's action://open output-dir link.
         if hasattr(self.ui.txt003, "anchorClicked"):
             self.ui.txt003.anchorClicked.connect(self._on_log_link_clicked)
 
@@ -469,26 +471,21 @@ class CompositorSlots(_CompositorSlotsInternal):
         ptk.FileUtils.open_explorer(path)
 
     def _on_log_link_clicked(self, url) -> None:
-        """Route clickable links in the log panel.
+        """Route ``action://`` links in the log panel.
 
         ``action://open?path=…`` reveals a file/folder in the OS file
-        explorer (used by the completion message's output-dir link);
-        ``http(s)`` links open in the default browser (the intro's docs
-        link). The QTextBrowser has openLinks disabled, so every anchor
-        is delivered here rather than navigated internally.
+        explorer (used by the completion message's output-dir link). The
+        intro's ``http(s)`` docs link is opened by
+        :meth:`TextEditLogHandler.route_links` off the same signal, so it is
+        deliberately not handled here (that would open it twice).
         """
         try:
-            scheme = url.scheme()
-            if scheme == "action" and url.host() == "open":
+            if url.scheme() == "action" and url.host() == "open":
                 from urllib.parse import parse_qs
 
                 path = parse_qs(url.query()).get("path", [""])[0]
                 if path:
                     self._open_dir(path)
-            elif scheme in ("http", "https"):
-                from qtpy.QtGui import QDesktopServices
-
-                QDesktopServices.openUrl(url)
         except Exception:  # pragma: no cover - defensive
             pass
 
@@ -795,10 +792,10 @@ class CompositorSlots(_CompositorSlotsInternal):
         if result is BatchResult.MASK_FAILURE:
             self.engine.logger.error(
                 "Unable to create masks from the source images.<br>"
-                "To create a mask, at least one set of source maps need a "
-                "transparent or single color background,<br>alternatively a "
-                "set of mask maps can be added to the source folder. "
-                "ex. &lt;map_name&gt;_mask.png"
+                "At least one map type needs a transparent or single-colour "
+                "background so the islands can be told apart —<br>"
+                "re-export with padding/dilation off (or a transparent "
+                "background) instead of edge-to-edge."
             )
             self.ui.footer.finish_progress(
                 "Mask creation failed — see message panel for details."

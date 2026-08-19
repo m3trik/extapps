@@ -56,7 +56,7 @@ class Job:
     ) -> List[Result]:
         """Launch Painter, execute ``calls`` in order over the bridge, shut down.
 
-        Args:
+        Parameters:
             calls: Sequence of :class:`Call` to execute.
             gui: Show Painter's UI. Default ``False``.
             app_path: Override Painter executable.

@@ -2,7 +2,7 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
-_Generated: 2026-08-18_
+_Generated: 2026-08-19_
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - `class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`
@@ -283,7 +283,7 @@ _Generated: 2026-08-18_
 ### `texture_maps/packer/launcher.py` — Application shell for the Map Packer UI.
 - `class PackerUI`
 
-### `texture_maps/packer/slots.py`
+### `texture_maps/packer/slots.py` — Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
 - `class PackerSlots(ImgUtils)`
   - methods: cmbR_init, cmbG_init, cmbB_init, cmbA_init, txtSuffix_init, cmbFormat_init, header_init, source_dir, b000, b001
 

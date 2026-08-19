@@ -137,7 +137,7 @@ class PainterConnection:
     ) -> bool:
         """Launch a fresh Painter and connect over the bridge HTTP server.
 
-        Args:
+        Parameters:
             force_new_instance: HARD-CODED safe default. ``False`` is rejected.
             gui: Show Painter's UI. Default ``False``.
             port: Starting port for auto-negotiation.

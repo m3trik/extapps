@@ -19,7 +19,7 @@ _REGISTRY: Dict[str, Callable] = {}
 def register(name: Optional[str] = None) -> Callable:
     """Decorator: register a function as an op.
 
-    Args:
+    Parameters:
         name: Dotted op name (e.g. ``"project.info"``). If None, derived
               from the function's module + name (``project_utils.info``
               becomes ``project.info``).

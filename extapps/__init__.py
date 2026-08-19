@@ -11,7 +11,7 @@ Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.1.14"
+__version__ = "0.1.15"
 
 # Base of every panel's "detailed docs" link (``BridgeSlotsBase.DOCS_URL`` on
 # the bridge panels, the compositor's intro, Substance's startup line): the

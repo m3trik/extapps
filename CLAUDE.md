@@ -2,17 +2,13 @@
 
 **Role**: Standalone Switchboard panels for content-pipeline workflows. Each app is a uitk external app discovered via the `uitk.external_apps.in_process` entry-point group.
 
-**Nav**: [← root](../CLAUDE.md) · **Deps**: [pythontk](../pythontk/CLAUDE.md) · [uitk](../uitk/CLAUDE.md) · **Used by**: [tentacle](../tentacle/CLAUDE.md) (via ExternalAppHandler discovery)
+**Nav**: [← root](../CLAUDE.md) · [docs](docs/README.md) · **Deps**: [pythontk](../pythontk/CLAUDE.md) · [uitk](../uitk/CLAUDE.md) · [unitytk](../unitytk/CLAUDE.md) (optional, `[unity]` extra) · **Used by**: [tentacle](../tentacle/CLAUDE.md) (ExternalAppHandler discovery)
 
 ## API surface
 
-**Before adding a helper, check the registry** (navigation rules: [root](../CLAUDE.md)):
+[`API_INDEX.md`](API_INDEX.md) · [`API_REGISTRY.md`](API_REGISTRY.md) · [`API_CHANGES.md`](API_CHANGES.md) · shadows [`API_SHADOWS.md`](../m3trik/docs/API_SHADOWS.md) — registry rules in [root](../CLAUDE.md). Upstream: [pythontk](../pythontk/API_INDEX.md) · [uitk](../uitk/API_INDEX.md) · [unitytk](../unitytk/API_INDEX.md) (optional).
 
-- [`API_INDEX.md`](API_INDEX.md) (compact — read first) · [`API_REGISTRY.md`](API_REGISTRY.md) (grep, don't Read whole) · [`API_CHANGES.md`](API_CHANGES.md)
-- Upstream: [pythontk](../pythontk/API_INDEX.md) · [uitk](../uitk/API_INDEX.md)
-- Cross-package shadows: [`m3trik/docs/API_SHADOWS.md`](../m3trik/docs/API_SHADOWS.md)
-
-This is the package-level public API. `substance_workflow`'s internal `registry.py` op registry (below) is a separate thing.
+Package-level public API; `substance_workflow`'s internal `registry.py` op registry (below) is separate.
 
 ## Scope
 
@@ -85,7 +81,7 @@ new entries surface in the package metadata `ExternalAppHandler` reads.
 ## Run tests
 
 ```powershell
-& python -m pytest o:\Cloud\Code\_scripts\extapps\test
+& python -m pytest test   # from the extapps/ root
 ```
 
 Live-DCC integration tests are gated — they launch a real Painter / a real
@@ -94,7 +90,7 @@ Live-DCC integration tests are gated — they launch a real Painter / a real
 ```powershell
 $env:SUBSTANCE_WORKFLOW_RUN_INTEGRATION = '1'   # live Substance Painter tests
 $env:METASHAPE_RUN_INTEGRATION = '1'            # live Metashape pipeline test
-& python -m pytest o:\Cloud\Code\_scripts\extapps\test
+& python -m pytest test
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for history.

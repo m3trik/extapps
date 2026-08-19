@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def _resolve_texture_sets(texture_set: Optional[str]):
     """Return a list of ``TextureSet`` objects matching the filter.
 
-    Args:
+    Parameters:
         texture_set: Single texture set name, or ``None`` for every set.
     """
     import substance_painter.textureset as textureset
@@ -227,7 +227,7 @@ def lighting_to_diffuse(
 ) -> dict:
     """Bake iray-backed AO (+ optional curvature) and composite onto base color.
 
-    Args:
+    Parameters:
         texture_set: Name of a single texture set to bake, or ``None`` for all.
         bake_resolution: Bake output size (power of two). ``1024`` → 1024².
         ao_intensity: Multiplier applied to AO contribution when compositing.

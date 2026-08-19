@@ -1073,6 +1073,24 @@ class TestConverterOptimize(unittest.TestCase):
         written = os.path.join(self.test_dir, "rock_Roughness.png")
         self.assertEqual(ImgUtils.ensure_image(written).size, (1024, 1024))
 
+    def test_clamp_target_keeps_a_non_square_maps_aspect(self):
+        """'Clamp: Target' also inherits the profile budget's POT rule, and
+        that rule used to snap each axis on its own: a 1024x768 source came out
+        1024x512 - a destroyed aspect ratio, well under the 2048 ceiling the
+        tooltip advertises, and reported by nothing. The snap now takes the
+        LONG edge and derives the other from the source ratio, so the clamp
+        resizes maps instead of reshaping them.
+        """
+        path = self._texture(name="rock_BaseColor.png", size=(1024, 768))
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        self.converter.tb000(
+            self._widget(clamp=ConverterSlots.CLAMP_TARGET, target=WF.GLTF, old="")
+        )
+
+        written = os.path.join(self.test_dir, "rock_BaseColor.png")
+        self.assertEqual(ImgUtils.ensure_image(written).size, (1024, 768))
+
     def test_unbudgeted_target_says_so_rather_than_silently_not_clamping(self):
         path = self._texture(size=(256, 256))
         self.converter._get_texture_paths = Mock(return_value=[path])

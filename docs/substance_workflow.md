@@ -49,10 +49,10 @@ results = Job.run_batch([
 ## Tests
 
 ```powershell
-& python -m pytest o:\Cloud\Code\_scripts\extapps\test
+& python -m pytest test                                 # from the extapps/ root
 # live-Painter integration (opt-in — launches a real Painter):
 $env:SUBSTANCE_WORKFLOW_RUN_INTEGRATION = '1'
-& python -m pytest o:\Cloud\Code\_scripts\extapps\test
+& python -m pytest test
 ```
 
 ## Known gaps (verify before relying on)

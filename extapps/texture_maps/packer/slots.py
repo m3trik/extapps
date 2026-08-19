@@ -1,5 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
+"""Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps."""
 from typing import List
 from pythontk.img_utils._img_utils import ImgUtils
 from pythontk.core_utils.engines.textures.map_factory import MapFactory
@@ -7,6 +8,8 @@ from pythontk.file_utils._file_utils import FileUtils
 
 
 class PackerSlots(ImgUtils):
+    """Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking."""
+
     channels = ["R", "G", "B", "A"]
     grayscale_types = [
         "None",

@@ -15,7 +15,12 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-dependencies = ["pythontk>=0.9.20", "uitk>=1.3.79", "qtpy"]
+# pythontk floor is 0.9.25: the Map Converter's 'Clamp: Target' relies on
+# MapOptimizer snapping the LONG edge to a power of two and deriving the
+# other from the source ratio. 0.9.24 snaps each axis on its own, which
+# reshapes a 1024x768 map to 1024x512 -- pinned because CI installs
+# pythontk from PyPI, where the workspace copy is not what gets tested.
+dependencies = ["pythontk>=0.9.25", "uitk>=1.3.79", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

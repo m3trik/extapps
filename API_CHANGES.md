@@ -1,5 +1,5 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ 4411786). Generated 2026-08-20._
+_Diff vs the last release (origin/main @ af80361). Generated 2026-08-20._
 
-No public API changes since the last release (origin/main @ 4411786).
+No public API changes since the last release (origin/main @ af80361).

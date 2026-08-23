@@ -146,7 +146,7 @@ Slots for the standalone Marmoset Workflow panel.
 
 Plain default values + literal formatting for Marmoset template tokens.
 
-- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L93)** — TemplateParams — module namespace.
+- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L97)** — TemplateParams — module namespace.
   - `TemplateParams.derive_auto_maps(manifest: Dict[str, Any]) -> Dict[str, bool]` *(static)* — Return the ``{MAP_*: bool}`` roster *manifest*'s textures imply.
   - `TemplateParams.derive_bake_values(values: Dict[str, Any]) -> Dict[str, Any]` *(static)* — Return the managed bake tokens derived from *values*.
   - `TemplateParams.python_literal(value: Any) -> str` *(static)* — Format *value* as a Python source literal for template substitution.

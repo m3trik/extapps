@@ -354,7 +354,7 @@
         {
           "name": "TemplateParams",
           "summary": "TemplateParams — module namespace.",
-          "line": 93,
+          "line": 97,
           "bases": [],
           "members": [
             {
@@ -363,7 +363,7 @@
               "kind": "staticmethod",
               "signature": "(manifest: Dict[str, Any]) -> Dict[str, bool]",
               "summary": "Return the ``{MAP_*: bool}`` roster *manifest*'s textures imply.",
-              "line": 147,
+              "line": 151,
               "deprecated": false
             },
             {
@@ -372,7 +372,7 @@
               "kind": "staticmethod",
               "signature": "(values: Dict[str, Any]) -> Dict[str, Any]",
               "summary": "Return the managed bake tokens derived from *values*.",
-              "line": 178,
+              "line": 182,
               "deprecated": false
             },
             {
@@ -381,7 +381,7 @@
               "kind": "staticmethod",
               "signature": "(value: Any) -> str",
               "summary": "Format *value* as a Python source literal for template substitution.",
-              "line": 210,
+              "line": 214,
               "deprecated": false
             },
             {
@@ -390,7 +390,7 @@
               "kind": "staticmethod",
               "signature": "() -> Dict[str, Any]",
               "summary": "Return a copy of :data:`DEFAULTS`.",
-              "line": 221,
+              "line": 225,
               "deprecated": false
             },
             {
@@ -399,7 +399,7 @@
               "kind": "staticmethod",
               "signature": "(values: Dict[str, Any]) -> Dict[str, str]",
               "summary": "Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.",
-              "line": 226,
+              "line": 230,
               "deprecated": false
             }
           ]

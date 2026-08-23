@@ -9,6 +9,9 @@ import tempfile
 import shutil
 import unittest
 
+from unittest import mock
+
+import pythontk as ptk
 from pythontk.core_utils.user_config import CONFIG_ROOT_ENV_VAR
 from extapps.photogrammetry import profile as pp
 
@@ -96,7 +99,6 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         """A malformed / unreadable profile must not break app discovery —
         configured_app_path returns None so the caller falls through to standard
         discovery rather than crashing the availability check."""
-        from unittest import mock
         with mock.patch.object(pp.Profile, "get_profile", side_effect=ValueError("boom")):
             self.assertIsNone(pp.Profile.configured_app_path("metashape_exe"))
 
@@ -104,7 +106,6 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         """A discovery function (Brush here) falls back to apps.<key> when its env
         var is unset and the app isn't on PATH (the network-install path), and a
         configured-but-missing path falls through to mock mode (offline share)."""
-        from unittest import mock
         from extapps.photogrammetry.gaussian_splat_workflow._gaussian_splat_workflow \
             import GaussianSplatWorkflow
         fake = os.path.join(self.tmp, "brush_app.exe")
@@ -224,7 +225,6 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         Metashape used ``env and isfile(env)`` (so an invalid ``METASHAPE_EXE``
         silently resolved the real install).
         """
-        from unittest import mock
         from extapps.photogrammetry.gaussian_splat_workflow._gaussian_splat_workflow             import GaussianSplatWorkflow
         from extapps.photogrammetry.gaussian_splat_workflow._splat_publish             import SplatPublishWorkflow
         from extapps.photogrammetry.realityscan_workflow._realityscan_workflow             import RealityCaptureWorkflow
@@ -313,6 +313,346 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         )
         proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
         self.assertEqual(proc.returncode, 0, f"Qt imported by headless path:\n{proc.stderr}")
+
+
+class ResolveAppPrecedenceTest(unittest.TestCase):
+    """The ``Profile.resolve_app`` discovery chain, stage by stage.
+
+    ``resolve_app`` is the single entry point for locating an external
+    application (CLAUDE.md), and every engine's ``find_*`` is a thin declaration
+    of what to feed it. The existing suite exercises it only *through* those
+    engines, which pins the wiring but not the chain: ``config_key=None``, the
+    fallback ordering, the validate/fallback asymmetry and the not-found tail
+    have no coverage that way. This class drives the chain directly.
+
+    Precedence, read off :meth:`Profile.resolve_app` (profile.py:317-331), is
+    **env → profile → fallbacks**, with the env stage *terminal* — set at all
+    decides the call, valid or not. There is no "explicit path" stage: the
+    ``path`` parameter selects *which profile file* stage 2 reads, it does not
+    supply a result.
+    """
+
+    def setUp(self):
+        self._prev = {
+            k: os.environ.get(k)
+            for k in (CONFIG_ROOT_ENV_VAR, pp.PROFILE_ENV, "FAKE_APP_EXE")
+        }
+        # Managed scratch: allocation joins a swept prefix namespace, so an
+        # abandoned dir (a hard kill mid-test) is reclaimed by age instead of
+        # leaking. "scoped" — this test is the producer and outlives every
+        # consumer, and a failure keeps the dir for inspection.
+        self._tmp_store = ptk.TempArtifacts("extapps_test_profile", policy="scoped")
+        self.tmp = self._tmp_store.dir_path()
+        os.environ[CONFIG_ROOT_ENV_VAR] = self.tmp
+        os.environ.pop(pp.PROFILE_ENV, None)
+        os.environ.pop("FAKE_APP_EXE", None)
+        self.calls = []
+
+    def tearDown(self):
+        for k, v in self._prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        self._tmp_store.cleanup()
+
+    # ---------------------------------------------------------------- helpers
+    def _file(self, name):
+        """Create an existing file under the scratch dir; return its path."""
+        path = os.path.join(self.tmp, name)
+        with open(path, "wb"):
+            pass
+        return path
+
+    def _profile_with(self, **apps):
+        """Write a profile whose ``apps`` block carries *apps*; return its path."""
+        path = os.path.join(self.tmp, "prof.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"apps": apps}, fh)
+        return path
+
+    def _recorder(self, tag, result):
+        """A fallback that records that it ran, then returns *result*."""
+
+        def _fallback():
+            self.calls.append(tag)
+            return result
+
+        return _fallback
+
+    # ------------------------------------------------------- stage 1: env var
+    def test_env_wins_over_profile_and_fallbacks(self):
+        env_exe = self._file("from_env.exe")
+        prof = self._profile_with(fake_app_exe=self._file("from_profile.exe"))
+        os.environ["FAKE_APP_EXE"] = env_exe
+        got = pp.Profile.resolve_app(
+            "FAKE_APP_EXE",
+            "fake_app_exe",
+            fallbacks=(self._recorder("fb", self._file("from_fallback.exe")),),
+            path=prof,
+        )
+        self.assertEqual(got, env_exe)
+        self.assertEqual(self.calls, [])  # later stages never consulted
+
+    def test_env_set_but_invalid_is_terminal(self):
+        """Set-but-invalid returns None instead of falling through — the
+        property that lets ``FOO_EXE=`` force mock mode on a machine where the
+        app is installed AND named in the profile."""
+        prof = self._profile_with(fake_app_exe=self._file("real.exe"))
+        for bad in ("", os.path.join(self.tmp, "nope.exe")):
+            with self.subTest(value=bad or "<empty>"):
+                self.calls.clear()
+                os.environ["FAKE_APP_EXE"] = bad
+                got = pp.Profile.resolve_app(
+                    "FAKE_APP_EXE",
+                    "fake_app_exe",
+                    fallbacks=(self._recorder("fb", self._file("real.exe")),),
+                    path=prof,
+                )
+                self.assertIsNone(got)
+                self.assertEqual(self.calls, [])
+
+    def test_unset_env_is_not_terminal(self):
+        """Terminal means *set*, not *present-and-empty* — an unset var has to
+        fall through, or no machine without the override could discover
+        anything."""
+        exe = self._file("configured.exe")
+        prof = self._profile_with(fake_app_exe=exe)
+        self.assertNotIn("FAKE_APP_EXE", os.environ)
+        self.assertEqual(
+            pp.Profile.resolve_app("FAKE_APP_EXE", "fake_app_exe", path=prof), exe
+        )
+
+    # -------------------------------------------------------- stage 2: profile
+    def test_profile_value_wins_over_fallbacks(self):
+        exe = self._file("configured.exe")
+        prof = self._profile_with(fake_app_exe=exe)
+        got = pp.Profile.resolve_app(
+            "FAKE_APP_EXE",
+            "fake_app_exe",
+            fallbacks=(self._recorder("fb", self._file("standard.exe")),),
+            path=prof,
+        )
+        self.assertEqual(got, exe)
+        self.assertEqual(self.calls, [])
+
+    def test_invalid_profile_value_falls_through_to_fallbacks(self):
+        """The offline-network-share case: configured but not reachable, so
+        discovery continues rather than reporting the app missing."""
+        standard = self._file("standard.exe")
+        prof = self._profile_with(fake_app_exe=os.path.join(self.tmp, "gone.exe"))
+        got = pp.Profile.resolve_app(
+            "FAKE_APP_EXE",
+            "fake_app_exe",
+            fallbacks=(self._recorder("fb", standard),),
+            path=prof,
+        )
+        self.assertEqual(got, standard)
+        self.assertEqual(self.calls, ["fb"])
+
+    def test_no_config_key_skips_the_profile_stage_entirely(self):
+        """``config_key=None`` (splat-transform has no profile key) must not
+        read the profile at all — not read it and find nothing."""
+        standard = self._file("standard.exe")
+        with mock.patch.object(
+            pp.Profile, "configured_app_path", side_effect=AssertionError("consulted")
+        ):
+            got = pp.Profile.resolve_app(
+                "FAKE_APP_EXE", None, fallbacks=(self._recorder("fb", standard),)
+            )
+        self.assertEqual(got, standard)
+        self.assertEqual(self.calls, ["fb"])
+
+    def test_path_selects_which_profile_stage_two_reads(self):
+        """*path* is forwarded to configured_app_path — it names a profile file,
+        it is not itself a result."""
+        a, b = self._file("a.exe"), self._file("b.exe")
+        prof_a = os.path.join(self.tmp, "a.json")
+        prof_b = os.path.join(self.tmp, "b.json")
+        for target, exe in ((prof_a, a), (prof_b, b)):
+            with open(target, "w", encoding="utf-8") as fh:
+                json.dump({"apps": {"fake_app_exe": exe}}, fh)
+        self.assertEqual(
+            pp.Profile.resolve_app("FAKE_APP_EXE", "fake_app_exe", path=prof_a), a
+        )
+        self.assertEqual(
+            pp.Profile.resolve_app("FAKE_APP_EXE", "fake_app_exe", path=prof_b), b
+        )
+
+    # ------------------------------------------------------ stage 3: fallbacks
+    def test_fallbacks_run_in_order_and_stop_at_the_first_hit(self):
+        second = self._file("second.exe")
+        got = pp.Profile.resolve_app(
+            "FAKE_APP_EXE",
+            None,
+            fallbacks=(
+                self._recorder("first", None),
+                self._recorder("second", second),
+                self._recorder("third", self._file("third.exe")),
+            ),
+        )
+        self.assertEqual(got, second)
+        self.assertEqual(self.calls, ["first", "second"])  # third never ran
+
+    def test_fallback_results_are_not_validated(self):
+        """Documented asymmetry: *validate* guards stages 1-2 only. A fallback
+        owns its own validation because what counts as valid differs per engine
+        (a file for an exe, a dir holding a train script for SuGaR), so whatever
+        it returns is taken as-is."""
+        ghost = os.path.join(self.tmp, "never_existed.exe")
+        self.assertFalse(os.path.exists(ghost))
+        self.assertEqual(
+            pp.Profile.resolve_app("FAKE_APP_EXE", None, fallbacks=(lambda: ghost,)),
+            ghost,
+        )
+
+    def test_not_found_returns_none_after_exhausting_every_stage(self):
+        prof = self._profile_with(fake_app_exe=os.path.join(self.tmp, "gone.exe"))
+        got = pp.Profile.resolve_app(
+            "FAKE_APP_EXE",
+            "fake_app_exe",
+            fallbacks=(self._recorder("a", None), self._recorder("b", None)),
+            path=prof,
+        )
+        self.assertIsNone(got)
+        self.assertEqual(self.calls, ["a", "b"])
+
+    def test_no_fallbacks_is_a_valid_chain(self):
+        self.assertIsNone(pp.Profile.resolve_app("FAKE_APP_EXE", None))
+
+    # --------------------------------------------------------------- validate
+    def test_custom_validate_governs_stages_one_and_two(self):
+        """The SuGaR shape: the target is a *directory* holding a marker file,
+        so isfile would reject it at both stages."""
+        repo = os.path.join(self.tmp, "sugar_repo")
+        os.makedirs(repo, exist_ok=True)
+        with open(os.path.join(repo, "train_full_pipeline.py"), "wb"):
+            pass
+        is_repo = lambda p: os.path.isfile(  # noqa: E731
+            os.path.join(p, "train_full_pipeline.py")
+        )
+        prof = self._profile_with(fake_app_dir=repo)
+
+        # stage 2 accepts it with the custom predicate, rejects it with the default
+        self.assertEqual(
+            pp.Profile.resolve_app(
+                "FAKE_APP_EXE", "fake_app_dir", validate=is_repo, path=prof
+            ),
+            repo,
+        )
+        self.assertIsNone(
+            pp.Profile.resolve_app("FAKE_APP_EXE", "fake_app_dir", path=prof)
+        )
+        # stage 1 uses the same predicate
+        os.environ["FAKE_APP_EXE"] = repo
+        self.assertEqual(
+            pp.Profile.resolve_app("FAKE_APP_EXE", None, validate=is_repo), repo
+        )
+        self.assertIsNone(pp.Profile.resolve_app("FAKE_APP_EXE", None))
+
+    def test_default_validate_is_resolved_per_call_not_bound_at_import(self):
+        """Documented: ``validate = validate or os.path.isfile`` runs per call,
+        so a patched ``os.path.isfile`` is honoured. Binding it at import would
+        make every engine's discovery unmockable."""
+        ghost = os.path.join(self.tmp, "ghost.exe")
+        os.environ["FAKE_APP_EXE"] = ghost
+        self.assertIsNone(pp.Profile.resolve_app("FAKE_APP_EXE", None))
+        with mock.patch("os.path.isfile", return_value=True):
+            self.assertEqual(pp.Profile.resolve_app("FAKE_APP_EXE", None), ghost)
+
+    # ---------------------------------------------------------------- caching
+    def test_resolution_is_not_cached(self):
+        """There is no caching anywhere in the chain (``resolve_app`` reads
+        ``os.environ`` per call and ``UserConfig.resolve`` re-reads the file), and
+        the panels depend on that: 'Download Brush' installs into the managed
+        catalog and the very next availability check has to see it. A cache here
+        would make a freshly installed engine read as missing until restart."""
+        exe = self._file("late.exe")
+        prof_missing = self._profile_with(fake_app_exe=os.path.join(self.tmp, "x.exe"))
+        self.assertIsNone(
+            pp.Profile.resolve_app("FAKE_APP_EXE", "fake_app_exe", path=prof_missing)
+        )
+        # Same arguments, newly-appearing install -> found, no restart needed.
+        prof_found = self._profile_with(fake_app_exe=exe)
+        self.assertEqual(
+            pp.Profile.resolve_app("FAKE_APP_EXE", "fake_app_exe", path=prof_found), exe
+        )
+        # And an env var set after the first call takes effect immediately.
+        os.environ["FAKE_APP_EXE"] = ""
+        self.assertIsNone(
+            pp.Profile.resolve_app("FAKE_APP_EXE", "fake_app_exe", path=prof_found)
+        )
+
+    def test_bad_profile_does_not_break_the_chain(self):
+        """A malformed profile must degrade to 'no configured path', not raise —
+        the panel availability check runs this on every open."""
+        prof = os.path.join(self.tmp, "broken.json")
+        with open(prof, "w", encoding="utf-8") as fh:
+            fh.write("{not json")
+        standard = self._file("standard.exe")
+        got = pp.Profile.resolve_app(
+            "FAKE_APP_EXE",
+            "fake_app_exe",
+            fallbacks=(self._recorder("fb", standard),),
+            path=prof,
+        )
+        self.assertEqual(got, standard)
+
+
+class DiscoverSourceDirsTest(unittest.TestCase):
+    """``Profile.discover_source_dirs`` — the other I/O entry point in profile.py.
+
+    Both ``run_combined`` drivers call it to expand ``--input-root`` into the
+    per-capture subdirs of a batch run, so a silent miss there drops a capture
+    from the batch.
+    """
+
+    def setUp(self):
+        self._store = ptk.TempArtifacts("extapps_test_sources", policy="scoped")
+        self.root = self._store.dir_path()
+
+    def tearDown(self):
+        self._store.cleanup()
+
+    def _sub(self, name, *files):
+        path = os.path.join(self.root, name)
+        os.makedirs(path, exist_ok=True)
+        for fn in files:
+            with open(os.path.join(path, fn), "wb"):
+                pass
+        return path
+
+    def test_returns_only_image_bearing_immediate_subdirs_sorted(self):
+        b = self._sub("b_capture", "shot.JPG")  # extension match is case-insensitive
+        a = self._sub("a_capture", "frame.png")
+        self._sub("notes", "readme.txt")  # no images -> skipped
+        with open(os.path.join(self.root, "loose.jpg"), "wb"):
+            pass  # a file at the root is not a source dir
+        self.assertEqual(pp.Profile.discover_source_dirs(self.root), [a, b])
+
+    def test_does_not_recurse(self):
+        """Only *immediate* subdirs: images one level deeper do not promote the
+        parent, which is what keeps an already-processed output tree out of a
+        batch."""
+        outer = os.path.join(self.root, "outer")
+        os.makedirs(os.path.join(outer, "inner"), exist_ok=True)
+        with open(os.path.join(outer, "inner", "frame.jpg"), "wb"):
+            pass
+        self.assertEqual(pp.Profile.discover_source_dirs(self.root), [])
+
+    def test_every_declared_extension_is_recognized(self):
+        expected = []
+        for i, ext in enumerate(pp.IMAGE_EXTS):
+            expected.append(self._sub(f"cap{i}", f"frame{ext}"))
+        self.assertEqual(pp.Profile.discover_source_dirs(self.root), sorted(expected))
+
+    def test_missing_root_raises_valueerror(self):
+        with self.assertRaises(ValueError) as ctx:
+            pp.Profile.discover_source_dirs(os.path.join(self.root, "absent"))
+        self.assertIn("input-root does not exist", str(ctx.exception))
+
+    def test_empty_root_is_empty_not_an_error(self):
+        self.assertEqual(pp.Profile.discover_source_dirs(self.root), [])
 
 
 if __name__ == "__main__":

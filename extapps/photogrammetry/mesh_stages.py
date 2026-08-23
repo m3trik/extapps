@@ -17,7 +17,9 @@ the exported file exists. ``mock_mode`` only softens the *missing-input*
 case so mock pipeline runs stay quiet.
 
 Host requirements: ``self.qc`` (a ``pythontk.QcLog``), ``self.project_path``
-(str), ``self.name`` (str), and ``self._notify(stage, fraction)``.
+(str), ``self.name`` (str), and ``self._notify(stage, fraction)`` (supplied by
+:class:`~extapps.photogrammetry._progress_notify.ProgressNotifyMixin`, which both
+engines also inherit).
 Optional: ``self.gate`` (a ``pythontk.QcGate`` — the ``"mesh"`` gate is
 checked when present) and ``self.mock_mode``.
 """

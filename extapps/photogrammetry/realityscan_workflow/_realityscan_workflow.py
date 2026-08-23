@@ -24,6 +24,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from pythontk import ImgUtils, QcGate, QcLog
 
+from .._progress_notify import ProgressNotifyMixin
 from ..profile import Profile
 from ..mesh_stages import MeshStagesMixin
 from ..prep_stages import PrepStagesMixin
@@ -115,7 +116,10 @@ class _RealityCaptureWorkflowInternal:
 # Workflow
 # ---------------------------------------------------------------------------
 class RealityCaptureWorkflow(
-    PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal
+    ProgressNotifyMixin,
+    PrepStagesMixin,
+    MeshStagesMixin,
+    _RealityCaptureWorkflowInternal,
 ):
     """Wrapper around RealityCapture's CLI for the standard photogrammetry
     pipeline. Mirrors :class:`MetashapeWorkflow`'s public method shape.
@@ -298,18 +302,6 @@ class RealityCaptureWorkflow(
             else "RealityCapture"
         )
         return f"{product} {self.get_realitycapture_version()} ({self.rc_exe})"
-
-    def _notify(self, stage: str, fraction: float = 0.0) -> None:
-        if self.progress is None:
-            return
-        try:
-            self.progress(stage, float(fraction))
-        except Exception as e:
-            import sys
-            print(
-                f"[RealityCaptureWorkflow] progress callback raised: {e}",
-                file=sys.stderr,
-            )
 
     def _connection(self):
         """Resolve (once) and return the execution transport.

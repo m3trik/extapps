@@ -26,6 +26,7 @@ from typing import Callable, Dict, List, Optional
 
 from pythontk import QcLog
 
+from .._progress_notify import ProgressNotifyMixin
 from ..profile import Profile
 
 # Prebuilt Brush release binaries (github.com/ArthurBrussee/brush). cargo-dist
@@ -86,7 +87,7 @@ class _GaussianSplatWorkflowInternal:
         return _printer
 
 
-class GaussianSplatWorkflow(_GaussianSplatWorkflowInternal):
+class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal):
     """Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``."""
     @staticmethod
     def find_brush_exe() -> Optional[str]:
@@ -192,16 +193,6 @@ class GaussianSplatWorkflow(_GaussianSplatWorkflowInternal):
         if self.brush_exe is None:
             return "Brush not found (set BRUSH_EXE env or install)"
         return f"Brush ({self.brush_exe})"
-
-    def _notify(self, stage: str, fraction: float = 0.0) -> None:
-        if self.progress is None:
-            return
-        try:
-            self.progress(stage, float(fraction))
-        except Exception as e:
-            import sys
-            print(f"[GaussianSplatWorkflow] progress callback raised: {e}",
-                  file=sys.stderr)
 
     def _run_brush(self, args: List[str], label: str = "train") -> int:
         """Invoke Brush; stream stdout/stderr to ``logs/<label>.log``."""

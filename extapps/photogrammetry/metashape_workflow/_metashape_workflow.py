@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 from pythontk import GateError, ImgUtils, QcGate, QcLog  # noqa: F401 — GateError is a
 # pure re-export (no local use); pinned by test_metashape_workflow.py.
 
+from .._progress_notify import ProgressNotifyMixin
 from ..mesh_stages import MeshStagesMixin
 from ..prep_stages import PrepStagesMixin
 
@@ -45,7 +46,7 @@ DEFAULT_GATES: Dict[str, Dict[str, float]] = {
 }
 
 
-class MetashapeWorkflow(PrepStagesMixin, MeshStagesMixin):
+class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin):
     """Wrapper around Agisoft Metashape's Python API for the standard
     photogrammetry pipeline. Supports a `mock_mode` for dry-runs without a
     valid license, and a `progress` callback for UI integration.
@@ -165,16 +166,6 @@ class MetashapeWorkflow(PrepStagesMixin, MeshStagesMixin):
             f"Metashape {MetashapeWorkflow.get_metashape_version()} "
             f"({'Licensed' if MetashapeWorkflow.is_license_valid() else 'No valid license'})"
         )
-
-    def _notify(self, stage: str, fraction: float = 0.0) -> None:
-        if self.progress is None:
-            return
-        try:
-            self.progress(stage, float(fraction))
-        except Exception as e:
-            import sys
-
-            print(f"[MetashapeWorkflow] progress callback raised: {e}", file=sys.stderr)
 
     @staticmethod
     def _camera_quality(cam: Any, default: Optional[float] = None) -> Optional[float]:

@@ -59,6 +59,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Union
 
 from pythontk import QcLog
 
+from .._progress_notify import ProgressNotifyMixin
 from ..profile import Profile
 from ._gaussian_splat_workflow import GaussianSplatWorkflow
 
@@ -75,7 +76,7 @@ class _SplatPublishWorkflowInternal:
         return ",".join(str(v) for v in value)
 
 
-class SplatPublishWorkflow(_SplatPublishWorkflowInternal):
+class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal):
     """Clean a trained 3DGS ``.ply`` and convert it to engine-ready formats."""
     @staticmethod
     def find_splat_transform() -> "Optional[str]":
@@ -133,16 +134,6 @@ class SplatPublishWorkflow(_SplatPublishWorkflowInternal):
             return ("splat-transform not found (npm i -g @playcanvas/splat-transform, "
                     "or set SPLAT_TRANSFORM_EXE)")
         return f"splat-transform ({self.exe})"
-
-    def _notify(self, stage: str, fraction: float = 0.0) -> None:
-        if self.progress is None:
-            return
-        try:
-            self.progress(stage, float(fraction))
-        except Exception as e:
-            import sys
-            print(f"[SplatPublishWorkflow] progress callback raised: {e}",
-                  file=sys.stderr)
 
     def _run_transform(
         self,

@@ -37,6 +37,7 @@ from typing import Callable, List, Optional
 
 from pythontk import QcLog
 
+from .._progress_notify import ProgressNotifyMixin
 from ..profile import Profile
 
 
@@ -56,7 +57,7 @@ class _SugarMeshWorkflowInternal:
         )
 
 
-class SugarMeshWorkflow(_SugarMeshWorkflowInternal):
+class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
     """COLMAP dataset → SuGaR refined textured ``.obj`` mesh."""
     @staticmethod
     def find_sugar_dir() -> "Optional[str]":
@@ -126,16 +127,6 @@ class SugarMeshWorkflow(_SugarMeshWorkflowInternal):
             return "SuGaR not found (set SUGAR_DIR env or install)"
         env = self.env_bat or "(no sugar_buildenv.bat — env may be inactive)"
         return f"SuGaR ({self.sugar_dir}) via {env}"
-
-    def _notify(self, stage: str, fraction: float = 0.0) -> None:
-        if self.progress is None:
-            return
-        try:
-            self.progress(stage, float(fraction))
-        except Exception as e:
-            import sys
-            print(f"[SugarMeshWorkflow] progress callback raised: {e}",
-                  file=sys.stderr)
 
     @staticmethod
     def _b(value: bool) -> str:

@@ -2,8 +2,6 @@
 
 _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_registry.py`._
 
-_Generated: 2026-08-23_
-
 ## Index
 
 - [`marmoset_workflow/_marmoset_engine.py`](#marmoset_workflow--_marmoset_engine) — Drive Marmoset Toolbag from the outside -- launch + templated automation.
@@ -19,6 +17,7 @@ _Generated: 2026-08-23_
 - [`mesh_convert/slots.py`](#mesh_convert--slots)
 - [`photogrammetry/_panel_slots.py`](#photogrammetry--_panel_slots) — Shared scaffolding for the photogrammetry workflow panels.
 - [`photogrammetry/_process_runner.py`](#photogrammetry--_process_runner) — Async, log-streaming process runner shared by the photogrammetry panels.
+- [`photogrammetry/_progress_notify.py`](#photogrammetry--_progress_notify) — The one progress-notify shim the photogrammetry engines share.
 - [`photogrammetry/_shared_params.py`](#photogrammetry--_shared_params) — Input pre-processing parameter specs shared by the image-in engines.
 - [`photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py`](#photogrammetry--gaussian_splat_workflow--_gaussian_splat_runner) — Local, async runner the Brush (gaussian-splat) panel dispatches to.
 - [`photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py`](#photogrammetry--gaussian_splat_workflow--_gaussian_splat_workflow) — Brush gaussian-splat workflow engine.
@@ -223,6 +222,13 @@ Async, log-streaming process runner shared by the photogrammetry panels.
   - `ProcessRunner.cancel(self) -> None` — Kill an in-flight run (no-op when idle).
 - **[`class PyModuleRunner(ProcessRunner)`](extapps/extapps/photogrammetry/_process_runner.py#L173)** — ``ProcessRunner`` for engines whose headless driver is a normal-Python
 
+<a id="photogrammetry--_progress_notify"></a>
+### `photogrammetry/_progress_notify.py`
+
+The one progress-notify shim the photogrammetry engines share.
+
+- **[`class ProgressNotifyMixin`](extapps/extapps/photogrammetry/_progress_notify.py#L40)** — Supplies ``_notify`` to an engine that carries a ``progress`` callback.
+
 <a id="photogrammetry--_shared_params"></a>
 ### `photogrammetry/_shared_params.py`
 
@@ -249,7 +255,7 @@ Local, async runner the Brush (gaussian-splat) panel dispatches to.
 
 Brush gaussian-splat workflow engine.
 
-- **[`class GaussianSplatWorkflow(_GaussianSplatWorkflowInternal)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L89)** — Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``.
+- **[`class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py#L90)** — Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``.
   - `GaussianSplatWorkflow.find_brush_exe() -> Optional[str]` *(static)* — Return the Brush executable path or None.
   - `GaussianSplatWorkflow.is_brush_available() -> bool` *(static)*
   - `GaussianSplatWorkflow.install_brush(progress_callback: Optional[Callable[[int, int], None]] = None) -> str` *(static)* — Download + install Brush via :class:`pythontk.AppInstaller`;
@@ -270,7 +276,7 @@ Headless entry point: download + install Brush via pythontk.AppInstaller.
 
 Engine-delivery stage for the splat track — clean + convert to engine formats.
 
-- **[`class SplatPublishWorkflow(_SplatPublishWorkflowInternal)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_splat_publish.py#L78)** — Clean a trained 3DGS ``.ply`` and convert it to engine-ready formats.
+- **[`class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/_splat_publish.py#L79)** — Clean a trained 3DGS ``.ply`` and convert it to engine-ready formats.
   - `SplatPublishWorkflow.find_splat_transform() -> 'Optional[str]'` *(static)* — Return the ``splat-transform`` executable path or None.
   - `SplatPublishWorkflow.is_splat_transform_available() -> bool` *(static)*
   - `SplatPublishWorkflow.get_publish_info(self) -> str`
@@ -327,7 +333,7 @@ Slots for the Brush (gaussian-splat) Workflow panel.
 
 Shared, SDK-agnostic mesh post-processing stages (PyMeshLab-backed).
 
-- **[`class MeshStagesMixin`](extapps/extapps/photogrammetry/mesh_stages.py#L31)** — Measure / refine / bake / repair stages shared by both photogrammetry engines.
+- **[`class MeshStagesMixin`](extapps/extapps/photogrammetry/mesh_stages.py#L33)** — Measure / refine / bake / repair stages shared by both photogrammetry engines.
   - `MeshStagesMixin.measure_mesh(self, model_path: Optional[str] = None) -> Optional[Dict[str, Any]]` — QC metrics for the exported mesh file, evaluated against the
   - `MeshStagesMixin.refine_mesh(self, model_path: Optional[str] = None, output_path: Optional[str] = None, remesh_target_pct: float = 0.0, decimate_target_faces: int = 0, curvature_weighted: bool = True, compare_deviation: bool = True) -> Optional[str]` — Isotropic remesh and/or curvature-weighted decimation on the
   - `MeshStagesMixin.bake_vertex_color(self, model_path: Optional[str] = None, output_path: Optional[str] = None, texture_size: int = 1024) -> Optional[Tuple[str, str]]` — Bake per-vertex color to a texture on auto-generated UVs
@@ -358,7 +364,7 @@ Local, async runner the Metashape panel dispatches to.
 <a id="photogrammetry--metashape_workflow--_metashape_workflow"></a>
 ### `photogrammetry/metashape_workflow/_metashape_workflow.py`
 
-- **[`class MetashapeWorkflow(PrepStagesMixin, MeshStagesMixin)`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L48)** — Wrapper around Agisoft Metashape's Python API for the standard
+- **[`class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin)`](extapps/extapps/photogrammetry/metashape_workflow/_metashape_workflow.py#L49)** — Wrapper around Agisoft Metashape's Python API for the standard
   - `MetashapeWorkflow.is_metashape_available() -> bool` *(static)* — True if the Metashape Python module imported successfully.
   - `MetashapeWorkflow.is_license_valid() -> bool` *(static)* — True if a valid Metashape license is reachable.
   - `MetashapeWorkflow.get_metashape_version() -> str` *(static)*
@@ -428,7 +434,7 @@ Slots for the Metashape Workflow panel.
 
 Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
 
-- **[`class PrepStagesMixin`](extapps/extapps/photogrammetry/prep_stages.py#L25)** — Curate / equalize / export-sidecar stages shared by both photogrammetry engines.
+- **[`class PrepStagesMixin`](extapps/extapps/photogrammetry/prep_stages.py#L27)** — Curate / equalize / export-sidecar stages shared by both photogrammetry engines.
   - `PrepStagesMixin.image_long_edge(image_path: str) -> Optional[int]` *(static)* — Long edge (px) of an image, or ``None`` if unreadable.
   - `PrepStagesMixin.extract_videos_to_dir(videos: Sequence[str], output_dir: str, *, window_sec: float = 1.0, quality: int = 95, log: Optional[Callable[[str], None]] = None) -> List[str]` *(static)* — Extract frames from one or more videos into a single ``output_dir``.
   - `PrepStagesMixin.first_image_in_dirs(dirs: Sequence[str]) -> Optional[str]` *(static)* — First image file (sorted) across ``dirs``, or ``None``.
@@ -477,7 +483,7 @@ Local, async runner the RealityCapture panel dispatches to.
 
 RealityCapture / RealityScan workflow engine.
 
-- **[`class RealityCaptureWorkflow(PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal)`](extapps/extapps/photogrammetry/realityscan_workflow/_realityscan_workflow.py#L117)** — Wrapper around RealityCapture's CLI for the standard photogrammetry
+- **[`class RealityCaptureWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal)`](extapps/extapps/photogrammetry/realityscan_workflow/_realityscan_workflow.py#L118)** — Wrapper around RealityCapture's CLI for the standard photogrammetry
   - `RealityCaptureWorkflow.find_realitycapture_exe() -> Optional[str]` *(static)* — Return the RealityCapture.exe path or None.
   - `RealityCaptureWorkflow.is_realitycapture_available() -> bool` *(static)*
   - `RealityCaptureWorkflow.get_realitycapture_version() -> str` *(static)* — Read RC's FileVersion from Windows binary metadata.
@@ -583,7 +589,7 @@ Slots for the RealityCapture Workflow panel.
 
 SuGaR mesh-extraction workflow engine.
 
-- **[`class SugarMeshWorkflow(_SugarMeshWorkflowInternal)`](extapps/extapps/photogrammetry/sugar_mesh_workflow/_sugar_mesh.py#L59)** — COLMAP dataset → SuGaR refined textured ``.obj`` mesh.
+- **[`class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal)`](extapps/extapps/photogrammetry/sugar_mesh_workflow/_sugar_mesh.py#L60)** — COLMAP dataset → SuGaR refined textured ``.obj`` mesh.
   - `SugarMeshWorkflow.find_sugar_dir() -> 'Optional[str]'` *(static)* — Return the SuGaR repo dir or None.
   - `SugarMeshWorkflow.is_sugar_available() -> bool` *(static)*
   - `SugarMeshWorkflow.get_sugar_info(self) -> str`

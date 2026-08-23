@@ -11,7 +11,9 @@ method shape" contract structural (the two cannot drift apart again) and
 unifies their QC payloads.
 
 Host requirements: ``self.qc`` (a ``pythontk.QcLog``), ``self.project_path``
-(str), and ``self._notify(stage, fraction)``.
+(str), and ``self._notify(stage, fraction)`` (supplied by
+:class:`~extapps.photogrammetry._progress_notify.ProgressNotifyMixin`, which both
+engines also inherit).
 """
 
 from __future__ import annotations

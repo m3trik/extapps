@@ -51,18 +51,33 @@ jobs:
           # unitytk is an OPTIONAL runtime extra, but
           # test_unity_workflow.py::test_script_checklist_populates_from_unitytk
           # imports it unguarded to assert the panel's checklist matches the
-          # installed release — so CI needs it present or that test errors.
-          #
-          # --no-cache-dir + --upgrade forces a fresh resolution for in-house
-          # deps: pip's wheel cache can otherwise return a stale pythontk/uitk
-          # missing an API the current extapps source expects.
-          pip install --no-cache-dir --upgrade pythontk uitk unitytk
+          # installed release -- so CI needs it present or that test errors. It
+          # is not in this package's floors, so it is installed by name.
+          pip install --no-cache-dir unitytk
           # pymeshlab backs the MeshStagesMixin photogrammetry stages (via
           # pythontk.MeshOps). Installed so the real-work stage tests run
           # rather than skip; the dep-missing branch stays covered via
           # patch.object(MeshOps, "available").
           pip install pymeshlab
-          pip install -e . --no-deps
+          # WITH deps, in a retry loop. pip resolves the floors declared in
+          # pyproject.toml (`pythontk>=X`), so a stale PyPI CDN edge that still
+          # lists the previous release fails LOUDLY with "No matching
+          # distribution" and is retried -- instead of silently installing the
+          # old version and running this suite against code that lacks the new
+          # symbols. Measured 2026-08-23: the bare-name install resolved
+          # pythontk 0.9.28 82 s after 0.9.30 was uploaded, and the only failure
+          # was two tests importing symbols that exist only in 0.9.30.
+          # --no-cache-dir: pip's HTTP cache can hold the stale index page too.
+          for attempt in 1 2 3 4 5 6; do
+            if pip install --no-cache-dir -e "."; then break; fi
+            if [ "$attempt" -lt 6 ]; then
+              echo "::warning::editable install attempt $attempt failed (index propagation lag?); retrying in 30s"
+              sleep 30
+            else
+              echo "::error::editable install failed after $attempt attempts"
+              exit 1
+            fi
+          done
 
       - name: Run tests
         # Live-DCC integration tests stay opt-in and are NOT enabled here:

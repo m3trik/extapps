@@ -13,6 +13,8 @@ they all use:
   and the per-engine semantic **preset** store.
 * :mod:`~extapps.photogrammetry.prep_stages` — :class:`PrepStagesMixin`
   (dHash + sharpness curation, exposure equalization) shared by both SfM engines.
+* :mod:`~extapps.photogrammetry._progress_notify` — :class:`ProgressNotifyMixin`,
+  the one ``_notify(stage, fraction)`` shim all five engines report progress through.
 * ``_panel_slots`` / ``_process_runner`` / ``_shared_params`` — the shared
   Switchboard-panel scaffolding (base slots + frames-source mixin, the async
   ``QProcess`` runner, and the common pre-processing param specs) the

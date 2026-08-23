@@ -2,8 +2,6 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
-_Generated: 2026-08-23_
-
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - `class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`
   - methods: toolbag_path, toolbag_log_path, preflight, deliver, send, render_template, list_templates, template_modes, list_template_modes
@@ -56,6 +54,9 @@ _Generated: 2026-08-23_
   - methods: exe, is_available, is_running, start, cancel
 - `class PyModuleRunner(ProcessRunner)`
 
+### `photogrammetry/_progress_notify.py` — The one progress-notify shim the photogrammetry engines share.
+- `class ProgressNotifyMixin`
+
 ### `photogrammetry/_shared_params.py` — Input pre-processing parameter specs shared by the image-in engines.
 - `class SharedParams`
   - methods: render_flag_argv, preprocessing_argv
@@ -67,14 +68,14 @@ _Generated: 2026-08-23_
   - methods: exe, is_available
 
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py` — Brush gaussian-splat workflow engine.
-- `class GaussianSplatWorkflow(_GaussianSplatWorkflowInternal)`
+- `class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)`
   - methods: find_brush_exe, is_brush_available, install_brush, read_splat_count, get_brush_info, train, finalize_run
 
 ### `photogrammetry/gaussian_splat_workflow/_install_brush.py` — Headless entry point: download + install Brush via pythontk.AppInstaller.
 - `main() -> int`
 
 ### `photogrammetry/gaussian_splat_workflow/_splat_publish.py` — Engine-delivery stage for the splat track — clean + convert to engine formats.
-- `class SplatPublishWorkflow(_SplatPublishWorkflowInternal)`
+- `class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal)`
   - methods: find_splat_transform, is_splat_transform_available, get_publish_info, clean, to_unity, to_web, publish, finalize_run
 
 ### `photogrammetry/gaussian_splat_workflow/launcher.py` — Application shell for the Brush (gaussian-splat) Workflow UI.
@@ -105,7 +106,7 @@ _Generated: 2026-08-23_
   - methods: exe, is_available, start
 
 ### `photogrammetry/metashape_workflow/_metashape_workflow.py`
-- `class MetashapeWorkflow(PrepStagesMixin, MeshStagesMixin)`
+- `class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin)`
   - methods: is_metashape_available, is_license_valid, get_metashape_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, generate_masks_native, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
 
 ### `photogrammetry/metashape_workflow/launcher.py` — Application shell for the Metashape Workflow UI.
@@ -141,7 +142,7 @@ _Generated: 2026-08-23_
   - methods: exe, is_available
 
 ### `photogrammetry/realityscan_workflow/_realityscan_workflow.py` — RealityCapture / RealityScan workflow engine.
-- `class RealityCaptureWorkflow(PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal)`
+- `class RealityCaptureWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal)`
   - methods: find_realitycapture_exe, is_realitycapture_available, get_realitycapture_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, import_masks, generate_depth_maps, build_model, clean_mesh, simplify_model, reduce_overlap, import_model, build_texture, save_project, export_model, export_qc, finalize_run
 
 ### `photogrammetry/realityscan_workflow/_rsnode_client.py` — RSNode REST client — drive a running RealityScan 2.1 over its REST API (headless).
@@ -170,7 +171,7 @@ _Generated: 2026-08-23_
   - methods: params_module, template_dir, make_bridge, list_template_modes, default_output_dir, help_spec
 
 ### `photogrammetry/sugar_mesh_workflow/_sugar_mesh.py` — SuGaR mesh-extraction workflow engine.
-- `class SugarMeshWorkflow(_SugarMeshWorkflowInternal)`
+- `class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal)`
   - methods: find_sugar_dir, is_sugar_available, get_sugar_info, extract_mesh, finalize_run
 
 ### `photogrammetry/sugar_mesh_workflow/run_combined.py` — Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``.obj``.

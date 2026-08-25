@@ -1,7 +1,5 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ 95eee35)._
+_Diff vs the last release (origin/main @ c6ce7e6)._
 
-## Added (1)
-
-- `photogrammetry/_progress_notify.py::ProgressNotifyMixin(class)`
+No public API changes since the last release (origin/main @ c6ce7e6).

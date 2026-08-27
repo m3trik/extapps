@@ -15,12 +15,18 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-# pythontk floor is 0.9.25: the Map Converter's 'Clamp: Target' relies on
-# MapOptimizer snapping the LONG edge to a power of two and deriving the
-# other from the source ratio. 0.9.24 snaps each axis on its own, which
-# reshapes a 1024x768 map to 1024x512 -- pinned because CI installs
-# pythontk from PyPI, where the workspace copy is not what gets tested.
-dependencies = ["pythontk>=0.9.25", "uitk>=1.3.79", "qtpy"]
+# Floors are HAND-RATCHETED here: extapps is off-chain from m3trik/push.ps1
+# (absent from $STRICT_PACKAGES and $REQUIRED_PINS), so nothing bumps these
+# for us the way it does for the cascade packages.
+# pythontk 0.9.33 / uitk 1.3.96: the Map Packer's output-affix field reads the
+# shared convention (ptk.NamingConvention.affix), normalises a bare token with
+# ptk.StrUtils.delimit_affix, and drives the picker through the option box's
+# set_affix(convention_key=, settings_key=) -- all four first ship in those
+# releases. The floor matters on an UPGRADE, not a fresh install: pip leaves an
+# already-satisfied floor alone, so an artist on pythontk 0.9.32 would keep it
+# and the packer would die on the first pack. (Supersedes the 0.9.25 floor the
+# Map Converter's 'Clamp: Target' needed for MapOptimizer's long-edge snap.)
+dependencies = ["pythontk>=0.9.33", "uitk>=1.3.96", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

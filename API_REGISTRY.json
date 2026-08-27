@@ -3936,7 +3936,7 @@
         {
           "name": "PackerSlots",
           "summary": "Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.",
-          "line": 10,
+          "line": 12,
           "bases": [
             "ImgUtils"
           ],
@@ -3947,7 +3947,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 146,
+              "line": 174,
               "deprecated": false
             },
             {
@@ -3956,7 +3956,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 149,
+              "line": 177,
               "deprecated": false
             },
             {
@@ -3965,7 +3965,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 152,
+              "line": 180,
               "deprecated": false
             },
             {
@@ -3974,7 +3974,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 155,
+              "line": 183,
               "deprecated": false
             },
             {
@@ -3982,8 +3982,8 @@
               "qualname": "PackerSlots.txtSuffix_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Output-suffix field — clearable back to the ``_Packed`` default.",
-              "line": 158,
+              "summary": "Output-affix field — clearable back to the convention's default.",
+              "line": 186,
               "deprecated": false
             },
             {
@@ -3992,7 +3992,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the output-format combo and react to format changes.",
-              "line": 162,
+              "line": 197,
               "deprecated": false
             },
             {
@@ -4001,7 +4001,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Build the header menu's Pack/Unpack toggle and Missing Maps policy.",
-              "line": 189,
+              "line": 224,
               "deprecated": false
             },
             {
@@ -4010,7 +4010,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 312,
+              "line": 347,
               "deprecated": false
             },
             {
@@ -4019,7 +4019,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 371,
+              "line": 437,
               "deprecated": false
             },
             {
@@ -4028,7 +4028,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 592,
+              "line": 681,
               "deprecated": false
             }
           ]

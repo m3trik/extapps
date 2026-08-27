@@ -12,6 +12,7 @@ raised ``AttributeError`` and the conversion path never worked.
 The heavy UI wiring in ``__init__`` is bypassed (``__new__``); ``_pack_set``
 touches no UI, so it is exercised directly.
 """
+
 import io
 import os
 import types
@@ -36,9 +37,7 @@ class TestMapPackerConversion(unittest.TestCase):
         cls.test_dir = tempfile.mkdtemp(prefix="packer_test_")
         # Only a Roughness map is present; Smoothness must be derived from it.
         cls.roughness = os.path.join(cls.test_dir, "mat_Roughness.png")
-        ImgUtils.save_image(
-            ImgUtils.create_image("L", (8, 8), 64), cls.roughness
-        )
+        ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), 64), cls.roughness)
 
     @classmethod
     def tearDownClass(cls):
@@ -79,9 +78,7 @@ class TestMapPackerConversion(unittest.TestCase):
             fmt="PNG",
         )
         self.assertFalse(result)
-        self.assertFalse(
-            os.path.isfile(os.path.join(self.test_dir, "mat_Empty.png"))
-        )
+        self.assertFalse(os.path.isfile(os.path.join(self.test_dir, "mat_Empty.png")))
 
 
 class TestMapPackerCompleteness(unittest.TestCase):
@@ -222,15 +219,21 @@ class TestMapPackerCompleteness(unittest.TestCase):
         and RGBA files under a single suffix.
         """
         self.assertTrue(
-            self._pack("_RGB", ["Metallic", "Roughness", "Smoothness", "None"],
-                       rule=PackerSlots.MISSING_FORCE)
+            self._pack(
+                "_RGB",
+                ["Metallic", "Roughness", "Smoothness", "None"],
+                rule=PackerSlots.MISSING_FORCE,
+            )
         )
         self.assertEqual(Image.open(self._path("_RGB")).mode, "RGB")
 
         # A requested but unresolvable (Metallic) -> still RGBA, alpha filled.
         self.assertTrue(
-            self._pack("_RGBA", ["Roughness", "Smoothness", "None", "Metallic"],
-                       rule=PackerSlots.MISSING_FORCE)
+            self._pack(
+                "_RGBA",
+                ["Roughness", "Smoothness", "None", "Metallic"],
+                rule=PackerSlots.MISSING_FORCE,
+            )
         )
         self.assertEqual(Image.open(self._path("_RGBA")).mode, "RGBA")
 
@@ -243,14 +246,73 @@ class TestMapPackerCompleteness(unittest.TestCase):
 
         combo = _FakeDataCombo(PackerSlots.MISSING_FORCE)
         inst.ui = types.SimpleNamespace(
-            header=types.SimpleNamespace(
-                menu=types.SimpleNamespace(cmb_missing=combo)
-            )
+            header=types.SimpleNamespace(menu=types.SimpleNamespace(cmb_missing=combo))
         )
         self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_FORCE)
         # No selection (currentData() -> None) must not disable the guard.
         combo.data = None
         self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_SKIP)
+
+
+class TestMapPackerOutputAffix(unittest.TestCase):
+    """The output name: which side the affix lands on, and never over an input."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.test_dir = tempfile.mkdtemp(prefix="packer_affix_")
+        cls.roughness = os.path.join(cls.test_dir, "mat_Roughness.png")
+        ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), 64), cls.roughness)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.test_dir):
+            shutil.rmtree(cls.test_dir)
+
+    def _pack(self, **kwargs):
+        return PackerSlots.__new__(PackerSlots)._pack_set(
+            base_name="mat",
+            files=[self.roughness],
+            combos=["Roughness", "None", "None", "None"],
+            ext="png",
+            fmt="PNG",
+            **kwargs,
+        )
+
+    def test_a_prefix_lands_on_the_front_of_the_name(self):
+        """_pack_set gained `prefix`; nothing covered the branch."""
+        self.assertTrue(self._pack(prefix="ORM_", suffix=""))
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.test_dir, "ORM_mat.png")),
+            "the prefix branch did not reach the output name",
+        )
+
+    def test_an_affix_free_name_refuses_to_overwrite_its_own_source(self):
+        """An emptied convention entry is legal, and would pack over an input.
+
+        With prefix and suffix both empty the output stem EQUALS the source stem,
+        so the pack would read a map and write its own result on top of it --
+        destroying an artist's source texture with no warning.
+        """
+        # a source whose stem is exactly what an affix-free output would be called
+        collide = os.path.join(self.test_dir, "mat.png")
+        ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), 32), collide)
+        before = os.path.getsize(collide)
+
+        packed = PackerSlots.__new__(PackerSlots)._pack_set(
+            base_name="mat",
+            files=[collide],
+            combos=["Roughness", "None", "None", "None"],
+            ext="png",
+            fmt="PNG",
+            prefix="",
+            suffix="",
+        )
+        self.assertFalse(packed)
+        self.assertEqual(
+            os.path.getsize(collide),
+            before,
+            "the pack wrote over one of its own source maps",
+        )
 
 
 class TestMapPackerChannelSelection(unittest.TestCase):
@@ -314,9 +376,7 @@ class TestMapPackerUnpack(unittest.TestCase):
         an absent channel (A on an RGB input) is skipped without error."""
         inst = self._bare_slots()
         combos = ["Ambient_Occlusion", "Roughness", "Metallic", "Smoothness"]
-        result = inst._unpack_one(
-            file=self.packed, combos=combos, ext="png", fmt="PNG"
-        )
+        result = inst._unpack_one(file=self.packed, combos=combos, ext="png", fmt="PNG")
         self.assertTrue(result)
         for suffix in ("_Ambient_Occlusion", "_Roughness", "_Metallic"):
             out = os.path.join(self.test_dir, f"mat{suffix}.png")
@@ -536,15 +596,17 @@ class TestMapPackerOpenOutputDirSafety(unittest.TestCase):
 
     def test_open_output_dir_delegates_to_non_shell_launcher(self):
         inst = PackerSlots.__new__(PackerSlots)
-        malicious = 'O:/foo$(touch pwned)/out'
+        malicious = "O:/foo$(touch pwned)/out"
         inst._last_output_dir = malicious
 
-        with mock.patch("os.path.isdir", return_value=True), mock.patch(
-            "os.system"
-        ) as system_mock, mock.patch(
-            "extapps.texture_maps.packer.slots.FileUtils.open_explorer",
-            return_value=True,
-        ) as open_mock:
+        with (
+            mock.patch("os.path.isdir", return_value=True),
+            mock.patch("os.system") as system_mock,
+            mock.patch(
+                "extapps.texture_maps.packer.slots.FileUtils.open_explorer",
+                return_value=True,
+            ) as open_mock,
+        ):
             inst.b001()
 
         # No shell was spawned; the raw path went to the safe launcher intact.
@@ -554,9 +616,12 @@ class TestMapPackerOpenOutputDirSafety(unittest.TestCase):
     def test_open_output_dir_noop_without_output(self):
         inst = PackerSlots.__new__(PackerSlots)
         # No _last_output_dir set at all → guarded early-return, no launcher call.
-        with mock.patch("os.system") as system_mock, mock.patch(
-            "extapps.texture_maps.packer.slots.FileUtils.open_explorer"
-        ) as open_mock:
+        with (
+            mock.patch("os.system") as system_mock,
+            mock.patch(
+                "extapps.texture_maps.packer.slots.FileUtils.open_explorer"
+            ) as open_mock,
+        ):
             inst.b001()
         system_mock.assert_not_called()
         open_mock.assert_not_called()

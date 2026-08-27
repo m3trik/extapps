@@ -405,13 +405,13 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Specify a suffix for the packed texture's file name.</string>
+            <string>Affix for the packed texture's file name. The button beside it selects Prefix / Suffix / Auto / Scene; empty falls back to the shared naming convention.</string>
            </property>
            <property name="frame">
             <bool>false</bool>
            </property>
            <property name="placeholderText">
-            <string>Suffix:</string>
+            <string>Affix:</string>
            </property>
           </widget>
          </item>

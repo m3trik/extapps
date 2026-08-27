@@ -1,7 +1,9 @@
 # !/usr/bin/python
 # coding=utf-8
 """Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps."""
+
 from typing import List
+import pythontk as ptk
 from pythontk.img_utils._img_utils import ImgUtils
 from pythontk.core_utils.engines.textures.map_factory import MapFactory
 from pythontk.file_utils._file_utils import FileUtils
@@ -131,7 +133,33 @@ class PackerSlots(ImgUtils):
                 self.ui.cmbFormat,
                 self.ui.txtSuffix,
             ],
+            # A preset stores the field TEXT; the placement picker beside it is a
+            # separate, GLOBAL setting. Without the mode travelling with the text, a
+            # session left on Prefix applied the next preset's suffix-shaped value on
+            # the wrong side -- 'ORM_mat' came out '_ORMmat'. Metadata is dispatched
+            # BEFORE widget values, so the picker is already right when the text lands.
+            metadata_provider=lambda: {
+                "affix_mode": self.ui.txtSuffix.option_box.affix_mode
+            },
+            on_metadata_loaded=self._apply_preset_affix_mode,
         )
+
+    def _affix_option(self):
+        """The placement picker beside the output-affix field, or None."""
+        from uitk.widgets.optionBox.options.affix import AffixOption
+
+        return self.ui.txtSuffix.option_box.find_option(AffixOption)
+
+    def _apply_preset_affix_mode(self, meta):
+        """Restore the placement a preset was saved with.
+
+        A preset written before the mode was stored has no key, and reads back as
+        the suffix it was actually saved as -- not as "auto", which would re-derive
+        the side from the text and silently disagree with the picker.
+        """
+        option = self._affix_option()
+        if option is not None:
+            option.set_mode(meta.get("affix_mode", "suffix"))
 
     def _init_channel_combo(self, widget):
         """Populate a channel combo with the grayscale map types.
@@ -156,8 +184,15 @@ class PackerSlots(ImgUtils):
         self._init_channel_combo(widget)
 
     def txtSuffix_init(self, widget):
-        """Output-suffix field — clearable back to the ``_Packed`` default."""
+        """Output-affix field — clearable back to the convention's default."""
         widget.option_box.clear_option = True
+        # Fourth, custom state: take the packed-texture affix from the shared
+        # naming convention rather than this one field.
+        widget.option_box.set_affix(
+            default="auto",
+            settings_key="packer_output_affix",
+            convention_key="packedTexture",
+        )
 
     def cmbFormat_init(self, widget):
         """Populate the output-format combo and react to format changes."""
@@ -297,7 +332,7 @@ class PackerSlots(ImgUtils):
             filepath = preset_mgr._preset_path(name)
             if not filepath.exists():
                 data = {
-                    "_meta": {"version": 1},
+                    "_meta": {"version": 2, "affix_mode": "suffix"},
                     "cmbR": self.grayscale_types.index(preset["R"]),
                     "cmbG": self.grayscale_types.index(preset["G"]),
                     "cmbB": self.grayscale_types.index(preset["B"]),
@@ -315,6 +350,37 @@ class PackerSlots(ImgUtils):
     @source_dir.setter
     def source_dir(self, value):
         self._source_dir = value
+
+    def _resolve_output_affix(self):
+        """``(prefix, suffix)`` for the packed file name, from field + picker.
+
+        The picker beside the field decides which side the affix lands on; an
+        empty field falls back to the shared convention rather than a literal. An
+        affix carries its OWN separator (``apply_affix`` concatenates verbatim), so
+        a bare token typed without one is normalised first -- "Packed" has always
+        produced "base_Packed", not "basePacked".
+
+        An emptied convention entry is a sanctioned configuration everywhere else,
+        but here it would leave the output stem EQUAL to a source stem and pack
+        straight over an input map, so the shipped default stands in. (The field's
+        placeholderText is not a fallback here the way it is in mayatk -- this
+        panel uses it as the visible LABEL, so it would yield the affix "Suffix:".)
+
+        Lifted out of ``b000`` so the auto/suffix/prefix/convention contract is
+        testable without a Qt event loop.
+        """
+        affix = self.ui.txtSuffix.text().strip() or ptk.NamingConvention.affix(
+            "packedTexture"
+        )
+        if not affix:
+            affix = ptk.NamingConvention.DEFAULTS["packedTexture"].text
+        prefix, suffix = self.ui.txtSuffix.option_box.resolve_affix(
+            affix, default="suffix"
+        )
+        return (
+            ptk.StrUtils.delimit_affix(prefix, "prefix"),
+            ptk.StrUtils.delimit_affix(suffix, "suffix"),
+        )
 
     def _channel_combos(self) -> List[str]:
         """The R/G/B/A map-type selections, in channel order.
@@ -391,9 +457,7 @@ class PackerSlots(ImgUtils):
             return
 
         texture_sets = MapFactory.group_textures_by_set(file_paths)
-        suffix = self.ui.txtSuffix.text().strip() or "_Packed"
-        if not suffix.startswith("_"):
-            suffix = f"_{suffix}"
+        prefix, suffix = self._resolve_output_affix()
         ext = self.ui.cmbFormat.currentText().lower()
         fmt = self.ui.cmbFormat.currentText().upper()
         rule = self._missing_map_rule()
@@ -410,6 +474,7 @@ class PackerSlots(ImgUtils):
                     files=files,
                     combos=combos,
                     suffix=suffix,
+                    prefix=prefix,
                     ext=ext,
                     fmt=fmt,
                     rule=rule,
@@ -438,7 +503,16 @@ class PackerSlots(ImgUtils):
         self._finish_batch(success, file_paths)
 
     def _pack_set(
-        self, *, base_name, files, combos, suffix, ext, fmt, rule=MISSING_SKIP
+        self,
+        *,
+        base_name,
+        files,
+        combos,
+        suffix,
+        ext,
+        fmt,
+        rule=MISSING_SKIP,
+        prefix="",
     ) -> bool:
         """Helper for ``b000`` — pack a single texture set. Returns True
         if the set was packed and the output written.
@@ -512,7 +586,22 @@ class PackerSlots(ImgUtils):
         # those formats (no alpha means BC1 rather than BC3/BC7).
         out_mode = "RGBA" if requested["A"] != "None" else "RGB"
         output_dir = FileUtils.format_path(files[0], "path")
-        output_path = f"{output_dir}/{base_name}{suffix}.{ext}"
+        stem = ptk.StrUtils.apply_affix(base_name, prefix=prefix, suffix=suffix)
+        output_path = f"{output_dir}/{stem}.{ext}"
+        # Never write over one of our own source maps. Two ways in: an affix that
+        # resolves to nothing on both sides, and one the user deliberately types
+        # that collides -- including a re-pack over a previous output.
+        import os
+
+        def _key(path):
+            return os.path.normcase(os.path.abspath(path))
+
+        if _key(output_path) in {_key(f) for f in files}:
+            print(
+                f"// Warning: Skipped {base_name} -- the output name {stem}.{ext} "
+                "is one of its own source maps. Set an affix that distinguishes it."
+            )
+            return False
         self.pack_channels(
             channel_files=assigned,
             output_path=output_path,

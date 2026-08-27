@@ -853,12 +853,12 @@ Application shell for the Map Packer UI.
 
 Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
 
-- **[`class PackerSlots(ImgUtils)`](extapps/extapps/texture_maps/packer/slots.py#L10)** — Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.
+- **[`class PackerSlots(ImgUtils)`](extapps/extapps/texture_maps/packer/slots.py#L12)** — Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.
   - `PackerSlots.cmbR_init(self, widget)`
   - `PackerSlots.cmbG_init(self, widget)`
   - `PackerSlots.cmbB_init(self, widget)`
   - `PackerSlots.cmbA_init(self, widget)`
-  - `PackerSlots.txtSuffix_init(self, widget)` — Output-suffix field — clearable back to the ``_Packed`` default.
+  - `PackerSlots.txtSuffix_init(self, widget)` — Output-affix field — clearable back to the convention's default.
   - `PackerSlots.cmbFormat_init(self, widget)` — Populate the output-format combo and react to format changes.
   - `PackerSlots.header_init(self, widget)` — Build the header menu's Pack/Unpack toggle and Missing Maps policy.
   - `PackerSlots.source_dir(self)` *(property)*

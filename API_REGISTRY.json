@@ -3,6 +3,49 @@
   "source_root": "extapps/extapps",
   "modules": [
     {
+      "relpath": "__init__.py",
+      "summary": "extapps — standalone Switchboard panels for content-pipeline workflows.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DOCS_BASE_URL",
+          "qualname": "DOCS_BASE_URL",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 20,
+          "deprecated": false
+        },
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 23,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "relpath": "marmoset_workflow/__init__.py",
+      "summary": "Marmoset Workflow — launch Marmoset Toolbag and set up a project.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 20,
+          "deprecated": false
+        }
+      ]
+    },
+    {
       "relpath": "marmoset_workflow/_marmoset_engine.py",
       "summary": "Drive Marmoset Toolbag from the outside -- launch + templated automation.",
       "functions": [],
@@ -98,6 +141,44 @@
               "deprecated": false
             }
           ]
+        }
+      ],
+      "constants": [
+        {
+          "name": "APP",
+          "qualname": "APP",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 45,
+          "deprecated": false
+        },
+        {
+          "name": "SEND_TO",
+          "qualname": "SEND_TO",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 64,
+          "deprecated": false
+        },
+        {
+          "name": "ROUND_TRIP",
+          "qualname": "ROUND_TRIP",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 65,
+          "deprecated": false
+        },
+        {
+          "name": "ROUNDTRIP",
+          "qualname": "ROUNDTRIP",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 68,
+          "deprecated": false
         }
       ]
     },
@@ -206,6 +287,35 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "SLOT_MAP",
+          "qualname": "SLOT_MAP",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 648,
+          "deprecated": false
+        },
+        {
+          "name": "MODULE_NEUTRAL_FIELDS",
+          "qualname": "MODULE_NEUTRAL_FIELDS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 671,
+          "deprecated": false
+        },
+        {
+          "name": "SUBROUTINE_FIXES",
+          "qualname": "SUBROUTINE_FIXES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 684,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -220,7 +330,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "marmoset_workflow/parameters.py",
@@ -254,7 +365,18 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "PARAMS",
+          "qualname": "PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 34,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "marmoset_workflow/slots.py",
@@ -343,7 +465,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "marmoset_workflow/template_params.py",
@@ -403,6 +526,17 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "DEFAULTS",
+          "qualname": "DEFAULTS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 26,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -419,7 +553,54 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "BRIDGE_MODES",
+          "qualname": "BRIDGE_MODES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 12,
+          "deprecated": false
+        },
+        {
+          "name": "MODEL_FILE",
+          "qualname": "MODEL_FILE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 25,
+          "deprecated": false
+        },
+        {
+          "name": "MANIFEST_FILE",
+          "qualname": "MANIFEST_FILE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 26,
+          "deprecated": false
+        },
+        {
+          "name": "SAVE_PATH",
+          "qualname": "SAVE_PATH",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 27,
+          "deprecated": false
+        },
+        {
+          "name": "SHOULD_QUIT",
+          "qualname": "SHOULD_QUIT",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 28,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "marmoset_workflow/templates/lookdev.py",
@@ -435,7 +616,72 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "BRIDGE_MODES",
+          "qualname": "BRIDGE_MODES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 12,
+          "deprecated": false
+        },
+        {
+          "name": "MODEL_FILE",
+          "qualname": "MODEL_FILE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 25,
+          "deprecated": false
+        },
+        {
+          "name": "MANIFEST_FILE",
+          "qualname": "MANIFEST_FILE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 26,
+          "deprecated": false
+        },
+        {
+          "name": "SAVE_PATH",
+          "qualname": "SAVE_PATH",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 27,
+          "deprecated": false
+        },
+        {
+          "name": "SHOULD_QUIT",
+          "qualname": "SHOULD_QUIT",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 28,
+          "deprecated": false
+        },
+        {
+          "name": "SKY_PRESET",
+          "qualname": "SKY_PRESET",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 30,
+          "deprecated": false
+        },
+        {
+          "name": "FRAME_SELECTION",
+          "qualname": "FRAME_SELECTION",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 31,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "marmoset_workflow/toolbag_log.py",
@@ -486,6 +732,24 @@
             }
           ]
         }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "mesh_convert/__init__.py",
+      "summary": "Mesh Convert — FBX → glTF / GLB conversion.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 13,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -500,7 +764,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "mesh_convert/slots.py",
@@ -562,7 +827,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/_panel_slots.py",
@@ -650,7 +916,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/_process_runner.py",
@@ -721,7 +988,8 @@
           ],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/_progress_notify.py",
@@ -735,7 +1003,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/_shared_params.py",
@@ -767,6 +1036,79 @@
               "deprecated": false
             }
           ]
+        }
+      ],
+      "constants": [
+        {
+          "name": "PREPROCESS_MASTER_KEY",
+          "qualname": "PREPROCESS_MASTER_KEY",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 28,
+          "deprecated": false
+        },
+        {
+          "name": "PREPROCESSING_PARAMS",
+          "qualname": "PREPROCESSING_PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 32,
+          "deprecated": false
+        },
+        {
+          "name": "PREPROCESSING_VALUE_FLAGS",
+          "qualname": "PREPROCESSING_VALUE_FLAGS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 123,
+          "deprecated": false
+        },
+        {
+          "name": "PREPROCESSING_STORE_TRUE_FLAGS",
+          "qualname": "PREPROCESSING_STORE_TRUE_FLAGS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 133,
+          "deprecated": false
+        },
+        {
+          "name": "PREPROCESSING_KEYS",
+          "qualname": "PREPROCESSING_KEYS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 139,
+          "deprecated": false
+        },
+        {
+          "name": "PREPROCESSING_KNOB_KEYS",
+          "qualname": "PREPROCESSING_KNOB_KEYS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 146,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/gaussian_splat_workflow/__init__.py",
+      "summary": "Gaussian-splat workflow — train a 3D Gaussian Splat and publish it to engines.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 32,
+          "deprecated": false
         }
       ]
     },
@@ -831,7 +1173,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py",
@@ -912,6 +1255,26 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "BRUSH_DOWNLOAD",
+          "qualname": "BRUSH_DOWNLOAD",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 38,
+          "deprecated": false
+        },
+        {
+          "name": "BRUSH_EXE_NAME",
+          "qualname": "BRUSH_EXE_NAME",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 54,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -928,7 +1291,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/_splat_publish.py",
@@ -1018,7 +1382,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/launcher.py",
@@ -1032,7 +1397,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/parameters.py",
@@ -1066,7 +1432,18 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "PARAMS",
+          "qualname": "PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 24,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/run_combined.py",
@@ -1082,7 +1459,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/slots.py",
@@ -1207,7 +1585,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/mesh_stages.py",
@@ -1267,6 +1646,24 @@
             }
           ]
         }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "photogrammetry/metashape_workflow/__init__.py",
+      "summary": "Metashape Workflow — Agisoft Metashape photogrammetry automation.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 15,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -1318,7 +1715,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/metashape_workflow/_metashape_runner.py",
@@ -1362,7 +1760,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/metashape_workflow/_metashape_workflow.py",
@@ -1624,6 +2023,26 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "IMAGE_EXTS",
+          "qualname": "IMAGE_EXTS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 21,
+          "deprecated": false
+        },
+        {
+          "name": "DEFAULT_GATES",
+          "qualname": "DEFAULT_GATES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 27,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -1638,7 +2057,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/metashape_workflow/parameters.py",
@@ -1672,7 +2092,18 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "PARAMS",
+          "qualname": "PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 39,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "photogrammetry/metashape_workflow/run_combined.py",
@@ -1688,7 +2119,18 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "PREP_RESULT_PREFIX",
+          "qualname": "PREP_RESULT_PREFIX",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 43,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "photogrammetry/metashape_workflow/slots.py",
@@ -1760,7 +2202,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/prep_stages.py",
@@ -1838,7 +2281,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/profile.py",
@@ -1918,6 +2362,97 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "PROFILE_NAME",
+          "qualname": "PROFILE_NAME",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 37,
+          "deprecated": false
+        },
+        {
+          "name": "PROFILE_PACKAGE",
+          "qualname": "PROFILE_PACKAGE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 38,
+          "deprecated": false
+        },
+        {
+          "name": "PROFILE_ENV",
+          "qualname": "PROFILE_ENV",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 39,
+          "deprecated": false
+        },
+        {
+          "name": "PRESETS_NAME",
+          "qualname": "PRESETS_NAME",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 50,
+          "deprecated": false
+        },
+        {
+          "name": "PRESETS_DIR",
+          "qualname": "PRESETS_DIR",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 51,
+          "deprecated": false
+        },
+        {
+          "name": "IMAGE_EXTS",
+          "qualname": "IMAGE_EXTS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 55,
+          "deprecated": false
+        },
+        {
+          "name": "QUALITY_TIERS",
+          "qualname": "QUALITY_TIERS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 61,
+          "deprecated": false
+        },
+        {
+          "name": "EXAMPLE_PROFILE",
+          "qualname": "EXAMPLE_PROFILE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 414,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "relpath": "photogrammetry/realityscan_workflow/__init__.py",
+      "summary": "RealityCapture / RealityScan workflow.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 17,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -1978,7 +2513,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/_realityscan_runner.py",
@@ -2013,7 +2549,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/_realityscan_workflow.py",
@@ -2276,6 +2813,35 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "IMAGE_EXTS",
+          "qualname": "IMAGE_EXTS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 37,
+          "deprecated": false
+        },
+        {
+          "name": "QC_REPORT_TEMPLATE",
+          "qualname": "QC_REPORT_TEMPLATE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 48,
+          "deprecated": false
+        },
+        {
+          "name": "DEFAULT_GATES",
+          "qualname": "DEFAULT_GATES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 63,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -2453,7 +3019,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/_rsnode_connection.py",
@@ -2495,6 +3062,17 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "DEFAULT_RSNODE_URL",
+          "qualname": "DEFAULT_RSNODE_URL",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 56,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -2509,7 +3087,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/parameters.py",
@@ -2543,7 +3122,18 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "PARAMS",
+          "qualname": "PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 38,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/run_combined.py",
@@ -2568,7 +3158,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/slots.py",
@@ -2640,7 +3231,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/sugar_mesh_workflow/_sugar_mesh.py",
@@ -2703,7 +3295,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "photogrammetry/sugar_mesh_workflow/run_combined.py",
@@ -2719,7 +3312,25 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
+    },
+    {
+      "relpath": "substance_workflow/__init__.py",
+      "summary": "Substance Workflow — Adobe Substance 3D Painter integration.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 26,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "substance_workflow/bake_utils.py",
@@ -2731,7 +3342,7 @@
           "kind": "function",
           "signature": "(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict",
           "summary": "Bake iray-backed AO (+ optional curvature) and composite onto base color.",
-          "line": 212,
+          "line": 211,
           "deprecated": false
         },
         {
@@ -2740,7 +3351,7 @@
           "kind": "function",
           "signature": "(texture_set: str, maps: Optional[List[str]] = None, high_poly: Optional[str] = None) -> dict",
           "summary": "Bake the named mesh maps.",
-          "line": 331,
+          "line": 330,
           "deprecated": false
         },
         {
@@ -2749,7 +3360,7 @@
           "kind": "function",
           "signature": "(maps: Optional[List[str]] = None) -> dict",
           "summary": "Bake mesh maps for every texture set in the project.",
-          "line": 344,
+          "line": 343,
           "deprecated": false
         },
         {
@@ -2758,11 +3369,12 @@
           "kind": "function",
           "signature": "(texture_set: str, width: int, height: int) -> None",
           "summary": "Set the baking resolution for the named texture set.",
-          "line": 350,
+          "line": 349,
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/channel_utils.py",
@@ -2805,7 +3417,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/env_utils/painter_connection.py",
@@ -2869,7 +3482,7 @@
               "kind": "method",
               "signature": "(self, force_new_instance: bool = True, gui: bool = False, port: int = 5050, app_path: Optional[str] = None, launch_args: Optional[List[str]] = None, timeout: float = 180.0) -> bool",
               "summary": "Launch a fresh Painter and connect over the bridge HTTP server.",
-              "line": 129,
+              "line": 127,
               "deprecated": false
             },
             {
@@ -2878,7 +3491,7 @@
               "kind": "method",
               "signature": "(self, op: str, timeout: float = 60.0, **kwargs: Any) -> Any",
               "summary": "Call a registered op over the bridge and return its value.",
-              "line": 203,
+              "line": 197,
               "deprecated": false
             },
             {
@@ -2887,7 +3500,7 @@
               "kind": "method",
               "signature": "(self, op: str = '') -> dict",
               "summary": "Fetch the registry's signature description for agent self-discovery.",
-              "line": 230,
+              "line": 224,
               "deprecated": false
             },
             {
@@ -2896,12 +3509,13 @@
               "kind": "method",
               "signature": "(self, force: bool = False) -> None",
               "summary": "Close the bridge and terminate the Painter process we launched.",
-              "line": 250,
+              "line": 244,
               "deprecated": false
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/env_utils/painter_finder.py",
@@ -2943,7 +3557,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/export_utils.py",
@@ -2977,7 +3592,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/job.py",
@@ -3043,7 +3659,8 @@
             }
           ]
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/launcher.py",
@@ -3057,7 +3674,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/layer_utils.py",
@@ -3127,7 +3745,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/material_utils.py",
@@ -3161,7 +3780,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/plugins/substance_workflow_bridge/__init__.py",
@@ -3173,7 +3793,7 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin entry point — start the JSON-RPC bridge server.",
-          "line": 107,
+          "line": 108,
           "deprecated": false
         },
         {
@@ -3182,11 +3802,22 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin teardown.",
-          "line": 121,
+          "line": 122,
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "OP_MODULES",
+          "qualname": "OP_MODULES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 82,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "substance_workflow/plugins/substance_workflow_bridge/server.py",
@@ -3237,6 +3868,17 @@
               "deprecated": false
             }
           ]
+        }
+      ],
+      "constants": [
+        {
+          "name": "MARSHALLER",
+          "qualname": "MARSHALLER",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 41,
+          "deprecated": false
         }
       ]
     },
@@ -3304,11 +3946,12 @@
           "kind": "function",
           "signature": "(mesh_path: str) -> dict",
           "summary": "Reimport the project's mesh from ``mesh_path``.",
-          "line": 77,
+          "line": 81,
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/registry.py",
@@ -3351,7 +3994,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/resource_utils.py",
@@ -3385,7 +4029,8 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
     },
     {
       "relpath": "substance_workflow/slots.py",
@@ -3528,6 +4173,53 @@
             }
           ]
         }
+      ],
+      "constants": [
+        {
+          "name": "MESH_EXTS",
+          "qualname": "MESH_EXTS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 27,
+          "deprecated": false
+        },
+        {
+          "name": "PIPELINE_STAGES",
+          "qualname": "PIPELINE_STAGES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 43,
+          "deprecated": false
+        },
+        {
+          "name": "BLEND_MODES",
+          "qualname": "BLEND_MODES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 70,
+          "deprecated": false
+        },
+        {
+          "name": "BAKE_RESOLUTIONS",
+          "qualname": "BAKE_RESOLUTIONS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 71,
+          "deprecated": false
+        },
+        {
+          "name": "ADVANCED_PARAMS",
+          "qualname": "ADVANCED_PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 79,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -3580,7 +4272,25 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": []
+    },
+    {
+      "relpath": "texture_maps/compositor/__init__.py",
+      "summary": "Map Compositor — multi-layer texture compositing tool.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 13,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "texture_maps/compositor/launcher.py",
@@ -3594,7 +4304,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "texture_maps/compositor/slots.py",
@@ -3683,6 +4394,24 @@
             }
           ]
         }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "texture_maps/converter/__init__.py",
+      "summary": "Map Converter — texture conversion, channel packing, PBR-workflow prep.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 14,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -3697,7 +4426,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "texture_maps/converter/slots.py",
@@ -3790,7 +4520,7 @@
               "kind": "staticmethod",
               "signature": "(mode: str, modifier: str) -> Tuple[str, str]",
               "summary": "Resolve the Affix mode against the modifier text.",
-              "line": 697,
+              "line": 704,
               "deprecated": false
             },
             {
@@ -3799,7 +4529,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 1067,
+              "line": 1117,
               "deprecated": false
             },
             {
@@ -3808,7 +4538,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 1077,
+              "line": 1127,
               "deprecated": false
             },
             {
@@ -3817,7 +4547,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 1133,
+              "line": 1183,
               "deprecated": false
             },
             {
@@ -3826,7 +4556,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 1159,
+              "line": 1209,
               "deprecated": false
             },
             {
@@ -3835,7 +4565,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
-              "line": 1215,
+              "line": 1265,
               "deprecated": false
             },
             {
@@ -3844,7 +4574,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
-              "line": 1244,
+              "line": 1294,
               "deprecated": false
             },
             {
@@ -3853,7 +4583,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert DirectX to OpenGL",
-              "line": 1319,
+              "line": 1369,
               "deprecated": false
             },
             {
@@ -3862,7 +4592,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert OpenGL to DirectX",
-              "line": 1336,
+              "line": 1386,
               "deprecated": false
             },
             {
@@ -3871,7 +4601,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 1353,
+              "line": 1403,
               "deprecated": false
             },
             {
@@ -3880,7 +4610,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 1396,
+              "line": 1446,
               "deprecated": false
             },
             {
@@ -3889,7 +4619,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 1423,
+              "line": 1473,
               "deprecated": false
             },
             {
@@ -3898,7 +4628,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 1449,
+              "line": 1499,
               "deprecated": false
             },
             {
@@ -3907,10 +4637,28 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
-              "line": 1475,
+              "line": 1525,
               "deprecated": false
             }
           ]
+        }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "texture_maps/packer/__init__.py",
+      "summary": "Map Packer — channel-pack textures from per-channel source maps.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 14,
+          "deprecated": false
         }
       ]
     },
@@ -3926,7 +4674,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "texture_maps/packer/slots.py",
@@ -4033,6 +4782,24 @@
             }
           ]
         }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "unity_workflow/__init__.py",
+      "summary": "Unity Workflow — send a model file into a Unity project (DCC-agnostic).",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 19,
+          "deprecated": false
+        }
       ]
     },
     {
@@ -4047,7 +4814,8 @@
           "bases": [],
           "members": []
         }
-      ]
+      ],
+      "constants": []
     },
     {
       "relpath": "unity_workflow/parameters.py",
@@ -4081,7 +4849,18 @@
           "deprecated": false
         }
       ],
-      "classes": []
+      "classes": [],
+      "constants": [
+        {
+          "name": "PARAMS",
+          "qualname": "PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 28,
+          "deprecated": false
+        }
+      ]
     },
     {
       "relpath": "unity_workflow/slots.py",
@@ -4091,7 +4870,7 @@
         {
           "name": "UnityWorkflowSlots",
           "summary": "Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.",
-          "line": 53,
+          "line": 61,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -4102,7 +4881,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 140,
+              "line": 156,
               "deprecated": false
             },
             {
@@ -4111,7 +4890,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 144,
+              "line": 160,
               "deprecated": false
             },
             {
@@ -4120,7 +4899,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Build the unitytk engine, or ``None`` when it is absent.",
-              "line": 149,
+              "line": 165,
               "deprecated": false
             },
             {
@@ -4129,7 +4908,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 165,
+              "line": 181,
               "deprecated": false
             },
             {
@@ -4138,7 +4917,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 289,
+              "line": 308,
               "deprecated": false
             },
             {
@@ -4147,7 +4926,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (public hand-off point for hosts).",
-              "line": 294,
+              "line": 313,
               "deprecated": false
             },
             {
@@ -4156,10 +4935,206 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run the selected template: copy the model, or script management.",
-              "line": 470,
+              "line": 486,
               "deprecated": false
             }
           ]
+        }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "webxr_preview/__init__.py",
+      "summary": "WebXR Preview — the live browser / headset preview panel.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 20,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "relpath": "webxr_preview/launcher.py",
+      "summary": "Application shell for the WebXR Preview UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "WebXrPreviewUI",
+          "summary": "",
+          "line": 19,
+          "bases": [],
+          "members": []
+        }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "webxr_preview/parameters.py",
+      "summary": "Tunable parameters surfaced in the WebXR Preview panel.",
+      "functions": [
+        {
+          "name": "defaults",
+          "qualname": "defaults",
+          "kind": "function",
+          "signature": "() -> 'dict[str, Any]'",
+          "summary": "Return ``{key: default}`` for every registered parameter.",
+          "line": 160,
+          "deprecated": false
+        }
+      ],
+      "classes": [],
+      "constants": [
+        {
+          "name": "SOURCE_FILE_TYPES",
+          "qualname": "SOURCE_FILE_TYPES",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 28,
+          "deprecated": false
+        },
+        {
+          "name": "EXPORT_KEYS",
+          "qualname": "EXPORT_KEYS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 33,
+          "deprecated": false
+        },
+        {
+          "name": "FILE_KEYS",
+          "qualname": "FILE_KEYS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 36,
+          "deprecated": false
+        },
+        {
+          "name": "PARAMS",
+          "qualname": "PARAMS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 40,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "relpath": "webxr_preview/slots.py",
+      "summary": "Slots for the WebXR Preview panel — the single UI for the live preview.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "WebXrPreviewSlots",
+          "summary": "Switchboard slots wired to ``webxr_preview.ui``.",
+          "line": 54,
+          "bases": [
+            "BridgeSlotsBase"
+          ],
+          "members": [
+            {
+              "name": "params_module",
+              "qualname": "WebXrPreviewSlots.params_module",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "",
+              "line": 161,
+              "deprecated": false
+            },
+            {
+              "name": "template_dir",
+              "qualname": "WebXrPreviewSlots.template_dir",
+              "kind": "property",
+              "signature": "(self) -> Path",
+              "summary": "",
+              "line": 165,
+              "deprecated": false
+            },
+            {
+              "name": "make_bridge",
+              "qualname": "WebXrPreviewSlots.make_bridge",
+              "kind": "method",
+              "signature": "(self)",
+              "summary": "The panel's own, host-free engine.",
+              "line": 171,
+              "deprecated": false
+            },
+            {
+              "name": "engine",
+              "qualname": "WebXrPreviewSlots.engine",
+              "kind": "property",
+              "signature": "(self)",
+              "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
+              "line": 186,
+              "deprecated": false
+            },
+            {
+              "name": "list_template_modes",
+              "qualname": "WebXrPreviewSlots.list_template_modes",
+              "kind": "method",
+              "signature": "(self) -> List[Tuple[str, str]]",
+              "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
+              "line": 299,
+              "deprecated": false
+            },
+            {
+              "name": "open_preview_page",
+              "qualname": "WebXrPreviewSlots.open_preview_page",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Open the live page in a browser, without paying for a push.",
+              "line": 379,
+              "deprecated": false
+            },
+            {
+              "name": "stop_server",
+              "qualname": "WebXrPreviewSlots.stop_server",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Stop serving and release the port.",
+              "line": 392,
+              "deprecated": false
+            },
+            {
+              "name": "set_source_file",
+              "qualname": "WebXrPreviewSlots.set_source_file",
+              "kind": "method",
+              "signature": "(self, path: str) -> None",
+              "summary": "Pre-fill Source File and select the file source.",
+              "line": 404,
+              "deprecated": false
+            },
+            {
+              "name": "b000",
+              "qualname": "WebXrPreviewSlots.b000",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Build the deliverable for the active source and publish it.",
+              "line": 490,
+              "deprecated": false
+            }
+          ]
+        }
+      ],
+      "constants": [
+        {
+          "name": "FILE_SOURCE",
+          "qualname": "FILE_SOURCE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 42,
+          "deprecated": false
         }
       ]
     }

@@ -176,9 +176,8 @@ def _add_lighting_layer(
     # designed statically (needs a live Painter session to validate). Until
     # then this resolves defensively and degrades to a warning: the layer is
     # created, blended, and intensity-scaled, but not yet map-driven.
-    mesh_map_setter = (
-        getattr(layerstack, "set_source_from_mesh_map", None)
-        or getattr(layerstack, "set_channel_source_to_mesh_map", None)
+    mesh_map_setter = getattr(layerstack, "set_source_from_mesh_map", None) or getattr(
+        layerstack, "set_channel_source_to_mesh_map", None
     )
     if mesh_map_setter is None:
         logger.warning(

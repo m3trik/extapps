@@ -68,6 +68,7 @@ packer = "extapps.texture_maps.packer:PackerUI"
 mesh_convert = "extapps.mesh_convert:MeshConvertUI"
 marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI [hide_maya]"
 unity_workflow = "extapps.unity_workflow:UnityWorkflowUI"
+webxr_preview = "extapps.webxr_preview:WebXrPreviewUI"
 
 [tool.setuptools.dynamic]
 version = {attr = "extapps.__version__"}

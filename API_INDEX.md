@@ -2,11 +2,19 @@
 
 _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a name; for full signatures/docs, slice [API_REGISTRY.md](API_REGISTRY.md) (never Read it whole)._
 
+### `__init__.py` — extapps — standalone Switchboard panels for content-pipeline workflows.
+- constants: DOCS_BASE_URL, DEFAULT_INCLUDE
+
+### `marmoset_workflow/__init__.py` — Marmoset Workflow — launch Marmoset Toolbag and set up a project.
+- constants: DEFAULT_INCLUDE
+
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
+- constants: APP, SEND_TO, ROUND_TRIP, ROUNDTRIP
 - `class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`
   - methods: toolbag_path, toolbag_log_path, preflight, deliver, send, render_template, list_templates, template_modes, list_template_modes
 
 ### `marmoset_workflow/_toolbag_helpers.py` — Shared helpers for Marmoset Toolbag template scripts.
+- constants: SLOT_MAP, MODULE_NEUTRAL_FIELDS, SUBROUTINE_FIXES
 - `class ToolbagHelpers(_ToolbagHelpersInternal)`
   - methods: derive_per_run_log_path, begin_log, log, find_material, load_manifest, wire_materials_from_manifest, split_source_target, collect_mesh_objects, apply_sky_preset, frame_in_viewport
 
@@ -17,24 +25,31 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `referenced_keys(script_text: str) -> 'set[str]'`
 - `defaults() -> 'dict[str, Any]'`
 - `render_context(values: 'dict[str, Any]') -> 'dict[str, str]'`
+- constants: PARAMS
 
 ### `marmoset_workflow/slots.py` — Slots for the standalone Marmoset Workflow panel.
 - `class MarmosetWorkflowSlots(BridgeSlotsBase)`
   - methods: params_module, template_dir, make_bridge, list_template_modes, select_initial_template_index, resolved_model_path, set_model_path, b000
 
 ### `marmoset_workflow/template_params.py` — Plain default values + literal formatting for Marmoset template tokens.
+- constants: DEFAULTS
 - `class TemplateParams`
   - methods: derive_auto_maps, derive_bake_values, python_literal, defaults, to_context
 
 ### `marmoset_workflow/templates/import.py` — Open the model in Toolbag and wire materials from the manifest.
 - `main()`
+- constants: BRIDGE_MODES, MODEL_FILE, MANIFEST_FILE, SAVE_PATH, SHOULD_QUIT
 
 ### `marmoset_workflow/templates/lookdev.py` — Open the model in Toolbag, apply a Sky preset, and frame the model.
 - `main()`
+- constants: BRIDGE_MODES, MODEL_FILE, MANIFEST_FILE, SAVE_PATH, SHOULD_QUIT, SKY_PRESET, FRAME_SELECTION
 
 ### `marmoset_workflow/toolbag_log.py` — Marmoset Toolbag log-file resolution, classification, and live tailing.
 - `class ToolbagLog`
   - methods: resolve_toolbag_log_path, classify_log_line, dispatch_log_lines, start_toolbag_log_tail
+
+### `mesh_convert/__init__.py` — Mesh Convert — FBX → glTF / GLB conversion.
+- constants: DEFAULT_INCLUDE
 
 ### `mesh_convert/launcher.py` — Application shell for the Mesh Convert UI.
 - `class MeshConvertUI`
@@ -58,8 +73,12 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class ProgressNotifyMixin`
 
 ### `photogrammetry/_shared_params.py` — Input pre-processing parameter specs shared by the image-in engines.
+- constants: PREPROCESS_MASTER_KEY, PREPROCESSING_PARAMS, PREPROCESSING_VALUE_FLAGS, PREPROCESSING_STORE_TRUE_FLAGS, PREPROCESSING_KEYS, PREPROCESSING_KNOB_KEYS
 - `class SharedParams`
   - methods: render_flag_argv, preprocessing_argv
+
+### `photogrammetry/gaussian_splat_workflow/__init__.py` — Gaussian-splat workflow — train a 3D Gaussian Splat and publish it to engines.
+- constants: DEFAULT_INCLUDE
 
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py` — Local, async runner the Brush (gaussian-splat) panel dispatches to.
 - `class GaussianSplatRunner(PyModuleRunner)`
@@ -68,6 +87,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
   - methods: exe, is_available
 
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py` — Brush gaussian-splat workflow engine.
+- constants: BRUSH_DOWNLOAD, BRUSH_EXE_NAME
 - `class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)`
   - methods: find_brush_exe, is_brush_available, install_brush, read_splat_count, get_brush_info, train, finalize_run
 
@@ -85,6 +105,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `to_argv(values: 'Dict[str, Any]') -> 'List[str]'`
 - `referenced_keys(source: str = '') -> 'set[str]'`
 - `defaults() -> 'Dict[str, Any]'`
+- constants: PARAMS
 
 ### `photogrammetry/gaussian_splat_workflow/run_combined.py` — Driver for the gaussian-splat track: Brush splat training + engine publish.
 - `main(argv=None) -> int`
@@ -97,6 +118,9 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class MeshStagesMixin`
   - methods: measure_mesh, refine_mesh, bake_vertex_color, run_mesh_stages, clean_mesh_advanced
 
+### `photogrammetry/metashape_workflow/__init__.py` — Metashape Workflow — Agisoft Metashape photogrammetry automation.
+- constants: DEFAULT_INCLUDE
+
 ### `photogrammetry/metashape_workflow/_metashape_connection.py` — Headless launch connection for Agisoft Metashape.
 - `class MetashapeConnection`
   - methods: find_exe, is_available, run_script, run_combined
@@ -106,6 +130,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
   - methods: exe, is_available, start
 
 ### `photogrammetry/metashape_workflow/_metashape_workflow.py`
+- constants: IMAGE_EXTS, DEFAULT_GATES
 - `class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin)`
   - methods: is_metashape_available, is_license_valid, get_metashape_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, generate_masks_native, import_masks, generate_depth_maps, build_model, clean_mesh, reduce_overlap, build_texture, save_project, export_model, export_colmap, export_qc, finalize_run
 
@@ -116,9 +141,11 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `to_argv(values: 'Dict[str, Any]') -> 'List[str]'`
 - `referenced_keys(source: str = '') -> 'set[str]'`
 - `defaults() -> 'Dict[str, Any]'`
+- constants: PARAMS
 
 ### `photogrammetry/metashape_workflow/run_combined.py` — Driver script for multi-session combined runs.
 - `main(argv=None) -> int`
+- constants: PREP_RESULT_PREFIX
 
 ### `photogrammetry/metashape_workflow/slots.py` — Slots for the Metashape Workflow panel.
 - `class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`
@@ -129,8 +156,12 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
   - methods: image_long_edge, extract_videos_to_dir, first_image_in_dirs, derive_texture_size, curate_input_set, preview_curation, equalize_exposures
 
 ### `photogrammetry/profile.py` — Photogrammetry I/O + tuning **profile** — site/personal config kept out of source.
+- constants: PROFILE_NAME, PROFILE_PACKAGE, PROFILE_ENV, PRESETS_NAME, PRESETS_DIR, IMAGE_EXTS, QUALITY_TIERS, EXAMPLE_PROFILE
 - `class Profile(_ProfileInternal)`
   - methods: get_profile, configured_app_path, resolve_app, preset_store, get_preset, init_user_profile, discover_source_dirs
+
+### `photogrammetry/realityscan_workflow/__init__.py` — RealityCapture / RealityScan workflow.
+- constants: DEFAULT_INCLUDE
 
 ### `photogrammetry/realityscan_workflow/_realityscan_connection.py` — Launch connection for RealityScan / RealityCapture.
 - `class RealityScanInteractiveError(RuntimeError)`
@@ -142,6 +173,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
   - methods: exe, is_available
 
 ### `photogrammetry/realityscan_workflow/_realityscan_workflow.py` — RealityCapture / RealityScan workflow engine.
+- constants: IMAGE_EXTS, QC_REPORT_TEMPLATE, DEFAULT_GATES
 - `class RealityCaptureWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin, _RealityCaptureWorkflowInternal)`
   - methods: find_realitycapture_exe, is_realitycapture_available, get_realitycapture_version, get_image_filepaths, get_license_info, create_chunk, add_images, add_image_dirs, triage_images, align_photos, align_photos_with_retry, refine_alignment, dedupe_cameras_by_pose, calibrate_colors, generate_masks, import_masks, generate_depth_maps, build_model, clean_mesh, simplify_model, reduce_overlap, import_model, build_texture, save_project, export_model, export_qc, finalize_run
 
@@ -151,6 +183,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
   - methods: normalize_commands, connect, node_status, create_session, run_commands, upload_file, list_files, download_file, project_status, tags, has_tag, wait_for_tag, tasks, wait_for_task, save_project, open_project, close_project
 
 ### `photogrammetry/realityscan_workflow/_rsnode_connection.py` — RSNode-backed connection — drive a running RealityScan 2.1 over REST.
+- constants: DEFAULT_RSNODE_URL
 - `class RsNodeConnection`
   - methods: is_available, close, run
 
@@ -161,6 +194,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `to_argv(values: 'Dict[str, Any]') -> 'List[str]'`
 - `referenced_keys(source: str = '') -> 'set[str]'`
 - `defaults() -> 'Dict[str, Any]'`
+- constants: PARAMS
 
 ### `photogrammetry/realityscan_workflow/run_combined.py` — Driver script for multi-session combined RealityCapture runs.
 - `publish_outputs(project_dir: str, publish_dir: str)`
@@ -176,6 +210,9 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 
 ### `photogrammetry/sugar_mesh_workflow/run_combined.py` — Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``.obj``.
 - `main(argv=None) -> int`
+
+### `substance_workflow/__init__.py` — Substance Workflow — Adobe Substance 3D Painter integration.
+- constants: DEFAULT_INCLUDE
 
 ### `substance_workflow/bake_utils.py` — Bake operations — iray-backed mesh-map bakes and lighting composites.
 - `lighting_to_diffuse(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict`
@@ -229,10 +266,12 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 ### `substance_workflow/plugins/substance_workflow_bridge/__init__.py` — substance_workflow_bridge — Painter-side Python plugin.
 - `start_plugin() -> None`
 - `close_plugin() -> None`
+- constants: OP_MODULES
 
 ### `substance_workflow/plugins/substance_workflow_bridge/server.py` — Live-mode HTTP bridge — runs inside Painter, dispatches ops on the main thread.
 - `call_on_main_thread(func, *args, **kwargs)`
 - `dispatch_request(path: str, payload: dict, executor=None) -> tuple`
+- constants: MARSHALLER
 - `class BridgeServer`
   - methods: start, stop
 
@@ -257,6 +296,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `import_(path: str, shelf: str = 'your_assets', kind: str = 'smartmaterial') -> str`
 
 ### `substance_workflow/slots.py` — Switchboard slots for the Substance Workflow UI.
+- constants: MESH_EXTS, PIPELINE_STAGES, BLEND_MODES, BAKE_RESOLUTIONS, ADVANCED_PARAMS
 - `class SubstanceWorkflowSlots(ptk.LoggingMixin)`
   - methods: header_init, txt000_init, txt001_init, txt002_init, cmb000_init, btn_stages_init, btn_advanced_init, cmb003, btn_launch, b000, set_mesh_path, btn_browse_mesh, btn_browse_template, btn_browse_project
 
@@ -267,12 +307,18 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `channels(name: str) -> List[str]`
 - `add_channel(name: str, channel: str, fmt: str = 'sRGB8') -> None`
 
+### `texture_maps/compositor/__init__.py` — Map Compositor — multi-layer texture compositing tool.
+- constants: DEFAULT_INCLUDE
+
 ### `texture_maps/compositor/launcher.py` — Application shell for the Map Compositor UI.
 - `class CompositorUI`
 
 ### `texture_maps/compositor/slots.py` — UI slot bindings for the compositor window.
 - `class CompositorSlots(_CompositorSlotsInternal)`
   - methods: output_dir, map_name, header_init, txt000_init, txt001_init, txt002_init, b002, process
+
+### `texture_maps/converter/__init__.py` — Map Converter — texture conversion, channel packing, PBR-workflow prep.
+- constants: DEFAULT_INCLUDE
 
 ### `texture_maps/converter/launcher.py` — Application shell for the Map Converter UI.
 - `class ConverterUI`
@@ -281,12 +327,18 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class ConverterSlots(ImgUtils)`
   - methods: source_dir, scopes, register_scope, unregister_scope, texture_provider, header_init, tb000_init, tb000, resolve_affix, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
 
+### `texture_maps/packer/__init__.py` — Map Packer — channel-pack textures from per-channel source maps.
+- constants: DEFAULT_INCLUDE
+
 ### `texture_maps/packer/launcher.py` — Application shell for the Map Packer UI.
 - `class PackerUI`
 
 ### `texture_maps/packer/slots.py` — Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
 - `class PackerSlots(ImgUtils)`
   - methods: cmbR_init, cmbG_init, cmbB_init, cmbA_init, txtSuffix_init, cmbFormat_init, header_init, source_dir, b000, b001
+
+### `unity_workflow/__init__.py` — Unity Workflow — send a model file into a Unity project (DCC-agnostic).
+- constants: DEFAULT_INCLUDE
 
 ### `unity_workflow/launcher.py` — Application shell for the Unity Workflow launcher UI.
 - `class UnityWorkflowUI`
@@ -295,7 +347,23 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `referenced_keys(script_text: str) -> 'set[str]'`
 - `defaults() -> 'dict[str, Any]'`
 - `render_context(values: 'dict[str, Any]') -> 'dict[str, str]'`
+- constants: PARAMS
 
 ### `unity_workflow/slots.py` — Slots for the standalone Unity Workflow panel.
 - `class UnityWorkflowSlots(BridgeSlotsBase)`
   - methods: params_module, template_dir, make_bridge, list_template_modes, resolved_model_path, set_model_path, b000
+
+### `webxr_preview/__init__.py` — WebXR Preview — the live browser / headset preview panel.
+- constants: DEFAULT_INCLUDE
+
+### `webxr_preview/launcher.py` — Application shell for the WebXR Preview UI.
+- `class WebXrPreviewUI`
+
+### `webxr_preview/parameters.py` — Tunable parameters surfaced in the WebXR Preview panel.
+- `defaults() -> 'dict[str, Any]'`
+- constants: SOURCE_FILE_TYPES, EXPORT_KEYS, FILE_KEYS, PARAMS
+
+### `webxr_preview/slots.py` — Slots for the WebXR Preview panel — the single UI for the live preview.
+- constants: FILE_SOURCE
+- `class WebXrPreviewSlots(BridgeSlotsBase)`
+  - methods: params_module, template_dir, make_bridge, engine, list_template_modes, open_preview_page, stop_server, set_source_file, b000

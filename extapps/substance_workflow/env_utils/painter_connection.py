@@ -120,9 +120,7 @@ class PainterConnection:
         for p in range(start_port, start_port + max_check):
             if NetUtils.is_port_bindable(p):
                 return p
-        raise RuntimeError(
-            f"No free port in {start_port}..{start_port + max_check}"
-        )
+        raise RuntimeError(f"No free port in {start_port}..{start_port + max_check}")
 
     # ---- lifecycle -------------------------------------------------------
 
@@ -153,16 +151,12 @@ class PainterConnection:
 
         exe = app_path or PainterFinder.resolve()
         if not exe:
-            raise FileNotFoundError(
-                "Substance 3D Painter not found. Pass app_path=..."
-            )
+            raise FileNotFoundError("Substance 3D Painter not found. Pass app_path=...")
 
         chosen_port = self.get_available_port(start_port=port)
         env = self.build_painter_env(port=chosen_port)
 
-        self.process = self.launch_painter(
-            exe, env, gui=gui, extra_args=launch_args
-        )
+        self.process = self.launch_painter(exe, env, gui=gui, extra_args=launch_args)
         self.host = "localhost"
         self.port = chosen_port
 

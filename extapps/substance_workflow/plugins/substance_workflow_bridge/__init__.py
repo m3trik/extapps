@@ -14,6 +14,7 @@ import sys
 
 logger = logging.getLogger(__name__)
 
+
 # Bootstrap: make ``extapps.substance_workflow`` and its ``pythontk`` dependency
 # importable inside Painter's bundled Python, where neither is installed.
 # Painter loads this plugin in place from the repo (``plugins_dir()`` goes on

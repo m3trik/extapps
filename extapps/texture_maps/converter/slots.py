@@ -608,22 +608,29 @@ class ConverterSlots(ImgUtils):
         # subdirectories cannot hit this (each source keeps its own folder), so
         # the check is scoped to the shared case, and refuses up front for the
         # same reason as the guard above.
-        shared = [
-            label
-            for label, folder in (("output", new_folder), ("archive", old_folder))
-            if self._is_abs_dest(folder)
-        ]
-        if shared:
-            clashes = self._stem_collisions(texture_paths)
+        # One question asked of each destination: would two inputs land on the
+        # SAME path? Both keyed on the resolved path rather than the bare stem,
+        # which is what keeps a refusal honest -- `.tga` and `.png` sources
+        # collapsed into one folder keep two names and lose nothing, and the
+        # earlier shared-folder guard refused them anyway. The archive keeps
+        # each source's own container, so it asks with no forced extension and
+        # no profile.
+        for where, folder, forced_ext, profile in (
+            ("output", new_folder, file_type, target_profile),
+            ("archive", old_folder, "", None),
+        ):
+            clashes = self._output_collisions(
+                texture_paths, forced_ext, folder, profile
+            )
             if clashes:
                 print(
-                    f"// A shared {' and '.join(shared)} folder would collect "
-                    f"{len(clashes)} set(s) of same-named maps onto one path - "
-                    "each would overwrite the last. Use a subdirectory name, or "
-                    "run the clashing sources separately."
+                    f"// {len(clashes)} {where} path(s) would be claimed by more "
+                    "than one map - each would overwrite the last, so only the "
+                    "final result would survive. Convert them separately, or "
+                    "give each source its own subdirectory."
                 )
-                for stem, clashing in clashes:
-                    print(f"//   {stem}: " + ", ".join(clashing))
+                for out_name, clashing in clashes:
+                    print(f"//   {out_name}: " + ", ".join(clashing))
                 return
 
         verb = "Assessing" if dry_run else "Optimizing"
@@ -757,23 +764,66 @@ class ConverterSlots(ImgUtils):
             return os.path.normpath(text)
         return text.strip("/\\").strip()
 
-    @staticmethod
-    def _stem_collisions(paths) -> List[Tuple[str, List[str]]]:
-        """``[(stem, [path, ...]), ...]`` for stems claimed by more than one input.
+    @classmethod
+    def _output_collisions(cls, paths, file_type, folder, profile=None):
+        """``[(name, [path, ...]), ...]`` for inputs resolving to ONE file in *folder*.
 
-        Compared without the extension, because a format conversion merges
-        them: ``rock_BaseColor.tga`` and ``rock_BaseColor.png`` both write
-        ``rock_BaseColor.png`` under ``Format: PNG``. Grouped case-insensitively
-        (the filesystems these land on are), but reported with the stem as the
-        first input actually spells it — a lower-cased name in the message
-        reads as a second, non-existent problem.
+        Destination-agnostic on purpose -- ``tb000`` asks it twice, once of the
+        OUTPUT folder (where a forced container can merge two maps) and once of
+        the ARCHIVE folder (where the move keeps each source's own name, so it
+        is asked with neither a forced extension nor a profile).
+
+        Same-stem inputs are harmless while each keeps its own extension --
+        ``rock_BaseColor.tga`` and ``rock_BaseColor.png`` write two files. A
+        format CONVERSION is what merges them: under ``Format: PNG`` both
+        resolve to ``rock_BaseColor.png`` and ``optimize_map``'s writer
+        defaults to overwriting, so one optimized result is lost while the
+        summary still counts two maps. The archive's version of the same thing
+        is two identically named sources moved into one shared folder.
+
+        Keyed on the RESOLVED output (destination + stem + target extension)
+        rather than on the bare stem, which is what makes refusing safe: a run
+        that cannot lose anything is never rejected, so the folders users
+        process today keep working. Only the EXTENSION is derived here -- the
+        rest of the filename comes from the stem, equal by construction for
+        anything that could collide (``resolve_map_type(key=False)`` keeps the
+        source's own spelling, so ``rock_Diffuse`` and ``rock_BaseColor`` stay
+        apart), and re-deriving the whole name would duplicate
+        ``optimize_map``'s naming and drift from it.
+
+        *profile* is load-bearing, not optional detail. Choosing a workflow
+        target leaves the Format field on its sentinel, so ``file_type`` is
+        empty and the PROFILE decides the container per map type -- and every
+        built-in profile names a concrete one (png, or tga for Unreal). Reading
+        only ``file_type`` would let each source keep its own extension here
+        and miss exactly the merge this guard exists for, with nothing in the
+        Format field to hint at why.
+
+        Parameters:
+            paths: The inputs about to be processed.
+            file_type: A container the UI forces on every map, or ``""``.
+            folder: The destination field to resolve against, per
+                :meth:`_resolve_dest` (bare name = per texture, full path =
+                shared by the run, empty = each source's own directory).
+            profile: The active workflow target, consulted only when
+                *file_type* is empty.
         """
-        by_stem: Dict[str, Tuple[str, List[str]]] = {}
+        by_output: Dict[Tuple[str, str, str], Tuple[str, List[str]]] = {}
         for path in paths:
+            dest = cls._resolve_dest(os.path.dirname(path), folder)
             stem = FileUtils.format_path(path, "name")
-            _, hits = by_stem.setdefault(os.path.normcase(stem), (stem, []))
+            out_ext = (file_type or "").lower().lstrip(".")
+            if not out_ext and profile:
+                spec = OutputTemplates.resolve(
+                    MapFactory.resolve_map_type(path, key=True), profile
+                )
+                out_ext = (spec.ext or "").lower().lstrip(".")
+            if not out_ext:  # nothing forces a container: each keeps its own
+                out_ext = FileUtils.format_path(path, "ext").lower().lstrip(".")
+            key = (os.path.normcase(dest), os.path.normcase(stem), out_ext)
+            _, hits = by_output.setdefault(key, (f"{stem}.{out_ext}", []))
             hits.append(path)
-        return [entry for entry in by_stem.values() if len(entry[1]) > 1]
+        return [entry for entry in by_output.values() if len(entry[1]) > 1]
 
     @classmethod
     def _resolve_dest(cls, directory: str, folder: str) -> str:

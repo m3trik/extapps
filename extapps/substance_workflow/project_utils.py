@@ -67,7 +67,11 @@ def create(mesh_path: str, template_path: Optional[str] = None) -> dict:
 
     settings = project.Settings()
     if template_path:
-        project.create(mesh_file_path=mesh_path, template_file_path=template_path, settings=settings)
+        project.create(
+            mesh_file_path=mesh_path,
+            template_file_path=template_path,
+            settings=settings,
+        )
     else:
         project.create(mesh_file_path=mesh_path, settings=settings)
     return info()

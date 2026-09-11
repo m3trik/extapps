@@ -19,6 +19,7 @@ Note: *Unity Studio* is a separate paid, browser-based product (assets enter it 
 Unity Cloud's Asset Manager), not this desktop FBX hand-off -- this panel does not
 target it.
 """
+
 from __future__ import annotations
 
 import os
@@ -45,8 +46,15 @@ _UNITYTK_REQ = "unitytk>=0.0.8"
 
 # Unity-importable model formats offered in the file picker.
 _MODEL_FILE_TYPES = [
-    "*.fbx", "*.obj", "*.usd", "*.usdc", "*.usda",
-    "*.abc", "*.gltf", "*.glb", "*.ply",
+    "*.fbx",
+    "*.obj",
+    "*.usd",
+    "*.usdc",
+    "*.usda",
+    "*.abc",
+    "*.gltf",
+    "*.glb",
+    "*.ply",
 ]
 
 
@@ -63,6 +71,11 @@ class UnityWorkflowSlots(BridgeSlotsBase):
 
     # The required path row IS the Unity project (folder with Assets/).
     REQUIRE_OUTPUT_DIR = True
+
+    # The combo picks a MODE, not a template file, and ``template_dir`` is
+    # this package's own directory -- so the template-management rows would
+    # offer to re-scan nothing and to reveal source code.
+    TEMPLATE_MENU = False
     OUTPUT_DIR_LABEL = "Unity Project:"
     OUTPUT_DIR_PLACEHOLDER = "(folder containing Assets/)"
     OUTPUT_DIR_TOOLTIP = (
@@ -101,13 +114,16 @@ class UnityWorkflowSlots(BridgeSlotsBase):
             "Tweak the parameters, then click <b>Send to Unity</b>.",
         ],
         "sections": [
-            ("Parameters", [
-                "<b>Assets Subfolder</b> — where under Assets/ the file lands.",
-                "<b>Asset Name</b> — optional; blank uses the file's name.",
-                "<b>Launch Unity</b> — after copying: <i>Don't launch</i> (Unity "
-                "imports on focus), <i>Open Editor</i> (windowed), or "
-                "<i>Headless</i> (batch import).",
-            ]),
+            (
+                "Parameters",
+                [
+                    "<b>Assets Subfolder</b> — where under Assets/ the file lands.",
+                    "<b>Asset Name</b> — optional; blank uses the file's name.",
+                    "<b>Launch Unity</b> — after copying: <i>Don't launch</i> (Unity "
+                    "imports on focus), <i>Open Editor</i> (windowed), or "
+                    "<i>Headless</i> (batch import).",
+                ],
+            ),
         ],
         "notes": [
             "The Blender 'Unity Bridge' opens this panel with the exported "
@@ -192,17 +208,20 @@ class UnityWorkflowSlots(BridgeSlotsBase):
         menu = edit.option_box.menu  # the option-menu (▾) button + its Menu
         for label, name, tooltip, handler in (
             (
-                "Set Project…", "btn_set_project",
+                "Set Project…",
+                "btn_set_project",
                 "Browse for the Unity project folder (the one containing 'Assets/').",
                 self._pick_output_dir,
             ),
             (
-                "Open Unity Project", "btn_open_project",
+                "Open Unity Project",
+                "btn_open_project",
                 "Reveal the configured Unity project folder in Explorer.",
                 self._open_project_folder,
             ),
             (
-                "New Unity Project…", "btn_new_project",
+                "New Unity Project…",
+                "btn_new_project",
                 "Create a new Unity project (pick a version + location) and load it\n"
                 "into the field above. Uses the selected Unity Version.",
                 self._new_unity_project,
@@ -380,8 +399,7 @@ class UnityWorkflowSlots(BridgeSlotsBase):
         project = self.resolved_output_dir()
         if not project:
             self.panel_log(
-                "Set the Unity Project folder first (the one containing "
-                "'Assets/').",
+                "Set the Unity Project folder first (the one containing 'Assets/').",
                 "error",
             )
             if self._output_dir_edit is not None:
@@ -391,9 +409,7 @@ class UnityWorkflowSlots(BridgeSlotsBase):
         if action == "install":
             # Explicit action — prompting to install the DCC-side unitytk
             # package is appropriate here (and only here).
-            if not self.ensure_optional_package(
-                _UNITYTK_REQ, feature="Unity Workflow"
-            ):
+            if not self.ensure_optional_package(_UNITYTK_REQ, feature="Unity Workflow"):
                 return
             # Engine just arrived: fill the checklist that built empty, so the
             # run below deploys the real set. Guarded — a re-populate would

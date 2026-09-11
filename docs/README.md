@@ -1,4 +1,4 @@
-[![Tests](https://img.shields.io/badge/Tests-650%20passed-brightgreen.svg)](../test/)
+[![Tests](https://img.shields.io/badge/Tests-696%20passed-brightgreen.svg)](../test/)
 
 <!-- short_description_start -->
 Standalone Switchboard panels for content-pipeline workflows — map compositing, texture conversion and channel packing, photogrammetry, mesh conversion, and Substance / Marmoset / Unity automation.

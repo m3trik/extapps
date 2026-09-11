@@ -1557,29 +1557,144 @@ class TestConverterOptimize(unittest.TestCase):
             self.converter.tb000(self._widget(clamp=128, new=out, old=""))
         reported = "\n".join(str(c.args[0]) for c in mock_print.call_args_list if c.args)
 
-        self.assertIn("same-named maps", reported)
+        self.assertIn("claimed by more than one map", reported)
         self.assertFalse(os.path.exists(out), "nothing may be written after a refusal")
         for src in sources:  # every source left exactly as it was
             self.assertEqual(ImgUtils.get_image_size(src), (256, 256))
 
-    def test_stem_collisions_ignore_the_extension(self):
-        """A format conversion merges 'x.tga' and 'x.png' into one output name.
-        Grouping is case-insensitive, but the stem is reported as spelled."""
-        clashes = ConverterSlots._stem_collisions(
-            [
-                "a/rock_BaseColor.tga",
-                "b/ROCK_basecolor.png",
-                "a/rock_Normal.png",
-            ]
+    def test_a_conversion_that_would_merge_two_maps_in_one_folder_is_refused(self):
+        """`rock_BaseColor.tga` and `rock_BaseColor.png` in the SAME folder both
+        resolve to `rock_BaseColor.png` under `Format: PNG`, and the writer
+        defaults to overwriting -- so one optimized result was silently lost
+        while the summary still counted two maps.
+
+        Narrower than the shared-destination case: the SOURCES survive here
+        whenever an archive folder is set, so only the result is destroyed.
+        """
+        png = self._texture("rock_BaseColor.png")
+        tga = self._texture("rock_BaseColor.tga")
+        self.converter._get_texture_paths = Mock(return_value=[png, tga])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(file_type="png"))
+        reported = "\n".join(
+            str(c.args[0]) for c in mock_print.call_args_list if c.args
         )
-        # Grouping defers to normcase for the same reason the destination guard
-        # does: 'rock' and 'ROCK' are one file on Windows and two on POSIX, so
-        # the collision is only real where the filesystem would fold them.
-        if os.path.normcase("A") == os.path.normcase("a"):
-            self.assertEqual([stem for stem, _ in clashes], ["rock_BaseColor"])
-            self.assertEqual(len(clashes[0][1]), 2)
-        else:
-            self.assertEqual(clashes, [])
+
+        self.assertIn("rock_BaseColor.png", reported)
+        self.assertIn("overwrite", reported.lower())
+
+    def test_the_same_pair_with_NO_conversion_is_left_alone(self):
+        """Each keeps its own extension, so nothing can be lost -- refusing here
+        would start rejecting folders that process correctly today."""
+        png = self._texture("rock_BaseColor.png")
+        tga = self._texture("rock_BaseColor.tga")
+        self.converter._get_texture_paths = Mock(return_value=[png, tga])
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(file_type=""))
+        reported = "\n".join(
+            str(c.args[0]) for c in mock_print.call_args_list if c.args
+        )
+
+        self.assertNotIn("overwrite the last", reported.lower())
+
+    def test_output_collisions_key_on_the_RESOLVED_name(self):
+        """The bare stem over-fires; the resolved output name does not."""
+        pair = [
+            os.path.join(self.test_dir, "rock_BaseColor.tga"),
+            os.path.join(self.test_dir, "rock_BaseColor.png"),
+        ]
+        self.assertEqual(
+            ConverterSlots._output_collisions(pair, "png", ""),
+            [("rock_BaseColor.png", pair)],
+        )
+        self.assertEqual(ConverterSlots._output_collisions(pair, "", ""), [])
+
+    def test_a_workflow_target_that_forces_ONE_container_is_caught(self):
+        """Choosing a target leaves the Format field on its sentinel, so
+        `file_type` is empty and the PROFILE picks the container per map type
+        -- and every built-in profile names a concrete one. The `.tga` and
+        `.png` sources still merge, with nothing in Format to hint at why.
+        """
+        pair = [
+            os.path.join(self.test_dir, "rock_BaseColor.tga"),
+            os.path.join(self.test_dir, "rock_BaseColor.png"),
+        ]
+        merged = ConverterSlots._output_collisions(pair, "", "", WF.GLTF)
+        self.assertEqual(len(merged), 1, "the profile's container was not consulted")
+        self.assertEqual(merged[0][1], pair)
+
+    def test_no_target_and_no_format_leaves_each_container_alone(self):
+        """Nothing forces a common extension, so nothing can be lost."""
+        pair = [
+            os.path.join(self.test_dir, "rock_BaseColor.tga"),
+            os.path.join(self.test_dir, "rock_BaseColor.png"),
+        ]
+        self.assertEqual(ConverterSlots._output_collisions(pair, "", "", None), [])
+
+    def test_output_collisions_see_a_shared_destination_folder(self):
+        """Two folders collapsed onto one absolute output collide even when the
+        extensions already agree."""
+        shared = os.path.join(self.test_dir, "collected")
+        pair = [
+            os.path.join(self.test_dir, "a", "rock_BaseColor.png"),
+            os.path.join(self.test_dir, "b", "rock_BaseColor.png"),
+        ]
+        self.assertEqual(
+            ConverterSlots._output_collisions(pair, "", shared),
+            [("rock_BaseColor.png", pair)],
+        )
+        # per-texture subdirectories keep them apart
+        self.assertEqual(ConverterSlots._output_collisions(pair, "", "out"), [])
+
+    def test_a_shared_folder_does_NOT_refuse_maps_that_keep_two_names(self):
+        """The over-fire the bare-stem guard used to produce.
+
+        Collapsing two source folders into one output is only destructive when
+        the inputs resolve to ONE name. `.tga` and `.png` with no conversion
+        keep two, land side by side, and lose nothing -- so refusing them
+        rejects a run that works.
+        """
+        out = os.path.join(self.test_dir, "collected")
+        sources = []
+        for sub, name in (("a", "rock_BaseColor.png"), ("b", "rock_BaseColor.tga")):
+            os.makedirs(os.path.join(self.test_dir, sub), exist_ok=True)
+            sources.append(self._texture(name=os.path.join(sub, name)))
+        self.converter._get_texture_paths = Mock(return_value=sources)
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(new=out, old=""))
+        reported = "\n".join(
+            str(c.args[0]) for c in mock_print.call_args_list if c.args
+        )
+
+        self.assertNotIn("claimed by more than one map", reported)
+        for name in ("rock_BaseColor.png", "rock_BaseColor.tga"):
+            self.assertTrue(
+                os.path.isfile(os.path.join(out, name)), f"{name} was not written"
+            )
+
+    def test_a_shared_ARCHIVE_folder_still_refuses_a_real_collision(self):
+        """The archive keeps each source's own name, so two identically named
+        files from different folders overwrite one another there -- the half of
+        the old shared-destination guard that was never about the output."""
+        archive = os.path.join(self.test_dir, "archived")
+        sources = []
+        for sub in ("a", "b"):
+            os.makedirs(os.path.join(self.test_dir, sub), exist_ok=True)
+            sources.append(
+                self._texture(name=os.path.join(sub, "rock_BaseColor.png"))
+            )
+        self.converter._get_texture_paths = Mock(return_value=sources)
+
+        with patch("builtins.print") as mock_print:
+            self.converter.tb000(self._widget(new="", old=archive))
+        reported = "\n".join(
+            str(c.args[0]) for c in mock_print.call_args_list if c.args
+        )
+
+        self.assertIn("archive path(s) would be claimed", reported)
 
     def test_subdirectory_destination_allows_same_named_maps(self):
         """Per-texture subdirectories keep each source in its own folder, so

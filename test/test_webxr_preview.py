@@ -178,9 +178,7 @@ class TestSourceWiring(_PanelTestCase):
         # Read off Parameters.scope_spec, so this pins that the panel does not
         # keep a private copy of the vocabulary every other bridge shares.
         self.assertEqual(keys, ["selected", "all", "visible", "file"])
-        self.assertEqual(
-            keys[-1], "file", "File must stay last: combos persist by index"
-        )
+        self.assertEqual(keys[-1], "file", "File on Disk stays last")
 
     def test_a_file_source_hides_the_export_rows(self):
         from extapps.webxr_preview import parameters as params
@@ -200,6 +198,67 @@ class TestSourceWiring(_PanelTestCase):
         visible = self.slots._relevant_param_keys()
         self.assertFalse(visible & params.FILE_KEYS)
         self.assertTrue(params.EXPORT_KEYS <= visible)
+
+
+class TestPersistence(_PanelTestCase):
+    """What a panel reopened in a NEW session restores, and what it must not.
+
+    A second ``WebXrPreviewUI`` is a fresh Switchboard over the same (sandboxed)
+    QSettings store -- the shape of the next DCC session.
+    """
+
+    def _reopen(self, engine=None):
+        from extapps.webxr_preview.launcher import WebXrPreviewUI
+
+        ui = WebXrPreviewUI()
+        self.addCleanup(ui.deleteLater)
+        # The host injects its bridge AFTER the panel is built -- exactly what
+        # tentacle's launch does (``launch(show=False)``, then ``engine =``).
+        if engine is not None:
+            ui.slots.engine = engine
+        return ui.slots
+
+    def test_the_source_choice_survives_a_new_session_with_a_host(self):
+        """Regression: the combo restored before the host injected its scopes,
+        so the stored choice was out of range, skipped -- and the repopulate
+        that followed reset it to the first entry, every session."""
+        self.slots.engine = _FakeHostBridge
+        self.slots._select_source("visible")
+
+        reopened = self._reopen(engine=_FakeHostBridge)
+
+        self.assertEqual(reopened._active_source(), "visible")
+
+    def test_the_file_source_survives_a_new_session_with_a_host(self):
+        self.slots.engine = _FakeHostBridge
+        self.slots._select_source("file")
+
+        reopened = self._reopen(engine=_FakeHostBridge)
+
+        self.assertEqual(reopened._active_source(), "file")
+
+    def test_a_file_handed_over_before_the_host_is_not_overridden(self):
+        """A hand-off selects File on Disk; re-applying last session's scope
+        when the host's engine arrives would push the scene instead of the file
+        the caller just handed over."""
+        self.slots.engine = _FakeHostBridge
+        self.slots._select_source("visible")
+
+        reopened = self._reopen()
+        reopened.set_source_file(self.glb)
+        reopened.engine = _FakeHostBridge
+
+        self.assertEqual(reopened._active_source(), "file")
+
+    def test_the_source_file_is_not_persisted(self):
+        """The field names one hand-off, not a preference: a path restored from
+        last session would be pushed by a press meant to ask for a file."""
+        self.slots.set_source_file(self.glb)
+        self.assertFalse(self.slots._source_edit().restore_state)
+
+        reopened = self._reopen()
+
+        self.assertEqual(reopened._source_text(), "")
 
 
 class TestOneServerPerPanel(_PanelTestCase):

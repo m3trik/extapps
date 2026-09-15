@@ -151,6 +151,16 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         self._status = None
         self._initial_source_file: str = kwargs.get("source_file", "") or ""
         super().__init__(switchboard)
+        # By LABEL, not position. The list is host-dependent -- File on Disk is
+        # entry 0 without a host and entry 3 with one -- so a stored index means
+        # a different source in each, and the host's scopes arrive only after
+        # this combo has already restored (see _populate_sources).
+        self.ui.cmb000.restore_by = "text"
+        # A hand-off, not a preference: a path restored from last session would
+        # be pushed by the press that is meant to ask for a file, and it would
+        # outrank a host's ``source_file``. Explicit, because registration
+        # defaults every widget without the attribute to restoring.
+        self._source_edit().restore_state = False
         self._adopt_host_deliverer()
         self._build_status_row()
         if self._initial_source_file:
@@ -286,8 +296,8 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         The host scopes come off the SHARED spec rather than a list written
         here: scope is the same control every other hand-off bridge offers, so
         reading the spec means this panel's vocabulary cannot fork from theirs.
-        File on Disk is appended last, which also keeps the addition
-        append-only for anyone whose combo index is already stored.
+        File on Disk is appended last. The combo persists by label, so neither
+        the order nor a host's presence changes what a stored choice means.
         """
         entries: List[Tuple[str, str]] = []
         if self._engine is not None:
@@ -313,9 +323,20 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         change fired the change handler five times, and it would have grown
         with every host that re-pointed the panel. The base's own refresh does
         the repopulate half alone, which is all that changed here.
+
+        The stored choice is re-applied afterwards, because it could not be
+        before: the combo restores when the panel is built, and a host injects
+        its scopes only after that (``launch(show=False)``, then ``engine =``).
+        A stored scope missing from the list is skipped, and this repopulate
+        then reset the combo to its first entry -- every session opened on
+        Selected whatever was last picked. Every change is saved as it happens,
+        so the store IS the last deliberate choice.
         """
         try:
             self.refresh_templates()
+            restore = getattr(self.ui.cmb000, "perform_restore_state", None)
+            if restore is not None:  # a combo not registered with a window
+                restore(force=True)
         except Exception:  # noqa: BLE001 - a repopulate must never take the panel down
             self.sb.logger.debug("source combo repopulate failed", exc_info=True)
 
@@ -453,6 +474,13 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             data = combo.itemData(i)
             if isinstance(data, (tuple, list)) and data and data[0] == key:
                 combo.setCurrentIndex(i)
+                # Saved even when the index did not move -- File on Disk is
+                # the only entry before a host arrives, so selecting it emits
+                # nothing. Unsaved, the host's repopulate would re-apply last
+                # session's scope over a file this call just handed over.
+                state = getattr(self.ui, "state", None)
+                if state is not None:
+                    state.save(combo)
                 return
 
     # ------------------------------------------------------------------ preflight

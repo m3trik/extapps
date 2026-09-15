@@ -5048,7 +5048,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 161,
+              "line": 171,
               "deprecated": false
             },
             {
@@ -5057,7 +5057,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 165,
+              "line": 175,
               "deprecated": false
             },
             {
@@ -5066,7 +5066,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "The panel's own, host-free engine.",
-              "line": 171,
+              "line": 181,
               "deprecated": false
             },
             {
@@ -5075,7 +5075,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
-              "line": 186,
+              "line": 196,
               "deprecated": false
             },
             {
@@ -5084,7 +5084,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
-              "line": 299,
+              "line": 309,
               "deprecated": false
             },
             {
@@ -5093,7 +5093,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Open the live page in a browser, without paying for a push.",
-              "line": 379,
+              "line": 400,
               "deprecated": false
             },
             {
@@ -5102,7 +5102,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Stop serving and release the port.",
-              "line": 392,
+              "line": 413,
               "deprecated": false
             },
             {
@@ -5111,7 +5111,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill Source File and select the file source.",
-              "line": 404,
+              "line": 425,
               "deprecated": false
             },
             {
@@ -5120,7 +5120,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Build the deliverable for the active source and publish it.",
-              "line": 490,
+              "line": 518,
               "deprecated": false
             }
           ]

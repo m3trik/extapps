@@ -7,6 +7,7 @@ signature contract. Integration tests open a real Painter scene and
 exercise the iray-backed bake path; they are gated behind
 ``SUBSTANCE_WORKFLOW_RUN_INTEGRATION=1``.
 """
+
 import os
 import sys
 import unittest
@@ -87,7 +88,7 @@ class TestBakeUtilsRegistration(SubstanceWorkflowTestCase):
     f"Test scene not available: {TEST_SCENE}",
 )
 class TestLightingToDiffuseIntegration(SubstanceWorkflowTestCase):
-    """End-to-end against the C130J Dubai demo scene.
+    """End-to-end against the lighting demo scene.
 
     Launches Painter, opens ``power_cart_panel.spp``, bakes AO via iray,
     composites a multiply layer, asserts the result shape.

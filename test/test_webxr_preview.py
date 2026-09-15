@@ -152,6 +152,16 @@ class _PanelTestCase(unittest.TestCase):
         self.ui = WebXrPreviewUI()
         self.slots = self.ui.slots
 
+        # A message box is modal too. A push that has to ASK -- a missing KTX2
+        # encoder offers its managed install -- blocked the CI runner, which has
+        # no toktx, until the 300s timeout killed pytest before it printed a
+        # summary, and so kept the publish job red. Fail the case instead; a case
+        # that expects a message replaces this, as TestTextureToolGate does.
+        def _unexpected_message_box(*args, **kwargs):
+            raise AssertionError(f"a test opened a modal message box: {args[:1]!r}")
+
+        self.slots.sb.message_box = _unexpected_message_box
+
     def tearDown(self) -> None:
         self._reset_servers()
         _preview_server.webbrowser.open = self._real_open
@@ -502,6 +512,13 @@ class TestPushWiring(_PanelTestCase):
             self.sent.append(kwargs),
             {"version": 1, "url": "http://x/", "asset": "a.glb"},
         )[1]
+        # The KTX2 tool gate is TestTextureToolGate's subject. Here every push
+        # would otherwise ask the MACHINE: with KTX2 restored from an earlier
+        # case and no toktx installed (the CI runner), each push opened the
+        # install prompt -- green on a workstation, a timeout on CI.
+        encoder = mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", return_value=None)
+        encoder.start()
+        self.addCleanup(encoder.stop)
 
     def test_scripts_are_an_explicit_list_even_when_none_are_ticked(self):
         self.slots.set_source_file(self.glb)
@@ -524,8 +541,7 @@ class TestPushWiring(_PanelTestCase):
     def test_the_texture_format_reaches_the_deliverer(self):
         self.slots._param_widgets["TEXTURE_FORMAT"].setCurrentIndex(1)
         self.slots.set_source_file(self.glb)
-        with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", return_value=None):
-            self.slots.b000()
+        self.slots.b000()
         self.assertEqual(self.sent[0]["texture_format"], "KTX2")
 
     def test_open_browser_is_always_auto(self):

@@ -18,6 +18,7 @@ Bootstrap.configure_high_dpi()
 
 class SubstanceWorkflowUI:
     def __new__(cls, *args, **kwargs):
+        from qtpy import QtCore
         from uitk import Switchboard
         from extapps import __version__
         from extapps.substance_workflow.slots import SubstanceWorkflowSlots
@@ -32,7 +33,13 @@ class SubstanceWorkflowUI:
         ui.set_attributes(WA_TranslucentBackground=True)
         # Use the uitk Header in place of the native OS frame so window
         # controls live on the header (matches the other extapps panels).
-        ui.set_flags(FramelessWindowHint=True)
+        # Frameless chromed window: the uitk Header supplies the window
+        # controls in place of the native OS frame. Set the SAME clean flag
+        # set as uitk's WindowPanel rather than OR-ing FramelessWindowHint
+        # onto a QMainWindow's defaults -- those defaults carry native
+        # decoration hints which, on a frameless host-owned window, make it
+        # float always-on-top of its parent.
+        ui.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
         ui.style.set(theme="dark", style_class="bgWithBorder")
 
         ui.header.config_buttons("menu", "minimize", "fullscreen", "hide")

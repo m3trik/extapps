@@ -123,3 +123,80 @@ jobs:
           fi
           echo "$PASSED passed, $FAILED failed, $ERRORS errors"
           exit 0
+
+  lint:
+    # ``ruff check`` only -- NOT ``ruff format --check``, for the reason
+    # pythontk/tests.yml states: a format gate would be red on arrival and
+    # therefore ignored.
+    #
+    # Scoped to ``.`` rather than the package dir: measured 2026-09-16, this repo
+    # is clean against the declared rule set across BOTH the package and
+    # test/, so the gate covers the whole tree from day one. (uitk, blendertk
+    # and unitytk gate the package dir only -- their test/ trees still carry
+    # findings.)
+    #
+    # Pinned, because an unpinned ruff turns an upstream rule addition into a
+    # red PR nobody changed.
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install ruff==0.15.17
+
+      - name: ruff check
+        run: ruff check .
+
+  api-registry:
+    # Content-hash staleness gate for the committed API_INDEX.md /
+    # API_REGISTRY.md (root CLAUDE.md documents --check as the CI gate). Its
+    # own job because the generator lives in the m3trik repo and expects the
+    # monorepo layout - <pkg>/ and m3trik/ as siblings - so the repos are
+    # checked out into sibling paths. pythontk is checked out for one file: it
+    # owns the SymbolRecord DTO the generator loads from source at import
+    # (generate_api_registry.py::_load_symbol_record), so it is a hard
+    # requirement of running the generator at all, for any package.
+    #
+    # extapps was in ECOSYSTEM_PACKAGES and shipped a committed registry, but no
+    # workflow regenerated or checked it -- the refresh job writes only
+    # m3trik's cross-package shadow report, and push.ps1's Prepare phase
+    # covers the cascade repos, which this one is not. Its registry could
+    # therefore drift from source indefinitely with nothing to say so.
+    #
+    # AST-only: no package install, no runtime, no git history. Deterministic
+    # in a fresh checkout because --check hashes CONTENT, not mtimes, and
+    # normalizes away the generation date and #L line numbers (see
+    # StalenessGate) - only a real public-surface delta fails this.
+    name: API registry up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: extapps
+
+      - uses: actions/checkout@v4
+        with:
+          repository: m3trik/m3trik
+          ref: main
+          path: m3trik
+
+      - uses: actions/checkout@v4
+        with:
+          repository: m3trik/pythontk
+          ref: dev
+          path: pythontk
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Registry matches source
+        run: python m3trik/scripts/generate_api_registry.py extapps --check

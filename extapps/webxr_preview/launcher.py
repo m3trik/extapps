@@ -18,6 +18,7 @@ Bootstrap.configure_high_dpi()
 
 class WebXrPreviewUI:
     def __new__(cls, *args, **kwargs):
+        from qtpy import QtCore
         from uitk import Switchboard
         from extapps import __version__
         from extapps.webxr_preview.slots import WebXrPreviewSlots
@@ -30,7 +31,13 @@ class WebXrPreviewUI:
         )
         ui = sb.loaded_ui.webxr_preview
         ui.set_attributes(WA_TranslucentBackground=True)
-        ui.set_flags(FramelessWindowHint=True)
+        # Frameless chromed window: the uitk Header supplies the window
+        # controls in place of the native OS frame. Set the SAME clean flag
+        # set as uitk's WindowPanel rather than OR-ing FramelessWindowHint
+        # onto a QMainWindow's defaults -- those defaults carry native
+        # decoration hints which, on a frameless host-owned window, make it
+        # float always-on-top of its parent.
+        ui.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
         ui.style.set(theme="dark", style_class="bgWithBorder")
 
         ui.header.config_buttons("menu", "minimize", "fullscreen", "hide")

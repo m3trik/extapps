@@ -6,6 +6,7 @@ Most engine logic lives in pythontk and is imported indirectly via the slot
 classes; the SDK-specific engines (substance Painter, Marmoset Toolbag) are
 bundled with their panels. This test only guards the extapps surface.
 """
+
 import importlib
 from pathlib import Path
 
@@ -39,7 +40,28 @@ PANEL_CLASSES = [
     ("MeshConvertUI", "MeshConvertSlots"),
     ("MarmosetWorkflowUI", "MarmosetWorkflowSlots"),
     ("UnityWorkflowUI", "UnityWorkflowSlots"),
+    ("WebXrPreviewUI", "WebXrPreviewSlots"),
 ]
+
+
+def test_panel_classes_covers_the_whole_roster():
+    """This hand-list must not drift from pyproject's entry-point table.
+
+    It did: WebXrPreviewUI shipped as a rostered panel and was missing here, so
+    nothing checked that the root re-exported it. A hand-listed subset of a
+    family is exactly the shape CODE_STANDARD.md §6 forbids -- derive the guard
+    from the roster that already lists the family.
+    """
+    from test_window_chrome import _roster_ui_classes
+
+    rostered = _roster_ui_classes()
+    listed = {ui for ui, _ in PANEL_CLASSES}
+    assert listed == rostered, (
+        "PANEL_CLASSES has drifted from the entry-point roster.\n"
+        "  missing here: %s\n  not rostered: %s"
+        % (sorted(rostered - listed), sorted(listed - rostered))
+    )
+
 
 # Panels that log a docs link at open (a clickable anchor in the log pane —
 # the compositor's "detailed docs" line, generalised as
@@ -70,7 +92,7 @@ def test_docs_url_points_at_a_file_in_this_repo(slots_name):
     assert url.startswith(_DOCS_URL_PREFIX), url
     assert cls.DOCS_LABEL.strip(), f"{slots_name}.DOCS_LABEL is empty"
     repo_root = Path(extapps.__file__).resolve().parents[1]
-    target = repo_root / url[len(_DOCS_URL_PREFIX):]
+    target = repo_root / url[len(_DOCS_URL_PREFIX) :]
     assert target.is_file(), f"{slots_name}.DOCS_URL -> missing {target}"
 
 

@@ -17,6 +17,7 @@ Bootstrap.configure_high_dpi()
 
 class CompositorUI:
     def __new__(cls, *args, **kwargs):
+        from qtpy import QtCore
         from uitk import Switchboard
         from extapps import __version__
         from extapps.texture_maps.compositor.slots import CompositorSlots
@@ -32,7 +33,13 @@ class CompositorUI:
         ui.set_attributes(WA_TranslucentBackground=True)
         # Use the uitk Header in place of the native OS frame so the
         # options menu (and other header controls) stay visible.
-        ui.set_flags(FramelessWindowHint=True)
+        # Frameless chromed window: the uitk Header supplies the window
+        # controls in place of the native OS frame. Set the SAME clean flag
+        # set as uitk's WindowPanel rather than OR-ing FramelessWindowHint
+        # onto a QMainWindow's defaults -- those defaults carry native
+        # decoration hints which, on a frameless host-owned window, make it
+        # float always-on-top of its parent.
+        ui.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
         ui.style.set(theme="dark", style_class="bgWithBorder")
 
         # Expose the menu button (and standard window controls) on the header.

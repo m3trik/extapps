@@ -53,9 +53,9 @@ copy fails the guard instead of silently escaping it.
 Runs only in the monorepo layout (siblings checked out); skips cleanly in a
 standalone extapps checkout.
 """
-import ast
+
 import os
-import re
+import sys
 import unittest
 from pathlib import Path
 
@@ -90,136 +90,42 @@ def _rel_files(root: Path):
 
 
 # ---------------------------------------------------------------- comparison
+#
+# The normalizer is NOT defined here. It is the single source of truth in
+# m3trik/scripts/check_dcc_twins.py, which m3trik's CI runs against the whole
+# monorepo as a --check gate. It lived here first, and keeping a second copy
+# beside it would be the exact drift this file exists to prevent -- on the one
+# piece of code whose correctness decides whether every OTHER twin comparison
+# means anything.
+#
+# m3trik is a sibling repo, so a standalone extapps checkout has no access to
+# it. That is a SKIP, never an error: a collection error would take the whole
+# module down, including the cases that need no siblings at all.
+_M3TRIK_SCRIPTS = _repo_root() / "m3trik" / "scripts"
+if str(_M3TRIK_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_M3TRIK_SCRIPTS))
+try:
+    import check_dcc_twins as _twins
+except ImportError as exc:  # pragma: no cover - standalone checkout
+    raise unittest.SkipTest(
+        "m3trik sibling not checked out; the twin normalizer lives in "
+        "m3trik/scripts/check_dcc_twins.py (%s)" % exc
+    )
+
+_fold_hosts = _twins.fold_hosts
+_collapse_docstrings = _twins.collapse_docstrings
+_host_normalized = _twins.host_normalized
+_comment_stripped = _twins.comment_stripped
+_twin_normalized = _twins.twin_normalized
+
+
 def _lines(path: Path):
     return path.read_text(encoding="utf-8").splitlines()
 
 
-def _collapse_docstrings(lines):
-    """Source lines with each docstring collapsed to a one-line placeholder.
-
-    Lets per-package docstrings (module-path self-references) diverge while
-    keeping everything else — code, comments, formatting — line-comparable.
-    Raises ``SyntaxError`` if *lines* are not parseable Python.
-    """
-    src = "\n".join(lines)
-    lines = list(lines)
-    drop = set()
-    for node in ast.walk(ast.parse(src)):
-        if isinstance(
-            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
-        ):
-            body = getattr(node, "body", None)
-            if (
-                body
-                and isinstance(body[0], ast.Expr)
-                and isinstance(body[0].value, ast.Constant)
-                and isinstance(body[0].value.value, str)
-            ):
-                doc = body[0].value
-                lines[doc.lineno - 1] = '"""<doc>"""'
-                drop.update(range(doc.lineno, doc.end_lineno))
-    return [ln for i, ln in enumerate(lines) if i not in drop]
-
-
-# The host vocabulary a twin is ALLOWED to differ in -- in PROSE. Ordered
-# longest-first within each pair so `blendertk` folds before `blender` could match
-# inside it. Mapped to neutral tokens rather than to one side's spelling: folding
-# "Blender"->"Maya" would let a genuine cross-wiring slip through in the other
-# direction.
-_HOST_TOKENS = (
-    (r"blendertk|mayatk", "<dcctk>"),
-    (r"\bbtk\b|\bmtk\b", "<dcc>"),
-    (r"\bbpy\b|maya\.cmds|maya\.mel", "<dccapi>"),
-    (r"\bblender\b|\bmaya\b", "<dccname>"),
-)
-_HOST_RE = tuple((re.compile(p, re.IGNORECASE), sub) for p, sub in _HOST_TOKENS)
-
-
-def _fold_hosts(text: str) -> str:
-    """Replace every host-vocabulary token in *text* with its neutral placeholder."""
-    for rx, sub in _HOST_RE:
-        text = rx.sub(sub, text)
-    return text
-
-
-def _host_normalized(lines, code_aware: bool = False):
-    """Fold the host vocabulary so 'same file, other DCC' compares equal.
-
-    With *code_aware*, only STRING and COMMENT tokens are folded -- executable code
-    is compared verbatim. That distinction is the whole safety of this normalizer.
-    A twin may legitimately *name* the other DCC in prose (blendertk's vendored
-    engine docstring says "the Maya bridge in mayatk", by design), but it must never
-    name it in code: an `import mayatk` inside blendertk, or an `mtk.foo()` call
-    where the twin has `btk.foo()`, is a real cross-wiring bug, and a whole-line fold
-    would quietly report those two lines as equal.
-
-    Falls back to the whole-line fold when the text does not tokenize as Python --
-    used for `.lua` and `.ui`, which carry no imports to mask.
-    """
-    if not code_aware:
-        return [_fold_hosts(line) for line in lines]
-
-    import io
-    import tokenize
-
-    src = "\n".join(lines)
-    try:
-        toks = list(tokenize.generate_tokens(io.StringIO(src).readline))
-    except (tokenize.TokenError, IndentationError, SyntaxError):
-        return [_fold_hosts(line) for line in lines]
-
-    out = list(lines)
-    for tok in toks:
-        if tok.type not in (tokenize.STRING, tokenize.COMMENT):
-            continue
-        (srow, scol), (erow, ecol) = tok.start, tok.end
-        if srow == erow:
-            line = out[srow - 1]
-            out[srow - 1] = line[:scol] + _fold_hosts(line[scol:ecol]) + line[ecol:]
-            continue
-        # Multi-line string: fold only the part INSIDE it on the first and last
-        # lines. Folding those lines whole would reach the code around the quotes
-        # -- `x = mtk.f("""Maya` would have its `mtk` folded too, which is exactly
-        # the masking this function exists to avoid.
-        out[srow - 1] = out[srow - 1][:scol] + _fold_hosts(out[srow - 1][scol:])
-        for i in range(srow, erow - 1):
-            out[i] = _fold_hosts(out[i])
-        out[erow - 1] = _fold_hosts(out[erow - 1][:ecol]) + out[erow - 1][ecol:]
-    return out
-
-
-def _comment_stripped(lines, marker: str):
-    """Drop whole-line *marker* comments — the non-Python analogue of docstrings.
-
-    A ``.lua`` preset's leading ``--`` block is its description and names its host
-    exactly like a module docstring does; the code below it is the twin contract.
-    """
-    return [ln for ln in lines if not ln.lstrip().startswith(marker)]
-
-
-def _twin_normalized(lines, rel: str):
-    """Reduce *lines* to what a declared twin must share, by file type.
-
-    Order matters and is the reason this is one function rather than a chain of
-    fallbacks. The host fold runs FIRST, on the original source, because that is
-    the form guaranteed to tokenize — collapsing docstrings first can leave a
-    function whose body was only a docstring with no body at all, and the fold
-    would then silently degrade to its coarse whole-line mode on exactly the files
-    that most need the precise one. Folding cannot break parseability itself: the
-    placeholders contain no quotes, so the folded source is still valid Python.
-    """
-    if rel.endswith(".py"):
-        lines = _host_normalized(lines, code_aware=True)
-        try:
-            return _collapse_docstrings(lines)
-        except SyntaxError:
-            return lines  # unparseable: the fold alone is the comparison
-    if rel.endswith(".lua"):
-        lines = _comment_stripped(lines, "--")
-    return _host_normalized(lines)
-
-
-def _assert_code_identical(test: unittest.TestCase, a: Path, b: Path, rel: str, hint: str):
+def _assert_code_identical(
+    test: unittest.TestCase, a: Path, b: Path, rel: str, hint: str
+):
     """Strict line compare, then one normalized re-compare.
 
     The normalizer removes exactly the categories a declared twin may legitimately
@@ -277,7 +183,8 @@ class TestMarmosetEngineVendorSync(unittest.TestCase):
             self.assertTrue(may_f.is_file(), f"missing {may_f}")
             self.assertTrue(ext_f.is_file(), f"missing {ext_f}")
             self.assertEqual(
-                _lines(may_f), _lines(ext_f),
+                _lines(may_f),
+                _lines(ext_f),
                 f"vendored Marmoset file '{rel}' has drifted between "
                 f"mayatk.mat_utils.marmoset_bridge and extapps.marmoset_workflow. "
                 f"Mirror the change into both copies (extapps CLAUDE.md hard rule), "
@@ -287,11 +194,13 @@ class TestMarmosetEngineVendorSync(unittest.TestCase):
     def test_panel_files_all_classified(self):
         classified = set(MARMOSET_PANEL_VENDORED) | INTENTIONALLY_DIVERGENT | PANEL_ONLY
         present = {
-            rel for rel in _rel_files(self.ext_dir)
+            rel
+            for rel in _rel_files(self.ext_dir)
             if not rel.endswith("_ui.py")  # generated by the uitk loader
         }
         self.assertLessEqual(
-            present, classified,
+            present,
+            classified,
             "unclassified files in extapps.marmoset_workflow: "
             f"{sorted(present - classified)} — mirror into MARMOSET_PANEL_VENDORED "
             "or ledger as PANEL_ONLY/INTENTIONALLY_DIVERGENT",
@@ -351,7 +260,8 @@ class _DccPairSyncMixin:
             self.assertTrue(may_sub.is_dir(), f"missing {may_sub}")
             self.assertTrue(ble_sub.is_dir(), f"missing {ble_sub}")
             self.assertEqual(
-                _rel_files(may_sub), _rel_files(ble_sub),
+                _rel_files(may_sub),
+                _rel_files(ble_sub),
                 f"'{self.subpath[-1]}/{sub}/' file sets differ between {self.hint}",
             )
 
@@ -387,21 +297,26 @@ class _TopLevelLedgerMixin:
                 and not p.name.endswith((".pyc", "_ui.py"))  # *_ui.py is generated
             }
             self.assertLessEqual(
-                present, classified,
+                present,
+                classified,
                 f"unclassified top-level entries {sorted(present - classified)} in "
                 f"{pkg}'s {'.'.join(self.subpath)} — vendor-mirror (add to the "
                 f"engine lists) or ledger as DCC-half",
             )
 
 
-class TestMarmosetEngineDccSync(_TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase):
+class TestMarmosetEngineDccSync(
+    _TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase
+):
     subpath = ("mat_utils", "marmoset_bridge")
     top_files = MARMOSET_ENGINE_TOP
     subdirs = MARMOSET_ENGINE_DIRS
     dcc_half_files = MARMOSET_DCC_HALF
 
 
-class TestSubstanceEngineDccSync(_TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase):
+class TestSubstanceEngineDccSync(
+    _TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase
+):
     subpath = ("mat_utils", "substance_bridge")
     top_files = SUBSTANCE_ENGINE_TOP
     subdirs = SUBSTANCE_ENGINE_DIRS
@@ -453,7 +368,9 @@ class TestHostNormalizer(unittest.TestCase):
         return _host_normalized([a], code_aware) == _host_normalized([b], code_aware)
 
     def test_prose_may_name_the_other_dcc(self):
-        self.assertTrue(self._equal("x = 1  # the Maya bridge", "x = 1  # the Blender bridge"))
+        self.assertTrue(
+            self._equal("x = 1  # the Maya bridge", "x = 1  # the Blender bridge")
+        )
         self.assertTrue(self._equal('"""Maya side."""', '"""Blender side."""'))
         self.assertTrue(self._equal("s = 'mayatk'", "s = 'blendertk'"))
 
@@ -474,17 +391,38 @@ class TestHostNormalizer(unittest.TestCase):
         self.assertIn("<dccname>", folded_a[0])  # the prose inside DID fold
         self.assertIn("mtk", folded_a[1])  # the trailing call did NOT
 
-    def test_unparseable_python_degrades_to_the_line_fold(self):
-        """A tokenize failure must not crash the guard, nor silently pass everything."""
-        self.assertTrue(self._equal("def f(  # Maya", "def f(  # Blender"))
+    def test_unparseable_python_does_not_fold_at_all(self):
+        """A tokenize failure must not crash the guard, nor mask a cross-wiring.
+
+        This pinned the whole-line fold until 2026-09-17, back when the
+        assertion ran against a vendored copy of the normalizer. That fallback
+        folded ``import mayatk`` and ``import blendertk`` to the same
+        placeholder, so a twin that was BOTH cross-wired and unparseable
+        compared equal and its ledger entry reported ``ok`` -- the one failure
+        this normalizer exists to prevent, reached through its own error path.
+        It now returns the lines unfolded: the two sides differ on host
+        vocabulary and report ``drift``, a false alarm a maintainer reads and
+        dismisses instead of a false all-clear nobody sees.
+        """
+        self.assertFalse(self._equal("def f(  # Maya", "def f(  # Blender"))
         self.assertFalse(self._equal("def f(  # Maya", "def g(  # Blender"))
+        # The load-bearing case the old fallback masked.
+        self.assertFalse(
+            self._equal("import mayatk\ndef f(:", "import blendertk\ndef f(:")
+        )
+        # Still does not raise -- the other half of the original contract.
+        self.assertTrue(_host_normalized(["def f(:"], True))
 
     def test_non_python_folds_whole_lines(self):
         # .lua / .ui carry no imports to mask, so the coarse fold is safe there.
-        self.assertTrue(self._equal("-- Maya pack", "-- Blender pack", code_aware=False))
+        self.assertTrue(
+            self._equal("-- Maya pack", "-- Blender pack", code_aware=False)
+        )
 
 
-class TestRizomScriptsDccSync(_TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase):
+class TestRizomScriptsDccSync(
+    _TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase
+):
     """The Lua presets are shared data; the engines around them are ports."""
 
     subpath = ("uv_utils", "rizom_bridge")
@@ -493,7 +431,9 @@ class TestRizomScriptsDccSync(_TopLevelLedgerMixin, _DccPairSyncMixin, unittest.
     dcc_half_files = RIZOM_DCC_HALF
 
 
-class TestUnityBridgeDccSync(_TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase):
+class TestUnityBridgeDccSync(
+    _TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase
+):
     """The parameter registry + panel layout are shared; the export halves are ports."""
 
     subpath = ("env_utils", "unity_bridge")

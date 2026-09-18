@@ -17,13 +17,20 @@ Bootstrap.configure_high_dpi()
 
 class PackerUI:
     def __new__(cls):
+        from qtpy import QtCore
         from uitk import Switchboard
         from extapps.texture_maps.packer.slots import PackerSlots
 
         sb = Switchboard(ui_source="packer.ui", slot_source=PackerSlots)
         ui = sb.loaded_ui.packer
         ui.set_attributes(WA_TranslucentBackground=True)
-        ui.set_flags(FramelessWindowHint=True)
+        # Frameless chromed window: the uitk Header supplies the window
+        # controls in place of the native OS frame. Set the SAME clean flag
+        # set as uitk's WindowPanel rather than OR-ing FramelessWindowHint
+        # onto a QMainWindow's defaults -- those defaults carry native
+        # decoration hints which, on a frameless host-owned window, make it
+        # float always-on-top of its parent.
+        ui.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
         ui.style.set(theme="dark", style_class="translucentBgWithBorder")
         ui.header.config_buttons("menu", "minimize", "hide")
         return ui

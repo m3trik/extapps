@@ -950,13 +950,14 @@ Application shell for the Map Converter UI.
 
 Map Converter UI — slot file for ``converter.ui``.
 
-- **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L33)** — Switchboard slots for ``converter.ui``.
+- **[`class ConverterSlots(ImgUtils)`](extapps/extapps/texture_maps/converter/slots.py#L34)** — Switchboard slots for ``converter.ui``.
   - `ConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
   - `ConverterSlots.scopes(self) -> Tuple[str, ...]` *(property)* — Scope labels currently offered, in combobox order.
   - `ConverterSlots.register_scope(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None` — Offer *label* in the Scope combobox, resolved by calling *provider*.
   - `ConverterSlots.unregister_scope(self, label: str) -> None` — Drop a previously registered scope (no-op if it isn't registered).
   - `ConverterSlots.texture_provider(self) -> Optional[Callable[[], Iterable[str]]]` *(property)* — Provider for the plain "Selected" scope.
   - `ConverterSlots.header_init(self, widget)` — Add the global Scope combobox to the header menu.
+  - `ConverterSlots.optimize_formats(self) -> Tuple[str, ...]` *(property)* — The containers Optimize offers: every writable one, then the
   - `ConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu.
   - `ConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
   - `ConverterSlots.resolve_affix(mode: str, modifier: str) -> Tuple[str, str]` *(static)* — Resolve the Affix mode against the modifier text.

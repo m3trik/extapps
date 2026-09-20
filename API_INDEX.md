@@ -325,7 +325,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 
 ### `texture_maps/converter/slots.py` — Map Converter UI — slot file for ``converter.ui``.
 - `class ConverterSlots(ImgUtils)`
-  - methods: source_dir, scopes, register_scope, unregister_scope, texture_provider, header_init, tb000_init, tb000, resolve_affix, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
+  - methods: source_dir, scopes, register_scope, unregister_scope, texture_provider, header_init, optimize_formats, tb000_init, tb000, resolve_affix, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
 
 ### `texture_maps/packer/__init__.py` — Map Packer — channel-pack textures from per-channel source maps.
 - constants: DEFAULT_INCLUDE

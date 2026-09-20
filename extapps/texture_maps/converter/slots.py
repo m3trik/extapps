@@ -27,6 +27,7 @@ from pythontk.core_utils.engines.textures.map_factory import MapFactory
 from pythontk.core_utils.engines.textures.map_registry import MapRegistry
 from pythontk.core_utils.engines.textures.map_optimizer import MapOptimizer
 from pythontk.core_utils.engines.textures.output_template import OutputTemplates
+from pythontk.core_utils.export_profile import ExportProfile
 from pythontk.file_utils._file_utils import FileUtils
 from pythontk.str_utils._str_utils import StrUtils
 
@@ -270,6 +271,40 @@ class ConverterSlots(ImgUtils):
     #: lossy is opt-in, and the safety gate still refuses it per map type.
     LOSSY_CHOICES = (("Off", 0), ("q95", 95), ("q90", 90), ("q80", 80))
 
+    @property
+    def optimize_formats(self) -> Tuple[str, ...]:
+        """The containers Optimize offers: every writable one, then the
+        delivery containers (``ImgUtils.DELIVERY_FORMATS`` -- KTX2).
+
+        Appended, never interleaved: the Format combo persists its selection by
+        index, so a new entry anywhere but the end would re-point every saved
+        choice. KTX2 is offered whether or not its encoder is installed yet;
+        choosing it offers the install (:meth:`_ktx2_ready`).
+        """
+        return tuple(self.writable) + tuple(
+            ext for ext in ImgUtils.DELIVERY_FORMATS if ext not in self.writable
+        )
+
+    def _ktx2_ready(self) -> bool:
+        """Settle a missing KTX2 encoder before a KTX2 run, offering the managed
+        install -- the panels' rule: a missing tool is an install offer, never
+        a dead end in a log.  The refusal is the fix-shaped message naming the
+        manual install, so it IS the dialog."""
+        return ImgUtils.settle_ktx2_encoder(
+            prompt=self.sb.confirm,
+            refused=self.sb.message_box,
+            installed=lambda path: self.sb.message_box(
+                f"Installed KTX-Software (toktx): <hl>{path}</hl>"
+            ),
+        )
+
+    #: KTX2 RDO dictionary sizes for the Optimize menu (``toktx --uastc_rdo_d``),
+    #: largest window first. toktx's own 4096 is the first-run default: this is
+    #: a map tool, where the time is the user's to spend -- a web export runs a
+    #: smaller window by policy (``MeshConvert.WEB_DELIVERY_UASTC_RDO_DICTIONARY``).
+    RDO_DICTIONARIES = (16384, 4096, 1024, 256)
+    DEFAULT_RDO_DICTIONARY = 4096
+
     def tb000_init(self, widget):
         """Populate the Optimize toolbutton's option menu.
 
@@ -319,7 +354,10 @@ class ConverterSlots(ImgUtils):
             setToolTip=(
                 "Set the output file type. 'Original' keeps each texture's "
                 "existing format; with a Target selected, WEBP is the web/XR "
-                "choice (lossless WebP is 10-30% under PNG at identical pixels)."
+                "choice (lossless WebP is 10-30% under PNG at identical pixels).\n"
+                "KTX2 is the GPU-delivery container (Basis: UASTC for normals and "
+                "data maps, ETC1S for base color / emissive) -- it needs the toktx "
+                "encoder, which is offered for install on first use."
             ),
         )
         # Falsy sentinels (empty string / 0) — the prefix-mode combobox
@@ -330,7 +368,7 @@ class ConverterSlots(ImgUtils):
         menu.cmb001.add(
             OutputTemplates.format_choices(
                 sentinel=OutputTemplates.ORIGINAL_LABEL,
-                writable=self.writable,
+                writable=self.optimize_formats,
                 sentinel_first=True,
             ),
             prefix="Format:",
@@ -387,6 +425,56 @@ class ConverterSlots(ImgUtils):
             ),
         )
         menu.cmb_lossy.add(list(self.LOSSY_CHOICES), prefix="Lossy:")
+
+        # The KTX2 pair: meaningful only with Format KTX2, and there only for
+        # the maps that encode UASTC -- which is what their tooltips say, the
+        # way the Lossy row names the maps it leaves alone.
+        menu.add(
+            "QComboBox",
+            setObjectName="cmb_rdo",
+            setToolTip=(
+                "KTX2 only: UASTC rate-distortion optimisation for the maps "
+                "that encode UASTC - normals, ORM / mask and other data maps. "
+                "Smaller files at a controlled quality cost, and 3-4x the "
+                "encode time.\n"
+                "Normal maps are capped at lambda 0.75 (toktx's own guidance); "
+                "base color and emissive encode ETC1S, which has no RDO stage.\n"
+                "Off = plain UASTC."
+            ),
+        )
+        # The exporter's own vocabulary (ExportProfile), so the two read alike.
+        menu.cmb_rdo.add(ExportProfile.UASTC_RDO_OPTIONS, prefix="RDO:")
+        menu.add(
+            "QComboBox",
+            setObjectName="cmb_rdo_dictionary",
+            setToolTip=(
+                "KTX2 with RDO on: the RDO dictionary size - how far back the "
+                "optimiser looks for matches, and where RDO's time goes. "
+                "Measured on production maps: 1024 took half the time of 4096 "
+                "(toktx's own) for 2% larger files, 256 saved little more for "
+                "5%. A larger window keeps more of RDO's size win and takes "
+                "longer."
+            ),
+        )
+        menu.cmb_rdo_dictionary.add(
+            [
+                (
+                    f"{size} (toktx default)"
+                    if size == self.DEFAULT_RDO_DICTIONARY
+                    else str(size),
+                    size,
+                )
+                for size in self.RDO_DICTIONARIES
+            ],
+            prefix="RDO Dictionary:",
+        )
+        # First-run default only, as with the clamp: a saved choice restores
+        # after the *_init hooks.
+        default_dictionary = menu.cmb_rdo_dictionary.findData(
+            self.DEFAULT_RDO_DICTIONARY
+        )
+        if default_dictionary > -1:
+            menu.cmb_rdo_dictionary.setCurrentIndex(default_dictionary)
 
         menu.add("Separator", setTitle="Naming")
         menu.add(
@@ -504,10 +592,17 @@ class ConverterSlots(ImgUtils):
         )
         target = widget.option_box.menu.cmb_target.currentData() or None
         lossy_quality = widget.option_box.menu.cmb_lossy.currentData() or None
+        uastc_rdo = widget.option_box.menu.cmb_rdo.currentData() or None
+        uastc_rdo_dictionary = (
+            widget.option_box.menu.cmb_rdo_dictionary.currentData() or None
+        )
 
         target_profile, file_type = OutputTemplates.resolve_selection(
             target, file_type
         )
+        # A dry run encodes too (its size is a real encode), so both need it.
+        if file_type == "ktx2" and not self._ktx2_ready():
+            return
 
         # 'Clamp: Target' takes the ceiling from the profile's DeliveryBudget.
         # The number is resolved HERE rather than left to enforce_budget alone:
@@ -664,6 +759,8 @@ class ConverterSlots(ImgUtils):
                         output_profile=target_profile,
                         enforce_budget=enforce_budget,
                         lossy_quality=lossy_quality,
+                        uastc_rdo=uastc_rdo,
+                        uastc_rdo_dictionary=uastc_rdo_dictionary,
                     )
                 except Exception as e:
                     before = after = None
@@ -876,6 +973,8 @@ class ConverterSlots(ImgUtils):
         output_profile=None,
         enforce_budget=False,
         lossy_quality=None,
+        uastc_rdo=None,
+        uastc_rdo_dictionary=None,
     ):
         """Helper for ``tb000`` — optimize (or, when *dry_run*, assess) one path.
 
@@ -912,6 +1011,8 @@ class ConverterSlots(ImgUtils):
             "output_profile": output_profile,
             "enforce_budget": enforce_budget,
             "lossy_quality": lossy_quality,
+            "uastc_rdo": uastc_rdo,
+            "uastc_rdo_dictionary": uastc_rdo_dictionary,
         }
 
         if dry_run:
@@ -1028,6 +1129,8 @@ class ConverterSlots(ImgUtils):
         output_profile=None,
         enforce_budget=False,
         lossy_quality=None,
+        uastc_rdo=None,
+        uastc_rdo_dictionary=None,
     ):
         """Print what optimizing *texture_path* would do, touching nothing.
 
@@ -1044,6 +1147,8 @@ class ConverterSlots(ImgUtils):
             output_profile=output_profile,
             enforce_budget=enforce_budget,
             lossy_quality=lossy_quality,
+            uastc_rdo=uastc_rdo,
+            uastc_rdo_dictionary=uastc_rdo_dictionary,
         )
         if report.get("error"):
             print(f"// {report['error']}")

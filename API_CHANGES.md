@@ -1,5 +1,7 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ 179fa05)._
+_Diff vs the last release (origin/main @ 2f21b8e)._
 
-No public API changes since the last release (origin/main @ 179fa05).
+## Added (1)
+
+- `texture_maps/converter/slots.py::ConverterSlots.optimize_formats(self) -> Tuple[str, ...]`

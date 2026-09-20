@@ -977,6 +977,8 @@ class TestConverterOptimize(unittest.TestCase):
         lossy=0,
         file_type="",
         secondary=1.0,
+        rdo=0,
+        rdo_dictionary=ConverterSlots.DEFAULT_RDO_DICTIONARY,
     ):
         widget = MagicMock()
         menu = widget.option_box.menu
@@ -987,6 +989,10 @@ class TestConverterOptimize(unittest.TestCase):
         # every optimize test through the target-filter path.
         menu.cmb_target.currentData.return_value = target
         menu.cmb_lossy.currentData.return_value = lossy
+        # Same reason: a Mock converts to 1.0 / 1, an "RDO on, dictionary 1" run
+        # the dials refuse before any map is touched.
+        menu.cmb_rdo.currentData.return_value = rdo
+        menu.cmb_rdo_dictionary.currentData.return_value = rdo_dictionary
         menu.cmb_secondary_scale.currentData.return_value = secondary
         # Affix mode lives on the modifier field's option box (an icon button
         # beside it), not a sibling combobox.
@@ -1038,6 +1044,82 @@ class TestConverterOptimize(unittest.TestCase):
         )
 
     # ---- dry run --------------------------------------------------------
+
+    # ---- KTX2 RDO ---------------------------------------------------------
+
+    def test_ktx2_is_offered_after_every_existing_format(self):
+        """Optimize could not write KTX2 at all -- its Format list was
+        ``ImgUtils.writable``, which keeps delivery containers out -- so the
+        RDO rows had nothing to act on. KTX2 is offered now, LAST: the combo
+        persists by index, and an entry anywhere else would re-point every
+        saved choice. Added: 2026-09-19"""
+        formats = self.converter.optimize_formats
+        self.assertEqual(formats[: len(ImgUtils.writable)], tuple(ImgUtils.writable))
+        self.assertEqual(formats[-1], "ktx2")
+
+    def test_a_ktx2_run_offers_the_encoder_and_stops_when_declined(self):
+        """No toktx: the run offers the managed install (the panels' rule) and,
+        declined, writes nothing -- the message is the fix. Added: 2026-09-19"""
+        path = self._texture(name="rock_Normal_OpenGL.png")
+        self.converter._get_texture_paths = Mock(return_value=[path])
+        declined = FileNotFoundError("KTX2 encoding requires 'toktx' ...")
+        with patch(
+            "pythontk.img_utils._img_utils.ImgUtils.ensure_ktx2_encoder",
+            side_effect=declined,
+        ), patch(
+            "extapps.texture_maps.converter.slots.MapOptimizer.optimize_map"
+        ) as optimize:
+            self.converter.tb000(self._widget(file_type="ktx2", old=""))
+        optimize.assert_not_called()
+        self.mock_sb.message_box.assert_called_with(str(declined))
+
+    def test_the_rdo_rows_reach_the_ktx2_encode(self):
+        """Optimize's RDO and RDO Dictionary rows reach the encoder of a KTX2
+        run -- the normal map capped at toktx's 0.75 -- and the dry run sizes
+        the same encode. Off, nothing rides. Added: 2026-09-19"""
+        import struct
+
+        calls = []
+
+        class _Encoder:
+            def encode(
+                self,
+                source,
+                output,
+                codec="UASTC",
+                srgb=True,
+                mipmaps=True,
+                quality=None,
+                uastc_rdo=None,
+                uastc_rdo_dictionary=None,
+            ):
+                calls.append((codec, uastc_rdo, uastc_rdo_dictionary))
+                with open(output, "wb") as fh:
+                    fh.write(b"\xabKTX 20\xbb\r\n\x1a\n")
+                    fh.write(struct.pack("<5I", 0, 1, *source.size, 0))
+                return output
+
+        ImgUtils.register_ktx2_encoder(_Encoder())
+        self.addCleanup(ImgUtils.register_ktx2_encoder, None)
+        path = self._texture(name="rock_Normal_OpenGL.png")
+        self.converter._get_texture_paths = Mock(return_value=[path])
+
+        for dry_run, dictionary in ((False, 1024), (True, 256)):
+            with self.subTest(dry_run=dry_run):
+                calls.clear()
+                self.converter.tb000(
+                    self._widget(
+                        file_type="ktx2",
+                        rdo=2.0,
+                        rdo_dictionary=dictionary,
+                        old="",
+                        dry_run=dry_run,
+                    )
+                )
+                self.assertEqual(calls, [("UASTC", 0.75, dictionary)])
+        calls.clear()
+        self.converter.tb000(self._widget(file_type="ktx2", old=""))
+        self.assertEqual(calls, [("UASTC", None, None)])
 
     # ---- target template / lossy ---------------------------------------
 

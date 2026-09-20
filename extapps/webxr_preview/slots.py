@@ -499,20 +499,15 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         """
         if str(texture_format).upper() != "KTX2":
             return True
-        try:
-            installed = ptk.ImgUtils.ensure_ktx2_encoder(
-                prompt=lambda question: (
-                    self.sb.message_box(question, "Yes", "No") == "Yes"
-                )
-            )
-        except FileNotFoundError as error:
-            # Declined, or the install failed. The error is the fix-shaped one
-            # naming the manual install, so it IS the message.
-            self.sb.message_box(str(error))
-            return False
-        if installed:
-            self.sb.message_box(f"Installed KTX-Software (toktx): <hl>{installed}</hl>")
-        return True
+        # Declined, or the install failed: the refusal is the fix-shaped
+        # message naming the manual install, so it IS the dialog.
+        return ptk.ImgUtils.settle_ktx2_encoder(
+            prompt=self.sb.confirm,
+            refused=self.sb.message_box,
+            installed=lambda path: self.sb.message_box(
+                f"Installed KTX-Software (toktx): <hl>{path}</hl>"
+            ),
+        )
 
     # ------------------------------------------------------------------ b000 — the push
     def b000(self) -> None:

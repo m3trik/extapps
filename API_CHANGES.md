@@ -1,7 +1,12 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ 2f21b8e)._
+_Diff vs the last release (origin/main @ b02496d)._
 
-## Added (1)
+## Removed (1)
 
-- `texture_maps/converter/slots.py::ConverterSlots.optimize_formats(self) -> Tuple[str, ...]`
+- `marmoset_workflow/_marmoset_engine.py::ROUNDTRIP` — was `(constant)`
+
+## Added (2)
+
+- `webxr_preview/parameters.py::GLB_KEYS(constant)`
+- `webxr_preview/parameters.py::LIGHTING_KEYS(constant)`

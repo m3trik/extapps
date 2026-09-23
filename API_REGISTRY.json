@@ -53,7 +53,7 @@
         {
           "name": "MarmosetEngine",
           "summary": "Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.",
-          "line": 79,
+          "line": 76,
           "bases": [
             "ptk.Deliverer",
             "ptk.LoggingMixin"
@@ -65,7 +65,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve the Toolbag executable path.",
-              "line": 118,
+              "line": 115,
               "deprecated": false
             },
             {
@@ -74,7 +74,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve Toolbag's application log file (script prints + tracebacks).",
-              "line": 138,
+              "line": 135,
               "deprecated": false
             },
             {
@@ -83,7 +83,7 @@
               "kind": "method",
               "signature": "(self, bridge, request) -> bool",
               "summary": "Validate the (template, mode) before the bridge produces its payload.",
-              "line": 149,
+              "line": 146,
               "deprecated": false
             },
             {
@@ -92,7 +92,7 @@
               "kind": "method",
               "signature": "(self, bridge, payload, request) -> Optional[Dict[str, Any]]",
               "summary": "Hand the produced model + manifests to Toolbag via :meth:`send`.",
-              "line": 165,
+              "line": 162,
               "deprecated": false
             },
             {
@@ -101,7 +101,7 @@
               "kind": "method",
               "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, output_dir: Optional[str] = None, texture_dir: Optional[str] = None, texture_set_aliases: Optional[Dict[str, str]] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]",
               "summary": "Render *template* in *mode* against *model_path* and hand off to Toolbag.",
-              "line": 190,
+              "line": 187,
               "deprecated": false
             },
             {
@@ -110,7 +110,7 @@
               "kind": "method",
               "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None) -> Optional[str]",
               "summary": "Return the rendered Toolbag Python script body, or *None* on miss.",
-              "line": 455,
+              "line": 452,
               "deprecated": false
             },
             {
@@ -119,7 +119,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Path]",
               "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
-              "line": 725,
+              "line": 722,
               "deprecated": false
             },
             {
@@ -128,7 +128,7 @@
               "kind": "staticmethod",
               "signature": "(template_path: Path) -> Tuple[str, ...]",
               "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
-              "line": 730,
+              "line": 727,
               "deprecated": false
             },
             {
@@ -137,7 +137,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Tuple[str, str]]",
               "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
-              "line": 739,
+              "line": 736,
               "deprecated": false
             }
           ]
@@ -169,15 +169,6 @@
           "signature": "",
           "summary": "",
           "line": 65,
-          "deprecated": false
-        },
-        {
-          "name": "ROUNDTRIP",
-          "qualname": "ROUNDTRIP",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 68,
           "deprecated": false
         }
       ]
@@ -264,7 +255,7 @@
               "kind": "staticmethod",
               "signature": "(root)",
               "summary": "Recursively gather ``mset.MeshObject`` descendants of *root*.",
-              "line": 544,
+              "line": 541,
               "deprecated": false
             },
             {
@@ -273,7 +264,7 @@
               "kind": "staticmethod",
               "signature": "(preset_path)",
               "summary": "Load a ``.tbsky`` preset onto the scene's existing SkyObject.",
-              "line": 584,
+              "line": 581,
               "deprecated": false
             },
             {
@@ -282,7 +273,7 @@
               "kind": "staticmethod",
               "signature": "()",
               "summary": "Frame the imported scene in the viewport (best-effort).",
-              "line": 610,
+              "line": 607,
               "deprecated": false
             }
           ]
@@ -295,7 +286,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 648,
+          "line": 645,
           "deprecated": false
         },
         {
@@ -304,7 +295,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 671,
+          "line": 668,
           "deprecated": false
         },
         {
@@ -313,7 +304,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 684,
+          "line": 681,
           "deprecated": false
         }
       ]
@@ -4994,7 +4985,7 @@
           "kind": "function",
           "signature": "() -> 'dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 160,
+          "line": 249,
           "deprecated": false
         }
       ],
@@ -5006,7 +4997,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 28,
+          "line": 37,
           "deprecated": false
         },
         {
@@ -5015,7 +5006,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 33,
+          "line": 42,
           "deprecated": false
         },
         {
@@ -5024,7 +5015,25 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 36,
+          "line": 45,
+          "deprecated": false
+        },
+        {
+          "name": "GLB_KEYS",
+          "qualname": "GLB_KEYS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 50,
+          "deprecated": false
+        },
+        {
+          "name": "LIGHTING_KEYS",
+          "qualname": "LIGHTING_KEYS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 55,
           "deprecated": false
         },
         {
@@ -5033,7 +5042,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 40,
+          "line": 138,
           "deprecated": false
         }
       ]
@@ -5057,7 +5066,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 171,
+              "line": 174,
               "deprecated": false
             },
             {
@@ -5066,7 +5075,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 175,
+              "line": 178,
               "deprecated": false
             },
             {
@@ -5075,7 +5084,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "The panel's own, host-free engine.",
-              "line": 181,
+              "line": 184,
               "deprecated": false
             },
             {
@@ -5084,7 +5093,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
-              "line": 196,
+              "line": 199,
               "deprecated": false
             },
             {
@@ -5093,7 +5102,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
-              "line": 309,
+              "line": 312,
               "deprecated": false
             },
             {
@@ -5102,7 +5111,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Open the live page in a browser, without paying for a push.",
-              "line": 400,
+              "line": 407,
               "deprecated": false
             },
             {
@@ -5111,7 +5120,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Stop serving and release the port.",
-              "line": 413,
+              "line": 420,
               "deprecated": false
             },
             {
@@ -5120,7 +5129,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill Source File and select the file source.",
-              "line": 425,
+              "line": 432,
               "deprecated": false
             },
             {
@@ -5129,7 +5138,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Build the deliverable for the active source and publish it.",
-              "line": 513,
+              "line": 538,
               "deprecated": false
             }
           ]

@@ -210,6 +210,71 @@ class TestSourceWiring(_PanelTestCase):
         self.assertTrue(params.EXPORT_KEYS <= visible)
 
 
+class TestGlbRowsMirrorTheExporter(_PanelTestCase):
+    """The Textures and Lighting rows ARE the Scene Exporter's -- nothing to
+    keep in sync.
+
+    The preview used to offer WebP / KTX2 and nothing else, so every push was
+    cut to the web ceiling (2048 px) whatever the export was set to.
+    """
+
+    def test_one_row_per_exporter_row_with_its_label_and_table(self):
+        from extapps.webxr_preview import parameters as params
+
+        options = ptk.ExportProfile.glb_options()
+        self.assertEqual(
+            list(params.GLB_KEYS.values()), list(ptk.ExportProfile.GLB_ROWS)
+        )
+        for key, row in params.GLB_KEYS.items():
+            with self.subTest(row=row):
+                spec = params.PARAMS[key]
+                self.assertEqual(spec.label, ptk.ExportProfile.GLB_ROWS[row])
+                self.assertEqual(list(spec.choices), list(options[row].items()))
+                widget = self.slots._param_widgets[key]
+                self.assertEqual(
+                    [widget.itemText(i) for i in range(widget.count())],
+                    list(options[row]),
+                )
+
+    def test_the_rows_default_to_the_exporters_defaults(self):
+        """Where the Scene Exporter starts each row (the off state, and the
+        lighting recipe's own level for Baked Reflections), so a fresh preview
+        and a fresh export build the same texture pass and publish the same
+        recipe. Pinned on the registry, not a live panel -- a panel restores
+        its last session."""
+        from extapps.webxr_preview import parameters as params
+
+        exporter = ptk.ExportProfile.glb_defaults()
+        defaults = params.defaults()
+        for key, row in params.GLB_KEYS.items():
+            with self.subTest(row=row):
+                self.assertEqual(defaults[key], exporter[row])
+        self.assertEqual(
+            defaults["BAKED_REFLECTIONS"], ptk.ExportProfile.baked_reflections_default()
+        )
+
+    def test_the_texture_rows_answer_every_source(self):
+        """Textures are the deliverer's, so a file source shows them too."""
+        from extapps.webxr_preview import parameters as params
+
+        textures = set(params.GLB_KEYS) - params.LIGHTING_KEYS
+        self.slots._select_source("file")
+        self.assertTrue(textures <= self.slots._relevant_param_keys())
+
+    def test_the_lighting_rows_answer_a_host_source_only(self):
+        """The recipe rides the scene sidecar, which a file push never builds:
+        a Lighting row there would change nothing, so it is not offered."""
+        from extapps.webxr_preview import parameters as params
+
+        self.assertEqual(params.LIGHTING_KEYS, {"BAKED_REFLECTIONS"})
+        self.assertEqual(params.PARAMS["BAKED_REFLECTIONS"].section, "Lighting")
+        self.slots._select_source("file")
+        self.assertFalse(params.LIGHTING_KEYS & self.slots._relevant_param_keys())
+        self.slots.engine = _FakeHostBridge
+        self.slots._select_source("selected")
+        self.assertTrue(params.LIGHTING_KEYS <= self.slots._relevant_param_keys())
+
+
 class TestPersistence(_PanelTestCase):
     """What a panel reopened in a NEW session restores, and what it must not.
 
@@ -454,12 +519,27 @@ class TestTextureToolGate(_PanelTestCase):
             "Yes" if len(a) > 1 else None,
         )[1]
 
+    KTX2 = {"texture_file_type": "ktx2"}
+
     def test_webp_asks_nothing(self):
         # Probing for a tool the push will not use would ask about a control
-        # the user never touched.
+        # the user never touched -- Original is the web default, WebP too.
         with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder") as ensure:
-            self.assertTrue(self.slots._texture_tool_ready("WEBP"))
+            for rows in ({}, {"texture_file_type": ""}, {"texture_file_type": "webp"}):
+                self.assertTrue(self.slots._texture_tool_ready(rows), rows)
         ensure.assert_not_called()
+
+    def test_ktx2_with_its_twin_asks_too(self):
+        """Both KTX2 entries encode with toktx; the twin only adds a copy."""
+        with mock.patch(
+            "pythontk.ImgUtils.ensure_ktx2_encoder", return_value=None
+        ) as ensure:
+            self.assertTrue(
+                self.slots._texture_tool_ready(
+                    {"texture_file_type": ptk.ExportRun.KTX2_WITH_FALLBACK}
+                )
+            )
+        ensure.assert_called_once()
 
     def test_ktx2_hands_the_primitive_the_panels_own_consent(self):
         seen = {}
@@ -469,19 +549,19 @@ class TestTextureToolGate(_PanelTestCase):
             return None
 
         with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", side_effect=_capture):
-            self.assertTrue(self.slots._texture_tool_ready("KTX2"))
+            self.assertTrue(self.slots._texture_tool_ready(self.KTX2))
         self.assertTrue(callable(seen["prompt"]))
 
     def test_an_accepted_install_reports_the_binary_it_landed(self):
         with mock.patch(
             "pythontk.ImgUtils.ensure_ktx2_encoder", return_value="C:/toktx.exe"
         ):
-            self.assertTrue(self.slots._texture_tool_ready("KTX2"))
+            self.assertTrue(self.slots._texture_tool_ready(self.KTX2))
         self.assertTrue(any("toktx.exe" in m for m in self.answers))
 
     def test_an_already_installed_toktx_says_nothing(self):
         with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", return_value=None):
-            self.assertTrue(self.slots._texture_tool_ready("KTX2"))
+            self.assertTrue(self.slots._texture_tool_ready(self.KTX2))
         self.assertEqual(self.answers, [])
 
     def test_a_declined_install_stops_the_push_with_the_fix(self):
@@ -489,14 +569,14 @@ class TestTextureToolGate(_PanelTestCase):
             "toktx not found; install KTX-Software from https://…"
         )
         with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", side_effect=error):
-            self.assertFalse(self.slots._texture_tool_ready("KTX2"))
+            self.assertFalse(self.slots._texture_tool_ready(self.KTX2))
         # The refusal names the manual install, so it IS the message.
         self.assertEqual(self.answers, [str(error)])
 
     def test_a_declined_install_never_reaches_the_server(self):
         error = FileNotFoundError("toktx not found")
         self.slots.set_source_file(self.glb)
-        self.slots._param_widgets["TEXTURE_FORMAT"].setCurrentIndex(1)
+        self.slots._write_param("TEXTURE_FILE_TYPE", "ktx2")
         with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", side_effect=error):
             self.slots.b000()
         self.assertIsNone(self.slots._deliverer().server)
@@ -538,11 +618,33 @@ class TestPushWiring(_PanelTestCase):
         registered = [choice[1] for choice in params.PARAMS["VIEWER_SCRIPTS"].choices]
         self.assertEqual(sorted(self.sent[0]["scripts"]), sorted(registered))
 
-    def test_the_texture_format_reaches_the_deliverer(self):
-        self.slots._param_widgets["TEXTURE_FORMAT"].setCurrentIndex(1)
+    def test_every_viewer_script_row_names_a_packaged_script(self):
+        """A row whose value the server does not ship raises at push time, AFTER
+        the export has been paid for -- so the registry is checked here."""
+        from extapps.webxr_preview import parameters as params
+
+        values = [choice[1] for choice in params.PARAMS["VIEWER_SCRIPTS"].choices]
+        self.assertIn("snapshot", values, "the Export Image row is missing")
+        self.assertEqual(sorted(set(values) - set(ptk.PreviewServer.SCRIPTS)), [])
+
+    def test_the_glb_rows_reach_the_deliverer_as_the_export_names_them(self):
+        """Every row, every push, keyed as the Scene Exporter keys it -- so the
+        deliverer resolves them with the exporters' own methods."""
+        self.slots._write_param("TEXTURE_FILE_TYPE", "ktx2")
+        self.slots._write_param("OPTIMIZE_TEXTURES", 4096)
+        self.slots._write_param("BAKED_REFLECTIONS", "half")
         self.slots.set_source_file(self.glb)
         self.slots.b000()
-        self.assertEqual(self.sent[0]["texture_format"], "KTX2")
+        self.assertEqual(
+            self.sent[0]["glb_options"],
+            {
+                "texture_file_type": "ktx2",
+                "optimize_textures": 4096,
+                "secondary_max_size": 0,
+                "uastc_rdo": 0,
+                "baked_reflections": "half",
+            },
+        )
 
     def test_open_browser_is_always_auto(self):
         # "auto" reuses a page that can pick the version up -- including one

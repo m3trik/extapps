@@ -102,7 +102,10 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         "steps": [
             "Pick a <b>Source</b> -- a scope when a DCC opened this panel, or "
             "a file on disk.",
-            "Set the delivery options (textures, format, viewer scripts).",
+            "Set the delivery options and viewer scripts. The <b>Textures</b> "
+            "and <b>Lighting</b> rows are the Scene Exporter's own: set them "
+            "as the export is set and the preview's textures take the export's "
+            "container and size, and its bake the export's reflections.",
             "Click <b>Push to Preview</b>. The first push opens a tab.",
         ],
         "sections": [
@@ -354,7 +357,11 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         """
         keys = set(self.params_module.PARAMS)
         if self._active_source() == FILE_SOURCE:
-            return keys - self.params_module.EXPORT_KEYS
+            # The lighting recipe rides the scene sidecar, which a file push
+            # never builds -- a row there would change nothing.
+            return (
+                keys - self.params_module.EXPORT_KEYS - self.params_module.LIGHTING_KEYS
+            )
         return keys - self.params_module.FILE_KEYS
 
     # ------------------------------------------------------------------ status row
@@ -483,21 +490,39 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                     state.save(combo)
                 return
 
+    # ------------------------------------------------------------------ GLB rows
+    @staticmethod
+    def _glb_options(values: Dict[str, Any]) -> Dict[str, Any]:
+        """The Scene Exporter rows of collected *values*, keyed as the push
+        takes them.
+
+        ``{row key: combo value}`` (:attr:`pythontk.ExportProfile.GLB_ROWS`) --
+        handed to ``push(glb_options=...)``, which resolves them with the Scene
+        Exporters' own methods. Nothing is interpreted here.
+        """
+        return {
+            row: values[key] for key, row in _params.GLB_KEYS.items() if key in values
+        }
+
     # ------------------------------------------------------------------ preflight
-    def _texture_tool_ready(self, texture_format: str) -> bool:
+    def _texture_tool_ready(self, glb_options: Dict[str, Any]) -> bool:
         """Settle a missing KTX2 encoder BEFORE the push, offering the install.
 
         Only KTX2 needs an external tool. The bridge already refuses a KTX2
-        push without ``toktx``, eagerly, before it pays for the sidecar and
-        lightmap passes -- but it refuses by RAISING with an install URL, and a
-        panel control that dead-ends in a URL is what the Scene Exporter's own
-        KTX2 row stopped doing. A missing tool means *offer the managed
-        install*, never *abort and go read a log*.
+        push without ``toktx``, eagerly, before it pays for the export -- but it
+        refuses by RAISING with an install URL, and a panel control that
+        dead-ends in a URL is what the Scene Exporter's own KTX2 row stopped
+        doing. A missing tool means *offer the managed install*, never *abort
+        and go read a log*.
 
-        Gated on the choice: WebP needs nothing, and probing for a tool the
-        push will not use would ask about a control the user never touched.
+        Gated on the resolved container, read the way the push will read it
+        (``ExportRun.for_glb``), so both KTX2 entries -- alone and
+        with its twin -- ask and nothing else does: WebP needs no tool, and
+        probing for one the push will not use would ask about a control the
+        user never touched.
         """
-        if str(texture_format).upper() != "KTX2":
+        run, _notes = ptk.ExportRun.for_glb(glb_options)
+        if run.texture_file_type != "ktx2":
             return True
         # Declined, or the install failed: the refusal is the fix-shaped
         # message naming the manual install, so it IS the dialog.
@@ -515,8 +540,11 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         values = self.collect_param_values()
         source = self._active_source()
 
-        texture_format = values.get("TEXTURE_FORMAT", "WEBP")
-        if not self._texture_tool_ready(texture_format):
+        # Every row, every push: the panel IS the answer, so an untouched row
+        # says "the Scene Exporter's default" rather than leaving the
+        # deliverer's own setting in force.
+        glb_options = self._glb_options(values)
+        if not self._texture_tool_ready(glb_options):
             return
 
         # An explicit list every push, never None: the checkboxes ARE the
@@ -526,9 +554,9 @@ class WebXrPreviewSlots(BridgeSlotsBase):
 
         try:
             if source == FILE_SOURCE:
-                outcome = self._push_file(values, texture_format, scripts)
+                outcome = self._push_file(values, glb_options, scripts)
             else:
-                outcome = self._push_scope(source, values, texture_format, scripts)
+                outcome = self._push_scope(source, values, glb_options, scripts)
         except Exception:
             self.bridge.logger.error("Preview raised:\n" + traceback.format_exc())
             return
@@ -537,7 +565,7 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             return  # the step settled the run and has already said why
         self._report(*outcome)
 
-    def _push_file(self, values, texture_format, scripts):
+    def _push_file(self, values, glb_options, scripts):
         """Push the chosen file. ``None`` when the run was settled here."""
         path = str(values.get("SOURCE_FILE") or "").strip()
         if not path:
@@ -553,14 +581,14 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 objects=[path],
                 scope=FILE_SOURCE,
                 open_browser="auto",
-                texture_format=texture_format,
+                glb_options=glb_options,
                 scripts=scripts,
                 progress=lambda message: tick(text=message),
                 EMBED_TEXTURES=bool(values.get("EMBED_TEXTURES", True)),
             )
         return result, [f"Source: <hl>{os.path.basename(path)}</hl>"]
 
-    def _push_scope(self, scope, values, texture_format, scripts):
+    def _push_scope(self, scope, values, glb_options, scripts):
         """Export *scope* from the host and push it."""
         bridge = self._host()
         if bridge is None:
@@ -585,7 +613,7 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 objects=objects,
                 scope=scope,
                 open_browser="auto",
-                texture_format=texture_format,
+                glb_options=glb_options,
                 scripts=scripts,
                 progress=lambda message: tick(text=message),
                 EMBED_TEXTURES=bool(values.get("EMBED_TEXTURES", True)),

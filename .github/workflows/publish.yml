@@ -3,8 +3,9 @@ name: Publish to PyPI
 # extapps is a main-only standalone (no dev/main flow). Publishes on
 # every push to main that touches package source or pyproject.toml,
 # but only uploads to PyPI when the local __version__ outpaces what's
-# already on PyPI. Mirrors the ecosystem publish pattern minus the
-# dev-bump step.
+# already on PyPI -- and a push that changes what ships WITHOUT that
+# fails (the `version` job below). Mirrors the ecosystem publish
+# pattern minus the dev-bump step.
 
 on:
   push:
@@ -30,8 +31,51 @@ jobs:
   test:
     uses: ./.github/workflows/tests.yml
 
+  # What does this push mean? Until 2026-09-21 an unchanged __version__
+  # printed "already on PyPI" and went GREEN, so a push carrying real changes
+  # at the published version uploaded nothing and said nothing (2026-09-18:
+  # 179fa05 changed 8 launchers at 0.1.18 == PyPI 0.1.18, ran green, and those
+  # changes stayed off PyPI until 0.1.19). check_version_bump.py fails exactly
+  # that case, passes a push that ships nothing, and passes a hold this push's
+  # CHANGELOG.md declares. It is shared with unitytk, so it lives in m3trik and
+  # runs from the same sibling layout as tests.yml's registry job.
+  version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: extapps
+          # The gate diffs github.event.before..HEAD; a shallow clone lacks the
+          # pre-push commit, and the gate fails a range it cannot resolve.
+          fetch-depth: 0
+
+      - uses: actions/checkout@v4
+        with:
+          repository: m3trik/m3trik
+          ref: main
+          path: m3trik
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Get version
+        id: version
+        env:
+          # Empty on workflow_dispatch: with no push range the gate only reports.
+          BASE: ${{ github.event.before }}
+        run: |
+          PYPI=$(pip index versions extapps 2>/dev/null | grep -oP 'Available versions: \K[^,]+' || echo "none")
+          python m3trik/scripts/check_version_bump.py extapps --repo extapps --published "$PYPI" --base "$BASE" >> "$GITHUB_OUTPUT"
+
   publish:
-    needs: test
+    needs: [test, version]
+    if: needs.version.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -48,42 +92,29 @@ jobs:
       - name: Install build tools
         run: pip install build twine
 
-      - name: Get version
-        id: version
-        run: |
-          VERSION=$(grep -oP '__version__\s*=\s*["\x27]\K[^"\x27]+' extapps/__init__.py)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-          PYPI=$(pip index versions extapps 2>/dev/null | grep -oP 'Available versions: \K[^,]+' || echo "none")
-          echo "pypi=$PYPI" >> $GITHUB_OUTPUT
-
-          if [ "$VERSION" != "$PYPI" ]; then
-            echo "publish=true" >> $GITHUB_OUTPUT
-          else
-            echo "publish=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Build
-        if: steps.version.outputs.publish == 'true'
         run: |
           python -m build --wheel
           python -m twine check dist/*
 
       - name: Verify Install
-        if: steps.version.outputs.publish == 'true'
         run: pip install dist/*.whl --no-deps
 
       - name: Publish
-        if: steps.version.outputs.publish == 'true' && inputs.dry_run != true
+        if: inputs.dry_run != true
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: python -m twine upload dist/* --skip-existing
+        # No --skip-existing: this job runs only when `version` read PyPI as
+        # NOT having this version. If that read was wrong (the lookup falls back
+        # to "none" on any failure), a skip would turn the upload into a silent
+        # no-op -- the very green the `version` job exists to refuse.
+        run: python -m twine upload dist/*
 
       - name: Summary
         run: |
-          if [ "${{ steps.version.outputs.publish }}" == "true" ]; then
-            echo "Published extapps v${{ steps.version.outputs.version }}"
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            echo "Dry run: built extapps v${{ needs.version.outputs.version }}, upload skipped"
           else
-            echo "v${{ steps.version.outputs.version }} already on PyPI"
+            echo "Published extapps v${{ needs.version.outputs.version }}"
           fi

@@ -114,8 +114,7 @@ Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - [`APP`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L45) — constant
 - [`SEND_TO`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L64) — constant
 - [`ROUND_TRIP`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L65) — constant
-- [`ROUNDTRIP`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L68) — constant
-- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L79)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
+- **[`class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L76)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
   - `MarmosetEngine.toolbag_path(self) -> Optional[str]` *(property)* — Resolve the Toolbag executable path.
   - `MarmosetEngine.toolbag_log_path(self) -> Optional[str]` *(property)* — Resolve Toolbag's application log file (script prints + tracebacks).
   - `MarmosetEngine.preflight(self, bridge, request) -> bool` — Validate the (template, mode) before the bridge produces its payload.
@@ -131,9 +130,9 @@ Drive Marmoset Toolbag from the outside -- launch + templated automation.
 
 Shared helpers for Marmoset Toolbag template scripts.
 
-- [`SLOT_MAP`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L648) — constant
-- [`MODULE_NEUTRAL_FIELDS`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L671) — constant
-- [`SUBROUTINE_FIXES`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L684) — constant
+- [`SLOT_MAP`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L645) — constant
+- [`MODULE_NEUTRAL_FIELDS`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L668) — constant
+- [`SUBROUTINE_FIXES`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L681) — constant
 - **[`class ToolbagHelpers(_ToolbagHelpersInternal)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L200)** — ToolbagHelpers — module namespace.
   - `ToolbagHelpers.derive_per_run_log_path(manifest_path)` *(static)* — Return the ``<base>.toolbag.log`` path next to *manifest_path*.
   - `ToolbagHelpers.begin_log(reference_path)` *(static)* — Start a fresh log file alongside *reference_path*.
@@ -1063,11 +1062,13 @@ Application shell for the WebXR Preview UI.
 
 Tunable parameters surfaced in the WebXR Preview panel.
 
-- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/webxr_preview/parameters.py#L160) — Return ``{key: default}`` for every registered parameter.
-- [`SOURCE_FILE_TYPES`](extapps/extapps/webxr_preview/parameters.py#L28) — constant
-- [`EXPORT_KEYS`](extapps/extapps/webxr_preview/parameters.py#L33) — constant
-- [`FILE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L36) — constant
-- [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L40) — constant
+- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/webxr_preview/parameters.py#L249) — Return ``{key: default}`` for every registered parameter.
+- [`SOURCE_FILE_TYPES`](extapps/extapps/webxr_preview/parameters.py#L37) — constant
+- [`EXPORT_KEYS`](extapps/extapps/webxr_preview/parameters.py#L42) — constant
+- [`FILE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L45) — constant
+- [`GLB_KEYS`](extapps/extapps/webxr_preview/parameters.py#L50) — constant
+- [`LIGHTING_KEYS`](extapps/extapps/webxr_preview/parameters.py#L55) — constant
+- [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L138) — constant
 
 <a id="webxr_preview--slots"></a>
 ### `webxr_preview/slots.py`

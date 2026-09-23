@@ -9,7 +9,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - constants: DEFAULT_INCLUDE
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
-- constants: APP, SEND_TO, ROUND_TRIP, ROUNDTRIP
+- constants: APP, SEND_TO, ROUND_TRIP
 - `class MarmosetEngine(ptk.Deliverer, ptk.LoggingMixin)`
   - methods: toolbag_path, toolbag_log_path, preflight, deliver, send, render_template, list_templates, template_modes, list_template_modes
 
@@ -361,7 +361,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 
 ### `webxr_preview/parameters.py` — Tunable parameters surfaced in the WebXR Preview panel.
 - `defaults() -> 'dict[str, Any]'`
-- constants: SOURCE_FILE_TYPES, EXPORT_KEYS, FILE_KEYS, PARAMS
+- constants: SOURCE_FILE_TYPES, EXPORT_KEYS, FILE_KEYS, GLB_KEYS, LIGHTING_KEYS, PARAMS
 
 ### `webxr_preview/slots.py` — Slots for the WebXR Preview panel — the single UI for the live preview.
 - constants: FILE_SOURCE

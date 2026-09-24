@@ -366,4 +366,4 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 ### `webxr_preview/slots.py` — Slots for the WebXR Preview panel — the single UI for the live preview.
 - constants: FILE_SOURCE
 - `class WebXrPreviewSlots(BridgeSlotsBase)`
-  - methods: params_module, template_dir, make_bridge, engine, list_template_modes, open_preview_page, stop_server, set_source_file, b000
+  - methods: params_module, template_dir, make_bridge, engine, list_template_modes, open_preview_page, stop_server, share_link, stop_sharing, set_source_file, b000

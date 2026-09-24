@@ -32,7 +32,11 @@ classifiers = [
 # uitk 1.4.2: both KTX2 panels hand `Switchboard.confirm` to the install
 # offer (`ptk.ImgUtils.settle_ktx2_encoder(prompt=sb.confirm)`); an older uitk
 # has no `confirm` and the first KTX2 run raises AttributeError.
-dependencies = ["pythontk>=0.11.2", "uitk>=1.4.2", "qtpy"]
+# pythontk 0.11.3: the WebXR Preview's Share Via row lists
+# `ptk.ShareTunnel.PROVIDERS` at import and Share Link calls
+# `PreviewBridge.share`; an older pythontk has neither, so the panel raises
+# AttributeError on load.
+dependencies = ["pythontk>=0.11.3", "uitk>=1.4.2", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

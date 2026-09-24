@@ -724,5 +724,183 @@ class TestPushWiring(_PanelTestCase):
         browse.assert_not_called()
 
 
+#: The link the fake tunnel prints.
+_FAKE_LINK = "https://panel-share.example.test"
+
+
+class TestShareLink(_PanelTestCase):
+    """Share Link through the panel: one server, one link, view-only.
+
+    The tunnel is a fake provider -- a real child printing a link -- driven
+    through pythontk's real ShareTunnel, so the path under test is the panel's
+    wiring onto the server a push uses, not a mock of it.
+    """
+
+    def setUp(self):
+        super().setUp()
+        fake = {
+            "label": "Fake tunnel",
+            "executable": sys.executable,
+            "args": [
+                "-u",
+                "-c",
+                f"import time; print('{_FAKE_LINK}', flush=True); time.sleep(600)",
+            ],
+            "url": r"(https://panel-share\.example\.test)",
+            "ready": None,
+            "public": True,
+            "install": "https://example.test/install",
+        }
+        providers = mock.patch.dict(
+            ptk.ShareTunnel.PROVIDERS,
+            {
+                "fake": fake,
+                "fake-exits": {**fake, "args": ["-c", "raise SystemExit(4)"]},
+            },
+        )
+        providers.start()
+        self.addCleanup(providers.stop)
+        # This machine's alias config must not leak into the case.
+        env = mock.patch.dict(
+            os.environ,
+            {ptk.PreviewServer.ALIAS_ENV: "", ptk.PreviewServer.ALIAS_URL_ENV: ""},
+        )
+        env.start()
+        self.addCleanup(env.stop)
+        self.messages = []
+        self.slots.sb.message_box = lambda text, *a, **k: self.messages.append(text)
+
+    def _share(self, provider="fake"):
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value=provider):
+            self.slots.share_link()
+
+    def test_the_row_offers_every_provider_pythontk_drives(self):
+        """A registry, not a list kept here: a provider added upstream
+        arrives as an entry by itself."""
+        from extapps.webxr_preview import parameters as params
+
+        values = [entry[1] for entry in params.PARAMS["SHARE_VIA"].choices]
+        self.assertEqual(values[0], "auto")
+        self.assertEqual(
+            set(values[1:]), set(ptk.ShareTunnel.PROVIDERS) - {"fake", "fake-exits"}
+        )
+
+    def test_the_row_answers_every_source(self):
+        self.slots.set_source_file(self.glb)
+        self.assertIn("SHARE_VIA", self.slots._relevant_param_keys())
+        self.slots.engine = _FakeHostBridge
+        self.slots._select_source("selected")
+        self.assertIn("SHARE_VIA", self.slots._relevant_param_keys())
+
+    def test_the_header_offers_share_and_stop(self):
+        handlers = {item[3] for item in self.slots.HEADER_MENU_ITEMS}
+        for name in ("share_link", "stop_sharing"):
+            self.assertIn(name, handlers)
+            self.assertTrue(callable(getattr(self.slots, name)))
+
+    def test_share_link_shares_the_one_server_and_copies_the_link(self):
+        self.slots.set_source_file(self.glb)
+        self.slots.b000()  # the server a push made
+        pushed_to = self.slots._server()
+
+        self._share()
+
+        self.assertIs(
+            self.slots._server(), pushed_to, "sharing started a second server"
+        )
+        self.assertEqual(pushed_to.share_url, _FAKE_LINK)
+        self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+        self.assertIn(f"shared at {_FAKE_LINK} (0 guests)", self.slots._status_text())
+        self.assertEqual(self.messages, [])
+
+    def test_share_link_before_any_push_starts_serving(self):
+        """A link can go out before the first model does."""
+        self._share()
+        self.assertEqual(self.slots._server().share_url, _FAKE_LINK)
+        self.assertEqual(self.opened, [], "sharing must not open a tab")
+
+    def test_a_refused_provider_stops_before_anything_starts(self):
+        """Declined install, or none possible: settle has already said why."""
+        self._share(provider=None)
+        self.assertIsNone(self.slots._server())
+
+    def test_a_failed_share_leads_with_the_next_step(self):
+        self._share(provider="fake-exits")
+        self.assertEqual(len(self.messages), 1)
+        self.assertIn("exited (code 4)", self.messages[0])
+        self.assertNotIn("\n", self.messages[0], "the dialog carries the one line")
+        self.assertIsNone(self.slots._server().share_info())
+
+    def test_stop_sharing_takes_the_link_down_and_leaves_the_page(self):
+        self._share()
+        server = self.slots._server()
+        self.slots.stop_sharing()
+        self.assertIsNone(server.share_info())
+        self.assertTrue(server.is_running, "the owner's page lost its server")
+        self.assertNotIn("shared at", self.slots._status_text())
+
+    def test_the_share_waits_off_the_ui_thread(self):
+        """A share waits on its provider and then on public DNS -- 6-18 s for
+        a quick tunnel's new name -- and on the UI thread that froze the panel,
+        and the DCC hosting it, for the whole wait. It runs on a worker while
+        the progress tick keeps the host's loop turning; a second press landing
+        in that time (a tick is where one would) opens no second share."""
+        import threading
+        import time
+        from contextlib import contextmanager
+
+        calls, ticks = [], []
+
+        def slow_share(**kwargs):
+            calls.append(threading.current_thread())
+            time.sleep(0.5)
+            return {"url": _FAKE_LINK, "public": True, "alias_error": None}
+
+        def tick(*args, **kwargs):
+            ticks.append(threading.current_thread())
+            if len(ticks) == 1:
+                self.slots.share_link()  # a second press, mid-share
+            return True
+
+        @contextmanager
+        def progress(*args, **kwargs):
+            yield tick
+
+        with (
+            mock.patch.object(self.slots.bridge, "share", side_effect=slow_share),
+            mock.patch.object(self.slots.sb, "progress", progress),
+        ):
+            self._share()
+
+        self.assertEqual(len(calls), 1, "a second press opened a second share")
+        self.assertIsNot(calls[0], threading.main_thread(), "shared on the UI thread")
+        self.assertGreater(len(ticks), 3, "the panel was not kept turning")
+        self.assertTrue(all(t is threading.main_thread() for t in ticks))
+        self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+
+    def test_stop_sharing_retires_a_share_whose_client_died(self):
+        """A share whose tunnel client exited on its own reads as not shared,
+        so Stop Sharing answered "Nothing is being shared" and left it be: the
+        guest listener open, and the alias still sending guests to the dead
+        link until the next share."""
+        from pathlib import Path
+
+        folder = Path(self.temp.dir_path())
+        with mock.patch.dict(os.environ, {ptk.PreviewServer.ALIAS_ENV: str(folder)}):
+            self._share()
+        server = self.slots._server()
+        process = server._tunnel._process
+        process.kill()
+        process.wait(timeout=10)
+        self.assertIsNone(server.share_info())
+
+        self.slots.stop_sharing()
+
+        self.assertIsNone(server.guest_port, "the guest listener was left open")
+        page = (folder / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn(_FAKE_LINK, page)
+        self.assertIn("Nothing is being shared right now", page)
+
+
 if __name__ == "__main__":
     unittest.main()

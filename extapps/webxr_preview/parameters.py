@@ -110,6 +110,39 @@ _ROW_TOOLTIPS: Dict[str, str] = {
 }
 
 
+#: What each way of sharing means for whoever presses Share Link, in the
+#: panel's words. The entries themselves come from pythontk's registry
+#: (``ShareTunnel.PROVIDERS``), so a provider added there arrives by itself,
+#: under its own label.
+_PROVIDER_TOOLTIPS: Dict[str, str] = {
+    "cloudflared": "A Cloudflare quick tunnel: no account, and a fresh random "
+    "link on every share. Cloudflare's edge terminates the HTTPS, so it sees "
+    "the traffic. The panel offers to download cloudflared when it is missing; "
+    "a machine that denies outbound connections by default must allow it once.",
+    "tailscale_funnel": "Tailscale Funnel: a STABLE public link on your "
+    "machine's tailnet name -- bookmark it once in a headset -- with the HTTPS "
+    "ending on this machine. Funnel must be enabled for the tailnet; the first "
+    "share names the page that does it. Relayed, so a large push loads slower.",
+    "tailscale_serve": "Tailscale, reachable only by devices on your tailnet: "
+    "nothing public. A standalone headset needs the Tailscale app to open it.",
+}
+
+
+def _share_choices() -> list:
+    """Auto, then every provider pythontk can drive."""
+    auto = (
+        "Auto",
+        "auto",
+        "This machine's default: the provider PYTHONTK_SHARE_PROVIDER names, "
+        "else the first installed of the public ones (Cloudflare, then "
+        "Tailscale Funnel).",
+    )
+    return [auto] + [
+        (spec["label"], name, _PROVIDER_TOOLTIPS.get(name, ""))
+        for name, spec in ptk.ShareTunnel.PROVIDERS.items()
+    ]
+
+
 def _glb_rows(rows: Dict[str, str], section: str) -> "dict[str, AttributeSpec]":
     """One choice row per Scene Exporter GLB row in *rows*, from its own table.
 
@@ -242,6 +275,24 @@ PARAMS: "dict[str, AttributeSpec]" = {
         "source alike.\n\n"
         "The panel is authoritative: unticking a box turns that script off on "
         "the next push.",
+    ),
+    "SHARE_VIA": AttributeSpec(
+        key="SHARE_VIA",
+        label="Share Via",
+        kind="choice",
+        default="auto",
+        choices=_share_choices(),
+        section="Sharing",
+        tooltip="How Share Link (in the header menu) publishes the preview.\n\n"
+        "A share is a link anyone can open in a browser -- desktop, phone, or "
+        "a standalone headset, which gets its VR button because the link is "
+        "HTTPS. It is VIEW-ONLY and LIVE: every push reaches it, and nothing a "
+        "guest does writes to this machine. Each guest downloads the model and "
+        "renders it on their own device; this machine only serves files.\n\n"
+        "For a short link that never changes, set PYTHONTK_PREVIEW_ALIAS to "
+        "a file your web server serves (a path, or user@host:/path) and "
+        "PYTHONTK_PREVIEW_ALIAS_URL to its address: every share rewrites it "
+        "to point at the live link, and says the share ended when it stops.",
     ),
 }
 

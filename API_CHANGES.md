@@ -1,12 +1,8 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ b02496d)._
-
-## Removed (1)
-
-- `marmoset_workflow/_marmoset_engine.py::ROUNDTRIP` — was `(constant)`
+_Diff vs the last release (origin/main @ 2517ebe)._
 
 ## Added (2)
 
-- `webxr_preview/parameters.py::GLB_KEYS(constant)`
-- `webxr_preview/parameters.py::LIGHTING_KEYS(constant)`
+- `webxr_preview/slots.py::WebXrPreviewSlots.share_link(self) -> None`
+- `webxr_preview/slots.py::WebXrPreviewSlots.stop_sharing(self) -> None`

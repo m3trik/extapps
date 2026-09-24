@@ -4985,7 +4985,7 @@
           "kind": "function",
           "signature": "() -> 'dict[str, Any]'",
           "summary": "Return ``{key: default}`` for every registered parameter.",
-          "line": 249,
+          "line": 300,
           "deprecated": false
         }
       ],
@@ -5042,7 +5042,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 138,
+          "line": 171,
           "deprecated": false
         }
       ]
@@ -5055,7 +5055,7 @@
         {
           "name": "WebXrPreviewSlots",
           "summary": "Switchboard slots wired to ``webxr_preview.ui``.",
-          "line": 54,
+          "line": 55,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -5066,7 +5066,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 174,
+              "line": 208,
               "deprecated": false
             },
             {
@@ -5075,7 +5075,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 178,
+              "line": 212,
               "deprecated": false
             },
             {
@@ -5084,7 +5084,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "The panel's own, host-free engine.",
-              "line": 184,
+              "line": 218,
               "deprecated": false
             },
             {
@@ -5093,7 +5093,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
-              "line": 199,
+              "line": 233,
               "deprecated": false
             },
             {
@@ -5102,7 +5102,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
-              "line": 312,
+              "line": 351,
               "deprecated": false
             },
             {
@@ -5111,7 +5111,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Open the live page in a browser, without paying for a push.",
-              "line": 407,
+              "line": 450,
               "deprecated": false
             },
             {
@@ -5119,8 +5119,26 @@
               "qualname": "WebXrPreviewSlots.stop_server",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Stop serving and release the port.",
-              "line": 420,
+              "summary": "Stop serving and release the port -- ending any share.",
+              "line": 462,
+              "deprecated": false
+            },
+            {
+              "name": "share_link",
+              "qualname": "WebXrPreviewSlots.share_link",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Share the preview at a link anyone can open, and copy it.",
+              "line": 472,
+              "deprecated": false
+            },
+            {
+              "name": "stop_sharing",
+              "qualname": "WebXrPreviewSlots.stop_sharing",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Take the link down;",
+              "line": 534,
               "deprecated": false
             },
             {
@@ -5129,7 +5147,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill Source File and select the file source.",
-              "line": 432,
+              "line": 582,
               "deprecated": false
             },
             {
@@ -5138,7 +5156,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Build the deliverable for the active source and publish it.",
-              "line": 538,
+              "line": 688,
               "deprecated": false
             }
           ]
@@ -5151,7 +5169,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 42,
+          "line": 43,
           "deprecated": false
         }
       ]

@@ -25,6 +25,7 @@ uses: the panel owns the Source picker, the host owns what each scope means.
 from __future__ import annotations
 
 import os
+import threading
 import traceback
 import webbrowser
 from pathlib import Path
@@ -81,6 +82,22 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             "open_preview_page",
         ),
         (
+            "Share Link",
+            "btn_share_link",
+            "Give the preview a link anyone can open -- desktop, phone or a "
+            "standalone headset -- and copy it to the clipboard.\n\n"
+            "View-only and live: every push reaches it, and nothing a guest "
+            "does writes to this machine. Each guest renders the model on "
+            "their own device. The Share Via row picks how it is published.",
+            "share_link",
+        ),
+        (
+            "Stop Sharing",
+            "btn_stop_sharing",
+            "Take the link down. Your own page and the server are untouched.",
+            "stop_sharing",
+        ),
+        (
             "Stop Server",
             "btn_stop_server",
             "Stop serving and release the port.\n\n"
@@ -122,6 +139,21 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 ],
             ),
             (
+                "Sharing a link",
+                [
+                    "<b>Share Link</b> publishes the preview at an HTTPS link "
+                    "through a tunnel (the <b>Share Via</b> row), so a guest "
+                    "needs only a browser -- and a standalone headset gets its "
+                    "VR button, because the link is a secure context.",
+                    "The share is a second, <b>view-only</b> door onto the same "
+                    "server: guests see every push, and cannot save a setting, "
+                    "record, or reach anything but the model and the page.",
+                    "Each guest downloads the model and renders it on their "
+                    "own device. The link IS the deliverable: a guest can save "
+                    "the GLB. Stop sharing when the review is over.",
+                ],
+            ),
+            (
                 "What survives the trip",
                 [
                     "The deliverable is self-describing: the lightmap "
@@ -152,6 +184,8 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         self._engine = kwargs.get("engine", None)
         self._host_bridge = None
         self._status = None
+        #: True while Share Link waits on its provider (see share_link).
+        self._share_pending = False
         self._initial_source_file: str = kwargs.get("source_file", "") or ""
         super().__init__(switchboard)
         # By LABEL, not position. The list is host-dependent -- File on Disk is
@@ -275,6 +309,11 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         """
         return getattr(self.bridge, "deliverer", None)
 
+    def _server(self):
+        """That deliverer's server, or ``None`` before anything started one."""
+        deliverer = self._deliverer()
+        return getattr(deliverer, "server", None) if deliverer else None
+
     def _bind_logger(self, bridge) -> None:
         """Route *bridge*'s logger into the panel's log pane.
 
@@ -384,16 +423,20 @@ class WebXrPreviewSlots(BridgeSlotsBase):
 
     def _status_text(self) -> str:
         """One line describing the live preview, for the footer."""
-        deliverer = self._deliverer()
-        server = getattr(deliverer, "server", None) if deliverer else None
+        server = self._server()
         if server is None or not getattr(server, "url", ""):
             return "No preview server running."
         try:
             version = server.manifest().get("version", "?")
+            share = server.share_info()
         except Exception:  # noqa: BLE001 - the footer must never raise
-            version = "?"
+            version, share = "?", None
         watching = "watching" if server.has_viewer() else "nothing watching"
-        return f"v{version} · {watching} · {server.url}"
+        text = f"v{version} · {watching} · {server.url}"
+        if share:
+            guests = share["guests"]
+            text += f" · shared at {share['url']} ({guests} guest{'s' * (guests != 1)})"
+        return text
 
     def _refresh_status(self) -> None:
         """Re-run the footer resolver; a no-op on a UI without a footer."""
@@ -406,8 +449,7 @@ class WebXrPreviewSlots(BridgeSlotsBase):
     # ------------------------------------------------------------------ header actions
     def open_preview_page(self) -> None:
         """Open the live page in a browser, without paying for a push."""
-        deliverer = self._deliverer()
-        server = getattr(deliverer, "server", None) if deliverer else None
+        server = self._server()
         url = getattr(server, "url", "") if server is not None else ""
         if not url:
             self.panel_log(
@@ -418,15 +460,123 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         webbrowser.open(url)
 
     def stop_server(self) -> None:
-        """Stop serving and release the port."""
-        deliverer = self._deliverer()
-        server = getattr(deliverer, "server", None) if deliverer else None
+        """Stop serving and release the port -- ending any share."""
+        server = self._server()
         if server is None:
             self.panel_log("No preview server is running.", "warning")
             return
         server.stop()
         self.panel_log("Preview server stopped; the port is released.")
         self._refresh_status()
+
+    def share_link(self) -> None:
+        """Share the preview at a link anyone can open, and copy it.
+
+        The provider is settled first, the way a KTX2 push settles its
+        encoder: a missing tunnel client is OFFERED (cloudflared downloads),
+        never a dead end in a log line. A provider that cannot produce a link
+        -- a tailnet that has not enabled Funnel, a firewall that blocks the
+        client -- says so in a dialog whose first line is the next step; the
+        client's own output follows in the log.
+
+        The share itself runs off the UI thread (:meth:`_off_ui_thread`): a
+        provider takes seconds to bring a link up, and a quick tunnel's new
+        name 6-18 s more to resolve, which on the UI thread froze the panel --
+        and the DCC hosting it -- for the whole wait.
+        """
+        if self._share_pending:
+            self.panel_log("A link is already being opened.", "warning")
+            return
+        choice = self.collect_param_values().get("SHARE_VIA") or "auto"
+        provider = ptk.ShareTunnel.settle(
+            choice,
+            prompt=self.sb.confirm,
+            refused=self.sb.message_box,
+            installed=lambda path: self.sb.message_box(
+                f"Installed the tunnel client: <hl>{path}</hl>"
+            ),
+        )
+        if provider is None:
+            return
+        self._share_pending = True
+        try:
+            with self.sb.progress(text="Sharing: opening the link…") as tick:
+                info = self._off_ui_thread(
+                    lambda: self.bridge.share(provider=provider), tick
+                )
+        except (OSError, RuntimeError) as error:  # incl. TimeoutError
+            detail = str(error)
+            self.panel_log(f"Sharing failed:\n{detail}", "error")
+            self.sb.message_box(detail.splitlines()[0])
+            return
+        finally:
+            self._share_pending = False
+        try:
+            from qtpy import QtWidgets
+
+            QtWidgets.QApplication.clipboard().setText(info["url"])
+            copied = " -- copied to the clipboard"
+        except Exception:  # noqa: BLE001 - no clipboard is not a failed share
+            copied = ""
+        reach = "anyone with it" if info["public"] else "your tailnet only"
+        self.panel_log(
+            f"Shared, view-only, at <hl>{info['url']}</hl>{copied}. Opens for "
+            f"{reach}; every push reaches it."
+        )
+        if info.get("alias_error"):
+            self.panel_log(
+                f"The stable alias was not updated ({info['alias_error']}); "
+                f"send the link above instead.",
+                "warning",
+            )
+        self._refresh_status()
+
+    def stop_sharing(self) -> None:
+        """Take the link down; the owner's page and server are untouched.
+
+        Unshares even when nothing reads as shared: a share whose client died
+        on its own reads that way while it still holds its guest listener and
+        an alias sending guests to the dead link; and a share still opening
+        stops as its link arrives.
+        """
+        server = self._server()
+        shared = server is not None and server.share_info() is not None
+        if server is not None:
+            server.unshare()
+        if shared:
+            self.panel_log("Stopped sharing; the link no longer opens.")
+        elif self._share_pending:
+            self.panel_log("Stopped the link being opened.")
+        else:
+            self.panel_log("Nothing is being shared.", "warning")
+        self._refresh_status()
+
+    @staticmethod
+    def _off_ui_thread(work, tick):
+        """*work*'s result, computed on a worker thread while *tick* keeps the
+        panel turning; re-raises what *work* raised.
+
+        *tick* is the progress checkpoint, which pumps the host's event loop by
+        the host's own input policy -- a DCC admits no clicks mid-slot -- so
+        the panel repaints and the host stays responsive without a raw
+        ``processEvents`` that would bypass that policy.
+        """
+        outcome = {}
+
+        def run():
+            try:
+                outcome["value"] = work()
+            except BaseException as error:  # noqa: BLE001 -- re-raised below
+                outcome["error"] = error
+
+        worker = threading.Thread(target=run, name="webxr-preview-share", daemon=True)
+        worker.start()
+        while worker.is_alive():
+            tick()
+            worker.join(0.05)
+        if "error" in outcome:
+            raise outcome["error"]
+        return outcome["value"]
 
     # ------------------------------------------------------------------ public hand-off
     def set_source_file(self, path: str) -> None:

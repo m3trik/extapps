@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- **2026-09-23 -- the WebXR Preview shares by link: Share Link / Stop Sharing and a Share Via row (`webxr_preview/slots.py`, `webxr_preview/parameters.py`).** Share Link publishes the live preview at a view-only HTTPS link (pythontk's `PreviewServer.share`) and copies it to the clipboard; every push reaches it, a headset's browser gets its VR button, and the footer shows the link and how many guests are watching. The provider is settled first, like the KTX2 encoder: cloudflared's download is offered when it is missing, and a tailnet that has not enabled Funnel, or a firewall that blocks the client, is reported with the step to take. Share Via lists pythontk's providers from its registry, Auto first. The share waits off the UI thread (a provider's start plus a quick tunnel's 6-18 s DNS wait froze the panel, and its DCC, before), and a second press while it waits opens nothing; Stop Sharing also retires a share whose tunnel client died, and one still opening. Needs the pythontk release that ships `ShareTunnel`. Tests: `test_webxr_preview` `TestShareLink` (+2 found in review: the share off the UI thread, a dead client's share retired).
+
 ## 0.2.0
 
 - **2026-09-23 -- the Optimize Textures and Secondary Map Size tooltips say what OFF does (`webxr_preview/parameters.py`).** OFF sets no ceiling -- every map keeps its resolution -- unless Secondary Map Size caps the data maps, and that cap applies with Optimize Textures OFF too, as a choice of its own; the tooltips said OFF resized nothing and tied the secondary cap to Optimize. pythontk's `describe_texture_pass` words the same rows the same way. The floor moves to pythontk 0.11.2, whose GLB rows this panel reads at import.

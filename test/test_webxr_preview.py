@@ -769,6 +769,13 @@ class TestShareLink(_PanelTestCase):
         self.addCleanup(env.stop)
         self.messages = []
         self.slots.sb.message_box = lambda text, *a, **k: self.messages.append(text)
+        # These cases push for real: the share rides the server a push starts.
+        # The panel restores its rows between cases, so a KTX2 row an earlier
+        # case left (TestPushWiring writes one) sent the push through the KTX2
+        # tool gate, which on a runner without toktx -- CI -- stopped it before
+        # any server started. Textures are not this class's subject: the row
+        # goes back to its default, which needs no tool.
+        self.slots._write_param("TEXTURE_FILE_TYPE", "")
 
     def _share(self, provider="fake"):
         with mock.patch.object(ptk.ShareTunnel, "settle", return_value=provider):

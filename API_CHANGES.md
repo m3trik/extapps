@@ -1,8 +1,7 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ 2517ebe)._
+_Diff vs the last release (origin/main @ d6c7292)._
 
-## Added (2)
+## Added (1)
 
-- `webxr_preview/slots.py::WebXrPreviewSlots.share_link(self) -> None`
-- `webxr_preview/slots.py::WebXrPreviewSlots.stop_sharing(self) -> None`
+- `webxr_preview/slots.py::WebXrPreviewSlots.copy_share_link(self) -> None`

@@ -206,6 +206,11 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
 
         self.logger.setLevel(log_level)
         self.logger.hide_logger_name(True)
+        # uitk's Qt handler, not pythontk's Qt-free default (which is what a
+        # bare redirect attaches): it routes the pane's anchors, so the docs
+        # line below is a live link, and it reports the pane's width, which
+        # the run's boxes are sized to.
+        self.logger.set_text_handler(TextEditLogHandler)
         self.logger.setup_logging_redirect(self.ui.txt003)
 
         self.conn: Optional[PainterConnection] = None
@@ -214,20 +219,6 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
         self._installs: Dict[str, str] = PainterFinder.find_installs()
 
         self._log_status()
-        # Route anchors BEFORE logging the docs line. setup_logging_redirect
-        # attaches pythontk's DefaultTextLogHandler -- pythontk is Qt-free, so
-        # it cannot wire Qt link handling -- which leaves openExternalLinks
-        # False and the anchor inert. BridgeSlotsBase does this for its own
-        # panels; this one is a plain LoggingMixin panel, so it must do it
-        # itself or the link renders and does nothing when clicked.
-        try:
-            TextEditLogHandler.route_links(self.ui.txt003)
-        except Exception as e:  # noqa: BLE001 - cosmetic wiring, never fatal
-            # Same posture as BridgeSlotsBase's log wiring: an older uitk
-            # without route_links leaves the docs link inert, which is a
-            # cosmetic loss. Letting it raise here would take the whole panel
-            # down at construction over a link.
-            print(f"[SubstanceWorkflow] log link wiring failed (ignored): {e}")
         self.logger.info(
             f'{self.DOCS_LABEL}: <a href="{self.DOCS_URL}">{self.DOCS_URL}</a>'
         )

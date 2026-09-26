@@ -19,6 +19,7 @@ import os
 import sys
 import unittest
 import urllib.request
+from pathlib import Path
 from unittest import mock
 
 import pythontk as ptk
@@ -85,11 +86,19 @@ class _PanelTestCase(unittest.TestCase):
                 except Exception:  # noqa: BLE001
                     pass
             deliverer.server = None
+            # The page's switch outlives a test the same way.
+            deliverer.locomotion = True
 
     def setUp(self) -> None:
         from extapps.webxr_preview.launcher import WebXrPreviewUI
 
         self._reset_servers()
+
+        # Ephemeral ports: the default is the production one, where a preview
+        # tab the user has open would start polling a test's server.
+        port = mock.patch.object(ptk.PreviewServer, "DEFAULT_PORT", 0)
+        port.start()
+        self.addCleanup(port.stop)
 
         # A push opens a browser tab on the machine running the tests. Patch
         # what LAUNCHES, not the server method, so the "was a tab opened"
@@ -140,6 +149,35 @@ class _PanelTestCase(unittest.TestCase):
         for name in _BROWSER_CLASSES:
             setattr(_preview_server.webbrowser, name, _RecordingBrowser)
 
+        # Nor may a share reach a real tunnel provider: it would publish this
+        # machine through the user's own tailnet or account. One did, once --
+        # "Auto" resolved on the real machine spawned Tailscale Funnel, which
+        # refused only because the user's own share held its port. Guarded at
+        # what LAUNCHES, like the browser, and at the download settle offers.
+        from pythontk.core_utils.app_installer import AppInstaller
+        from pythontk.core_utils.app_launcher import AppLauncher
+
+        tunnels = ("tailscale", "cloudflared")
+        real_spawn, real_ensure = AppLauncher.spawn, AppInstaller.ensure
+
+        def _guarded_spawn(executable, *args, **kwargs):
+            stem = os.path.splitext(os.path.basename(str(executable)))[0].lower()
+            if stem in tunnels:
+                raise AssertionError(f"a test reached a real tunnel: {executable}")
+            return real_spawn(executable, *args, **kwargs)
+
+        def _guarded_ensure(name, *args, **kwargs):
+            if name in tunnels:
+                raise AssertionError(f"a test tried to download {name}")
+            return real_ensure(name, *args, **kwargs)
+
+        for guard in (
+            mock.patch.object(AppLauncher, "spawn", side_effect=_guarded_spawn),
+            mock.patch.object(AppInstaller, "ensure", side_effect=_guarded_ensure),
+        ):
+            guard.start()
+            self.addCleanup(guard.stop)
+
         # Artifacts go through the shared store, which owns their teardown.
         self.temp = ptk.TempArtifacts("test_webxr_preview", policy="scoped")
         self.glb = self.temp.path(extension=".glb")
@@ -161,6 +199,44 @@ class _PanelTestCase(unittest.TestCase):
             raise AssertionError(f"a test opened a modal message box: {args[:1]!r}")
 
         self.slots.sb.message_box = _unexpected_message_box
+
+    def _record_log(self):
+        """The panel's log lines from here on, as plain text."""
+        logged = []
+        real = self.slots.panel_log
+
+        def record(text, *args, **kwargs):
+            logged.append(str(text))
+            return real(text, *args, **kwargs)
+
+        self.slots.panel_log = record
+        return logged
+
+    def _pane_links(self):
+        """Every link in the panel's log pane, by address."""
+        links = set()
+        block = self.slots.ui.txt000.document().begin()
+        while block.isValid():
+            fragments = block.begin()
+            while not fragments.atEnd():
+                fmt = fragments.fragment().charFormat()
+                if fmt.isAnchor():
+                    links.add(fmt.anchorHref())
+                fragments += 1
+            block = block.next()
+        return links
+
+    def _reopen(self, engine=None):
+        """A second panel over the same QSettings store: the next DCC session."""
+        from extapps.webxr_preview.launcher import WebXrPreviewUI
+
+        ui = WebXrPreviewUI()
+        self.addCleanup(ui.deleteLater)
+        # The host injects its bridge AFTER the panel is built -- exactly what
+        # tentacle's launch does (``launch(show=False)``, then ``engine =``).
+        if engine is not None:
+            ui.slots.engine = engine
+        return ui.slots
 
     def tearDown(self) -> None:
         self._reset_servers()
@@ -279,19 +355,8 @@ class TestPersistence(_PanelTestCase):
     """What a panel reopened in a NEW session restores, and what it must not.
 
     A second ``WebXrPreviewUI`` is a fresh Switchboard over the same (sandboxed)
-    QSettings store -- the shape of the next DCC session.
+    QSettings store -- the shape of the next DCC session (``_reopen``).
     """
-
-    def _reopen(self, engine=None):
-        from extapps.webxr_preview.launcher import WebXrPreviewUI
-
-        ui = WebXrPreviewUI()
-        self.addCleanup(ui.deleteLater)
-        # The host injects its bridge AFTER the panel is built -- exactly what
-        # tentacle's launch does (``launch(show=False)``, then ``engine =``).
-        if engine is not None:
-            ui.slots.engine = engine
-        return ui.slots
 
     def test_the_source_choice_survives_a_new_session_with_a_host(self):
         """Regression: the combo restored before the host injected its scopes,
@@ -394,6 +459,54 @@ class TestOneServerPerPanel(_PanelTestCase):
         self.assertIsNot(ptk.FilePreviewBridge().deliverer, _FakeHostBridge.deliverer)
 
 
+class TestLocomotionSwitch(_PanelTestCase):
+    """The Locomotion row is the page's switch, applied at once.
+
+    The page reads it on every poll, so a headset mid-session -- a share's
+    guests included -- follows the box within a second. Waiting for the next
+    push would cost a re-export to stop someone walking about.
+    """
+
+    def _row(self):
+        return self.slots._param_widgets["LOCOMOTION"]
+
+    def tearDown(self) -> None:
+        # The row persists, as every row here does: re-ticked before the panel
+        # goes, so the next one -- the next test's -- opens on the default.
+        self._row().setChecked(True)
+        super().tearDown()
+
+    def test_the_row_is_on_by_default_and_reaches_the_deliverer(self):
+        self.slots.engine = _FakeHostBridge
+        self.assertIs(self._row().isChecked(), True)
+        self.assertIs(_FakeHostBridge.deliverer.locomotion, True)
+
+    def test_unticking_stops_a_running_page_without_a_push(self):
+        self.slots.engine = _FakeHostBridge
+        server = _FakeHostBridge.deliverer.ensure_server()
+        self._row().setChecked(False)
+        self.assertIs(_FakeHostBridge.deliverer.locomotion, False)
+        self.assertIs(server.manifest()["locomotion"], False)
+        self._row().setChecked(True)
+        self.assertIs(server.manifest()["locomotion"], True)
+
+    def test_the_row_follows_the_deliverer_a_host_brings(self):
+        # Unticked before any host: the file bridge's own deliverer takes it,
+        # and adopting the host's hands the answer over rather than losing it.
+        self._row().setChecked(False)
+        self.slots.engine = _FakeHostBridge
+        self.assertIs(_FakeHostBridge.deliverer.locomotion, False)
+
+    def test_a_push_publishes_the_row_whatever_set_the_deliverer_last(self):
+        self.slots.engine = _FakeHostBridge
+        self._row().setChecked(False)
+        _FakeHostBridge.deliverer.locomotion = True  # behind the panel's back
+        self.slots.set_source_file(self.glb)
+        self.slots.b000()
+        manifest = _FakeHostBridge.deliverer.server.manifest()
+        self.assertIs(manifest["locomotion"], False)
+
+
 class TestGlbIsPublishedAsAuthored(_PanelTestCase):
     """A GLB source short-circuits the build and is served byte-identical."""
 
@@ -434,6 +547,13 @@ class TestGlbIsPublishedAsAuthored(_PanelTestCase):
             os.path.normpath(os.path.dirname(self.glb)),
             [os.path.normpath(d) for d in self.slots.bridge.lightmap_search_dirs()],
         )
+
+    def test_a_push_logs_where_its_time_went(self):
+        """The question after every slow push, answered in the panel rather
+        than by a profiler: the result's stage timings, one line."""
+        logged = self._record_log()
+        self._push_file()
+        self.assertTrue(any(line.startswith("Push took ") for line in logged), logged)
 
     def test_the_first_push_opens_exactly_one_tab(self):
         self._push_file()
@@ -572,6 +692,15 @@ class TestTextureToolGate(_PanelTestCase):
             self.assertFalse(self.slots._texture_tool_ready(self.KTX2))
         # The refusal names the manual install, so it IS the message.
         self.assertEqual(self.answers, [str(error)])
+
+    def test_a_declined_install_leaves_its_install_page_in_the_log(self):
+        """The dialog is a toast gone in seconds; the log keeps the install
+        page, as a link."""
+        page = "https://github.com/KhronosGroup/KTX-Software/releases"
+        error = FileNotFoundError(f"toktx not found; install KTX-Software from {page}.")
+        with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", side_effect=error):
+            self.assertFalse(self.slots._texture_tool_ready(self.KTX2))
+        self.assertIn(page, self._pane_links())
 
     def test_a_declined_install_never_reaches_the_server(self):
         error = FileNotFoundError("toktx not found")
@@ -726,10 +855,15 @@ class TestPushWiring(_PanelTestCase):
 
 #: The link the fake tunnel prints.
 _FAKE_LINK = "https://panel-share.example.test"
+#: The page a fake provider's one-time step names (``fake-step``).
+_STEP_PAGE = "https://step.example.test/enable"
 
 
 class TestShareLink(_PanelTestCase):
-    """Share Link through the panel: one server, one link, view-only.
+    """Sharing through the panel: one server, one link, view-only.
+
+    The Sharing row is the switch -- a provider shares, Off stops -- and its
+    option box carries Share Now, Copy Link and Stop Sharing.
 
     The tunnel is a fake provider -- a real child printing a link -- driven
     through pythontk's real ShareTunnel, so the path under test is the panel's
@@ -738,6 +872,8 @@ class TestShareLink(_PanelTestCase):
 
     def setUp(self):
         super().setUp()
+        #: Created to take the ``fake-step-then-link`` provider's step.
+        self.step_taken = self.temp.path(extension=".step")
         fake = {
             "label": "Fake tunnel",
             "executable": sys.executable,
@@ -756,6 +892,34 @@ class TestShareLink(_PanelTestCase):
             {
                 "fake": fake,
                 "fake-exits": {**fake, "args": ["-c", "raise SystemExit(4)"]},
+                # Prints the page a one-time step takes, then waits -- the way
+                # Tailscale does with Funnel not yet enabled for the tailnet.
+                "fake-step": {
+                    **fake,
+                    "args": [
+                        "-u",
+                        "-c",
+                        f"import time; print('To enable, visit: {_STEP_PAGE}', "
+                        "flush=True); time.sleep(600)",
+                    ],
+                    "action": r"https://step\.example\.test/\S+",
+                },
+                # The same step, then the link once it is taken -- here, once
+                # the file ``self.step_taken`` names exists.
+                "fake-step-then-link": {
+                    **fake,
+                    "args": [
+                        "-u",
+                        "-c",
+                        "import os, time\n"
+                        f"print('To enable, visit: {_STEP_PAGE}', flush=True)\n"
+                        f"while not os.path.exists({self.step_taken!r}):\n"
+                        "    time.sleep(0.05)\n"
+                        f"print('{_FAKE_LINK}', flush=True)\n"
+                        "time.sleep(600)",
+                    ],
+                    "action": r"https://step\.example\.test/\S+",
+                },
             },
         )
         providers.start()
@@ -778,8 +942,33 @@ class TestShareLink(_PanelTestCase):
         self.slots._write_param("TEXTURE_FILE_TYPE", "")
 
     def _share(self, provider="fake"):
+        """Share Now, pressed on the row's option box -- the wiring included."""
         with mock.patch.object(ptk.ShareTunnel, "settle", return_value=provider):
-            self.slots.share_link()
+            self._action("btn_share_now").click()
+
+    def _row(self):
+        return self.slots._param_widgets["SHARE_VIA"]
+
+    def _action(self, name):
+        return getattr(self._row().option_box.menu, name)
+
+    def _pump_until(self, condition, timeout=20.0):
+        """Run the UI loop until *condition* holds; fail when it never does."""
+        import time
+
+        deadline = time.monotonic() + timeout
+        while not condition():
+            self.assertLess(time.monotonic(), deadline, "the panel never got there")
+            self.app.processEvents()
+            time.sleep(0.02)
+
+    def _wait_on_the_step(self):
+        """Share through a provider that stops on its step; the panel is free
+        again while the share waits for it. The dialog is answered Not Now."""
+        self.slots.sb.confirm = lambda *args, **kwargs: False
+        self._share(provider="fake-step-then-link")
+        self.assertTrue(self.slots._share_pending, "the share did not wait")
+        self.assertIsNone(self.slots._server().share_info())
 
     def test_the_row_offers_every_provider_pythontk_drives(self):
         """A registry, not a list kept here: a provider added upstream
@@ -787,9 +976,10 @@ class TestShareLink(_PanelTestCase):
         from extapps.webxr_preview import parameters as params
 
         values = [entry[1] for entry in params.PARAMS["SHARE_VIA"].choices]
-        self.assertEqual(values[0], "auto")
+        self.assertEqual(values[:2], ["off", "auto"])
         self.assertEqual(
-            set(values[1:]), set(ptk.ShareTunnel.PROVIDERS) - {"fake", "fake-exits"}
+            set(values[2:]),
+            {name for name in ptk.ShareTunnel.PROVIDERS if not name.startswith("fake")},
         )
 
     def test_the_row_answers_every_source(self):
@@ -799,11 +989,269 @@ class TestShareLink(_PanelTestCase):
         self.slots._select_source("selected")
         self.assertIn("SHARE_VIA", self.slots._relevant_param_keys())
 
-    def test_the_header_offers_share_and_stop(self):
+    def test_the_sharing_actions_live_on_the_rows_option_box(self):
+        """Beside the switch they act on, not in the header menu."""
         handlers = {item[3] for item in self.slots.HEADER_MENU_ITEMS}
-        for name in ("share_link", "stop_sharing"):
-            self.assertIn(name, handlers)
-            self.assertTrue(callable(getattr(self.slots, name)))
+        self.assertFalse(handlers & {"share_link", "stop_sharing"})
+        for name in ("btn_share_now", "btn_copy_share_link", "btn_stop_sharing"):
+            self.assertIsNotNone(self._action(name), name)
+
+    def test_the_row_starts_off_each_session(self):
+        """A link is a door to this machine: a session opens it only when
+        asked, so a row left on yesterday does not share today's first push."""
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+        self.assertIsNotNone(self.slots._server().share_info())
+        # Down with the row left on: what is left to restore is the setting.
+        self.slots._server().unshare()
+
+        reopened = self._reopen()
+
+        self.assertEqual(reopened._sharing_choice(), "off")
+
+    def test_a_panel_opened_on_a_live_share_shows_it_on_the_row(self):
+        """The server outlives the panel: reopened while a share is up, the
+        row shows its provider rather than Off beside a live link."""
+        fake = ptk.ShareTunnel.PROVIDERS["fake"]
+        with mock.patch.dict(ptk.ShareTunnel.PROVIDERS, {"cloudflared": fake}):
+            with mock.patch.object(
+                ptk.ShareTunnel, "settle", return_value="cloudflared"
+            ):
+                self.slots._write_param("SHARE_VIA", "cloudflared")
+            self.assertEqual(self.slots._server().share_url, _FAKE_LINK)
+            reopened = self._reopen()
+            self.assertEqual(reopened._sharing_choice(), "cloudflared")
+            self.assertEqual(self.slots._server().share_url, _FAKE_LINK)
+
+    def test_picking_another_provider_while_one_waits_on_its_step_switches(self):
+        """The wait was for one provider: asked for another, the panel ends
+        it and shares there -- not the first one's page offered again."""
+        self._wait_on_the_step()
+        asked = []
+        self.slots.sb.confirm = lambda question, *a, **k: asked.append(question)
+        self.slots._share("fake", interactive=True)
+        self.assertEqual(asked, [], "the first provider's step was offered again")
+        self.assertEqual(self.slots._server().share_url, _FAKE_LINK)
+        self.assertFalse(self.slots._share_pending)
+        Path(self.step_taken).touch()  # the old wait's step, taken late
+        self._pump_until(lambda: True)
+        self.assertEqual(self.slots._server().share_url, _FAKE_LINK)
+
+    def test_picking_a_provider_shares_at_once_and_off_takes_it_down(self):
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+        server = self.slots._server()
+        self.assertEqual(server.share_url, _FAKE_LINK)
+        self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+
+        self.slots._write_param("SHARE_VIA", "off")
+
+        self.assertIsNone(server.share_info())
+        self.assertTrue(server.is_running, "the owner's page lost its server")
+
+    def test_with_sharing_on_every_push_keeps_the_link_up_and_logs_it(self):
+        """The same link each push -- a guest's page picks the push up -- and a
+        share whose client dropped is brought back by the next one."""
+        self.slots.set_source_file(self.glb)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+            logged = self._record_log()
+            self.slots.b000()
+            server = self.slots._server()
+            self.assertTrue(any(_FAKE_LINK in line for line in logged), logged)
+            first = server._tunnel._process
+
+            first.kill()
+            first.wait(timeout=10)
+            self.assertIsNone(server.share_info())
+            logged.clear()
+            self.slots.b000()
+
+        self.assertEqual(server.share_url, _FAKE_LINK)
+        self.assertIsNot(
+            server._tunnel._process, first, "the dropped share stayed down"
+        )
+        self.assertTrue(any("Shared, view-only" in line for line in logged), logged)
+        self.assertEqual(self.messages, [], "a push put a share in a dialog")
+
+    def test_with_sharing_off_a_push_shares_nothing(self):
+        self.slots.set_source_file(self.glb)
+        self.slots.b000()
+        self.assertIsNone(self.slots._server().share_info())
+
+    def test_a_push_share_that_fails_is_logged_not_put_in_a_dialog(self):
+        """The row changed interactively; a push is not the moment to
+        interrupt, and the next push tries again."""
+        self.slots.set_source_file(self.glb)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake-exits"):
+            self.slots._write_param("SHARE_VIA", "auto")
+            self.messages.clear()
+            logged = self._record_log()
+            self.slots.b000()
+        self.assertEqual(self.messages, [])
+        self.assertTrue(any("Sharing failed" in line for line in logged), logged)
+
+    def test_stop_sharing_on_the_option_box_turns_the_row_off(self):
+        self._share()
+        server = self.slots._server()
+        self._action("btn_stop_sharing").click()
+        self.assertEqual(self.slots._sharing_choice(), "off")
+        self.assertIsNone(server.share_info())
+
+    def test_a_providers_one_time_step_is_offered_not_dead_ended(self):
+        """Funnel not yet enabled for the tailnet: the page that enables it is
+        offered and opened on a yes -- not an error dialog to copy a link from."""
+        asked = []
+        self.slots.sb.confirm = lambda question, *a, **k: asked.append(question) or True
+        self._share(provider="fake-step")
+        self.assertEqual(len(asked), 1)
+        self.assertIn(_STEP_PAGE, self.opened)
+        self.assertEqual(self.messages, [], "an offer, not an error")
+        self.assertIsNone(self.slots._server().share_info())
+
+    def test_a_push_logs_a_providers_step_and_asks_nothing(self):
+        """The row asked once; a push is not the moment to ask again."""
+        asked = []
+        self.slots.sb.confirm = lambda question, *a, **k: (
+            asked.append(question) or False
+        )
+        self.slots.set_source_file(self.glb)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake-step"):
+            self.slots._write_param("SHARE_VIA", "auto")
+            logged = self._record_log()
+            self.slots.b000()
+        self.assertEqual(len(asked), 1, "the push asked again")
+        self.assertTrue(any(_STEP_PAGE in line for line in logged), logged)
+        self.assertNotIn(_STEP_PAGE, self.opened)
+
+    def test_once_the_step_is_taken_the_link_comes_up_by_itself(self):
+        """Reported: Funnel enabled in the browser, and still no link -- the
+        share had given up on the step, and the retry it asked for was easy to
+        miss. It waits on the step in the background now, the panel free
+        meanwhile, and the link arrives with nothing pressed."""
+        self._wait_on_the_step()
+        self.assertIn(_STEP_PAGE, self._pane_links(), "the step page is not a link")
+        Path(self.step_taken).touch()  # enabled, in the browser
+        server = self.slots._server()
+        self._pump_until(lambda: not self.slots._share_pending)
+        self.assertEqual(server.share_url, _FAKE_LINK)
+        self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+        self.assertIn(_FAKE_LINK, self._pane_links())
+        self.assertEqual(self.messages, [])
+
+    def test_a_step_never_taken_ends_the_wait_and_names_the_page(self):
+        """The wait is bounded; when it runs out the log says the share
+        stopped waiting and where the step is -- no dialog, since whoever
+        started it may be long gone."""
+        with mock.patch.object(ptk.ShareTunnel, "_STEP_WAIT", 1.0):
+            self._wait_on_the_step()
+            logged = self._record_log()
+            self._pump_until(lambda: not self.slots._share_pending, timeout=15)
+        self.assertTrue(
+            any("stopped waiting" in line and _STEP_PAGE in line for line in logged),
+            logged,
+        )
+        self.assertIsNone(self.slots._server().share_info())
+        self.assertEqual(self.messages, [])
+
+    def test_turning_sharing_off_while_it_waits_on_the_step_ends_the_wait(self):
+        self._wait_on_the_step()
+        logged = self._record_log()
+        self.slots._write_param("SHARE_VIA", "off")
+        self._pump_until(lambda: not self.slots._share_pending, timeout=10)
+        Path(self.step_taken).touch()  # taken after all: nothing comes up
+        self.app.processEvents()
+        self.assertIsNone(self.slots._server().share_info())
+        self.assertFalse(any("failed" in line for line in logged), logged)
+        self.assertEqual(self.messages, [])
+
+    def test_a_push_while_the_share_waits_names_the_step_again(self):
+        self.slots.set_source_file(self.glb)
+        self._wait_on_the_step()
+        logged = self._record_log()
+        self.slots.b000()
+        self.assertTrue(any(_STEP_PAGE in line for line in logged), logged)
+        self.assertTrue(self.slots._share_pending, "the push dropped the wait")
+
+    def test_copy_link_with_the_row_on_brings_the_link_up(self):
+        """Reported: with the row on and its link down, Copy Link said to
+        pick a provider -- the one already picked. It shares now, and the link
+        is copied as it arrives."""
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake-exits"):
+            self.slots._write_param("SHARE_VIA", "auto")  # on, but its share failed
+        logged = self._record_log()
+        QApplication.clipboard().setText("")
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self._action("btn_copy_share_link").click()
+        self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+        self.assertFalse(any("pick a provider" in line for line in logged), logged)
+
+    def _open_as_guest(self, tab="guest-tab-1"):
+        """A guest's page polling the share, the way the tunnel forwards it."""
+        server = self.slots._server()
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{server.guest_port}/manifest.json?id={tab}",
+            headers={"Host": _FAKE_LINK.split("://", 1)[1]},
+        )
+        with urllib.request.urlopen(request, timeout=10) as response:
+            self.assertEqual(response.status, 200)
+
+    def test_a_push_says_who_has_the_link_open_never_a_bare_zero(self):
+        """Reported: "(0 watching)" read like a counter stuck at zero. It
+        counts the guest tabs open right now -- a push resets nothing -- so
+        with the link unopened the line says so, and a guest shows by count."""
+        self.slots.set_source_file(self.glb)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+            logged = self._record_log()
+            self.slots.b000()
+            live = [line for line in logged if line.startswith("Live at")]
+            self.assertEqual(len(live), 1, logged)
+            self.assertIn("no guest has it open", live[0])
+            self.assertNotIn("0 watching", live[0])
+
+            self._open_as_guest()
+            logged.clear()
+            self.slots.b000()
+        live = [line for line in logged if line.startswith("Live at")]
+        self.assertEqual(len(live), 1, logged)
+        self.assertIn("(1 guest watching)", live[0])
+
+    def test_the_footer_counts_a_guest_without_the_panel_doing_anything(self):
+        """The footer's count moved only when the panel acted -- a guest who
+        opened the link after the push stayed "0 guests" until the next one.
+        It re-reads while the panel is open."""
+        self._share()
+        footer = self.slots.ui.footer
+        self.assertIn("(0 guests)", footer.statusText())
+        self.slots.ui.show()
+        self.addCleanup(self.slots.ui.hide)
+        self.slots._status_timer.setInterval(50)
+        self._open_as_guest()
+        self._pump_until(lambda: "(1 guest)" in footer.statusText(), timeout=5)
+
+    def test_the_addresses_a_push_gives_are_links(self):
+        self.slots.set_source_file(self.glb)
+        self.slots.b000()
+        self.assertIn(self.slots._server().url, self._pane_links())
+
+    def test_a_refused_share_leaves_its_install_page_in_the_log(self):
+        """The dialog is a toast gone in seconds; the log keeps the page."""
+        absent = {
+            **ptk.ShareTunnel.PROVIDERS["fake"],
+            "executable": "no-such-tunnel-cli-xyz",
+            "paths": (),
+        }
+        with mock.patch.dict(ptk.ShareTunnel.PROVIDERS, {"fake-absent": absent}):
+            self.slots._share("fake-absent", interactive=True)
+        self.assertEqual(len(self.messages), 1)
+        self.assertIn("https://example.test/install", self._pane_links())
+
+    def test_copy_link_copies_the_live_link(self):
+        self._share()
+        QApplication.clipboard().setText("")
+        self._action("btn_copy_share_link").click()
+        self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
 
     def test_share_link_shares_the_one_server_and_copies_the_link(self):
         self.slots.set_source_file(self.glb)

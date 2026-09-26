@@ -36,7 +36,14 @@ classifiers = [
 # `ptk.ShareTunnel.PROVIDERS` at import and Share Link calls
 # `PreviewBridge.share`; an older pythontk has neither, so the panel raises
 # AttributeError on load.
-dependencies = ["pythontk>=0.11.3", "uitk>=1.4.2", "qtpy"]
+# pythontk 0.11.4: the Sharing row hands `PreviewBridge.share(on_step=)` and
+# catches `ShareTunnel.StepRequired`, and the Viewer rows set the deliverer's
+# `user_pos` / `locomotion`; an older pythontk raises TypeError on the first
+# share and AttributeError while handling it.
+# uitk 1.5.2: the Sharing row is `AttributeSpec(preset=False)`, which keeps it
+# out of presets and Reset to Defaults; an older uitk raises TypeError on
+# import of the WebXR Preview's parameters.
+dependencies = ["pythontk>=0.11.4", "uitk>=1.5.2", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

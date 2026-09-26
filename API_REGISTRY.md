@@ -1062,21 +1062,21 @@ Application shell for the WebXR Preview UI.
 
 Tunable parameters surfaced in the WebXR Preview panel.
 
-- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/webxr_preview/parameters.py#L300) — Return ``{key: default}`` for every registered parameter.
+- [`defaults() -> 'dict[str, Any]'`](extapps/extapps/webxr_preview/parameters.py#L327) — Return ``{key: default}`` for every registered parameter.
 - [`SOURCE_FILE_TYPES`](extapps/extapps/webxr_preview/parameters.py#L37) — constant
 - [`EXPORT_KEYS`](extapps/extapps/webxr_preview/parameters.py#L42) — constant
 - [`FILE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L45) — constant
 - [`GLB_KEYS`](extapps/extapps/webxr_preview/parameters.py#L50) — constant
 - [`LIGHTING_KEYS`](extapps/extapps/webxr_preview/parameters.py#L55) — constant
-- [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L171) — constant
+- [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L173) — constant
 
 <a id="webxr_preview--slots"></a>
 ### `webxr_preview/slots.py`
 
 Slots for the WebXR Preview panel — the single UI for the live preview.
 
-- [`FILE_SOURCE`](extapps/extapps/webxr_preview/slots.py#L43) — constant
-- **[`class WebXrPreviewSlots(BridgeSlotsBase)`](extapps/extapps/webxr_preview/slots.py#L55)** — Switchboard slots wired to ``webxr_preview.ui``.
+- [`FILE_SOURCE`](extapps/extapps/webxr_preview/slots.py#L44) — constant
+- **[`class WebXrPreviewSlots(BridgeSlotsBase)`](extapps/extapps/webxr_preview/slots.py#L107)** — Switchboard slots wired to ``webxr_preview.ui``.
   - `WebXrPreviewSlots.params_module(self)` *(property)*
   - `WebXrPreviewSlots.template_dir(self) -> Path` *(property)*
   - `WebXrPreviewSlots.make_bridge(self)` — The panel's own, host-free engine.
@@ -1084,7 +1084,8 @@ Slots for the WebXR Preview panel — the single UI for the live preview.
   - `WebXrPreviewSlots.list_template_modes(self) -> List[Tuple[str, str]]` — Sources, in the ``(template, mode)`` shape the base's combo reads.
   - `WebXrPreviewSlots.open_preview_page(self) -> None` — Open the live page in a browser, without paying for a push.
   - `WebXrPreviewSlots.stop_server(self) -> None` — Stop serving and release the port -- ending any share.
-  - `WebXrPreviewSlots.share_link(self) -> None` — Share the preview at a link anyone can open, and copy it.
-  - `WebXrPreviewSlots.stop_sharing(self) -> None` — Take the link down;
+  - `WebXrPreviewSlots.share_link(self) -> None` — Share Now: bring the link up without a push, or retry a failed one.
+  - `WebXrPreviewSlots.copy_share_link(self) -> None` — Copy Link: the live link to the clipboard, and to the log.
+  - `WebXrPreviewSlots.stop_sharing(self) -> None` — Stop Sharing: the row to Off, which takes the link down.
   - `WebXrPreviewSlots.set_source_file(self, path: str) -> None` — Pre-fill Source File and select the file source.
   - `WebXrPreviewSlots.b000(self) -> None` — Build the deliverable for the active source and publish it.

@@ -110,8 +110,8 @@ _ROW_TOOLTIPS: Dict[str, str] = {
 }
 
 
-#: What each way of sharing means for whoever presses Share Link, in the
-#: panel's words. The entries themselves come from pythontk's registry
+#: What each way of sharing means for whoever picks it, in the panel's words.
+#: The entries themselves come from pythontk's registry
 #: (``ShareTunnel.PROVIDERS``), so a provider added there arrives by itself,
 #: under its own label.
 _PROVIDER_TOOLTIPS: Dict[str, str] = {
@@ -121,23 +121,25 @@ _PROVIDER_TOOLTIPS: Dict[str, str] = {
     "a machine that denies outbound connections by default must allow it once.",
     "tailscale_funnel": "Tailscale Funnel: a STABLE public link on your "
     "machine's tailnet name -- bookmark it once in a headset -- with the HTTPS "
-    "ending on this machine. Funnel must be enabled for the tailnet; the first "
-    "share names the page that does it. Relayed, so a large push loads slower.",
+    "ending on this machine. Funnel must be enabled for the tailnet once; the "
+    "first share offers to open the page that does it, and the link comes up "
+    "by itself once it is enabled. Relayed, so a large push loads slower.",
     "tailscale_serve": "Tailscale, reachable only by devices on your tailnet: "
     "nothing public. A standalone headset needs the Tailscale app to open it.",
 }
 
 
 def _share_choices() -> list:
-    """Auto, then every provider pythontk can drive."""
+    """Off, Auto, then every provider pythontk can drive."""
+    off = ("Off", "off", "Not shared: the preview stays on this machine.")
     auto = (
         "Auto",
         "auto",
-        "This machine's default: the provider PYTHONTK_SHARE_PROVIDER names, "
-        "else the first installed of the public ones (Cloudflare, then "
-        "Tailscale Funnel).",
+        "Whatever this machine has: Cloudflare when it is installed, else "
+        "Tailscale Funnel when Tailscale is. With neither, the panel offers "
+        "to download Cloudflare's client.",
     )
-    return [auto] + [
+    return [off, auto] + [
         (spec["label"], name, _PROVIDER_TOOLTIPS.get(name, ""))
         for name, spec in ptk.ShareTunnel.PROVIDERS.items()
     ]
@@ -233,6 +235,20 @@ PARAMS: "dict[str, AttributeSpec]" = {
     ),
     **_glb_rows(ptk.ExportProfile.GLB_TEXTURE_ROWS, "Textures"),
     **_glb_rows(ptk.ExportProfile.GLB_LIGHTING_ROWS, "Lighting"),
+    "LOCOMOTION": AttributeSpec(
+        key="LOCOMOTION",
+        label="Locomotion",
+        kind="bool",
+        default=True,
+        section="Viewer",
+        tooltip="Getting around in a headset on the thumbsticks: walk where you "
+        "look, snap-turn, and aim a teleport.\n\n"
+        "Off, a session stays where it starts -- under the scene's start "
+        "camera (a camera named user_pos) when it has one: free to look round "
+        "and step about the room, but not to go anywhere.\n\n"
+        "Applies at once, without a push: a headset already in a session, a "
+        "share's guests included, follows within a second.",
+    ),
     "VIEWER_SCRIPTS": AttributeSpec(
         key="VIEWER_SCRIPTS",
         label="Viewer Scripts",
@@ -252,10 +268,15 @@ PARAMS: "dict[str, AttributeSpec]" = {
             (
                 "Inspect",
                 "inspect",
-                "Overlay draw calls, material count and DECODED texture "
-                "memory, read off the renderer. The last of those is the "
-                "number a GLB's file size does not tell you, and the one that "
-                "decides whether this scene needs a KTX2 texture file type.",
+                "A profiler in the page (press i, or its button): frame time "
+                "against the display's budget -- the headset's own rate in a "
+                "session -- CPU and GPU time, draw calls, estimated GPU memory, "
+                "what the file's bytes are, and how long it took to download, "
+                "parse and first draw. In a headset it shows beside the view "
+                "(B or Y).\n\n"
+                "GPU memory is the number a GLB's file size does not tell you, "
+                "and the one that decides whether this scene needs a KTX2 "
+                "texture file type.",
             ),
             (
                 "Export Image",
@@ -278,21 +299,27 @@ PARAMS: "dict[str, AttributeSpec]" = {
     ),
     "SHARE_VIA": AttributeSpec(
         key="SHARE_VIA",
-        label="Share Via",
+        label="Sharing",
         kind="choice",
-        default="auto",
+        default="off",
         choices=_share_choices(),
         section="Sharing",
-        tooltip="How Share Link (in the header menu) publishes the preview.\n\n"
+        tooltip="Share the preview at a link, through the provider picked here.\n\n"
+        "Picking one brings the link up at once and copies it; it then stays up "
+        "across pushes, and every push logs it -- a guest's page picks each push "
+        "up by itself, so the link is the same one each time. Off takes it down. "
+        "The row's option box has Share Now (also a retry), Copy Link and Stop "
+        "Sharing. It starts Off each session: a link is a door to this machine, "
+        "and it opens only when asked -- a preset never carries it, and Reset "
+        "to Defaults leaves it as it is.\n\n"
         "A share is a link anyone can open in a browser -- desktop, phone, or "
         "a standalone headset, which gets its VR button because the link is "
         "HTTPS. It is VIEW-ONLY and LIVE: every push reaches it, and nothing a "
         "guest does writes to this machine. Each guest downloads the model and "
-        "renders it on their own device; this machine only serves files.\n\n"
-        "For a short link that never changes, set PYTHONTK_PREVIEW_ALIAS to "
-        "a file your web server serves (a path, or user@host:/path) and "
-        "PYTHONTK_PREVIEW_ALIAS_URL to its address: every share rewrites it "
-        "to point at the live link, and says the share ended when it stops.",
+        "renders it on their own device; this machine only serves files.",
+        # A switch, not a setting: a preset loaded with it on would open a
+        # public link unasked, and one saved with it on reopens it on every load.
+        preset=False,
     ),
 }
 

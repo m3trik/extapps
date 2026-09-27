@@ -262,11 +262,11 @@ class TestParametersReferencedKeys(unittest.TestCase):
 
     def test_full_pipeline_returns_all_keys(self) -> None:
         P = self._P()
-        self.assertEqual(P.referenced_keys(""), set(P.PARAMS))
+        self.assertEqual(P.Parameters.referenced_keys(""), set(P.PARAMS))
 
     def test_align_mode_drops_post_align_stage_knobs(self) -> None:
         P = self._P()
-        keys = P.referenced_keys("align")
+        keys = P.Parameters.referenced_keys("align")
         for hidden in (
             "depth_downscale",
             "depth_filter",
@@ -305,17 +305,17 @@ class TestParametersReferencedKeys(unittest.TestCase):
 
     def test_refine_mode_adds_skip_refine(self) -> None:
         P = self._P()
-        keys = P.referenced_keys("refine")
+        keys = P.Parameters.referenced_keys("refine")
         self.assertIn("skip_refine", keys)
         self.assertNotIn("depth_filter", keys)
 
     def test_unknown_mode_falls_back_to_all_keys(self) -> None:
         P = self._P()
-        self.assertEqual(P.referenced_keys("bogus"), set(P.PARAMS))
+        self.assertEqual(P.Parameters.referenced_keys("bogus"), set(P.PARAMS))
 
     def test_preprocessing_values_render_to_cli_flags(self) -> None:
         P = self._P()
-        argv = P.to_argv(
+        argv = P.Parameters.to_argv(
             {
                 "curate_hash_threshold": 0,  # 0 = disable dedup; must still emit
                 "curate_sharpness_percentile": 12.5,
@@ -338,7 +338,7 @@ class TestParametersReferencedKeys(unittest.TestCase):
         pair (--flag / --no-flag), so unchecking it can override the on-by-default
         runner baseline."""
         P = self._P()
-        argv = P.to_argv(
+        argv = P.Parameters.to_argv(
             {
                 "triage_quality": 0.3,
                 "generic_preselection": True,
@@ -358,7 +358,7 @@ class TestParametersReferencedKeys(unittest.TestCase):
         self.assertIn("--generic-preselection", argv)
         # bool flag: falsey emits the explicit --no- form (the runner default is
         # ON, so omission could never turn it off)
-        off = P.to_argv({"generic_preselection": False})
+        off = P.Parameters.to_argv({"generic_preselection": False})
         self.assertNotIn("--generic-preselection", off)
         self.assertIn("--no-generic-preselection", off)
 
@@ -384,7 +384,7 @@ class TestParametersReferencedKeys(unittest.TestCase):
         omits the now-moot knob flags; True renders the knobs and emits no
         skip (with the per-stage skips left off)."""
         P = self._P()
-        off = P.to_argv(
+        off = P.Parameters.to_argv(
             {
                 "preprocess_input": False,
                 "curate_hash_threshold": 7,
@@ -395,7 +395,7 @@ class TestParametersReferencedKeys(unittest.TestCase):
         self.assertIn("--skip-equalize", off)
         self.assertNotIn("--curate-hash-threshold", off)
         self.assertNotIn("--equalize-strength", off)
-        on = P.to_argv(
+        on = P.Parameters.to_argv(
             {
                 "preprocess_input": True,
                 "curate_hash_threshold": 7,
@@ -1004,59 +1004,67 @@ class TestMetashapePanelDispatch(unittest.TestCase):
 
 
 class _FakeProc:
-    """Stand-in for the runner's QProcess, exercising its completion callbacks
-    without spawning a real metashape.exe (the actual launch + bake is a
-    desktop-only verification step, like the rest of this package)."""
+    """Stand-in for the runner's spawned process, exercising its completion
+    callbacks without spawning a real metashape.exe (the actual launch + bake is
+    a desktop-only verification step, like the rest of this package)."""
 
-    def __init__(self, out: bytes = b"", error: str = "process error"):
-        self._out = out
-        self._error = error
+    def __init__(self, returncode=None):
+        self.returncode = returncode
 
-    def readAllStandardOutput(self) -> bytes:
-        out, self._out = self._out, b""
-        return out
-
-    def errorString(self) -> str:
-        return self._error
+    def poll(self):
+        return self.returncode
 
 
 class TestMetashapeRunnerCallbacks(unittest.TestCase):
     """Runner completion/error wiring: exit code passthrough, streamed-output
-    flush, and the single-fire guard (a stray ``finished`` after an error, or a
-    double ``finished``, must not call ``on_done`` twice)."""
+    flush, and the single-fire guard (a stray finish after an error, or a
+    double finish, must not call ``on_done`` twice)."""
 
-    def _runner(self, proc):
+    def _runner(self, proc, output=()):
+        import queue
+
+        from extapps.photogrammetry._process_runner import ProcessRunner
         from extapps.photogrammetry.metashape_workflow._metashape_runner import (
             MetashapeRunner,
         )
 
         r = MetashapeRunner.__new__(MetashapeRunner)  # skip exe discovery
+        ProcessRunner.__init__(r)
         r._proc = proc
+        r._lines = queue.Queue()
+        for line in output:
+            r._lines.put(line)
         self.lines: list = []
         self.codes: list = []
         r._on_line = self.lines.append
         r._on_done = self.codes.append
         return r
 
-    def test_finished_flushes_output_and_reports_int_code_once(self) -> None:
-        r = self._runner(_FakeProc(b"hello-from-runner\n"))
-        r._on_finished(0)
+    def test_exit_flushes_output_and_reports_int_code_once(self) -> None:
+        r = self._runner(_FakeProc(returncode=0), output=["hello-from-runner"])
+        r._tick()
         self.assertEqual(self.codes, [0])
-        self.assertIn("hello-from-runner", "".join(self.lines))
-        r._on_finished(0)  # a stray second finished must not double-fire
+        self.assertIn("hello-from-runner\n", "".join(self.lines))
+        r._on_finished(0)  # a stray second finish must not double-fire
         self.assertEqual(self.codes, [0])
 
+    def test_a_running_child_only_forwards_output(self) -> None:
+        r = self._runner(_FakeProc(returncode=None), output=["progress 10%"])
+        r._tick()
+        self.assertEqual(self.codes, [])
+        self.assertEqual(self.lines, ["progress 10%\n"])
+
     def test_nonzero_exit_propagates(self) -> None:
-        r = self._runner(_FakeProc(b""))
-        r._on_finished(3)
+        r = self._runner(_FakeProc(returncode=3))
+        r._tick()
         self.assertEqual(self.codes, [3])
 
     def test_error_reports_minus_one_and_suppresses_later_finished(self) -> None:
-        r = self._runner(_FakeProc(b"", error="FailedToStart"))
-        r._on_error(None)
+        r = self._runner(_FakeProc(returncode=None))
+        r._on_error("FailedToStart")
         self.assertEqual(self.codes, [-1])
         self.assertTrue(any("process error" in ln for ln in self.lines))
-        r._on_finished(0)  # late finished after error -> no second callback
+        r._on_finished(0)  # late finish after error -> no second callback
         self.assertEqual(self.codes, [-1])
 
 

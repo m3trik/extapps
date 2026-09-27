@@ -17,7 +17,7 @@ import pythontk as ptk
 from pythontk.core_utils.logging_mixin import LevelAwareFormatter
 from qtpy.QtWidgets import QPushButton
 from uitk.widgets.textEditLogHandler import TextEditLogHandler
-from uitk.widgets.mixins.tooltip_mixin import TooltipFormat
+from pythontk import TooltipFormat
 
 from pythontk import BatchResult, MapCompositor, NormalOutputMode
 from extapps import DOCS_BASE_URL
@@ -804,7 +804,7 @@ class CompositorSlots(_CompositorSlotsInternal):
             # Clickable link (LoggingMixin.log_link) so the user can jump
             # straight to the results; routed to the explorer by
             # _on_log_link_clicked. Truncate the *label*, not the href —
-            # _wrap_text never hard-wraps a word containing a tag, so an
+            # TextLayout.wrap_text never hard-wraps a word containing a tag, so an
             # untruncated path would force the box wider than the panel.
             link = self.engine.logger.log_link(
                 ptk.truncate(output_dir, 60), "open", path=output_dir

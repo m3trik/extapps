@@ -20,14 +20,9 @@ of the engine's token defaults).
 
 from __future__ import annotations
 
-from typing import Any
 
-from uitk.bridge import AttributeSpec, Formatters, Parameters as _BridgeParams
-
-
-# Targets Python templates -- ``python_literal`` turns user values into
-# Python source literals when the engine substitutes them.
-_FORMATTER = Formatters.python_literal
+import pythontk as ptk
+from uitk.bridge import AttributeSpec, ParamRegistry
 
 
 # Display order is iteration order over this dict.
@@ -55,16 +50,24 @@ PARAMS: "dict[str, AttributeSpec]" = {
 }
 
 
-def referenced_keys(script_text: str) -> "set[str]":
-    """Registered keys present in *script_text* (delegates to uitk.bridge)."""
-    return _BridgeParams.referenced_keys(script_text, PARAMS)
+class Parameters(ParamRegistry):
+    """The Marmoset Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+
+    Handed to the slot as its ``params_module``: :data:`PARAMS` plus
+    ``referenced_keys`` / ``defaults`` / ``render_context`` (Python literals).
+    """
+
+    PARAMS = PARAMS
 
 
-def defaults() -> "dict[str, Any]":
-    """Return ``{key: default}`` for every registered parameter."""
-    return _BridgeParams.defaults(PARAMS)
-
-
-def render_context(values: "dict[str, Any]") -> "dict[str, str]":
-    """Format *values* for ``StrUtils.replace_delimited`` using Python literals."""
-    return _BridgeParams.render_context(values, PARAMS, formatter=_FORMATTER)
+# The module-level functions this class replaced, for one release.
+ptk.Deprecation.attributes(
+    globals(),
+    {
+        "referenced_keys": "extapps.marmoset_workflow.parameters.Parameters.referenced_keys",
+        "defaults": "extapps.marmoset_workflow.parameters.Parameters.defaults",
+        "render_context": "extapps.marmoset_workflow.parameters.Parameters.render_context",
+    },
+    remove_in="0.4.0",
+    since="2026-09-26",
+)

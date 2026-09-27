@@ -41,14 +41,14 @@ class TestBakeUtilsRegistration(SubstanceWorkflowTestCase):
 
         fn = registry.get("bake.lighting_to_diffuse")
         self.assertIsNotNone(fn)
-        self.assertEqual(getattr(fn, "_op_name", None), "bake.lighting_to_diffuse")
+        self.assertEqual(fn.__name__, "lighting_to_diffuse")
 
     def test_lighting_to_diffuse_signature(self) -> None:
         """Every documented knob must be on the signature so agents can discover it."""
         from extapps.substance_workflow import registry
 
         d = registry.describe("bake.lighting_to_diffuse")
-        params = d["parameters"]
+        params = [p["name"] for p in d["params"]]
         for expected in (
             "texture_set",
             "bake_resolution",
@@ -72,7 +72,7 @@ class TestBakeUtilsRegistration(SubstanceWorkflowTestCase):
         from extapps.substance_workflow import registry
 
         d = registry.describe("bake.lighting_to_diffuse")
-        p = d["parameters"]
+        p = {entry["name"]: entry for entry in d["params"]}
         self.assertEqual(p["bake_resolution"]["default"], "1024")
         self.assertEqual(p["blend_mode"]["default"], "'Multiply'")
         self.assertEqual(p["include_curvature"]["default"], "False")

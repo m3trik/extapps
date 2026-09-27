@@ -283,13 +283,19 @@ class Profile(_ProfileInternal):
         config_key: Optional[str] = None,
         *,
         validate: Optional[Callable[[str], bool]] = None,
+        spec=None,
         fallbacks: Sequence[Callable[[], Optional[str]]] = (),
         path=None,
     ) -> Optional[str]:
         """Resolve an engine's install location; the first hit wins. ``None`` = not found.
 
         The one discovery chain every photogrammetry engine uses, so the stages and
-        their precedence are declared per engine instead of hand-rolled five times:
+        their precedence are declared per engine instead of hand-rolled five times.
+        It is the ecosystem's own discovery with two photogrammetry stages in front:
+        an engine's standard locations are a :class:`pythontk.AppSpec` (names found
+        through :meth:`pythontk.AppLauncher.find_app`, install globs ranked newest
+        first by :meth:`pythontk.AppLauncher.scan_install_dirs`) -- the same record
+        the DCC bridges declare -- never a hand-written glob / ``which`` / version sort.
 
         1. **env override** (``$BRUSH_EXE``, ``$METASHAPE_EXE``, …) — **terminal**.
            If the variable is set *at all*, this call decides here: the value is
@@ -301,11 +307,14 @@ class Profile(_ProfileInternal):
         2. **profile** ``apps.<config_key>`` — the network / non-standard install
            hook (see :func:`configured_app_path`). Skipped when *config_key* is
            ``None`` (an engine with no profile key, e.g. splat-transform).
-        3. **fallbacks** — per-engine standard discovery (PATH, known install dirs,
-           a managed-install catalog), tried in order. Each returns a usable path or
-           ``None`` and is responsible for its own validation, since what counts as
-           valid differs (an exe is a file; a SuGaR checkout is a dir holding
-           ``train_full_pipeline.py``).
+        3. **spec** — the engine's :class:`pythontk.AppSpec`, resolved uncached
+           (``spec.resolve()``: its ``app_names`` on PATH / the registry, then its
+           ``scan_globs``, newest install first). Skipped when ``None``.
+        4. **fallbacks** — what no spec can declare (a managed-install catalog, a
+           lookup that must rank *after* the install scan), tried in order. Each
+           returns a usable path or ``None`` and is responsible for its own
+           validation, since what counts as valid differs (an exe is a file; a
+           SuGaR checkout is a dir holding ``train_full_pipeline.py``).
 
         :param validate: Predicate applied to stages 1-2. Defaults to
             :func:`os.path.isfile`, resolved per call rather than bound at import
@@ -323,6 +332,11 @@ class Profile(_ProfileInternal):
             configured = Profile.configured_app_path(config_key, path)
             if configured and validate(configured):
                 return configured
+
+        if spec is not None:
+            found = spec.resolve()
+            if found:
+                return found
 
         for fallback in fallbacks:
             found = fallback()

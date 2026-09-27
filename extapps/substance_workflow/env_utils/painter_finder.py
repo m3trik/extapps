@@ -1,16 +1,10 @@
 """Locate installed Substance 3D Painter."""
 
-import logging
 import os
 import platform
 from typing import Dict, List, Optional
 
-try:
-    from pythontk import AppLauncher
-except ImportError:
-    from pythontk.core_utils.app_launcher import AppLauncher
-
-logger = logging.getLogger(__name__)
+from pythontk import AppLauncher
 
 
 class PainterFinder:
@@ -33,29 +27,31 @@ class PainterFinder:
         if system == "darwin":
             return ["/Applications"]
         if system == "linux":
-            return [os.path.expanduser("~/Adobe"), "/opt"]
+            # Adobe's Linux installer puts it under /opt/Adobe (system) or
+            # ~/Adobe (user); /opt covers a hand-unpacked copy.
+            return [os.path.expanduser("~/Adobe"), "/opt/Adobe", "/opt"]
         return []
 
     @staticmethod
     def find_installs() -> Dict[str, str]:
-        """Return ``{label: exe_path}`` for every Painter install found."""
+        """Return ``{label: exe_path}`` for every Painter install found, newest first.
+
+        "Newest" is the natural sort :meth:`AppLauncher.scan_install_dirs` owns
+        (``Painter 10.0`` outranks ``Painter 9.1``); roots keep their priority order.
+        """
         system = platform.system().lower()
         exe_name = PainterFinder.EXE_NAME.get(system, PainterFinder.EXE_NAME["windows"])
 
-        found: Dict[str, str] = {}
-        for root in PainterFinder.default_install_roots():
-            if not os.path.isdir(root):
-                continue
-            try:
-                for child in sorted(os.listdir(root), reverse=True):
-                    if "Substance 3D Painter" not in child:
-                        continue
-                    install_dir = os.path.join(root, child)
-                    exe_path = os.path.join(install_dir, exe_name)
-                    if os.path.isfile(exe_path):
-                        found[child] = exe_path
-            except OSError as e:
-                logger.debug(f"Skipping {root}: {e}")
+        # ``?`` for each space: the Linux install spells folder and binary with
+        # underscores (/opt/Adobe/Adobe_Substance_3D_Painter/...).
+        patterns = [
+            os.path.join(root, "*Substance?3D?Painter*", exe_name.replace(" ", "?"))
+            for root in PainterFinder.default_install_roots()
+        ]
+        found: Dict[str, str] = {
+            os.path.basename(os.path.dirname(exe)): exe
+            for exe in AppLauncher.scan_install_dirs(patterns)
+        }
 
         if not found:
             via_path = AppLauncher.find_app(exe_name)
@@ -68,7 +64,7 @@ class PainterFinder:
         """Resolve an executable path.
 
         Accepts an absolute path, a version-fragment label substring, or
-        None (returns the first install found — typically the newest).
+        None (returns the newest install).
         """
         if version_or_path and os.path.isfile(version_or_path):
             return version_or_path

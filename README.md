@@ -1,3 +1,5 @@
+![Platform](https://img.shields.io/badge/Platform-Windows%2C%20Linux-lightgrey.svg)
+
 # extapps
 
 Standalone [uitk](https://github.com/m3trik/uitk)-Switchboard panels for content-pipeline work — texture compositing and conversion, photogrammetry, mesh conversion, and DCC automation. Each app is a self-contained subpackage that registers via the `uitk.external_apps.in_process` entry-point group, so hosts like [tentacle](https://github.com/m3trik/tentacle) and [mayatk](https://github.com/m3trik/mayatk) discover and launch them with no host-side imports.

@@ -5,52 +5,19 @@
 The DCC-agnostic Toolbag engine is bundled in this subpackage
 (:mod:`extapps.marmoset_workflow._marmoset_engine`), the parameter specs in
 :mod:`extapps.marmoset_workflow.parameters`, and the slot bindings in
-:mod:`extapps.marmoset_workflow.slots`; this module only assembles the
-Switchboard-driven UI and provides the script entry point.
+:mod:`extapps.marmoset_workflow.slots`; this module only declares the panel
+(:class:`extapps._panel_launcher.PanelLauncher` builds it) and provides the
+script entry point.
 """
 
-from uitk import Bootstrap
-
-# Must run before QApplication is constructed, so before any import that
-# touches Switchboard. No-ops inside DCC hosts that already own the
-# QApplication.
-Bootstrap.configure_high_dpi()
+from extapps._panel_launcher import PanelLauncher
 
 
-class MarmosetWorkflowUI:
-    def __new__(cls, *args, **kwargs):
-        from qtpy import QtCore
-        from uitk import Switchboard
-        from extapps import __version__
-        from extapps.marmoset_workflow.slots import MarmosetWorkflowSlots
-
-        sb = Switchboard(
-            *args,
-            ui_source="./marmoset_workflow.ui",
-            slot_source=MarmosetWorkflowSlots,
-            **kwargs,
-        )
-        ui = sb.loaded_ui.marmoset_workflow
-        ui.set_attributes(WA_TranslucentBackground=True)
-        # Frameless chromed window: the uitk Header supplies the window
-        # controls in place of the native OS frame. Set the SAME clean flag
-        # set as uitk's WindowPanel rather than OR-ing FramelessWindowHint
-        # onto a QMainWindow's defaults -- those defaults carry native
-        # decoration hints which, on a frameless host-owned window, make it
-        # float always-on-top of its parent.
-        ui.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
-        ui.style.set(theme="dark", style_class="bgWithBorder")
-
-        ui.header.config_buttons("menu", "minimize", "fullscreen", "hide")
-        ui.header.setVersion(__version__)
-
-        ui.setWindowTitle(f"Marmoset Workflow v{__version__}")
-        ui.resize(ui.sizeHint())
-        return ui
+class MarmosetWorkflowUI(PanelLauncher):
+    TITLE = "Marmoset Workflow"
 
 
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    ui = MarmosetWorkflowUI()
-    ui.show(pos="screen", app_exec=True)
+    MarmosetWorkflowUI().show(pos="screen", app_exec=True)

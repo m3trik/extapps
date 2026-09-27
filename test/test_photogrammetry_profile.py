@@ -12,8 +12,9 @@ import unittest
 from unittest import mock
 
 import pythontk as ptk
-from pythontk.core_utils.user_config import CONFIG_ROOT_ENV_VAR
 from extapps.photogrammetry import profile as pp
+
+CONFIG_ROOT_ENV_VAR = ptk.UserConfig.CONFIG_ROOT_ENV_VAR
 
 
 class PhotogrammetryProfileTest(unittest.TestCase):

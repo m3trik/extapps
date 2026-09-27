@@ -3,7 +3,7 @@
 """Local, async runner the Brush (gaussian-splat) panel dispatches to.
 
 A thin :class:`extapps.photogrammetry._process_runner.PyModuleRunner` subclass:
-the base owns the :class:`~qtpy.QtCore.QProcess` machinery, and ``PyModuleRunner``
+the base owns the async launch machinery (``AppLauncher.spawn`` + an event-loop reader), and ``PyModuleRunner``
 launches the headless driver as ``sys.executable -m ...run_combined`` (Brush's
 ``run_combined`` is a normal-Python driver that spawns ``brush.exe`` /
 splat-transform itself, so it runs in the panel's own interpreter). This class

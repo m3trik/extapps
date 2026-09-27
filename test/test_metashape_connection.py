@@ -34,10 +34,11 @@ class MetashapeConnectionTest(unittest.TestCase):
             conn.run_script("whatever.py")
 
     def test_run_script_builds_headless_argv_no_offscreen(self):
+        # The Windows rule: that bundle ships no Qt offscreen plugin.
         conn = MetashapeConnection(exe="C:/fake/metashape.exe")
         with mock.patch(
             "extapps.photogrammetry.metashape_workflow._metashape_connection.AppLauncher.run"
-        ) as run:
+        ) as run, mock.patch("sys.platform", "win32"):
             conn.run_script("M:/x/script.py", args=["--name", "t"], log_file="L.log")
             (called_exe,), kwargs = run.call_args
             self.assertEqual(called_exe, "C:/fake/metashape.exe")
@@ -47,6 +48,26 @@ class MetashapeConnectionTest(unittest.TestCase):
             self.assertNotIn("-platform", argv)  # never the offscreen path
             self.assertNotIn("offscreen", argv)
             self.assertEqual(kwargs["output_file"], "L.log")
+
+    def test_linux_without_a_display_runs_offscreen(self):
+        # metashape.sh on SSH / a render node: its xcb platform would abort.
+        # With a display (a desktop session) the argv stays the plain form.
+        conn = MetashapeConnection(exe="/opt/metashape-pro/metashape.sh")
+        target = (
+            "extapps.photogrammetry.metashape_workflow._metashape_connection"
+            ".AppLauncher.run"
+        )
+        headless = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")}
+        with mock.patch(target) as run, mock.patch("sys.platform", "linux"):
+            with mock.patch.dict(os.environ, headless, clear=True):
+                conn.run_script("/x/script.py")
+            self.assertEqual(
+                run.call_args.kwargs["args"][:4],
+                ["-platform", "offscreen", "-r", "/x/script.py"],
+            )
+            with mock.patch.dict(os.environ, {"DISPLAY": ":0"}):
+                conn.run_script("/x/script.py")
+            self.assertEqual(run.call_args.kwargs["args"], ["-r", "/x/script.py"])
 
     def test_run_combined_targets_runner_module(self):
         conn = MetashapeConnection(exe="C:/fake/metashape.exe")

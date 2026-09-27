@@ -254,7 +254,7 @@ class WebXrPreviewSlots(BridgeSlotsBase):
     # ------------------------------------------------------------------ base hooks
     @property
     def params_module(self):
-        return _params
+        return _params.Parameters
 
     @property
     def template_dir(self) -> Path:
@@ -469,10 +469,8 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         if self._active_source() == FILE_SOURCE:
             # The lighting recipe rides the scene sidecar, which a file push
             # never builds -- a row there would change nothing.
-            return (
-                keys - self.params_module.EXPORT_KEYS - self.params_module.LIGHTING_KEYS
-            )
-        return keys - self.params_module.FILE_KEYS
+            return keys - _params.EXPORT_KEYS - _params.LIGHTING_KEYS
+        return keys - _params.FILE_KEYS
 
     # ------------------------------------------------------------------ status row
     def _build_status_row(self) -> None:

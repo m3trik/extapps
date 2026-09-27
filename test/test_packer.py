@@ -6,7 +6,7 @@ Regression guard for the conversion branch of ``_pack_set``: when a
 requested channel map is absent but derivable from another present map
 (e.g. Smoothness from Roughness), the slot must convert and pack it.
 The line that did this called ``self.get_converted_map`` — a static that
-lives on ``MapFactory``, not on ``ImgUtils`` (the slot's base) — so it
+lives on ``MapFactory``, not on ``ImgUtils`` (then the slot's base) — so it
 raised ``AttributeError`` and the conversion path never worked.
 
 The heavy UI wiring in ``__init__`` is bypassed (``__new__``); ``_pack_set``
@@ -625,6 +625,20 @@ class TestMapPackerOpenOutputDirSafety(unittest.TestCase):
             inst.b001()
         system_mock.assert_not_called()
         open_mock.assert_not_called()
+
+
+class TestMapPackerHoldsNoEngine(unittest.TestCase):
+    """The panel calls ``ImgUtils``; it is not one.
+
+    Like ``ConverterSlots`` and ``MeshConvertSlots``: a slots class that
+    inherited its engine carried the whole image library as its own surface.
+    The pack, unpack and file-dialog calls go through the class instead;
+    the cases above run each of them.
+    """
+
+    def test_slots_do_not_inherit_the_image_engine(self):
+        self.assertFalse(issubclass(PackerSlots, ImgUtils))
+        self.assertFalse(hasattr(PackerSlots, "pack_channels"))
 
 
 if __name__ == "__main__":

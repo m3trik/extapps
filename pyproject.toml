@@ -12,7 +12,8 @@ requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
 ]
 
 # Floors are HAND-RATCHETED here: extapps is off-chain from m3trik/push.ps1
@@ -43,7 +44,19 @@ classifiers = [
 # uitk 1.5.2: the Sharing row is `AttributeSpec(preset=False)`, which keeps it
 # out of presets and Reset to Defaults; an older uitk raises TypeError on
 # import of the WebXR Preview's parameters.
-dependencies = ["pythontk>=0.11.4", "uitk>=1.5.2", "qtpy"]
+# uitk 1.6.0: the shared panel launcher registers extapps' Preset Editor label
+# (`uitk.PresetEditor.register_app_label`) and six panels' parameters.py
+# subclass `uitk.bridge.ParamRegistry`; an older uitk has neither, so every
+# panel raises ImportError on build.
+# pythontk 0.12.0: the Compositor imports `ptk.TooltipFormat` (ImportError on
+# load); the RealityScan and SuGaR runs write their scripts through
+# `AppLauncher.write_batch_script`, the Map Converter's rename-mode Optimize
+# moves through `FileUtils.replace_file` and the Mesh Converter's install offer
+# reads `MeshConvert.FBX2GLTF_VERSION` (each AttributeError on first use). An
+# older `AppInstaller` also ignores Brush's `arch` pin, so an arm64 Linux
+# downloads an x86_64 binary, and an older `scan_install_dirs` leaves the
+# Metashape finder's `~/...` patterns unexpanded, so it finds nothing there.
+dependencies = ["pythontk>=0.12.0", "uitk>=1.6.0", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

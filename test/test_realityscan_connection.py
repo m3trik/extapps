@@ -78,6 +78,12 @@ class RealityScanConnectionTest(unittest.TestCase):
         # failure. The wrapper must use the leading-redirect form instead.
         self.assertNotIn("%errorlevel%>", text)
         self.assertIn("echo %errorlevel%", text)
+        # Exact CRLF: "\r\n" written through a text-mode handle doubled every
+        # CR (CR CR LF). AppLauncher.write_batch_script owns the bytes now.
+        with open(bat, "rb") as fh:
+            data = fh.read()
+        self.assertNotIn(b"\r\r\n", data)
+        self.assertEqual(data.count(b"\r\n"), 3)
 
     @unittest.skipUnless(
         os.name == "nt",

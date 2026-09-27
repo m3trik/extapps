@@ -41,7 +41,7 @@ class _OpsContractMixin:
                     fn, f"{op_name} not registered"
                 )
                 d = registry.describe(op_name)
-                params = d.get("parameters", {})
+                params = [p["name"] for p in d.get("params", [])]
                 for p in expected_params:
                     self.assertIn(  # type: ignore[attr-defined]
                         p, params, f"{op_name} missing param {p}"

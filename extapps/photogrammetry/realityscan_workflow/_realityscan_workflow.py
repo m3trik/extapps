@@ -5,8 +5,8 @@
 Mirrors :class:`extapps.photogrammetry.metashape_workflow._metashape_workflow.MetashapeWorkflow`
 public method shape so the same UI panel can target either engine.
 
-RC has no Python API; this wrapper builds + runs CLI command chains via
-:mod:`subprocess`. Project state persists in a ``.rcproj`` between calls
+RC has no Python API; this wrapper builds + runs CLI command chains through
+:class:`pythontk.AppLauncher` (the transports). Project state persists in a ``.rcproj`` between calls
 (each stage loads the project, runs its commands, saves, and quits).
 
 Stages with no direct RC equivalent (depth maps, dedupe-by-pose, reduce
@@ -14,17 +14,13 @@ overlap) are no-ops here so a UI that drives both engines can present the
 same surface without engine-specific branches.
 """
 import functools
-import glob
 import os
-import re
-import shutil
-import subprocess
 import xml.etree.ElementTree as ET
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from pythontk import ImgUtils, QcGate, QcLog
+from pythontk import AppLauncher, AppSpec, ImgUtils, QcGate
 
-from .._progress_notify import ProgressNotifyMixin
+from .._workflow_engine import WorkflowEngine
 from ..profile import Profile
 from ..mesh_stages import MeshStagesMixin
 from ..prep_stages import PrepStagesMixin
@@ -47,15 +43,23 @@ IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp")
 # tag-guessing). Verified live against RealityScan 2.1's RSNode.
 QC_REPORT_TEMPLATE = os.path.join(os.path.dirname(__file__), "qc_report_template.html")
 
-# RealityScan (Epic's rebrand) installs to "C:\Program Files\RealityScan_<ver>\"
-# (e.g. RealityScan_2.0, RealityScan_2.1, ...). Glob + pick the highest version so
-# new releases are found without editing this file. RealityScan 2.x uses .rsproj;
-# legacy RealityCapture uses .rcproj. The fixed list below is the legacy fallback.
-_RC_INSTALL_GLOB = r"C:\Program Files\RealityScan_*\RealityScan.exe"
-_RC_DEFAULT_EXES = (
-    r"C:\Program Files\RealityScan\RealityScan.exe",
-    r"C:\Program Files\Capturing Reality\RealityCapture\RealityCapture.exe",
+# RealityScan (Epic's rebrand) installs to "<Program Files>\RealityScan_<ver>\"
+# (e.g. RealityScan_2.0, RealityScan_2.1, ...): the glob's newest match wins
+# (AppLauncher.scan_install_dirs' natural sort), so new releases are found without
+# editing this file. The unversioned dir and legacy RealityCapture follow.
+# RealityScan 2.x uses .rsproj; legacy RealityCapture uses .rcproj.
+APP = AppSpec(
+    name="RealityScan",
+    scan_globs=(
+        r"{program_files}\RealityScan_*\RealityScan.exe",
+        r"{program_files}\RealityScan\RealityScan.exe",
+        r"{program_files}\Capturing Reality\RealityCapture\RealityCapture.exe",
+    ),
+    not_found_msg="RealityScan/RealityCapture not found (set RC_EXE env or install)",
 )
+#: Looked up only after the install scan: an install dir outranks whatever
+#: PATH (or the App Paths registry) happens to name.
+_RC_APP_NAMES = ("RealityScan.exe", "RealityCapture.exe")
 
 
 # Acceptance-gate defaults. RC's report metric names differ from Metashape's;
@@ -87,26 +91,20 @@ class _RealityCaptureWorkflowInternal:
     ``_<Class>Internal`` base the public class inherits)."""
 
     @staticmethod
-    def _rc_install_version_key(path: str):
-        """Numeric sort key from the version in a ``RealityScan_<ver>`` path."""
-        m = re.search(r"RealityScan_([0-9][0-9.]*)", path)
-        if not m:
-            return (0,)
-        return tuple(int(x) for x in m.group(1).split(".") if x.isdigit())
-    @staticmethod
     @functools.lru_cache(maxsize=8)
     def _version_from_exe(exe_path: str) -> str:
         try:
-            out = subprocess.check_output(
-                [
-                    "powershell",
+            done = AppLauncher.run(
+                "powershell",
+                args=[
                     "-NoProfile",
                     "-Command",
                     f'(Get-Item -LiteralPath "{exe_path}").VersionInfo.FileVersion',
                 ],
-                text=True,
                 timeout=10,
-            ).strip()
+                hide_window=True,
+            )
+            out = (done.stdout or "").strip() if done.returncode == 0 else ""
             return out or "unknown"
         except Exception:
             return "unknown"
@@ -116,7 +114,7 @@ class _RealityCaptureWorkflowInternal:
 # Workflow
 # ---------------------------------------------------------------------------
 class RealityCaptureWorkflow(
-    ProgressNotifyMixin,
+    WorkflowEngine,
     PrepStagesMixin,
     MeshStagesMixin,
     _RealityCaptureWorkflowInternal,
@@ -139,28 +137,15 @@ class RealityCaptureWorkflow(
         (terminal — an empty string or a nonexistent path returns None so the
         caller enters mock mode, rather than falling through to the real install),
         then the profile's ``apps.realityscan_exe`` (network / non-standard
-        install), then the versioned install dirs (newest first), the default
-        install paths, and finally PATH.
+        install), then :data:`APP`'s install dirs (newest first), and finally
+        PATH / the App Paths registry.
         """
 
-        def _versioned_install() -> Optional[str]:
-            installs = sorted(
-                glob.glob(_RC_INSTALL_GLOB),
-                key=_RealityCaptureWorkflowInternal._rc_install_version_key,
-                reverse=True,
-            )
-            return installs[0] if installs else None
-
-        def _default_paths() -> Optional[str]:
-            return next((exe for exe in _RC_DEFAULT_EXES if os.path.isfile(exe)), None)
-
         def _on_path() -> Optional[str]:
-            return shutil.which("RealityScan.exe") or shutil.which("RealityCapture.exe")
+            return next(filter(None, map(AppLauncher.find_app, _RC_APP_NAMES)), None)
 
         return Profile.resolve_app(
-            "RC_EXE",
-            "realityscan_exe",
-            fallbacks=(_versioned_install, _default_paths, _on_path),
+            "RC_EXE", "realityscan_exe", spec=APP, fallbacks=(_on_path,)
         )
     @staticmethod
     def is_realitycapture_available() -> bool:
@@ -235,18 +220,12 @@ class RealityCaptureWorkflow(
             rsnode_url: RSNode base URL (default ``RC_RSNODE_URL`` env or
                 ``http://127.0.0.1:8000``).
         """
-        self.project_path = project_path
-        self.name = name
-        self.progress = progress
         self.gates = {**DEFAULT_GATES, **(gates or {})}
         self.gate_mode = gate_mode
         self.checkpoint_each_stage = bool(checkpoint_each_stage)
         self.rc_timeout_sec = rc_timeout_sec
 
         self.rc_exe = rc_exe or self.find_realitycapture_exe()
-        if mock_mode is None:
-            mock_mode = self.rc_exe is None
-        self.mock_mode = bool(mock_mode)
 
         # Transport is resolved lazily on first _run_rc so construction never
         # touches the network (unit tests stay hermetic). Auto-selection prefers
@@ -259,6 +238,13 @@ class RealityCaptureWorkflow(
                 use_rsnode = _env.strip().lower() not in ("", "0", "false", "no")
         self._use_rsnode = use_rsnode
         self._rsnode_url = rsnode_url or os.environ.get("RC_RSNODE_URL")
+
+        # Mock only with NOTHING to drive: a forced RSNode needs no local exe --
+        # it is how a host without RealityScan (Linux; it is Windows-only)
+        # drives a node on another machine.
+        if mock_mode is None:
+            mock_mode = self.rc_exe is None and not self._use_rsnode
+        self.mock_mode = bool(mock_mode)
         # An injected connection is active immediately; otherwise None until
         # _connection() resolves + memoizes the auto-selected transport.
         self._conn = connection
@@ -267,22 +253,22 @@ class RealityCaptureWorkflow(
         _exe_name = os.path.basename(self.rc_exe or "").lower()
         self.project_ext = "rsproj" if "realityscan" in _exe_name else self.PROJECT_EXT
 
-        os.makedirs(self.project_path, exist_ok=True)
+        self._open_run(
+            project_path,
+            name,
+            progress,
+            qc_fields={
+                "project_path": project_path,
+                "rc_exe": self.rc_exe or "",
+                "rc_version": self.get_realitycapture_version(),
+            },
+        )
         self._project_file = os.path.join(
             self.project_path, f"{name}.{self.project_ext}"
         )
         self._reports_dir = os.path.join(self.project_path, "reports")
-        self._logs_dir = os.path.join(self.project_path, "logs")
         os.makedirs(self._reports_dir, exist_ok=True)
-        os.makedirs(self._logs_dir, exist_ok=True)
-
-        self.qc = QcLog(os.path.join(self.project_path, f"{name}_qc.json"))
         self.gate = QcGate(self.gates, self.qc, mode=self.gate_mode)
-        self.qc.set("project_name", name)
-        self.qc.set("project_path", project_path)
-        self.qc.set("rc_exe", self.rc_exe or "")
-        self.qc.set("rc_version", self.get_realitycapture_version())
-        self.qc.set("mock_mode", self.mock_mode)
 
         # True once the .rcproj has been written; subsequent _run_rc calls
         # then prefix with -load to pick up where the last one left off.
@@ -295,7 +281,7 @@ class RealityCaptureWorkflow(
 
     def get_license_info(self) -> str:
         if self.rc_exe is None:
-            return "RealityScan/RealityCapture not found (set RC_EXE env or install)"
+            return APP.not_found_message
         product = (
             "RealityScan"
             if "realityscan" in os.path.basename(self.rc_exe).lower()
@@ -359,7 +345,7 @@ class RealityCaptureWorkflow(
         tail_cmds += list(commands)
         tail_cmds += ["-save", self._project_file, "-quit"]
 
-        log_path = os.path.join(self._logs_dir, f"{label}.log")
+        log_path = self._log_path(label)
         print(f"[rc:{label}] {' '.join(tail_cmds)}  >> {log_path}")
         completed = self._connection().run(
             tail_cmds, log_path=log_path, timeout=self.rc_timeout_sec
@@ -1136,10 +1122,9 @@ class RealityCaptureWorkflow(
 
     def finalize_run(self, success: bool = True) -> str:
         """Flush the QC JSON sidecar + release the transport. Returns the path."""
-        self.qc.finalize(success)
+        path = super().finalize_run(success)
         self._teardown_connection()
-        print(f"QC sidecar: {self.qc.path}")
-        return self.qc.path
+        return path
 
 
 # -----------------------------------------------------------------------------

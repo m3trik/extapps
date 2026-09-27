@@ -276,7 +276,7 @@ class TestInvokeRoundTrip(SubstanceWorkflowTestCase):
             b'{"ok": true, "value": {"hello": "world"}}'
         )
         with patch(
-            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            "pythontk.net_utils.rpc.client.urllib.request.urlopen",
             return_value=fake_resp,
         ):
             value = conn.invoke("project.info", path="/x.spp")
@@ -291,7 +291,7 @@ class TestInvokeRoundTrip(SubstanceWorkflowTestCase):
 
         fake_resp = self._mock_response(b'{"ok": false, "error": "bad op"}')
         with patch(
-            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            "pythontk.net_utils.rpc.client.urllib.request.urlopen",
             return_value=fake_resp,
         ):
             with self.assertRaises(RuntimeError) as ctx:
@@ -319,7 +319,7 @@ class TestInvokeConnectionRefused(SubstanceWorkflowTestCase):
 
         conn = self._connected()
         with patch(
-            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            "pythontk.net_utils.rpc.client.urllib.request.urlopen",
             side_effect=urllib.error.URLError("Connection refused"),
         ):
             with self.assertRaises(ConnectionError) as ctx:
@@ -329,7 +329,7 @@ class TestInvokeConnectionRefused(SubstanceWorkflowTestCase):
     def test_invoke_reraises_connectionrefusederror(self) -> None:
         conn = self._connected()
         with patch(
-            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            "pythontk.net_utils.rpc.client.urllib.request.urlopen",
             side_effect=ConnectionRefusedError(111, "Connection refused"),
         ):
             with self.assertRaises(ConnectionError):
@@ -340,7 +340,7 @@ class TestInvokeConnectionRefused(SubstanceWorkflowTestCase):
 
         conn = self._connected()
         with patch(
-            "extapps.substance_workflow.env_utils.painter_connection.urllib.request.urlopen",
+            "pythontk.net_utils.rpc.client.urllib.request.urlopen",
             side_effect=urllib.error.URLError("Connection refused"),
         ):
             with self.assertRaises(ConnectionError) as ctx:

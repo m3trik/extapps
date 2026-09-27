@@ -26,6 +26,10 @@ three and in none of the other eight, and no test could see it. That is the
 rule in CODE_STANDARD.md §6: a family's guard comes from the roster that
 already lists the family.
 
+The shared launcher has a second way in besides the entry points: each
+``launcher.py``'s ``__main__`` block, run with ``python -m`` or as a script.
+``TestLauncherMainBlocks`` runs those blocks.
+
 Run::
 
     pytest extapps/test/test_window_chrome.py
@@ -34,9 +38,12 @@ Run::
 from __future__ import annotations
 
 import re
+import runpy
 import sys
 import unittest
+import warnings
 from pathlib import Path
+from unittest import mock
 
 from qtpy import QtCore
 from qtpy.QtWidgets import QApplication
@@ -194,7 +201,8 @@ def _roster_ui_classes():
 
 
 class TestEveryPanelUsesTheCleanFlagSet(unittest.TestCase):
-    """Source-level, roster-wide: no launcher may OR onto QMainWindow defaults.
+    """Roster-wide: every panel is built by the ONE launcher recipe, and that
+    recipe never ORs onto QMainWindow defaults.
 
     ``AttributesMixin.set_flags`` ORs a hint onto ``self.windowFlags()``. On a
     ``QMainWindow`` root -- which every extapps ``.ui`` root is -- those defaults
@@ -237,15 +245,86 @@ class TestEveryPanelUsesTheCleanFlagSet(unittest.TestCase):
             "QMainWindow defaults (always-on-top under a DCC host): %s" % offenders,
         )
 
-    def test_every_launcher_sets_the_clean_set(self):
-        missing = [
-            p
-            for p in self._launchers()
-            if self.GOOD not in p.read_text(encoding="utf-8")
-        ]
-        self.assertEqual(
-            [], missing, "launchers not setting an explicit flag set: %s" % missing
-        )
+    def test_every_roster_panel_is_built_by_the_shared_launcher(self):
+        """The chrome is set in ONE place: a panel that re-implemented the
+        recipe (its own ``__new__``) could drift from it again."""
+        import importlib
+
+        from extapps._panel_launcher import PanelLauncher
+
+        stray = []
+        for target in sorted(_roster_targets()):
+            module, cls_name = _split_target(target)
+            cls = getattr(importlib.import_module(module), cls_name)
+            if not issubclass(cls, PanelLauncher) or "__new__" in vars(cls):
+                stray.append(target)
+        self.assertEqual([], stray, "panels not built by PanelLauncher: %s" % stray)
+
+    def test_the_shared_launcher_sets_the_clean_set(self):
+        src = (
+            Path(__file__).resolve().parents[1] / "extapps" / "_panel_launcher.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn(self.GOOD, src)
+        self.assertNotIn(self.BAD, src)
+
+
+class TestLauncherMainBlocks(unittest.TestCase):
+    """A ``launcher.py`` run as a program builds its own panel.
+
+    Its ``__main__`` block calls ``<Tool>UI()``, and run that way the class's
+    ``__module__`` is ``"__main__"``: ``PanelLauncher`` must find the tool's
+    package from the module's spec (``python -m``) or, run as a script, from
+    the package folders above the file. Deriving it from ``__module__`` made
+    every launcher raise ``ValueError: Empty module name``.
+
+    ``MainWindow.show`` is stubbed, so the block builds the panel and never
+    enters the event loop.
+    """
+
+    #: ``(launcher module, loaded-ui name, Slots class)``: a flat tool and one
+    #: nested under an umbrella package.
+    LAUNCHERS = (
+        ("extapps.mesh_convert.launcher", "mesh_convert", "MeshConvertSlots"),
+        ("extapps.texture_maps.packer.launcher", "packer", "PackerSlots"),
+    )
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = _ensure_app()
+
+    def _run_main(self, run, target, **kwargs) -> list:
+        """``run(target, run_name="__main__", **kwargs)``; what it showed."""
+        from uitk.widgets.mainWindow import MainWindow
+
+        shown = []
+
+        def show(window, pos=None, app_exec=False):
+            shown.append((window.objectName(), type(window.slots).__name__))
+            window.deleteLater()
+
+        with mock.patch.object(MainWindow, "show", new=show):
+            with warnings.catch_warnings():
+                # runpy warns that an earlier test already imported the module.
+                warnings.simplefilter("ignore", RuntimeWarning)
+                run(target, run_name="__main__", **kwargs)
+        self.app.processEvents()
+        return shown
+
+    def test_python_dash_m_builds_the_panel(self):
+        """``python -m extapps.<tool>.launcher``."""
+        for module, name, slots in self.LAUNCHERS:
+            with self.subTest(module=module):
+                shown = self._run_main(runpy.run_module, module, alter_sys=True)
+                self.assertEqual(shown, [(name, slots)])
+
+    def test_running_the_file_builds_the_panel(self):
+        """``python <tool dir>/launcher.py``."""
+        root = Path(__file__).resolve().parents[1]
+        for module, name, slots in self.LAUNCHERS:
+            path = root.joinpath(*module.split(".")).with_suffix(".py")
+            with self.subTest(path=str(path.relative_to(root))):
+                shown = self._run_main(runpy.run_path, str(path))
+                self.assertEqual(shown, [(name, slots)])
 
 
 if __name__ == "__main__":

@@ -1,10 +1,16 @@
 """substance_workflow_bridge — Painter-side Python plugin.
 
 Painter loads this whenever its containing directory appears in
-``SUBSTANCE_PAINTER_PLUGINS_PATH``. The plugin always starts a JSON-RPC
-HTTP server on ``SUBSTANCE_WORKFLOW_PORT`` (or an OS-assigned port if
-unset). ``run_batch`` from the client side drives this same server —
-there is no separate batch mode.
+``SUBSTANCE_PAINTER_PLUGINS_PATH``. On enable it starts the JSON-RPC HTTP
+server of :data:`extapps.substance_workflow.registry.PLUGIN` -- a
+:class:`pythontk.RpcPlugin`, so the routes, the main-thread marshalling and the
+wire format are the shared core's, not a copy -- on ``SUBSTANCE_WORKFLOW_PORT``
+(or an OS-assigned port if unset). ``Job.run_batch`` from the client side
+drives this same server; there is no separate batch mode.
+
+This plugin loads in place from the checkout (or the installed wheel) and
+bootstraps ``sys.path`` below, so it imports ``pythontk`` directly instead of
+carrying a staged ``_rpc_core.py`` like the installed mayatk/blendertk plugins.
 """
 
 import importlib
@@ -102,29 +108,24 @@ def _load_ops() -> None:
 
 _load_ops()
 
-_server = None
-
 
 def start_plugin() -> None:
-    """Painter plugin entry point — start the JSON-RPC bridge server."""
-    global _server
-    try:
-        from .server import BridgeServer
+    """Painter plugin entry point — start the JSON-RPC bridge server.
 
-        port = int(os.environ.get("SUBSTANCE_WORKFLOW_PORT", "0"))
-        _server = BridgeServer(port=port)
-        _server.start()
-    except Exception as e:
-        logger.exception(f"[substance_workflow] Bridge failed to start: {e}")
-        _server = None
+    Gated by the shared core: it binds only inside Painter (a stray call from
+    anywhere else is a no-op) unless ``SUBSTANCE_WORKFLOW_AUTOSTART=0`` opts
+    out, and a failure is reported, never raised at the host.
+    """
+    from extapps.substance_workflow.registry import PLUGIN
+
+    PLUGIN.autostart_safely()
 
 
 def close_plugin() -> None:
     """Painter plugin teardown."""
-    global _server
-    if _server is not None:
-        try:
-            _server.stop()
-        except Exception as e:
-            logger.exception(f"[substance_workflow] Bridge failed to stop cleanly: {e}")
-        _server = None
+    from extapps.substance_workflow.registry import PLUGIN
+
+    try:
+        PLUGIN.stop()
+    except Exception as e:
+        logger.exception(f"[substance_workflow] Bridge failed to stop cleanly: {e}")

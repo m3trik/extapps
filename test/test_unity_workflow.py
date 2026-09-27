@@ -33,7 +33,7 @@ class TestUnityWorkflowParameters(unittest.TestCase):
     def test_defaults_are_unity_side_only(self) -> None:
         P = self._P()
         self.assertEqual(
-            set(P.defaults()),
+            set(P.Parameters.defaults()),
             {
                 "ASSETS_SUBDIR",
                 "ASSET_NAME",
@@ -55,8 +55,21 @@ class TestUnityWorkflowParameters(unittest.TestCase):
         # the text it finds nothing (the panel drives visibility explicitly
         # from _relevant_param_keys() instead — see the panel-load test).
         P = self._P()
-        self.assertEqual(P.referenced_keys("plain text"), set())
-        self.assertEqual(P.referenced_keys("uses __ASSET_NAME__"), {"ASSET_NAME"})
+        self.assertEqual(P.Parameters.referenced_keys("plain text"), set())
+        self.assertEqual(
+            P.Parameters.referenced_keys("uses __ASSET_NAME__"), {"ASSET_NAME"}
+        )
+
+    def test_the_module_level_wrappers_warn_for_one_release(self) -> None:
+        """The panel's registry became a ``ParamRegistry`` class; the module
+        functions it replaced still answer, with a deprecation notice."""
+        P = self._P()
+        for name in ("defaults", "referenced_keys", "render_context"):
+            with self.subTest(name), self.assertWarns(DeprecationWarning):
+                fn = getattr(P, name)
+            self.assertEqual(fn, getattr(P.Parameters, name))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(P.defaults(), P.Parameters.defaults())
 
 
 class TestUnityWorkflowPanelLoads(unittest.TestCase):

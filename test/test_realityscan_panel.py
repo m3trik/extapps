@@ -66,7 +66,8 @@ class TestRealityScanPanelLoads(unittest.TestCase):
         cmb.setCurrentIndex(idx)
         self.assertEqual(self.slots._mode_argv(), ["--curate-preview"])
         self.assertEqual(
-            P.referenced_keys("prep_preview"), set(P.PARAMS) & PREPROCESSING_KEYS
+            P.Parameters.referenced_keys("prep_preview"),
+            set(P.PARAMS) & PREPROCESSING_KEYS,
         )
 
     def test_semantic_preset_mode_uses_realityscan_store(self) -> None:
@@ -139,14 +140,14 @@ class TestRCRunCombinedFramesDir(unittest.TestCase):
     (the panel's path), skipping --input-root subdir discovery."""
 
     def setUp(self) -> None:
-        from pythontk.core_utils.user_config import CONFIG_ROOT_ENV_VAR
+        from pythontk import UserConfig
         import extapps.photogrammetry.profile as pp
 
         self.tmp = tempfile.mkdtemp(prefix="rc_framesdir_")
         env = mock.patch.dict(os.environ)
         env.start()
         self.addCleanup(env.stop)
-        os.environ[CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
+        os.environ[UserConfig.CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
         os.environ.pop(pp.PROFILE_ENV, None)
         self.ver = mock.patch(
             "extapps.photogrammetry.realityscan_workflow._realityscan_workflow."

@@ -16,12 +16,9 @@ key-for-key so a preset/value reads the same in both panels.
 
 from __future__ import annotations
 
-from typing import Any
 
-from uitk.bridge import AttributeSpec, Formatters, Parameters as _BridgeParams
-
-
-_FORMATTER = Formatters.python_literal
+import pythontk as ptk
+from uitk.bridge import AttributeSpec, ParamRegistry
 
 
 # Display order is iteration order over this dict.
@@ -126,16 +123,25 @@ PARAMS: "dict[str, AttributeSpec]" = {
 }
 
 
-def referenced_keys(script_text: str) -> "set[str]":
-    """Registered keys present in *script_text* (delegates to uitk.bridge)."""
-    return _BridgeParams.referenced_keys(script_text, PARAMS)
+class Parameters(ParamRegistry):
+    """The Unity Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+
+    Handed to the slot as its ``params_module``: :data:`PARAMS` plus
+    ``referenced_keys`` / ``defaults`` (nothing is substituted, so the panel
+    shows every row).
+    """
+
+    PARAMS = PARAMS
 
 
-def defaults() -> "dict[str, Any]":
-    """Return ``{key: default}`` for every registered parameter."""
-    return _BridgeParams.defaults(PARAMS)
-
-
-def render_context(values: "dict[str, Any]") -> "dict[str, str]":
-    """Format *values* for substitution (kept for API parity; Unity renders no script)."""
-    return _BridgeParams.render_context(values, PARAMS, formatter=_FORMATTER)
+# The module-level functions this class replaced, for one release.
+ptk.Deprecation.attributes(
+    globals(),
+    {
+        "referenced_keys": "extapps.unity_workflow.parameters.Parameters.referenced_keys",
+        "defaults": "extapps.unity_workflow.parameters.Parameters.defaults",
+        "render_context": "extapps.unity_workflow.parameters.Parameters.render_context",
+    },
+    remove_in="0.4.0",
+    since="2026-09-26",
+)

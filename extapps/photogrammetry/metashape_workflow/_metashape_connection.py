@@ -9,28 +9,43 @@
 headless from any host — including a **non-interactive session** (SSH / Windows
 service session 0).
 
-Hard-won detail: launch with a plain ``metashape.exe -r <script>``. Do **not**
-pass ``-platform offscreen`` — Metashape does not bundle the Qt *offscreen*
-plugin, so that path crashes; the default ``windows`` Qt platform initializes
-fine for a headless script even with no interactive desktop, and the license
-activates normally in that context.
+Hard-won detail (Windows): launch with a plain ``metashape.exe -r <script>``.
+Do **not** pass ``-platform offscreen`` there — the Windows bundle does not ship
+the Qt *offscreen* plugin, so that path crashes; the default ``windows`` Qt
+platform initializes fine for a headless script even with no interactive
+desktop, and the license activates normally in that context. Linux is the
+opposite case: ``metashape.sh`` on a host with no display (SSH, a render node)
+needs ``-platform offscreen`` -- Agisoft's documented headless form -- or its
+xcb platform aborts (unverified here: no Linux Metashape at hand).
 
 Process spawn routes through :class:`pythontk.AppLauncher` (no raw subprocess).
 """
 from __future__ import annotations
 
 import os
+import sys
 from typing import List, Optional, Sequence
 
-from pythontk import AppLauncher
+from pythontk import AppLauncher, AppSpec
 
 from ..profile import Profile
 
-# Fallbacks if neither $METASHAPE_EXE nor AppLauncher discovery resolves it.
-_KNOWN_PATHS = [
-    r"C:\Program Files\Agisoft\Metashape Pro\metashape.exe",
-    r"C:\Program Files\Agisoft\Metashape\metashape.exe",
-]
+#: Metashape's standard locations, as data: the launcher names (PATH / the
+#: Windows App Paths registry), then the Agisoft install dirs -- Windows under
+#: either Program Files root, Linux's tarball unpacked under home or /opt.
+APP = AppSpec(
+    name="Agisoft Metashape",
+    app_names=("metashape", "metashape.sh"),
+    scan_globs=(
+        r"{program_files}\Agisoft\Metashape Pro\metashape.exe",
+        r"{program_files}\Agisoft\Metashape\metashape.exe",
+        "~/metashape-pro/metashape.sh",
+        "/opt/metashape-pro/metashape.sh",
+        "~/metashape/metashape.sh",
+        "/opt/metashape/metashape.sh",
+    ),
+    not_found_msg="Metashape not found (set $METASHAPE_EXE).",
+)
 
 
 class MetashapeConnection:
@@ -44,17 +59,9 @@ class MetashapeConnection:
         """Locate ``metashape.exe`` via the shared :func:`resolve_app` chain:
         ``$METASHAPE_EXE`` (terminal — set-but-invalid returns ``None`` so the
         caller enters mock mode) → the profile's ``apps.metashape_exe``
-        (network / non-standard install) → :meth:`AppLauncher.find_app` → known
-        Agisoft install paths. Returns the path or ``None``."""
-
-        def _known_paths() -> Optional[str]:
-            return next((p for p in _KNOWN_PATHS if os.path.isfile(p)), None)
-
-        return Profile.resolve_app(
-            "METASHAPE_EXE",
-            "metashape_exe",
-            fallbacks=(lambda: AppLauncher.find_app("metashape"), _known_paths),
-        )
+        (network / non-standard install) → :data:`APP` (the launcher names, then
+        the Agisoft install dirs). Returns the path or ``None``."""
+        return Profile.resolve_app("METASHAPE_EXE", "metashape_exe", spec=APP)
 
     def is_available(self) -> bool:
         """True if a metashape.exe was found (i.e. a headless run is possible)."""
@@ -79,8 +86,14 @@ class MetashapeConnection:
         :raises FileNotFoundError: if ``metashape.exe`` was not found.
         """
         if not self.exe:
-            raise FileNotFoundError("metashape.exe not found (set $METASHAPE_EXE).")
+            raise FileNotFoundError(APP.not_found_message)
         argv: List[str] = ["-r", script_path]
+        if (
+            sys.platform.startswith("linux")
+            and not os.environ.get("DISPLAY")
+            and not os.environ.get("WAYLAND_DISPLAY")
+        ):
+            argv = ["-platform", "offscreen"] + argv  # see the module docstring
         if args:
             argv += list(args)
         return AppLauncher.run(

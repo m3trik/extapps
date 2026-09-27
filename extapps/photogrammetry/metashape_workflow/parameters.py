@@ -7,7 +7,7 @@ script), this panel drives a single headless runner —
 :mod:`extapps.photogrammetry.metashape_workflow.run_combined` — inside the
 local ``metashape.exe``. So each :class:`AttributeSpec` here is keyed by the
 **semantic name the runner / preset JSON use** (``align_downscale``,
-``depth_filter``, ``face_count`` …), and :func:`to_argv` renders the collected
+``depth_filter``, ``face_count`` …), and :meth:`Parameters.to_argv` renders the collected
 values into ``run_combined`` CLI flags — the Metashape analogue of the bridges'
 placeholder substitution.
 
@@ -22,7 +22,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from uitk.bridge import AttributeSpec, Parameters as _BridgeParams
+import pythontk as ptk
+from uitk.bridge import AttributeSpec, ParamRegistry
 
 from .._shared_params import (
     PREPROCESSING_KEYS,
@@ -331,15 +332,6 @@ _BOOL_FLAGS: "Dict[str, str]" = {
 }
 
 
-def to_argv(values: "Dict[str, Any]") -> "List[str]":
-    """Render collected param *values* into ``run_combined`` CLI flags (via the
-    shared :func:`render_flag_argv` emit rules), then append the shared input
-    pre-processing flags (curate + equalize), which its master toggle gates."""
-    argv = SharedParams.render_flag_argv(values, _VALUE_FLAGS, _STORE_TRUE_FLAGS, _BOOL_FLAGS)
-    argv += SharedParams.preprocessing_argv(values)
-    return argv
-
-
 # Which params actually affect each run mode — the panel's relevance
 # declaration, mirroring run_combined.main()'s stage order. This is the
 # run-mode analogue of the DCC bridges' ``__TOKEN__`` placeholders: the bridge
@@ -378,23 +370,53 @@ _MODE_KEYS: "Dict[str, frozenset]" = {
 }
 
 
-def referenced_keys(source: str = "") -> "set[str]":
-    """Params relevant to the panel's current input — drives row visibility.
+class Parameters(ParamRegistry):
+    """The Metashape panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
 
-    Implements the same contract the DCC bridges' ``referenced_keys`` does
-    (given the panel's current input descriptor, return the relevant keys), but
-    this single-runner panel's input is the run **mode** (the ``--stop-after``
-    value: ``""`` / ``"align"`` / ``"refine"``), not template script text scanned
-    for ``__TOKEN__`` placeholders. A stop-after mode returns only the knobs for
-    stages it actually runs; full pipeline (or any unknown mode) returns every
-    registered key. ``BridgeSlotsBase`` feeds this through
-    ``_relevant_param_keys`` and centrally manages the show/hide + height fit.
+    Handed to the slot as its ``params_module``: :data:`PARAMS` plus
+    ``defaults``; ``referenced_keys`` is the run-mode relevance and ``to_argv``
+    renders the ``run_combined`` flags.
     """
-    keys = set(PARAMS)
-    allowed = _MODE_KEYS.get(source)
-    return keys if allowed is None else keys & allowed
+
+    PARAMS = PARAMS
+
+    @staticmethod
+    def to_argv(values: "Dict[str, Any]") -> "List[str]":
+        """Render collected param *values* into ``run_combined`` CLI flags (via the
+        shared :func:`render_flag_argv` emit rules), then append the shared input
+        pre-processing flags (curate + equalize), which its master toggle gates."""
+        argv = SharedParams.render_flag_argv(
+            values, _VALUE_FLAGS, _STORE_TRUE_FLAGS, _BOOL_FLAGS
+        )
+        argv += SharedParams.preprocessing_argv(values)
+        return argv
+
+    @classmethod
+    def referenced_keys(cls, source: str = "") -> "set[str]":
+        """Params relevant to the panel's current input — drives row visibility.
+
+        Implements the same contract the DCC bridges' ``referenced_keys`` does
+        (given the panel's current input descriptor, return the relevant keys), but
+        this single-runner panel's input is the run **mode** (the ``--stop-after``
+        value: ``""`` / ``"align"`` / ``"refine"``), not template script text scanned
+        for ``__TOKEN__`` placeholders. A stop-after mode returns only the knobs for
+        stages it actually runs; full pipeline (or any unknown mode) returns every
+        registered key. ``BridgeSlotsBase`` feeds this through
+        ``_relevant_param_keys`` and centrally manages the show/hide + height fit.
+        """
+        keys = set(cls.PARAMS)
+        allowed = _MODE_KEYS.get(source)
+        return keys if allowed is None else keys & allowed
 
 
-def defaults() -> "Dict[str, Any]":
-    """Return ``{key: default}`` for every registered parameter."""
-    return _BridgeParams.defaults(PARAMS)
+# The module-level functions this class replaced, for one release.
+ptk.Deprecation.attributes(
+    globals(),
+    {
+        "to_argv": "extapps.photogrammetry.metashape_workflow.parameters.Parameters.to_argv",
+        "referenced_keys": "extapps.photogrammetry.metashape_workflow.parameters.Parameters.referenced_keys",
+        "defaults": "extapps.photogrammetry.metashape_workflow.parameters.Parameters.defaults",
+    },
+    remove_in="0.4.0",
+    since="2026-09-26",
+)

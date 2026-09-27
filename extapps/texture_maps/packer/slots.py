@@ -4,13 +4,18 @@
 
 from typing import List
 import pythontk as ptk
-from pythontk.img_utils._img_utils import ImgUtils
+from pythontk import ImgUtils
 from pythontk.core_utils.engines.textures.map_factory import MapFactory
-from pythontk.file_utils._file_utils import FileUtils
+from pythontk import FileUtils
 
 
-class PackerSlots(ImgUtils):
-    """Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking."""
+class PackerSlots:
+    """Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.
+
+    The raster work is :class:`pythontk.ImgUtils`'s (``pack_channels`` /
+    ``extract_channels``), called on that class rather than inherited: the
+    panel is wiring, and the image library's surface is not the panel's.
+    """
 
     channels = ["R", "G", "B", "A"]
     grayscale_types = [
@@ -72,8 +77,6 @@ class PackerSlots(ImgUtils):
     }
 
     def __init__(self, switchboard, **kwargs):
-        super().__init__()
-
         self.sb = switchboard
         self.ui = self.sb.loaded_ui.packer
 
@@ -414,7 +417,7 @@ class PackerSlots(ImgUtils):
         Mirrors :class:`ConverterSlots`, which re-seeds after every selection.
         """
         file_paths = self.sb.file_dialog(
-            file_types=[f"*.{ext}" for ext in self.texture_file_types],
+            file_types=[f"*.{ext}" for ext in ImgUtils.texture_file_types],
             title=title,
             start_dir=self.source_dir,
             allow_multiple=True,
@@ -602,7 +605,7 @@ class PackerSlots(ImgUtils):
                 "is one of its own source maps. Set an affix that distinguishes it."
             )
             return False
-        self.pack_channels(
+        ImgUtils.pack_channels(
             channel_files=assigned,
             output_path=output_path,
             out_mode=out_mode,
@@ -665,7 +668,7 @@ class PackerSlots(ImgUtils):
             return False
 
         output_dir = FileUtils.format_path(file, "path")
-        results = self.extract_channels(
+        results = ImgUtils.extract_channels(
             file,
             channel_config,
             output_dir=output_dir,

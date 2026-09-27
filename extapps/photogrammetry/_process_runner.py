@@ -4,9 +4,13 @@
 
 The DCC bridges fire a quick RPC into a live host; a photogrammetry bake is
 minutes-to-hours, so a panel must not block the Qt thread. ``ProcessRunner``
-wraps a :class:`~qtpy.QtCore.QProcess`: it launches a command, streams merged
-stdout into an *on_line* callback on the event loop, and reports completion via
-*on_done* — no worker thread, no log-file polling. It exposes a
+launches a command through :meth:`pythontk.AppLauncher.spawn` (the ecosystem's
+one process boundary: no console window under a GUI host, and the child is
+bound to this process's lifetime, so a crashed host does not orphan an
+hours-long bake), reads its merged output on a :class:`pythontk.ProcessReader`
+thread, and hands it to *on_line* on the Qt event loop from a timer -- the
+callbacks only ever run on the thread that owns the panel. Completion arrives
+via *on_done*. It exposes a
 :class:`pythontk.LoggingMixin` ``.logger`` so :class:`uitk.bridge.BridgeSlotsBase`
 redirects it into the panel's log pane exactly as it does for the DCC engines.
 
@@ -26,6 +30,7 @@ so the child resolves ``extapps`` regardless of install mode. Metashape differs
 from __future__ import annotations
 
 import os
+import queue
 import sys
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -42,9 +47,17 @@ class ProcessRunner(ptk.LoggingMixin):
     process failed to launch). :meth:`cancel` kills a running job.
     """
 
+    #: Milliseconds between the event-loop ticks that forward the child's
+    #: output and notice its exit.
+    POLL_MS = 50
+
     def __init__(self):
         super().__init__()
-        self._proc: Optional[QtCore.QProcess] = None
+        self._proc = None  # the spawned subprocess.Popen
+        self._lines: "Optional[queue.Queue[str]]" = None
+        self._reader = None
+        self._unsubscribe: Optional[Callable[[], None]] = None
+        self._timer: Optional[QtCore.QTimer] = None
         self._on_line: Optional[Callable[[str], None]] = None
         self._on_done: Optional[Callable[[int], None]] = None
         # True from cancel() until the next start() — lets a multi-stage
@@ -77,10 +90,9 @@ class ProcessRunner(ptk.LoggingMixin):
 
     # ------------------------------------------------------------ state
     def is_running(self) -> bool:
-        return (
-            self._proc is not None
-            and self._proc.state() != QtCore.QProcess.NotRunning
-        )
+        """True from launch until *on_done* has been delivered (the output tail
+        is still being forwarded after the child itself exits)."""
+        return self._timer is not None and self._timer.isActive()
 
     # ------------------------------------------------------------ run
     def start(
@@ -112,59 +124,95 @@ class ProcessRunner(ptk.LoggingMixin):
 
         Split out of :meth:`start` so a multi-stage subclass can run another
         command (with per-stage *extra_env*) before/after the engine stage
-        while reusing the same QProcess plumbing. Callers must set
-        ``self._on_line`` / ``self._on_done`` (``start`` does)."""
-        proc = QtCore.QProcess()
-        proc.setProcessChannelMode(QtCore.QProcess.MergedChannels)
-        if cwd:
-            proc.setWorkingDirectory(cwd)
-        env = QtCore.QProcessEnvironment.systemEnvironment()
-        for k, v in self._env().items():
-            env.insert(k, v)
-        for k, v in (extra_env or {}).items():
-            env.insert(k, v)
-        proc.setProcessEnvironment(env)
+        while reusing the same plumbing. Callers must set ``self._on_line`` /
+        ``self._on_done`` (``start`` does).
 
-        proc.readyReadStandardOutput.connect(self._drain)
-        proc.finished.connect(self._on_finished)
-        proc.errorOccurred.connect(self._on_error)
+        The child's environment is this process's LIVE one
+        (:meth:`pythontk.AppLauncher.process_environ` -- what a host that sets
+        variables at the C level really hands its children) with
+        :meth:`_env` and *extra_env* merged over it."""
+        env = ptk.AppLauncher.process_environ()
+        env.update(self._env())
+        env.update(extra_env or {})
+        try:
+            proc = ptk.AppLauncher.spawn(program, args=list(args), cwd=cwd, env=env)
+        except Exception as e:  # noqa: BLE001 - not found / failed to start
+            # Reported from the event loop, as a start failure always was: the
+            # caller finishes its own bookkeeping (a "busy" state) before the
+            # -1 completion that undoes it arrives.
+            message = str(e)
+            QtCore.QTimer.singleShot(0, lambda: self._on_error(message))
+            return
 
-        self._proc = proc
-        proc.start(program, list(args))
+        lines: "queue.Queue[str]" = queue.Queue()
+        stream = ptk.OutputStream()
+        self._unsubscribe = stream.subscribe(lambda _source, line: lines.put(line))
+        self._reader = ptk.ProcessReader(proc.stdout, stream, "stdout")
+        self._reader.start()
+        self._proc, self._lines = proc, lines
+
+        timer = QtCore.QTimer()
+        timer.setInterval(self.POLL_MS)
+        timer.timeout.connect(self._tick)
+        self._timer = timer
+        timer.start()
 
     def cancel(self) -> None:
         """Kill an in-flight run (no-op when idle)."""
-        if self.is_running():
+        if self.is_running() and self._proc is not None:
             self._cancelled = True
-            self._proc.kill()
+            ptk.AppLauncher.close_process(self._proc.pid, force=True)
 
     # ------------------------------------------------------------ internals
     def _drain(self) -> None:
-        if self._proc is None or self._on_line is None:
+        """Forward every line read so far to *on_line*, as one chunk."""
+        if self._lines is None:
             return
-        data = bytes(self._proc.readAllStandardOutput()).decode("utf-8", "replace")
-        if data:
-            self._on_line(data)
+        chunk = []
+        while True:
+            try:
+                chunk.append(self._lines.get_nowait() + "\n")
+            except queue.Empty:
+                break
+        if chunk and self._on_line is not None:
+            self._on_line("".join(chunk))
 
-    def _on_finished(self, code, _status=None) -> None:
-        # Don't drop self._proc here — that would release the last Python ref to
-        # the QProcess from inside its own signal handler. ``is_running()``
-        # already reports idle via state() == NotRunning; the next ``start``
-        # reassigns self._proc (dropping the old one safely, off-handler).
-        self._drain()  # flush any trailing buffered output
+    def _tick(self) -> None:
+        """One event-loop tick: forward output; finish once the child has
+        exited and its pipe is drained."""
+        self._drain()
+        proc = self._proc
+        if proc is None or proc.poll() is None:
+            return
+        if self._reader is not None:
+            # The child is gone; its pipe closes with it (or with the last
+            # grandchild holding it -- ProcessReader ends either way).
+            self._reader.join(timeout=2.0)
+        self._drain()
+        self._on_finished(proc.returncode)
+
+    def _stop_streaming(self) -> None:
+        """Stop the tick timer and release the output subscription."""
+        if self._timer is not None:
+            self._timer.stop()
+        if self._unsubscribe is not None:
+            self._unsubscribe()
+            self._unsubscribe = None
+
+    def _on_finished(self, code) -> None:
+        """Deliver the exit code once (a second finish is a no-op)."""
+        self._stop_streaming()
         cb, self._on_done = self._on_done, None
         if cb is not None:
             cb(int(code))
 
-    def _on_error(self, _error) -> None:
-        # FailedToStart etc. — surface a launch failure as a -1 completion so the
-        # panel re-enables and reports rather than hanging "busy". A following
-        # ``finished`` (if any) is a no-op since on_done is cleared.
-        if self._proc is None:
-            return
-        msg = self._proc.errorString()
+    def _on_error(self, message: str) -> None:
+        """Surface a launch failure as a -1 completion, so the panel re-enables
+        and reports rather than hanging "busy". Single-fire with
+        :meth:`_on_finished`: whichever comes first clears *on_done*."""
+        self._stop_streaming()
         if self._on_line is not None:
-            self._on_line(f"[runner] process error: {msg}\n")
+            self._on_line(f"[runner] process error: {message}\n")
         cb, self._on_done = self._on_done, None
         if cb is not None:
             cb(-1)
@@ -183,7 +231,20 @@ class PyModuleRunner(ProcessRunner):
     MODULE = ""  # e.g. "extapps.photogrammetry.realityscan_workflow.run_combined"
 
     def _command(self, argv: Sequence[str]) -> Tuple[str, List[str]]:
-        return sys.executable, ["-m", self.MODULE, *list(argv)]
+        return self._python(), ["-m", self.MODULE, *list(argv)]
+
+    @staticmethod
+    def _python() -> str:
+        """A real interpreter for the child: this one when it is a python, else
+        the host's own (``maya.exe`` / Linux ``maya.bin`` -> ``mayapy``, Blender's
+        bundled python). Inside a DCC ``sys.executable`` is the host binary, and
+        ``-m`` through it started another copy of the host instead of the run."""
+        try:
+            from uitk.managers.optional_package_manager import OptionalPackageManager
+
+            return OptionalPackageManager.pip_python() or sys.executable
+        except Exception:  # uitk / a Qt binding unavailable: a plain python host
+            return sys.executable
 
     def _env(self) -> Dict[str, str]:
         env = dict(super()._env())

@@ -116,20 +116,24 @@ class RealityScanConnection:
         quoted = " ".join(
             f'"{a}"' if (" " in a or "\\" in a) else a for a in argv
         )
-        # cmd reads .bat text in the console OEM codepage; write it that way so
-        # non-ASCII paths survive verbatim. No errors="replace" — a path cmd
-        # cannot represent must fail loudly (UnicodeEncodeError) rather than be
-        # silently mangled to '?', which would redirect RC output / the .done
-        # marker to a wrong file and hang the poll loop to its deadline.
-        with open(bat, "w", encoding="oem") as fh:
-            fh.write("@echo off\r\n")
-            fh.write(f'{quoted} > "{log_path}" 2>&1\r\n')
-            # Leading-redirect form is deliberate: ``echo %errorlevel%>file``
-            # would expand to ``echo 0>file`` and cmd treats the bare digit as a
-            # file-handle redirect (``0>`` = stdin), writing an EMPTY marker — so
-            # a successful run (exit 0-9) would be misread as failure. Putting the
-            # redirect first avoids the digit-binding entirely.
-            fh.write(f'>"{marker}" echo %errorlevel%\r\n')
+        # AppLauncher owns the .bat bytes: the console OEM codepage (non-ASCII
+        # paths survive verbatim; one cmd cannot spell raises rather than being
+        # mangled to '?', which would redirect RC output / the .done marker to
+        # a wrong file and hang the poll loop to its deadline) and exact CRLF.
+        AppLauncher.write_batch_script(
+            bat,
+            [
+                "@echo off",
+                f'{quoted} > "{log_path}" 2>&1',
+                # Leading-redirect form is deliberate: ``echo %errorlevel%>file``
+                # would expand to ``echo 0>file`` and cmd treats the bare digit
+                # as a file-handle redirect (``0>`` = stdin), writing an EMPTY
+                # marker -- so a successful run (exit 0-9) would be misread as
+                # failure. Putting the redirect first avoids the digit-binding.
+                f'>"{marker}" echo %errorlevel%',
+            ],
+            shell="cmd",
+        )
         launched = AppLauncher.launch_in_session(
             "cmd", args=["/c", bat], session=target
         )

@@ -31,7 +31,7 @@ class TestParametersReferencedKeys(unittest.TestCase):
 
     def test_train_only_hides_publish_keys(self) -> None:
         P = self._P()
-        keys = P.referenced_keys("")
+        keys = P.Parameters.referenced_keys("")
         for train in ("total_steps", "max_resolution", "max_splats", "sh_degree"):
             self.assertIn(train, keys)
         for pub in ("publish_targets", "web_format", "spz_version"):
@@ -39,12 +39,14 @@ class TestParametersReferencedKeys(unittest.TestCase):
 
     def test_publish_mode_shows_publish_keys(self) -> None:
         P = self._P()
-        keys = P.referenced_keys("publish")
+        keys = P.Parameters.referenced_keys("publish")
         self.assertEqual(keys, set(P.PARAMS))
 
     def test_training_values_render_to_cli_flags(self) -> None:
         P = self._P()
-        argv = P.to_argv({"total_steps": 50000, "sh_degree": 2, "web_format": "sog"})
+        argv = P.Parameters.to_argv(
+            {"total_steps": 50000, "sh_degree": 2, "web_format": "sog"}
+        )
         self.assertEqual(argv[argv.index("--total-steps") + 1], "50000")
         self.assertEqual(argv[argv.index("--sh-degree") + 1], "2")
         self.assertEqual(argv[argv.index("--web-format") + 1], "sog")

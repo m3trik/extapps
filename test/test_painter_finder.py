@@ -44,6 +44,7 @@ class TestDefaultInstallRoots(SubstanceWorkflowTestCase):
         ):
             roots = PainterFinder.default_install_roots()
         self.assertIn("/opt", roots)
+        self.assertIn("/opt/Adobe", roots)  # where Adobe's Linux installer puts it
 
     def test_unknown_platform_returns_empty(self) -> None:
         with patch(
@@ -87,6 +88,53 @@ class TestFindInstalls(SubstanceWorkflowTestCase):
 
         self.assertEqual(len(installs), 2)
         self.assertIn("Adobe Substance 3D Painter 2024", installs)
+
+    def test_finds_the_linux_install_spelled_with_underscores(self) -> None:
+        # /opt/Adobe/Adobe_Substance_3D_Painter/Adobe_Substance_3D_Painter: the
+        # space-spelled globs never matched it, so Linux read "not installed".
+        tmp = self.create_temp_dir()
+        install = os.path.join(tmp, "Adobe_Substance_3D_Painter")
+        os.makedirs(install)
+        exe = os.path.join(install, "Adobe_Substance_3D_Painter")
+        with open(exe, "w", encoding="utf-8"):
+            pass
+
+        with patch.object(PainterFinder, "default_install_roots", return_value=[tmp]):
+            with patch(
+                "extapps.substance_workflow.env_utils.painter_finder.platform.system",
+                return_value="Linux",
+            ):
+                installs = PainterFinder.find_installs()
+
+        self.assertEqual(list(installs.values()), [exe])
+
+    def test_orders_installs_newest_first_by_version_not_string(self) -> None:
+        # A plain string sort ranks "Painter 9.1" above "Painter 10.0" ('9' > '1'),
+        # so resolve() with no argument handed back the OLDER install.
+        tmp = self.create_temp_dir()
+        for label in (
+            "Adobe Substance 3D Painter 9.1",
+            "Adobe Substance 3D Painter 10.0",
+        ):
+            install = os.path.join(tmp, label)
+            os.makedirs(install)
+            exe = os.path.join(install, "Adobe Substance 3D Painter.exe")
+            with open(exe, "w", encoding="utf-8"):
+                pass
+
+        with patch.object(PainterFinder, "default_install_roots", return_value=[tmp]):
+            with patch(
+                "extapps.substance_workflow.env_utils.painter_finder.platform.system",
+                return_value="Windows",
+            ):
+                installs = PainterFinder.find_installs()
+                newest = PainterFinder.resolve()
+
+        self.assertEqual(
+            list(installs),
+            ["Adobe Substance 3D Painter 10.0", "Adobe Substance 3D Painter 9.1"],
+        )
+        self.assertIn("Painter 10.0", newest)
 
     def test_ignores_non_painter_dirs(self) -> None:
         tmp = self.create_temp_dir()

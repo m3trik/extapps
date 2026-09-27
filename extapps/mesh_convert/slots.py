@@ -3,24 +3,22 @@
 import os
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
-from pythontk.file_utils._file_utils import FileUtils
-from pythontk.file_utils.mesh_convert._mesh_convert import (
-    FBX2GLTF_VERSION,
-    MeshConvert,
-)
+from pythontk import FileUtils, MeshConvert
 
 
-class MeshConvertSlots(MeshConvert):
+class MeshConvertSlots:
     """Switchboard slots for the Mesh Converter UI.
 
-    Inherits from :class:`MeshConvert` so all conversion logic
-    (``fbx_to_glb``, ``resolve_binary``) is available on ``self``.
+    HOLDS the conversion engine (:class:`pythontk.MeshConvert`) as
+    ``self.engine`` rather than inheriting it: the panel is wiring, and the
+    engine's surface (``fbx_to_glb``, ``resolve_binary``, the GLB passes) is
+    not the panel's.
     """
 
     def __init__(self, switchboard, **kwargs):
-        super().__init__()
-
         self.sb = switchboard
+        #: The conversion engine this panel drives (held, not inherited).
+        self.engine = MeshConvert()
         self.ui = self.sb.loaded_ui.mesh_convert
 
         self._source_dir: str = kwargs.get("source_dir", "")
@@ -108,7 +106,7 @@ class MeshConvertSlots(MeshConvert):
 
     def _ensure_binary_or_offer_download(self) -> Optional[str]:
         """Find FBX2glTF; if missing, prompt via Qt and install on confirm."""
-        existing = self.resolve_binary(required=False, auto_install=False)
+        existing = self.engine.resolve_binary(required=False, auto_install=False)
         if existing:
             return existing
 
@@ -118,7 +116,7 @@ class MeshConvertSlots(MeshConvert):
             None,
             "FBX2glTF not installed",
             (
-                f"FBX2glTF v{FBX2GLTF_VERSION} is required to convert FBX to GLB.\n\n"
+                f"FBX2glTF v{self.engine.FBX2GLTF_VERSION} is required to convert FBX to GLB.\n\n"
                 "Download it now (a few MB) into ~/.pythontk/tools/?"
             ),
             QMessageBox.Yes | QMessageBox.No,
@@ -129,7 +127,7 @@ class MeshConvertSlots(MeshConvert):
             return None
 
         try:
-            return self.resolve_binary(
+            return self.engine.resolve_binary(
                 required=True, auto_install=True, prompt=False
             )
         except (RuntimeError, OSError, FileNotFoundError, LookupError) as exc:
@@ -199,7 +197,7 @@ class MeshConvertSlots(MeshConvert):
                 for i, fbx_path in enumerate(fbx_paths):
                     print(f"Converting: {fbx_path} ..")
                     try:
-                        out_path = self.fbx_to_glb(
+                        out_path = self.engine.fbx_to_glb(
                             fbx_path,
                             overwrite=overwrite,
                             auto_install=False,
@@ -209,7 +207,7 @@ class MeshConvertSlots(MeshConvert):
                         ok_count += 1
                         if check_materials:
                             try:
-                                findings = self.check_glb_materials(out_path)
+                                findings = self.engine.check_glb_materials(out_path)
                             except (RuntimeError, ValueError, OSError) as exc:
                                 print(f"// Material check failed for {out_path}: {exc}")
                                 findings = []

@@ -24,10 +24,10 @@ in both. The flow is one way: nothing here is read by an export.
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Dict
 
 import pythontk as ptk
-from uitk.bridge import AttributeSpec, Parameters as _BridgeParams
+from uitk.bridge import AttributeSpec, ParamRegistry
 
 
 #: Source carriers the preview can build from. ``.fbx`` runs the full
@@ -324,6 +324,22 @@ PARAMS: "dict[str, AttributeSpec]" = {
 }
 
 
-def defaults() -> "dict[str, Any]":
-    """Return ``{key: default}`` for every registered parameter."""
-    return _BridgeParams.defaults(PARAMS)
+class Parameters(ParamRegistry):
+    """The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+
+    Handed to the slot as its ``params_module``: :data:`PARAMS` plus
+    ``defaults`` (the panel gates its rows by source, not by a template).
+    """
+
+    PARAMS = PARAMS
+
+
+# The module-level functions this class replaced, for one release.
+ptk.Deprecation.attributes(
+    globals(),
+    {
+        "defaults": "extapps.webxr_preview.parameters.Parameters.defaults",
+    },
+    remove_in="0.4.0",
+    since="2026-09-26",
+)

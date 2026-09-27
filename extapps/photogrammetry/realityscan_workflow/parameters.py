@@ -5,7 +5,7 @@
 Like the Metashape panel, this drives a single headless runner —
 :mod:`extapps.photogrammetry.realityscan_workflow.run_combined` — so each
 :class:`AttributeSpec` is keyed by the **semantic name the runner / preset JSON
-use** and :func:`to_argv` renders the collected values into ``run_combined`` CLI
+use** and :meth:`Parameters.to_argv` renders the collected values into ``run_combined`` CLI
 flags.
 
 RealityScan's automation surface is deliberately thin: its strongest noise levers
@@ -21,7 +21,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from uitk.bridge import AttributeSpec, Parameters as _BridgeParams
+import pythontk as ptk
+from uitk.bridge import AttributeSpec, ParamRegistry
 
 from ..profile import QUALITY_TIERS
 from .._shared_params import (
@@ -160,30 +161,49 @@ _STORE_TRUE_FLAGS: "Dict[str, str]" = {
 }
 
 
-def to_argv(values: "Dict[str, Any]") -> "List[str]":
-    """Render collected param *values* into ``run_combined`` CLI flags (via the
-    shared :func:`render_flag_argv` emit rules), then append the shared input
-    pre-processing flags (curate + equalize), which its master toggle gates."""
-    argv = SharedParams.render_flag_argv(values, _VALUE_FLAGS, _STORE_TRUE_FLAGS)
-    # Shared input pre-processing (curate + equalize), gated by its master toggle.
-    argv += SharedParams.preprocessing_argv(values)
-    return argv
+class Parameters(ParamRegistry):
+    """The RealityScan panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
 
-
-def referenced_keys(source: str = "") -> "set[str]":
-    """Params relevant to the panel's current input — drives row visibility.
-
-    RealityScan has no ``--stop-after`` run modes, so the Full-pipeline mode
-    shows every registered param; the shared Prep-preview mode (a curation
-    dry-run) shows only the pre-processing knobs. Same relevance contract as
-    the Metashape panel (the panel + bridge base consume this the same way).
+    Handed to the slot as its ``params_module``: :data:`PARAMS` plus
+    ``defaults``; ``referenced_keys`` is the run-mode relevance and ``to_argv``
+    renders the ``run_combined`` flags.
     """
-    keys = set(PARAMS)
-    if source == "prep_preview":
-        return keys & PREPROCESSING_KEYS
-    return keys
+
+    PARAMS = PARAMS
+
+    @staticmethod
+    def to_argv(values: "Dict[str, Any]") -> "List[str]":
+        """Render collected param *values* into ``run_combined`` CLI flags (via the
+        shared :func:`render_flag_argv` emit rules), then append the shared input
+        pre-processing flags (curate + equalize), which its master toggle gates."""
+        argv = SharedParams.render_flag_argv(values, _VALUE_FLAGS, _STORE_TRUE_FLAGS)
+        # Shared input pre-processing (curate + equalize), gated by its master toggle.
+        argv += SharedParams.preprocessing_argv(values)
+        return argv
+
+    @classmethod
+    def referenced_keys(cls, source: str = "") -> "set[str]":
+        """Params relevant to the panel's current input — drives row visibility.
+
+        RealityScan has no ``--stop-after`` run modes, so the Full-pipeline mode
+        shows every registered param; the shared Prep-preview mode (a curation
+        dry-run) shows only the pre-processing knobs. Same relevance contract as
+        the Metashape panel (the panel + bridge base consume this the same way).
+        """
+        keys = set(cls.PARAMS)
+        if source == "prep_preview":
+            return keys & PREPROCESSING_KEYS
+        return keys
 
 
-def defaults() -> "Dict[str, Any]":
-    """Return ``{key: default}`` for every registered parameter."""
-    return _BridgeParams.defaults(PARAMS)
+# The module-level functions this class replaced, for one release.
+ptk.Deprecation.attributes(
+    globals(),
+    {
+        "to_argv": "extapps.photogrammetry.realityscan_workflow.parameters.Parameters.to_argv",
+        "referenced_keys": "extapps.photogrammetry.realityscan_workflow.parameters.Parameters.referenced_keys",
+        "defaults": "extapps.photogrammetry.realityscan_workflow.parameters.Parameters.defaults",
+    },
+    remove_in="0.4.0",
+    since="2026-09-26",
+)

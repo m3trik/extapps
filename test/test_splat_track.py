@@ -33,14 +33,14 @@ class GsplatPresetOverlayTest(unittest.TestCase):
     """--preset lays shared run-template knobs over the gsplat runner defaults."""
 
     def setUp(self):
-        from pythontk.core_utils.user_config import CONFIG_ROOT_ENV_VAR
+        from pythontk import UserConfig
         import extapps.photogrammetry.profile as pp
 
         self.tmp = tempfile.mkdtemp(prefix="gsplat_preset_")
         env = mock.patch.dict(os.environ)
         env.start()
         self.addCleanup(env.stop)
-        os.environ[CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
+        os.environ[UserConfig.CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
         os.environ.pop(pp.PROFILE_ENV, None)
         # A user preset in the gaussian_splat store sets splat-training knobs.
         pp.Profile.preset_store("gaussian_splat").save("t_splat", {

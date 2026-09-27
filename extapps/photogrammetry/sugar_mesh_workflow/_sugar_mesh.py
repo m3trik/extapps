@@ -2,8 +2,8 @@
 # coding=utf-8
 """SuGaR mesh-extraction workflow engine.
 
-Wraps SuGaR's ``train_full_pipeline.py`` (https://github.com/Anttwo/SuGaR) via
-:mod:`subprocess`, mirroring the structure of
+Wraps SuGaR's ``train_full_pipeline.py`` (https://github.com/Anttwo/SuGaR)
+through :class:`pythontk.AppLauncher`, mirroring the structure of
 :class:`extapps.photogrammetry.gaussian_splat_workflow._gaussian_splat_workflow.GaussianSplatWorkflow`
 (dir/env discovery, QC log, mock mode, per-stage logging).
 
@@ -30,14 +30,14 @@ shortcut that skips vanilla-3DGS is *not* wired into SuGaR upstream, so it is
 not an option here.)
 """
 import os
+import sys
 import glob
-import subprocess
 import time
 from typing import Callable, List, Optional
 
-from pythontk import QcLog
+from pythontk import AppLauncher
 
-from .._progress_notify import ProgressNotifyMixin
+from .._workflow_engine import WorkflowEngine
 from ..profile import Profile
 
 
@@ -57,7 +57,7 @@ class _SugarMeshWorkflowInternal:
         )
 
 
-class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
+class SugarMeshWorkflow(WorkflowEngine, _SugarMeshWorkflowInternal):
     """COLMAP dataset → SuGaR refined textured ``.obj`` mesh."""
     @staticmethod
     def find_sugar_dir() -> "Optional[str]":
@@ -92,9 +92,6 @@ class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
         progress: Optional[Callable[[str, float], None]] = None,
         timeout_sec: int = 86400,
     ):
-        self.project_path = project_path
-        self.name = name
-        self.progress = progress
         self.timeout_sec = timeout_sec
 
         self.sugar_dir = sugar_dir or self.find_sugar_dir()
@@ -102,7 +99,7 @@ class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
         # nvdiffrast JIT-compiles at the textured-mesh step, so the build env
         # must be live for the whole run.
         if env_bat is None and self.sugar_dir:
-            cand = os.path.join(self.sugar_dir, "sugar_buildenv.bat")
+            cand = os.path.join(self.sugar_dir, self._ENV_SCRIPT)
             env_bat = cand if os.path.isfile(cand) else None
         self.env_bat = env_bat
 
@@ -110,22 +107,19 @@ class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
             mock_mode = self.sugar_dir is None
         self.mock_mode = bool(mock_mode)
 
-        os.makedirs(self.project_path, exist_ok=True)
-        self._logs_dir = os.path.join(self.project_path, "logs")
-        os.makedirs(self._logs_dir, exist_ok=True)
-
-        self.qc = QcLog(os.path.join(self.project_path, f"{name}_qc.json"))
-        self.qc.set("project_name", name)
-        self.qc.set("sugar_dir", self.sugar_dir or "")
-        self.qc.set("env_bat", self.env_bat or "")
-        self.qc.set("mock_mode", self.mock_mode)
+        self._open_run(
+            project_path,
+            name,
+            progress,
+            qc_fields={"sugar_dir": self.sugar_dir or "", "env_bat": self.env_bat or ""},
+        )
 
     # ----------------------------------------------------------- helpers
 
     def get_sugar_info(self) -> str:
         if self.sugar_dir is None:
             return "SuGaR not found (set SUGAR_DIR env or install)"
-        env = self.env_bat or "(no sugar_buildenv.bat — env may be inactive)"
+        env = self.env_bat or f"(no {self._ENV_SCRIPT} — env may be inactive)"
         return f"SuGaR ({self.sugar_dir}) via {env}"
 
     @staticmethod
@@ -210,17 +204,16 @@ class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
                 )
 
             start = time.time()
-            run_bat = self._write_run_bat(py_args)
-            log_path = os.path.join(self._logs_dir, "sugar_mesh.log")
-            print(f"[sugar_mesh] {run_bat}  >> {log_path}")
-            with open(log_path, "w", encoding="utf-8", errors="replace") as log:
-                log.write(f"# cmd: {py_args}\n")
-                log.flush()
-                completed = subprocess.run(
-                    ["cmd", "/c", run_bat],
-                    timeout=self.timeout_sec, stdout=log,
-                    stderr=subprocess.STDOUT,
-                )
+            run_script = self._write_run_bat(py_args)
+            log_path = self._log_path("sugar_mesh")
+            print(f"[sugar_mesh] {run_script}  >> {log_path}")
+            shell = ["cmd", "/c"] if sys.platform == "win32" else ["bash"]
+            completed = self._run_logged(
+                shell + [run_script],
+                "sugar_mesh",
+                timeout=self.timeout_sec,
+                header=f"cmd: {py_args}",
+            )
             st["returncode"] = completed.returncode
             if completed.returncode != 0:
                 raise RuntimeError(
@@ -241,19 +234,30 @@ class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
                 )
             return mesh
 
+    #: The SuGaR env activator this OS runs first (MSVC toolset + conda env on
+    #: Windows; the conda env on Linux, where SuGaR is native).
+    _ENV_SCRIPT = "sugar_buildenv.bat" if sys.platform == "win32" else "sugar_buildenv.sh"
+
     def _write_run_bat(self, py_args: str) -> str:
-        """Write a batch that activates the SuGaR env and runs the pipeline.
-        Returns the batch path."""
+        """Write the script that activates the SuGaR env and runs the pipeline --
+        a batch file on Windows, a bash script elsewhere (the name predates
+        Linux). Returns its path."""
+        if sys.platform != "win32":
+            lines = [f'source "{self.env_bat}"'] if self.env_bat else []
+            lines += [f'cd "{self.sugar_dir}" || exit 1', py_args, "status=$?"]
+            lines += ['echo "SUGAR_EXIT=$status"', 'exit "$status"']
+            script = os.path.join(self._logs_dir, "run_sugar.sh")
+            return AppLauncher.write_batch_script(script, lines, shell="bash")
         lines = ["@echo off"]
         if self.env_bat:
             lines.append(f'call "{self.env_bat}"')
         lines.append(f'cd /d "{self.sugar_dir}"')
         lines.append(py_args)
         lines.append("echo SUGAR_EXIT=%errorlevel%")
+        # OEM codepage + exact CRLF (a non-ASCII SuGaR / env path must survive
+        # for `cd /d`, or fail loudly): AppLauncher owns the .bat byte contract.
         bat = os.path.join(self._logs_dir, "run_sugar.bat")
-        with open(bat, "w", encoding="utf-8") as fh:
-            fh.write("\r\n".join(lines) + "\r\n")
-        return bat
+        return AppLauncher.write_batch_script(bat, lines, shell="cmd")
 
     def _find_output_obj(self, scene: str, since: float) -> Optional[str]:
         """Locate the textured OBJ SuGaR wrote for this scene.
@@ -278,7 +282,3 @@ class SugarMeshWorkflow(ProgressNotifyMixin, _SugarMeshWorkflowInternal):
             return None
         return max(candidates, key=os.path.getmtime)
 
-    def finalize_run(self, success: bool = True) -> str:
-        self.qc.finalize(success)
-        print(f"QC sidecar: {self.qc.path}")
-        return self.qc.path

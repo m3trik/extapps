@@ -8,10 +8,11 @@ Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
 ``ExternalAppHandler`` — no host-side knowledge required.
 """
 
+import pythontk as _ptk
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 # Base of every panel's "detailed docs" link (``BridgeSlotsBase.DOCS_URL`` on
 # the bridge panels, the compositor's intro, Substance's startup line): the
@@ -34,7 +35,7 @@ DEFAULT_INCLUDE = {
     "substance_workflow.slots": ["SubstanceWorkflowSlots"],
     "substance_workflow.env_utils.painter_connection": ["PainterConnection"],
     "substance_workflow.env_utils.painter_finder": ["PainterFinder"],
-    "substance_workflow.job": ["Call", "Job", "Result"],
+    "substance_workflow.job": ["Job"],
     "texture_maps.converter.launcher": ["ConverterUI"],
     "texture_maps.converter.slots": ["ConverterSlots"],
     "texture_maps.packer.launcher": ["PackerUI"],
@@ -56,3 +57,16 @@ DEFAULT_INCLUDE = {
 __all__ = ["__version__", "DOCS_BASE_URL"]
 
 bootstrap_package(globals(), include=DEFAULT_INCLUDE)
+
+# Substance's batch types are pythontk's since its RPC stack collapsed onto the
+# shared core; these names only alias them for one release (after bootstrap,
+# so the alias chains onto its loader).
+_ptk.Deprecation.attributes(
+    globals(),
+    {
+        "Call": "pythontk.Call",
+        "Result": "pythontk.Result",
+    },
+    remove_in="0.4.0",
+    since="2026-09-26",
+)

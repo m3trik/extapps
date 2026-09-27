@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 from pythontk import GateError, ImgUtils, QcGate, QcLog  # noqa: F401 — GateError is a
 # pure re-export (no local use); pinned by test_metashape_workflow.py.
 
-from .._progress_notify import ProgressNotifyMixin
+from .._workflow_engine import WorkflowEngine
 from ..mesh_stages import MeshStagesMixin
 from ..prep_stages import PrepStagesMixin
 
@@ -46,7 +46,7 @@ DEFAULT_GATES: Dict[str, Dict[str, float]] = {
 }
 
 
-class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin):
+class MetashapeWorkflow(WorkflowEngine, PrepStagesMixin, MeshStagesMixin):
     """Wrapper around Agisoft Metashape's Python API for the standard
     photogrammetry pipeline. Supports a `mock_mode` for dry-runs without a
     valid license, and a `progress` callback for UI integration.
@@ -127,9 +127,6 @@ class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin):
                 only — no .psx). Enables reopening to re-run later stages (e.g.
                 re-texture) without redoing alignment/depth.
         """
-        self.project_path = project_path
-        self.name = name
-        self.progress = progress
         self.gates = {**DEFAULT_GATES, **(gates or {})}
         self.gate_mode = gate_mode
         self.checkpoint_each_stage = bool(checkpoint_each_stage)
@@ -149,12 +146,19 @@ class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin):
             self.doc = _Metashape.Document()
             self.chunk = None
 
-        self.qc = QcLog(os.path.join(project_path, f"{name}_qc.json"))
-        self.qc.set("project_name", name)
-        self.qc.set("project_path", project_path)
-        self.qc.set("metashape_version", MetashapeWorkflow.get_metashape_version())
-        self.qc.set("licensed", MetashapeWorkflow.is_license_valid())
-        self.qc.set("mock_mode", self.mock_mode)
+        # No folders yet: the project folder is made on first write (a
+        # deliverables-only run never needs ``logs/``).
+        self._open_run(
+            project_path,
+            name,
+            progress,
+            qc_fields={
+                "project_path": project_path,
+                "metashape_version": MetashapeWorkflow.get_metashape_version(),
+                "licensed": MetashapeWorkflow.is_license_valid(),
+            },
+            make_dirs=False,
+        )
         self.gate = QcGate(self.gates, self.qc, mode=self.gate_mode)
 
     # ------------------------------------------------------------------ helpers
@@ -1391,16 +1395,6 @@ class MetashapeWorkflow(ProgressNotifyMixin, PrepStagesMixin, MeshStagesMixin):
             except Exception as e:
                 self.qc.warn(f"exportReport failed: {e}")
                 print(f"exportReport failed: {e}")
-
-    def finalize_run(self, success: bool = True) -> str:
-        """Write the QC JSON sidecar. Returns the sidecar path.
-
-        Always call this in the slot's ``finally`` block so even failed
-        runs leave a usable diagnostic on disk.
-        """
-        self.qc.finalize(success)
-        print(f"QC sidecar: {self.qc.path}")
-        return self.qc.path
 
 
 # -----------------------------------------------------------------------------

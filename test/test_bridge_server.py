@@ -1,14 +1,17 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Tests for the bridge plugin's HTTP dispatcher.
+"""Tests for the in-Painter bridge plugin: the shared RPC core, served for real.
 
-``dispatch_request`` is decoupled from Qt and HTTP, so we exercise the
-routing logic synchronously here. Live HTTP + main-thread marshalling is
-covered by the integration suite.
+The bridge is ``extapps.substance_workflow.registry.PLUGIN`` (a
+``pythontk.RpcPlugin``), so these drive it over an actual loopback socket with
+the client ``PainterConnection`` uses -- the same wire Painter serves. Main-thread
+marshalling is disabled through the plugin's own env switch (no pumped Qt loop
+here); the marshaller itself is pythontk's, tested there.
 """
 import os
 import sys
 import unittest
+from unittest import mock
 
 try:
     from .base_test import SubstanceWorkflowTestCase
@@ -21,115 +24,97 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 from extapps.substance_workflow import registry
-from extapps.substance_workflow.plugins.substance_workflow_bridge.server import dispatch_request
+from extapps.substance_workflow.env_utils.painter_connection import PainterConnection
+
+_NO_MARSHAL = {"SUBSTANCE_WORKFLOW_DISABLE_MAIN_THREAD": "1"}
 
 
-def _direct(fn, **kwargs):
-    """Synchronous executor — calls the function directly, no Qt hop."""
-    return fn(**kwargs)
+class TestServedOverTheWire(SubstanceWorkflowTestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        env = mock.patch.dict(os.environ, _NO_MARSHAL)
+        env.start()
+        cls.addClassCleanup(env.stop)
+        ops = mock.patch.dict(registry.PLUGIN.registry._ops)
+        ops.start()
+        cls.addClassCleanup(ops.stop)
 
-
-class _RegistryIsolated(SubstanceWorkflowTestCase):
-
-    def setUp(self) -> None:
-        super().setUp()
-        self._saved = dict(registry._REGISTRY)
-
-    def tearDown(self) -> None:
-        registry._REGISTRY.clear()
-        registry._REGISTRY.update(self._saved)
-        super().tearDown()
-
-
-class TestHealth(_RegistryIsolated):
-
-    def test_health_returns_ok(self) -> None:
-        status, body = dispatch_request("/health", {})
-        self.assertEqual(status, 200)
-        self.assertTrue(body["ok"])
-
-
-class TestDescribeEndpoint(_RegistryIsolated):
-
-    def test_describe_empty_returns_all_ops(self) -> None:
-        @registry.register("test.x")
-        def x() -> int:
-            return 1
-
-        status, body = dispatch_request("/describe", {"op": ""})
-        self.assertEqual(status, 200)
-        self.assertIn("test.x", body["value"])
-
-    def test_describe_named_returns_signature(self) -> None:
-        @registry.register("test.y")
-        def y(arg: int) -> str:
-            """Docs."""
-            return ""
-
-        status, body = dispatch_request("/describe", {"op": "test.y"})
-        self.assertEqual(status, 200)
-        self.assertEqual(body["value"]["doc"], "Docs.")
-        self.assertIn("arg", body["value"]["parameters"])
-
-    def test_describe_unknown_op_returns_empty_value(self) -> None:
-        status, body = dispatch_request("/describe", {"op": "no.such.op"})
-        self.assertEqual(status, 200)
-        self.assertEqual(body["value"], {})
-
-
-class TestOpDispatch(_RegistryIsolated):
-
-    def test_unknown_op_returns_404(self) -> None:
-        status, body = dispatch_request("/", {"op": "no.such.op"}, executor=_direct)
-        self.assertEqual(status, 404)
-        self.assertFalse(body["ok"])
-        self.assertIn("Unknown op", body["error"])
-
-    def test_op_success_returns_200_with_value(self) -> None:
         @registry.register("test.add")
         def add(a: int, b: int) -> int:
+            """Sum."""
             return a + b
 
-        status, body = dispatch_request(
-            "/", {"op": "test.add", "kwargs": {"a": 2, "b": 3}}, executor=_direct
-        )
-        self.assertEqual(status, 200)
-        self.assertTrue(body["ok"])
-        self.assertEqual(body["value"], 5)
-
-    def test_op_failure_returns_500(self) -> None:
         @registry.register("test.fails")
         def fails() -> None:
             raise ValueError("kaboom")
 
-        status, body = dispatch_request(
-            "/", {"op": "test.fails"}, executor=_direct
-        )
-        self.assertEqual(status, 500)
-        self.assertFalse(body["ok"])
-        self.assertIn("ValueError: kaboom", body["error"])
+        host, port = registry.PLUGIN.start(port=0, host="127.0.0.1")
+        cls.addClassCleanup(registry.PLUGIN.stop)
+        cls.conn = PainterConnection()
+        cls.conn.host, cls.conn.port = host, port
+        cls.conn.is_connected = True
 
-    def test_arbitrary_path_falls_through_to_op_dispatch(self) -> None:
-        @registry.register("test.found")
-        def found() -> int:
-            return 7
+    def test_health(self) -> None:
+        self.assertTrue(self.conn.client.ping(timeout=5.0))
 
-        status, body = dispatch_request(
-            "/arbitrary", {"op": "test.found"}, executor=_direct
-        )
-        self.assertEqual(status, 200)
-        self.assertEqual(body["value"], 7)
+    def test_op_round_trip(self) -> None:
+        self.assertEqual(self.conn.invoke("test.add", a=2, b=3), 5)
 
-    def test_empty_kwargs_works(self) -> None:
-        @registry.register("test.noarg")
-        def noarg() -> str:
-            return "ok"
+    def test_op_failure_carries_the_remote_type(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            self.conn.invoke("test.fails")
+        self.assertIn("ValueError: kaboom", str(ctx.exception))
 
-        status, body = dispatch_request(
-            "/", {"op": "test.noarg"}, executor=_direct
-        )
-        self.assertEqual(status, 200)
-        self.assertEqual(body["value"], "ok")
+    def test_unknown_op(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            self.conn.invoke("no.such.op")
+        self.assertIn("Unknown op", str(ctx.exception))
+
+    def test_describe_route(self) -> None:
+        d = self.conn.describe("test.add")
+        self.assertEqual((d["name"], d["doc"]), ("test.add", "Sum."))
+        self.assertEqual([p["name"] for p in d["params"]], ["a", "b"])
+        self.assertIn("test.add", [x["name"] for x in self.conn.describe()])
+
+    def test_real_ops_are_served(self) -> None:
+        """The bridge package's op modules register onto the served table."""
+        import extapps.substance_workflow.plugins.substance_workflow_bridge as bridge
+
+        self.assertTrue(bridge.OP_MODULES)
+        self.assertIn("project.info", self.conn.client.list_ops())
+
+
+class TestPluginLifecycle(SubstanceWorkflowTestCase):
+    """Painter's enable/disable hooks drive the shared core's gated start."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        import extapps.substance_workflow.plugins.substance_workflow_bridge as bridge
+
+        self.bridge = bridge
+        self.addCleanup(registry.PLUGIN.stop)
+        env = mock.patch.dict(os.environ, {"SUBSTANCE_WORKFLOW_PORT": "0", **_NO_MARSHAL})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_start_plugin_binds_only_inside_painter(self) -> None:
+        with mock.patch.object(registry.PLUGIN, "is_hosted", return_value=False):
+            self.bridge.start_plugin()
+        self.assertFalse(registry.PLUGIN.is_running())
+
+        with mock.patch.object(registry.PLUGIN, "is_hosted", return_value=True):
+            self.bridge.start_plugin()
+        self.assertTrue(registry.PLUGIN.is_running())
+
+        self.bridge.close_plugin()
+        self.assertFalse(registry.PLUGIN.is_running())
+
+    def test_autostart_opt_out(self) -> None:
+        with mock.patch.dict(os.environ, {"SUBSTANCE_WORKFLOW_AUTOSTART": "0"}), \
+             mock.patch.object(registry.PLUGIN, "is_hosted", return_value=True):
+            self.bridge.start_plugin()
+        self.assertFalse(registry.PLUGIN.is_running())
 
 
 if __name__ == "__main__":

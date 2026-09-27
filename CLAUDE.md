@@ -25,7 +25,7 @@ Tools that do NOT belong here:
 ## Hard rules
 
 - **All apps register via `uitk.external_apps.in_process` entry points.** No host (tentacle, mayatk, etc.) directly imports an app's slot class. Hosts launch apps through uitk's `ExternalAppHandler`.
-- **Generic mechanism lives in `pythontk`; app-specific engines live with their consumers.** Slot classes here only do UI wiring + dispatch. pythontk is **app-agnostic** — it ships the generic mechanism (`HandoffBridge`, `AppLauncher`, `RpcClient`, `process_stream`) and the pure *domain* cores (`core_utils/engines/`: shots, instancing, textures), never product SDK glue. So *app/SDK-specific* engines stay bundled with their consumer (`metashape_workflow._metashape_workflow` for the Metashape SDK; `substance_workflow`'s op registry + `PainterConnection` + bridge plugin for the Painter API — a native in-Painter plugin, distinct from the mayatk/blendertk `substance_bridge`; `marmoset_workflow._marmoset_engine` + `templates/` + `_toolbag_helpers` for Marmoset Toolbag). Generic carve-outs still go upstream to `pythontk`. An app engine that *also* has DCC consumers is vendored into each layer (none can import the others): `marmoset_workflow`'s engine is kept byte-identical to `mayatk.mat_utils.marmoset_bridge`'s copy, enforced by `test/test_vendor_sync.py` (which also guards the mayatk↔blendertk Marmoset + Substance + curtain-drape copies).
+- **Generic mechanism lives in `pythontk`; app-specific engines live with their consumers.** Slot classes here only do UI wiring + dispatch. pythontk is **app-agnostic** — it ships the generic mechanism (`HandoffBridge`, `AppLauncher`, `RpcClient`, `process_stream`) and the pure *domain* cores (`core_utils/engines/`: shots, instancing, textures), never product SDK glue. So *app/SDK-specific* engines stay bundled with their consumer (`metashape_workflow._metashape_workflow` for the Metashape SDK; `substance_workflow`'s op registry + `PainterConnection` + bridge plugin for the Painter API — a native in-Painter plugin, distinct from the mayatk/blendertk `substance_bridge`; `marmoset_workflow._marmoset_engine` + `templates/` + `_toolbag_helpers` for Marmoset Toolbag). Generic carve-outs still go upstream to `pythontk`. An app engine that *also* has DCC consumers is vendored into each layer (none can import the others): `marmoset_workflow`'s engine is kept byte-identical to `mayatk.mat_utils.marmoset_bridge`'s copy, enforced by `test/test_vendor_sync.py` (also the mayatk↔blendertk Marmoset/Substance/curtain-drape copies and the `_unity_panel.py` mixin all three Unity panels share).
 
 ### Painter session safety — HARD BLOCK (protect user work)
 
@@ -42,19 +42,20 @@ extapps/<tool>/
   __init__.py          # exposes <Tool>UI as the entry point
   slots.py             # Switchboard slot class
   <tool>.ui            # Qt Designer file
-  launcher.py          # <Tool>UI class (Switchboard wiring)
+  launcher.py          # <Tool>UI (a `PanelLauncher`: data only)
 ```
 
 Tools that share a domain layer group under an umbrella subpackage
 (docstring-only `__init__.py`): `texture_maps/` (compositor / converter /
 packer) and `photogrammetry/` (metashape / realityscan / gaussian_splat +
-the CLI-only, experimental sugar_mesh — sharing `Profile` / `PrepStagesMixin`
-/ `_panel_slots` / `_process_runner` / `SharedParams` and `presets/`).
+the CLI-only, experimental sugar_mesh — sharing `Profile` / `WorkflowEngine` /
+`PrepStagesMixin` / `_panel_slots` / `_process_runner` / `SharedParams` and `presets/`).
 Single tools stay flat. Discovery is one chain, `Profile.resolve_app`:
-terminal env override (set-but-invalid ⇒ mock), `apps.<key>`, per-engine
-fallbacks. Behaviour lives on classes (helpers on `_<Class>Internal`); config
-data stays flat. Exempt: `@register` ops, `run_combined`, `parameters.py`
-(uitk reads those as *module* attrs). The root `extapps/__init__.py` re-exports every
+terminal env override (set-but-invalid ⇒ mock), `apps.<key>`, the engine's
+`AppSpec`, fallbacks. Behaviour lives on classes (helpers on `_<Class>Internal`); config
+data stays flat (a panel's `parameters.py` declares `PARAMS` and a
+`uitk.ParamRegistry` subclass). Exempt: `@register` ops and `run_combined`
+(read as *module* attrs). The root `extapps/__init__.py` re-exports every
 panel's UI + Slots pair (guarded by `test_imports.py`). `<tool>_ui.py`
 files are uitk load-time compile caches — gitignored, never edited.
 
@@ -63,7 +64,7 @@ files are uitk load-time compile caches — gitignored, never edited.
 `*_utils.py` op modules (lazy-import `substance_painter` inside function bodies
 so they stay import-safe outside Painter), `env_utils/` (`PainterConnection`,
 `PainterFinder`), `job.py` (`run_batch`), and `plugins/substance_workflow_bridge/`
-— the in-Painter JSON-RPC server, loaded via `SUBSTANCE_PAINTER_PLUGINS_PATH`.
+(loaded via `SUBSTANCE_PAINTER_PLUGINS_PATH`), all on pythontk's RPC pair.
 
 ## Run
 

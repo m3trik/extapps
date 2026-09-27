@@ -30,22 +30,64 @@ from extapps.photogrammetry.realityscan_workflow._rsnode_connection import (  # 
 class FindExeVersionTest(unittest.TestCase):
     """RealityScan installs to RealityScan_<ver>\\; pick the HIGHEST version."""
 
+    @unittest.skipUnless(os.name == "nt", "RealityScan installs are a Windows layout")
     def test_picks_highest_version_numerically(self):
-        fakes = [
-            r"C:\Program Files\RealityScan_2.0\RealityScan.exe",
-            r"C:\Program Files\RealityScan_2.10\RealityScan.exe",  # 2.10 > 2.1 (numeric)
-            r"C:\Program Files\RealityScan_2.1\RealityScan.exe",
-        ]
-        with mock.patch.dict(os.environ), mock.patch("glob.glob", return_value=fakes):
+        """Real install dirs under a stand-in Program Files: the spec's scan
+        ranks them (AppLauncher.scan_install_dirs' natural sort)."""
+        root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
+        for ver in ("2.0", "2.10", "2.1"):  # 2.10 > 2.1 (numeric)
+            exe = os.path.join(root, f"RealityScan_{ver}", "RealityScan.exe")
+            os.makedirs(os.path.dirname(exe))
+            open(exe, "wb").close()
+        env = {"ProgramFiles": root, "ProgramFiles(x86)": os.path.join(root, "x86")}
+        with mock.patch.dict(os.environ, env), mock.patch(
+            "extapps.photogrammetry.profile.Profile.configured_app_path",
+            return_value=None,
+        ):
             os.environ.pop("RC_EXE", None)
             self.assertEqual(
                 RealityCaptureWorkflow.find_realitycapture_exe(),
-                r"C:\Program Files\RealityScan_2.10\RealityScan.exe",
+                os.path.join(root, "RealityScan_2.10", "RealityScan.exe"),
             )
 
     def test_env_override_empty_forces_none(self):
         with mock.patch.dict(os.environ, {"RC_EXE": ""}):
             self.assertIsNone(RealityCaptureWorkflow.find_realitycapture_exe())
+
+
+class RemoteNodeWithoutLocalExeTest(unittest.TestCase):
+    """RealityScan is Windows-only; a Linux host drives a node on another
+    machine. With no local exe the workflow went to MOCK even with RSNode forced
+    on, and the panel's runner reported RealityScan unavailable."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+
+    def _workflow(self, **kw):
+        with mock.patch.object(
+            RealityCaptureWorkflow, "find_realitycapture_exe", return_value=None
+        ):
+            return RealityCaptureWorkflow(
+                project_path=os.path.join(self.tmp, "proj"), name="t", **kw
+            )
+
+    def test_a_forced_node_is_not_mock(self):
+        wf = self._workflow(use_rsnode=True, rsnode_url="http://node:8000")
+        self.assertFalse(wf.mock_mode)
+        self.assertTrue(self._workflow().mock_mode)  # nothing to drive at all
+
+    def test_the_runner_counts_a_configured_remote_node(self):
+        from extapps.photogrammetry.realityscan_workflow._realityscan_runner import (
+            RealityScanRunner,
+        )
+
+        env = {"RC_EXE": "", "RC_RSNODE": "1", "RC_RSNODE_URL": "http://node:8000"}
+        with mock.patch.dict(os.environ, env):
+            self.assertTrue(RealityScanRunner().is_available())
+        with mock.patch.dict(os.environ, {"RC_EXE": "", "RC_RSNODE": "0"}):
+            self.assertFalse(RealityScanRunner().is_available())
 
 
 class AddImagesCommandTest(unittest.TestCase):
@@ -360,7 +402,7 @@ class PresetRunOverlayTest(unittest.TestCase):
     end-to-end (profile -> preset overlay -> arg default -> pipeline call)."""
 
     def setUp(self):
-        from pythontk.core_utils.user_config import CONFIG_ROOT_ENV_VAR
+        from pythontk import UserConfig
         import extapps.photogrammetry.profile as pp
 
         self.tmp = tempfile.mkdtemp()
@@ -368,7 +410,7 @@ class PresetRunOverlayTest(unittest.TestCase):
         env.start()
         self.addCleanup(env.stop)
         # Isolate from any personal profile so the *packaged* preset is exercised.
-        os.environ[CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
+        os.environ[UserConfig.CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
         os.environ.pop(pp.PROFILE_ENV, None)
         ver = mock.patch(f"{WF}.RealityCaptureWorkflow.get_realitycapture_version", return_value="test")
         ver.start()

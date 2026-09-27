@@ -4,23 +4,23 @@ Live JSON-RPC connection to a freshly launched Substance 3D Painter session.
 Mirrors the design of :class:`mayatk.MayaConnection`: every connection
 launches a NEW Painter instance on an unused port — the user's session is
 never touched. ``force_new_instance=False`` is rejected.
+
+The wire is the shared one: :attr:`PainterConnection.client` is a
+:class:`pythontk.RpcClient` bound to the launched bridge, and the bridge is a
+:class:`pythontk.RpcPlugin` (``extapps.substance_workflow.registry.PLUGIN``).
+What this class adds is the Painter launch -- the hard block, a bind-probed
+port pinned through ``SUBSTANCE_WORKFLOW_PORT``, the plugin folder on
+``SUBSTANCE_PAINTER_PLUGINS_PATH`` -- and teardown of exactly that process.
 """
 
-import json
 import logging
 import os
 import subprocess
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any, List, Optional
 
-try:
-    from pythontk import AppLauncher, NetUtils
-except ImportError:
-    from pythontk.core_utils.app_launcher import AppLauncher
-    from pythontk.net_utils._net_utils import NetUtils
+from pythontk import AppLauncher, NetUtils, RpcClient
 
 from .painter_finder import PainterFinder
 
@@ -100,7 +100,9 @@ class PainterConnection:
         return cls._instance
 
     def __init__(self) -> None:
-        self.host: str = "localhost"
+        # The IPv4 loopback the bridge binds: "localhost" resolves to ::1 first
+        # on Windows, and every request would wait out a refused IPv6 attempt.
+        self.host: str = "127.0.0.1"
         self.port: int = 0
         self.process: Optional[subprocess.Popen] = None
         self.is_connected: bool = False
@@ -157,7 +159,7 @@ class PainterConnection:
         env = self.build_painter_env(port=chosen_port)
 
         self.process = self.launch_painter(exe, env, gui=gui, extra_args=launch_args)
-        self.host = "localhost"
+        self.host = "127.0.0.1"
         self.port = chosen_port
 
         print(
@@ -179,65 +181,42 @@ class PainterConnection:
 
     def _wait_for_health(self, timeout: float) -> bool:
         start = time.time()
-        url = f"http://{self.host}:{self.port}/health"
+        client = self.client
         while time.time() - start < timeout:
             if self.process and self.process.poll() is not None:
                 return False
-            try:
-                with urllib.request.urlopen(url, timeout=1.0) as r:
-                    if r.status == 200:
-                        return True
-            except (urllib.error.URLError, ConnectionError, OSError):
-                pass
+            if client.ping(timeout=1.0):
+                return True
             time.sleep(0.5)
         return False
 
     # ---- RPC -------------------------------------------------------------
 
+    @property
+    def client(self) -> RpcClient:
+        """The shared JSON-RPC client, bound to this connection's bridge.
+
+        Built from the current ``host`` / ``port`` on each access (cheap: no
+        socket until a call), so it always addresses the bridge this connection
+        launched. It never launches or closes anything itself: lifecycle stays
+        here, behind the hard block.
+        """
+        return RpcClient(host=self.host, port=self.port, app_label="Painter")
+
     def invoke(self, op: str, timeout: float = 60.0, **kwargs: Any) -> Any:
-        """Call a registered op over the bridge and return its value."""
+        """Call a registered op over the bridge and return its value.
+
+        Raises:
+            RuntimeError: Not connected, or the op ran and failed.
+            ConnectionError: The bridge did not answer.
+        """
         if not self.is_connected:
             raise RuntimeError("Not connected. Call connect() first.")
+        return self.client.invoke(op, timeout=timeout, **kwargs)
 
-        url = f"http://{self.host}:{self.port}/"
-        payload = json.dumps({"op": op, "kwargs": kwargs}).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                body = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            body = json.loads(e.read().decode("utf-8"))
-        except (urllib.error.URLError, ConnectionError, OSError) as e:
-            raise ConnectionError(
-                f"Painter plugin not reachable at {url!r}: {e}"
-            ) from e
-
-        if not body.get("ok"):
-            raise RuntimeError(f"Op {op!r} failed: {body.get('error')}")
-        return body.get("value")
-
-    def describe(self, op: str = "") -> dict:
-        """Fetch the registry's signature description for agent self-discovery."""
-        url = f"http://{self.host}:{self.port}/describe"
-        payload = json.dumps({"op": op}).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                return json.loads(resp.read().decode("utf-8")).get("value", {})
-        except (urllib.error.URLError, ConnectionError, OSError) as e:
-            raise ConnectionError(
-                f"Painter plugin not reachable at {url!r}: {e}"
-            ) from e
+    def describe(self, op: str = "") -> Any:
+        """The registry's ``{name, doc, params}`` for *op*, or a list for all."""
+        return self.client.describe(op)
 
     # ---- shutdown --------------------------------------------------------
 

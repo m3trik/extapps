@@ -53,15 +53,17 @@ old "no PSNR gain at 4K" A/B was VRAM-bound at ~2.5-3M gaussians on 8 GB; a 10 G
 3080 holds more, so re-test ``--max-resolution 3840`` there before assuming 1920.
 """
 import os
-import shutil
-import subprocess
 from typing import Callable, Dict, List, Optional, Sequence, Union
 
-from pythontk import QcLog
+from pythontk import AppSpec
 
-from .._progress_notify import ProgressNotifyMixin
+from .._workflow_engine import WorkflowEngine
 from ..profile import Profile
 from ._gaussian_splat_workflow import GaussianSplatWorkflow
+
+#: splat-transform is an npm global on PATH -- on Windows the lookup resolves
+#: its ``.cmd`` shim.
+SPLAT_TRANSFORM_APP = AppSpec(name="splat-transform", app_names=("splat-transform",))
 
 
 class _SplatPublishWorkflowInternal:
@@ -76,8 +78,12 @@ class _SplatPublishWorkflowInternal:
         return ",".join(str(v) for v in value)
 
 
-class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal):
+class SplatPublishWorkflow(WorkflowEngine, _SplatPublishWorkflowInternal):
     """Clean a trained 3DGS ``.ply`` and convert it to engine-ready formats."""
+
+    #: Beside the training run's ``<name>_qc.json`` in a shared project folder.
+    QC_SUFFIX = "_publish_qc.json"
+
     @staticmethod
     def find_splat_transform() -> "Optional[str]":
         """Return the ``splat-transform`` executable path or None.
@@ -85,15 +91,15 @@ class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal):
         Runs the shared :func:`resolve_app` chain: the ``SPLAT_TRANSFORM_EXE``
         env override (terminal — empty or a nonexistent path returns None so the
         caller enters mock mode), then PATH. Unlike Brush/SuGaR (folder
-        installs), splat-transform is an npm global on PATH — on Windows
-        ``shutil.which`` resolves the ``.cmd`` shim. It has **no profile key**:
+        installs), splat-transform is an npm global on PATH
+        (:data:`SPLAT_TRANSFORM_APP`). It has **no profile key**:
         there is no network-install story for an npm global, hence the ``None``
         config key.
         """
         return Profile.resolve_app(
             "SPLAT_TRANSFORM_EXE",
             None,
-            fallbacks=(lambda: shutil.which("splat-transform"),),
+            spec=SPLAT_TRANSFORM_APP,
         )
     @staticmethod
     def is_splat_transform_available() -> bool:
@@ -108,9 +114,6 @@ class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal):
         progress: Optional[Callable[[str, float], None]] = None,
         timeout_sec: int = 3600,
     ):
-        self.project_path = project_path
-        self.name = name
-        self.progress = progress
         self.timeout_sec = timeout_sec
 
         self.exe = splat_transform_exe or self.find_splat_transform()
@@ -118,14 +121,9 @@ class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal):
             mock_mode = self.exe is None
         self.mock_mode = bool(mock_mode)
 
-        os.makedirs(self.project_path, exist_ok=True)
-        self._logs_dir = os.path.join(self.project_path, "logs")
-        os.makedirs(self._logs_dir, exist_ok=True)
-
-        self.qc = QcLog(os.path.join(self.project_path, f"{name}_publish_qc.json"))
-        self.qc.set("project_name", name)
-        self.qc.set("splat_transform_exe", self.exe or "")
-        self.qc.set("mock_mode", self.mock_mode)
+        self._open_run(
+            project_path, name, progress, qc_fields={"splat_transform_exe": self.exe or ""}
+        )
 
     # ----------------------------------------------------------- helpers
 
@@ -156,15 +154,9 @@ class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal):
         if self.exe is None:
             raise RuntimeError("splat-transform executable not found.")
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-        log_path = os.path.join(self._logs_dir, f"{label}.log")
+        log_path = self._log_path(label)
         print(f"[publish:{label}] {' '.join(argv[1:])}  >> {log_path}")
-        with open(log_path, "w", encoding="utf-8", errors="replace") as log:
-            log.write(f"# argv: {argv}\n")
-            log.flush()
-            completed = subprocess.run(
-                argv, timeout=self.timeout_sec, stdout=log,
-                stderr=subprocess.STDOUT,
-            )
+        completed = self._run_logged(argv, label, timeout=self.timeout_sec)
         if completed.returncode != 0:
             raise RuntimeError(
                 f"splat-transform failed (exit {completed.returncode}, "
@@ -353,7 +345,3 @@ class SplatPublishWorkflow(ProgressNotifyMixin, _SplatPublishWorkflowInternal):
             )
         return result
 
-    def finalize_run(self, success: bool = True) -> str:
-        self.qc.finalize(success)
-        print(f"QC sidecar: {self.qc.path}")
-        return self.qc.path

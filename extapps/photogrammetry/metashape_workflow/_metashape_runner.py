@@ -3,7 +3,7 @@
 """Local, async runner the Metashape panel dispatches to.
 
 A :class:`extapps.photogrammetry._process_runner.ProcessRunner` subclass: the
-base owns the :class:`~qtpy.QtCore.QProcess` machinery (async launch, live
+base owns the async launch machinery (``AppLauncher.spawn``, live
 stdout streaming into the panel log, completion/error callbacks); this class
 supplies the Metashape specifics — exe discovery via
 :class:`MetashapeConnection` and the ``metashape.exe -r run_combined.py``
@@ -210,7 +210,7 @@ class MetashapeRunner(ProcessRunner):
                 self._launch(program, args, cwd)
 
             # Deferred: reassigning self._proc synchronously here would drop
-            # the last ref to the stage-1 QProcess from inside its own
+            # the stage-1 run's timer from inside its own
             # finished handler (see ProcessRunner._on_finished).
             QtCore.QTimer.singleShot(0, launch)
 
@@ -253,7 +253,7 @@ class MetashapeRunner(ProcessRunner):
                     },
                 )
 
-            # Deferred for the same last-QProcess-ref reason as the prep chain.
+            # Deferred for the same reason as the prep chain (no relaunch from inside the finishing tick).
             QtCore.QTimer.singleShot(0, launch)
 
         return done

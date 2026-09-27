@@ -7,14 +7,17 @@ Adobe Substance 3D Painter automation as a Switchboard panel + headless engine.
 `substance_workflow` drives Painter over a JSON-RPC bridge. An in-Painter plugin
 (`plugins/substance_workflow_bridge`) loads the op **registry** and serves it over
 HTTP; the client side (`PainterConnection`, `Job.run_batch`) launches a fresh Painter
-and invokes ops by name.
+and invokes ops by name. The RPC is pythontk's shared pair, not a private stack: the
+registry is a `pythontk.RpcPlugin` (op table + main-thread marshaller + server), the
+client a `pythontk.RpcClient`, the batch loop `pythontk.RpcJob` over `pythontk.Call` /
+`pythontk.Result`, and `describe` returns the shared `{name, doc, params}` shape.
 
 - **`SubstanceWorkflowUI`** — the Switchboard panel. Set a mesh and/or project
   save path, pick which Painter to launch, choose stages (open/create → bake
   lighting→diffuse → save → export), tune advanced bake parameters, and Run.
 - **`PainterConnection`** — agent/session client: `connect()` then
   `invoke("project.info", ...)`.
-- **`Job.run_batch([Call(...), ...])`** — one-shot pipelines (launch → run → shut down).
+- **`Job.run_batch([ptk.Call(...), ...])`** — one-shot pipelines (launch → run → shut down).
 
 ## Session safety (hard rule)
 
@@ -24,7 +27,8 @@ session is never touched. Process control routes through `pythontk.AppLauncher`.
 
 ## Op registry — single source of truth
 
-`@register("ns.name")` in `registry.py` is the SSoT for callable ops. Op modules
+`@register("ns.name")` in `registry.py` is the SSoT for callable ops (a duplicate
+name raises). Op modules
 (`project_utils`, `bake_utils`, …) lazy-import `substance_painter` inside function
 bodies so they stay import-safe outside Painter (tests, registry inspection).
 Check the registry before adding a helper.
@@ -38,7 +42,8 @@ python -c "from extapps.substance_workflow import SubstanceWorkflowUI; Substance
 
 ```python
 # Batch
-from extapps.substance_workflow import Call, Job
+from pythontk import Call
+from extapps.substance_workflow import Job
 results = Job.run_batch([
     Call("project.create", kwargs={"mesh_path": "/path/mesh.fbx"}),
     Call("bake.lighting_to_diffuse", kwargs={"bake_resolution": 2048}),

@@ -2,7 +2,9 @@
 # coding=utf-8
 """Brush gaussian-splat workflow engine.
 
-Brush has no Python API; this wraps its CLI via :mod:`subprocess`, mirroring
+Brush has no Python API; this wraps its CLI via :class:`pythontk.AppLauncher`
+(the shared :class:`~extapps.photogrammetry._workflow_engine.WorkflowEngine`
+run), mirroring
 the structure of :class:`extapps.photogrammetry.realityscan_workflow._realityscan_workflow.RealityCaptureWorkflow`
 (exe discovery, QC log, mock mode, per-stage logging).
 
@@ -20,14 +22,17 @@ Validated defaults (indoor scene dataset, 8 GB VRAM class GPU):
   brush's stock values; only push them on a larger-VRAM card.
 """
 import os
-import shutil
-import subprocess
 from typing import Callable, Dict, List, Optional
 
-from pythontk import QcLog
+from pythontk import AppSpec
 
-from .._progress_notify import ProgressNotifyMixin
+from .._workflow_engine import WorkflowEngine
 from ..profile import Profile
+
+#: Brush on PATH: the shipped binary name first; ``brush_app.exe`` is a legacy
+#: name kept for old manual installs. (A panel-installed Brush lives in the
+#: managed-install catalog, which ``find_brush_exe`` consults after this.)
+BRUSH_APP = AppSpec(name="Brush", app_names=("brush", "brush_app.exe"))
 
 # Prebuilt Brush release binaries (github.com/ArthurBrussee/brush). cargo-dist
 # publishes one archive per platform with stable asset names, so the version-
@@ -43,6 +48,7 @@ BRUSH_DOWNLOAD: Dict[str, dict] = {
     "linux": {
         "url": f"{_BRUSH_RELEASE}/brush-app-x86_64-unknown-linux-gnu.tar.xz",
         "type": "tar.xz",
+        "arch": "x86_64",  # an arm64 Linux gets a clear LookupError, not a dud
     },
     "darwin": {
         "url": f"{_BRUSH_RELEASE}/brush-app-aarch64-apple-darwin.tar.xz",
@@ -87,7 +93,7 @@ class _GaussianSplatWorkflowInternal:
         return _printer
 
 
-class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal):
+class GaussianSplatWorkflow(WorkflowEngine, _GaussianSplatWorkflowInternal):
     """Wrapper around Brush's CLI for COLMAP-dataset -> 3DGS ``.ply``."""
     @staticmethod
     def find_brush_exe() -> Optional[str]:
@@ -104,11 +110,6 @@ class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)
         put it on ``PATH``, or install it via :meth:`install_brush`.
         """
 
-        def _on_path() -> Optional[str]:
-            # Probe the shipped binary name first; brush_app.exe is a legacy name
-            # kept as a fallback for old manual installs.
-            return shutil.which("brush") or shutil.which("brush_app.exe")
-
         def _managed() -> Optional[str]:
             try:
                 from pythontk import AppInstaller
@@ -117,7 +118,9 @@ class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)
             except Exception:  # noqa: BLE001 — discovery must never raise
                 return None
 
-        return Profile.resolve_app("BRUSH_EXE", "brush_exe", fallbacks=(_on_path, _managed))
+        return Profile.resolve_app(
+            "BRUSH_EXE", "brush_exe", spec=BRUSH_APP, fallbacks=(_managed,)
+        )
     @staticmethod
     def is_brush_available() -> bool:
         return GaussianSplatWorkflow.find_brush_exe() is not None
@@ -168,9 +171,6 @@ class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)
         progress: Optional[Callable[[str, float], None]] = None,
         timeout_sec: int = 14400,
     ):
-        self.project_path = project_path
-        self.name = name
-        self.progress = progress
         self.timeout_sec = timeout_sec
 
         self.brush_exe = brush_exe or self.find_brush_exe()
@@ -178,14 +178,9 @@ class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)
             mock_mode = self.brush_exe is None
         self.mock_mode = bool(mock_mode)
 
-        os.makedirs(self.project_path, exist_ok=True)
-        self._logs_dir = os.path.join(self.project_path, "logs")
-        os.makedirs(self._logs_dir, exist_ok=True)
-
-        self.qc = QcLog(os.path.join(self.project_path, f"{name}_qc.json"))
-        self.qc.set("project_name", name)
-        self.qc.set("brush_exe", self.brush_exe or "")
-        self.qc.set("mock_mode", self.mock_mode)
+        self._open_run(
+            project_path, name, progress, qc_fields={"brush_exe": self.brush_exe or ""}
+        )
 
     # ----------------------------------------------------------- helpers
 
@@ -202,15 +197,9 @@ class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)
         if self.brush_exe is None:
             raise RuntimeError("Brush executable not found.")
         argv = [self.brush_exe] + args
-        log_path = os.path.join(self._logs_dir, f"{label}.log")
+        log_path = self._log_path(label)
         print(f"[brush:{label}] {' '.join(args)}  >> {log_path}")
-        with open(log_path, "w", encoding="utf-8", errors="replace") as log:
-            log.write(f"# argv: {argv}\n")
-            log.flush()
-            completed = subprocess.run(
-                argv, timeout=self.timeout_sec, stdout=log,
-                stderr=subprocess.STDOUT,
-            )
+        completed = self._run_logged(argv, label, timeout=self.timeout_sec)
         if completed.returncode != 0:
             raise RuntimeError(
                 f"Brush failed (exit {completed.returncode}, label={label}). "
@@ -322,7 +311,3 @@ class GaussianSplatWorkflow(ProgressNotifyMixin, _GaussianSplatWorkflowInternal)
                 print(f"Trained splat -> {final_ply} (count unread)")
             return final_ply if os.path.isfile(final_ply) else None
 
-    def finalize_run(self, success: bool = True) -> str:
-        self.qc.finalize(success)
-        print(f"QC sidecar: {self.qc.path}")
-        return self.qc.path

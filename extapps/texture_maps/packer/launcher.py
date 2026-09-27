@@ -2,38 +2,17 @@
 # coding=utf-8
 """Application shell for the Map Packer UI.
 
-Engine logic lives in :class:`pythontk.ImgUtils` / :class:`pythontk.MapFactory`
-and slot bindings in :mod:`extapps.texture_maps.packer.slots`; this module only
-assembles the Switchboard-driven UI and provides the script entry point.
+Declares the panel (:class:`extapps._panel_launcher.PanelLauncher` builds
+it) and provides the script entry point; slot bindings live in
+:mod:`extapps.texture_maps.packer.slots`.
 """
 
-from uitk import Bootstrap
-
-# Must run before QApplication is constructed, so before any import
-# that touches Switchboard. No-ops inside DCC hosts that already own
-# the QApplication.
-Bootstrap.configure_high_dpi()
+from extapps._panel_launcher import PanelLauncher
 
 
-class PackerUI:
-    def __new__(cls):
-        from qtpy import QtCore
-        from uitk import Switchboard
-        from extapps.texture_maps.packer.slots import PackerSlots
-
-        sb = Switchboard(ui_source="packer.ui", slot_source=PackerSlots)
-        ui = sb.loaded_ui.packer
-        ui.set_attributes(WA_TranslucentBackground=True)
-        # Frameless chromed window: the uitk Header supplies the window
-        # controls in place of the native OS frame. Set the SAME clean flag
-        # set as uitk's WindowPanel rather than OR-ing FramelessWindowHint
-        # onto a QMainWindow's defaults -- those defaults carry native
-        # decoration hints which, on a frameless host-owned window, make it
-        # float always-on-top of its parent.
-        ui.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
-        ui.style.set(theme="dark", style_class="translucentBgWithBorder")
-        ui.header.config_buttons("menu", "minimize", "hide")
-        return ui
+class PackerUI(PanelLauncher):
+    STYLE_CLASS = "translucentBgWithBorder"
+    HEADER_BUTTONS = ("menu", "minimize", "hide")
 
 
 # -----------------------------------------------------------------------------

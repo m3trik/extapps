@@ -13,15 +13,23 @@ cannot import each other (mayatk ↔ blendertk ↔ extapps), each keeps a copy:
   ``blendertk.mat_utils.marmoset_bridge`` / ``extapps.marmoset_workflow``
   (the panel vendors the import/lookdev subset: no ``marmoset_rpc``, no bake
   template).
-* Substance connection + RPC client + templates —
+* Substance engine (``_substance_engine.py``: the DCC-free Painter half each
+  ``SubstanceBridge`` subclasses; byte-identical, mayatk's copy is the SSoT) +
+  connection + parameters + RPC client/installer/plugin + templates —
   ``mayatk.mat_utils.substance_bridge`` / ``blendertk.mat_utils.substance_bridge``
   (extapps' ``substance_workflow`` is a separate native in-Painter engine and
   is NOT a copy).
-* Curtain drape engine — ``mayatk.edit_utils._curtain_drape`` /
-  ``blendertk.edit_utils._curtain_drape``. Not app glue but a single tool's
+* Curtain drape engine — ``mayatk.edit_utils.curtain._curtain_drape`` /
+  ``blendertk.edit_utils.curtain._curtain_drape``. Not app glue but a single tool's
   displacement math: pythontk keeps only the general primitives it composes
   (``RailSurface``/``Polyline``/``MathUtils``/``BandLimitedNoise``), so the
   curtain-specific remainder is vendored with its two consumers.
+* Unity panel mixin — ``_unity_panel.py`` (``UnityPanelMixin``) in
+  ``mayatk.env_utils.unity_bridge`` / ``blendertk.env_utils.unity_bridge`` /
+  ``extapps.unity_workflow``: the project row, mode combo, Editor combo and
+  script management all three Unity panels share. unitytk is optional in each
+  host and Qt-free, and uitk carries no app vocabulary, so no importable home
+  exists.
 
 That duplication is only safe if a fix to one copy is mirrored into the
 others; this test fails the moment the shared files diverge, so drift is
@@ -29,9 +37,9 @@ caught at test time instead of shipping.
 
 Two comparison contracts:
 
-* **extapps ↔ mayatk (Marmoset)** — strict content equality (line-ending
-  tolerant) over an explicit vendored-file manifest: the panel's copy is
-  kept byte-identical to mayatk's.
+* **extapps ↔ mayatk (Marmoset, Unity panel mixin)** — strict content equality
+  (line-ending tolerant) over an explicit vendored-file manifest: the panel's
+  copy is kept byte-identical to mayatk's (the Unity mixin: to blendertk's too).
 * **mayatk ↔ blendertk** — *semantic twin* equality. A twin is "the same
   file except for which DCC it names", so the compare normalizes exactly
   that before asserting: docstrings collapse to a placeholder (they
@@ -54,6 +62,7 @@ Runs only in the monorepo layout (siblings checked out); skips cleanly in a
 standalone extapps checkout.
 """
 
+import ast
 import os
 import sys
 import unittest
@@ -227,7 +236,7 @@ MARMOSET_DCC_HALF = (
     "manifest.py",  # mayatk-only tool manifest
 )
 
-SUBSTANCE_ENGINE_TOP = ("connection.py", "parameters.py")
+SUBSTANCE_ENGINE_TOP = ("_substance_engine.py", "connection.py", "parameters.py")
 SUBSTANCE_ENGINE_DIRS = ("templates", "substance_rpc")
 SUBSTANCE_DCC_HALF = (
     "__init__.py",
@@ -322,9 +331,51 @@ class TestSubstanceEngineDccSync(
     subdirs = SUBSTANCE_ENGINE_DIRS
     dcc_half_files = SUBSTANCE_DCC_HALF
 
+    def test_engine_is_byte_identical(self):
+        """The engine's header declares it byte-identical, so compare it strictly.
+
+        The twin compare above tolerates host vocabulary in prose. The engine is
+        the one file here with no DCC half at all -- it names both hosts or
+        neither, and imports only relatively -- so any difference is drift (the
+        ``_unity_panel.py`` contract).
+        """
+        rel = "_substance_engine.py"
+        self.assertEqual(
+            _lines(self.may_dir / rel),
+            _lines(self.ble_dir / rel),
+            f"vendored '{rel}' has drifted between {self.hint}. Edit mayatk's "
+            f"copy (the SSoT) and mirror it byte-for-byte into blendertk.",
+        )
+
+    def test_engine_imports_no_host(self):
+        """The engine ships verbatim to both hosts, so it imports neither.
+
+        A byte-identical engine that imported ``mayatk`` (or ``bpy``) would pass
+        the identity check above and still break the other package: the one
+        drift two equal copies can carry. Siblings come in relatively.
+        """
+        rel = "_substance_engine.py"
+        tree = ast.parse((self.may_dir / rel).read_text(encoding="utf-8"))
+        hosts = {"maya", "mayatk", "pymel", "bpy", "blendertk"}
+        found = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                roots = [alias.name.split(".")[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
+                roots = [node.module.split(".")[0]]
+            else:
+                continue
+            found.extend(f"line {node.lineno}: {r}" for r in roots if r in hosts)
+        self.assertEqual(
+            found,
+            [],
+            f"'{rel}' imports a host package; move that call behind a DCC hook "
+            f"on SubstanceBridge instead",
+        )
+
 
 class TestCurtainEngineDccSync(_DccPairSyncMixin, unittest.TestCase):
-    subpath = ("edit_utils",)
+    subpath = ("edit_utils", "curtain")
     top_files = ("_curtain_drape.py",)
 
 
@@ -351,8 +402,37 @@ RIZOM_DCC_HALF = (
     "templates",
 )
 
-UNITY_SHARED_TOP = ("parameters.py", "unity_bridge.ui")
+UNITY_SHARED_TOP = ("parameters.py", "unity_bridge.ui", "_unity_panel.py")
 UNITY_DCC_HALF = ("__init__.py", "_unity_bridge.py", "unity_bridge_slots.py")
+
+# The Unity panel mixin: ONE file, byte-identical in all three Unity panels (SSoT:
+# mayatk's copy). Strict, not twin-normalized: it names no host, so any difference
+# is drift. Each entry: (package, package-relative dir, panel module, panel class).
+UNITY_PANEL_MIXIN = "_unity_panel.py"
+UNITY_PANEL_HOSTS = (
+    (
+        "mayatk",
+        ("env_utils", "unity_bridge"),
+        "unity_bridge_slots.py",
+        "UnityBridgeSlots",
+    ),
+    (
+        "blendertk",
+        ("env_utils", "unity_bridge"),
+        "unity_bridge_slots.py",
+        "UnityBridgeSlots",
+    ),
+    ("extapps", ("unity_workflow",), "slots.py", "UnityWorkflowSlots"),
+)
+# extapps' panel dir, classified like the Marmoset panel's: a file added there must
+# be ledgered as the vendored mixin or as panel-own.
+UNITY_WORKFLOW_PANEL_ONLY = {
+    "__init__.py",
+    "launcher.py",
+    "parameters.py",
+    "slots.py",
+    "unity_workflow.ui",
+}
 
 
 class TestHostNormalizer(unittest.TestCase):
@@ -439,6 +519,76 @@ class TestUnityBridgeDccSync(
     subpath = ("env_utils", "unity_bridge")
     top_files = UNITY_SHARED_TOP
     dcc_half_files = UNITY_DCC_HALF
+
+
+class TestUnityPanelMixinVendorSync(unittest.TestCase):
+    """The three Unity panels share one ``UnityPanelMixin``, byte-identical."""
+
+    def setUp(self):
+        self.dirs = {}
+        for pkg, parts, _module, _cls in UNITY_PANEL_HOSTS:
+            if pkg == "extapps":
+                d = Path(extapps.__file__).resolve().parent.joinpath(*parts)
+            else:
+                d = _sibling(pkg, *parts)
+            if d is None:
+                self.skipTest(
+                    f"{pkg} sibling not present (standalone extapps checkout)"
+                )
+            self.dirs[pkg] = d
+
+    def test_mixin_copies_are_content_identical(self):
+        ssot = self.dirs["mayatk"] / UNITY_PANEL_MIXIN
+        self.assertTrue(ssot.is_file(), f"missing {ssot}")
+        for pkg, d in self.dirs.items():
+            copy = d / UNITY_PANEL_MIXIN
+            self.assertTrue(copy.is_file(), f"missing {copy}")
+            self.assertEqual(
+                _lines(ssot),
+                _lines(copy),
+                f"vendored '{UNITY_PANEL_MIXIN}' has drifted between mayatk (the "
+                f"SSoT) and {pkg}. Edit mayatk's copy and mirror it into all three.",
+            )
+
+    def test_each_panel_lists_the_mixin_first(self):
+        """First base, so its hooks override ``BridgeSlotsBase``'s defaults.
+
+        Listed after the base, the mixin's ``template_dir`` / ``TEMPLATE_MENU`` /
+        ``default_output_dir`` would lose the MRO to the base's, silently.
+        """
+        for pkg, _parts, module, cls_name in UNITY_PANEL_HOSTS:
+            path = self.dirs[pkg] / module
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            cls = next(
+                (
+                    n
+                    for n in tree.body
+                    if isinstance(n, ast.ClassDef) and n.name == cls_name
+                ),
+                None,
+            )
+            self.assertIsNotNone(cls, f"{cls_name} not found in {path}")
+            first = cls.bases[0] if cls.bases else None
+            self.assertEqual(
+                getattr(first, "id", None),
+                "UnityPanelMixin",
+                f"{pkg}'s {cls_name} must list UnityPanelMixin as its first base",
+            )
+
+    def test_extapps_panel_files_all_classified(self):
+        classified = UNITY_WORKFLOW_PANEL_ONLY | {UNITY_PANEL_MIXIN}
+        present = {
+            rel
+            for rel in _rel_files(self.dirs["extapps"])
+            if not rel.endswith("_ui.py")  # generated by the uitk loader
+        }
+        self.assertLessEqual(
+            present,
+            classified,
+            "unclassified files in extapps.unity_workflow: "
+            f"{sorted(present - classified)} — ledger them in "
+            "UNITY_WORKFLOW_PANEL_ONLY or vendor-mirror them",
+        )
 
 
 if __name__ == "__main__":

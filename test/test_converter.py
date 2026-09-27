@@ -22,6 +22,7 @@ from pythontk import ImgUtils, FileUtils
 from pythontk.core_utils.engines.textures.map_factory import MapFactory as TextureMapFactory
 from pythontk.core_utils.engines.textures.map_registry import MapRegistry, WF
 
+from extapps.texture_maps.converter._converter import MapConverter
 from extapps.texture_maps.converter.slots import ConverterSlots
 
 # Check if Qt (PySide6/PyQt) is available via qtpy (for b012 tests)
@@ -1017,11 +1018,18 @@ class TestConverterOptimize(unittest.TestCase):
         ]
         for mode, text, expected in cases:
             with self.subTest(modifier=text):
-                self.assertEqual(ConverterSlots.resolve_affix(mode, text), expected)
+                self.assertEqual(MapConverter.resolve_affix(mode, text), expected)
 
     def test_resolve_affix_explicit_modes_override_the_underscore(self):
-        self.assertEqual(ConverterSlots.resolve_affix("prefix", "_LD"), ("prefix", "LD"))
-        self.assertEqual(ConverterSlots.resolve_affix("suffix", "LD_"), ("suffix", "LD"))
+        self.assertEqual(MapConverter.resolve_affix("prefix", "_LD"), ("prefix", "LD"))
+        self.assertEqual(MapConverter.resolve_affix("suffix", "LD_"), ("suffix", "LD"))
+
+    def test_resolve_affix_on_the_slots_is_a_deprecated_alias(self):
+        """It moved to the batch engine; the slots name forwards, with a notice."""
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(
+                ConverterSlots.resolve_affix("prefix", "_LD"), ("prefix", "LD")
+            )
 
     def test_auto_prefix_names_the_output_file(self):
         path = self._texture()
@@ -1067,7 +1075,7 @@ class TestConverterOptimize(unittest.TestCase):
             "pythontk.img_utils._img_utils.ImgUtils.ensure_ktx2_encoder",
             side_effect=declined,
         ), patch(
-            "extapps.texture_maps.converter.slots.MapOptimizer.optimize_map"
+            "extapps.texture_maps.converter._converter.MapOptimizer.optimize_map"
         ) as optimize:
             self.converter.tb000(self._widget(file_type="ktx2", old=""))
         optimize.assert_not_called()
@@ -1286,7 +1294,7 @@ class TestConverterOptimize(unittest.TestCase):
         path = self._texture(size=(256, 256))
         self.converter._get_texture_paths = Mock(return_value=[path])
 
-        predicted = self.converter._optimize_one(
+        predicted = self.converter.engine.optimize_one(
             path,
             file_type=None,
             max_size=128,
@@ -1298,7 +1306,7 @@ class TestConverterOptimize(unittest.TestCase):
             registry=MapRegistry(),
             dry_run=True,
         )
-        actual = self.converter._optimize_one(
+        actual = self.converter.engine.optimize_one(
             path,
             file_type=None,
             max_size=128,
@@ -1352,14 +1360,14 @@ class TestConverterOptimize(unittest.TestCase):
             return_value=[first, doomed, last]
         )
 
-        real_optimize_one = self.converter._optimize_one
+        real_optimize_one = self.converter.engine.optimize_one
 
         def _fail_on_doomed(texture_path, **kwargs):
             if texture_path == doomed:
                 raise PermissionError(f"[Errno 13] Permission denied: {doomed!r}")
             return real_optimize_one(texture_path, **kwargs)
 
-        self.converter._optimize_one = _fail_on_doomed
+        self.converter.engine.optimize_one = _fail_on_doomed
 
         with patch("builtins.print") as mock_print:
             self.converter.tb000(self._widget(clamp=128))
@@ -1552,11 +1560,11 @@ class TestConverterOptimize(unittest.TestCase):
                 stripped = text.strip()
                 expected = (
                     os.path.normpath(stripped)
-                    if ConverterSlots._is_abs_dest(stripped)
+                    if MapConverter.is_abs_dest(stripped)
                     else "new"
                 )
-                self.assertEqual(ConverterSlots._folder_name(text), expected)
-        self.assertEqual(ConverterSlots._folder_name(""), "")
+                self.assertEqual(MapConverter.folder_name(text), expected)
+        self.assertEqual(MapConverter.folder_name(""), "")
 
     # ---- absolute destinations ------------------------------------------
 
@@ -1564,8 +1572,8 @@ class TestConverterOptimize(unittest.TestCase):
         """A drive-rooted (or POSIX-rooted) entry names one shared destination,
         so it must survive the separator stripping that bare names get."""
         full = os.path.join(self.test_dir, "collected")
-        self.assertEqual(ConverterSlots._folder_name(full), os.path.normpath(full))
-        self.assertEqual(ConverterSlots._folder_name(f"  {full}  "), os.path.normpath(full))
+        self.assertEqual(MapConverter.folder_name(full), os.path.normpath(full))
+        self.assertEqual(MapConverter.folder_name(f"  {full}  "), os.path.normpath(full))
 
     def test_absolute_new_folder_collects_maps_from_several_source_folders(self):
         """The capability the Material Updater's Output Folder used to carry:
@@ -1688,10 +1696,10 @@ class TestConverterOptimize(unittest.TestCase):
             os.path.join(self.test_dir, "rock_BaseColor.png"),
         ]
         self.assertEqual(
-            ConverterSlots._output_collisions(pair, "png", ""),
+            MapConverter.output_collisions(pair, "png", ""),
             [("rock_BaseColor.png", pair)],
         )
-        self.assertEqual(ConverterSlots._output_collisions(pair, "", ""), [])
+        self.assertEqual(MapConverter.output_collisions(pair, "", ""), [])
 
     def test_a_workflow_target_that_forces_ONE_container_is_caught(self):
         """Choosing a target leaves the Format field on its sentinel, so
@@ -1703,7 +1711,7 @@ class TestConverterOptimize(unittest.TestCase):
             os.path.join(self.test_dir, "rock_BaseColor.tga"),
             os.path.join(self.test_dir, "rock_BaseColor.png"),
         ]
-        merged = ConverterSlots._output_collisions(pair, "", "", WF.GLTF)
+        merged = MapConverter.output_collisions(pair, "", "", WF.GLTF)
         self.assertEqual(len(merged), 1, "the profile's container was not consulted")
         self.assertEqual(merged[0][1], pair)
 
@@ -1713,7 +1721,7 @@ class TestConverterOptimize(unittest.TestCase):
             os.path.join(self.test_dir, "rock_BaseColor.tga"),
             os.path.join(self.test_dir, "rock_BaseColor.png"),
         ]
-        self.assertEqual(ConverterSlots._output_collisions(pair, "", "", None), [])
+        self.assertEqual(MapConverter.output_collisions(pair, "", "", None), [])
 
     def test_output_collisions_see_a_shared_destination_folder(self):
         """Two folders collapsed onto one absolute output collide even when the
@@ -1724,11 +1732,11 @@ class TestConverterOptimize(unittest.TestCase):
             os.path.join(self.test_dir, "b", "rock_BaseColor.png"),
         ]
         self.assertEqual(
-            ConverterSlots._output_collisions(pair, "", shared),
+            MapConverter.output_collisions(pair, "", shared),
             [("rock_BaseColor.png", pair)],
         )
         # per-texture subdirectories keep them apart
-        self.assertEqual(ConverterSlots._output_collisions(pair, "", "out"), [])
+        self.assertEqual(MapConverter.output_collisions(pair, "", "out"), [])
 
     def test_a_shared_folder_does_NOT_refuse_maps_that_keep_two_names(self):
         """The over-fire the bare-stem guard used to produce.
@@ -1815,7 +1823,7 @@ class TestConverterOptimize(unittest.TestCase):
         path = self._texture(size=(256, 256))
         size_before = os.path.getsize(path)
 
-        before, after = self.converter._optimize_one(
+        before, after = self.converter.engine.optimize_one(
             path,
             file_type=None,
             max_size=128,
@@ -1919,7 +1927,7 @@ class TestMapConverterFlipChannels(unittest.TestCase):
         path = self.create_test_image("flip_Identity.png", "RGB", (10, 20, 30))
         self.mock_sb.file_dialog.return_value = [path]
 
-        with patch.object(self.converter, "_flip_one") as mock_flip:
+        with patch.object(self.converter.engine, "flip_one") as mock_flip:
             self.converter.tb002(self._widget())
             mock_flip.assert_not_called()
 
@@ -1982,7 +1990,7 @@ class TestRenameModeExtension(unittest.TestCase):
         )
         base.update(kwargs)
         with contextlib.redirect_stdout(io.StringIO()):
-            self.slots._optimize_one(self.src, **base)
+            self.slots.engine.optimize_one(self.src, **base)
         out_dir = os.path.join(self.tmp, "out")
         return [
             os.path.join(out_dir, f)

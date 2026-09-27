@@ -13,11 +13,14 @@ they all use:
   and the per-engine semantic **preset** store.
 * :mod:`~extapps.photogrammetry.prep_stages` — :class:`PrepStagesMixin`
   (dHash + sharpness curation, exposure equalization) shared by both SfM engines.
-* :mod:`~extapps.photogrammetry._progress_notify` — :class:`ProgressNotifyMixin`,
-  the one ``_notify(stage, fraction)`` shim all five engines report progress through.
+* :mod:`~extapps.photogrammetry._workflow_engine` — :class:`WorkflowEngine`, the
+  base all five engines share: run identity + folders + QC sidecar, a logged tool
+  run through ``pythontk.AppLauncher``, and ``finalize_run``. It carries
+  :mod:`~extapps.photogrammetry._progress_notify`'s :class:`ProgressNotifyMixin`,
+  the one ``_notify(stage, fraction)`` shim they report progress through.
 * ``_panel_slots`` / ``_process_runner`` / ``_shared_params`` — the shared
   Switchboard-panel scaffolding (base slots + frames-source mixin, the async
-  ``QProcess`` runner, and the common pre-processing param specs) the
+  ``AppLauncher.spawn`` runner, and the common pre-processing param specs) the
   Metashape / RealityCapture / Brush panels are thin subclasses of.
 
 Domain-specific by design: this shared layer is used only by the photogrammetry

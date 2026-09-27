@@ -155,7 +155,7 @@ class _PanelTestCase(unittest.TestCase):
         # refused only because the user's own share held its port. Guarded at
         # what LAUNCHES, like the browser, and at the download settle offers.
         from pythontk.core_utils.app_installer import AppInstaller
-        from pythontk.core_utils.app_launcher import AppLauncher
+        from pythontk import AppLauncher
 
         tunnels = ("tailscale", "cloudflared")
         real_spawn, real_ensure = AppLauncher.spawn, AppInstaller.ensure
@@ -321,7 +321,7 @@ class TestGlbRowsMirrorTheExporter(_PanelTestCase):
         from extapps.webxr_preview import parameters as params
 
         exporter = ptk.ExportProfile.glb_defaults()
-        defaults = params.defaults()
+        defaults = params.Parameters.defaults()
         for key, row in params.GLB_KEYS.items():
             with self.subTest(row=row):
                 self.assertEqual(defaults[key], exporter[row])

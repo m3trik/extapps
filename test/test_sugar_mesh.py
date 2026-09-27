@@ -58,6 +58,66 @@ class SugarMeshTest(unittest.TestCase):
         self.assertIn("--high_poly True", cmd)
         self.assertIn("--refinement_time long", cmd)
 
+    @unittest.skipUnless(os.name == "nt", "cmd.exe .bat encoding is a Windows concern")
+    def test_run_bat_is_written_in_the_console_oem_codepage(self):
+        # cmd reads .bat text in the OEM codepage, so a UTF-8 .bat turns a
+        # non-ASCII install path into mojibake and the `cd /d` misses (the
+        # RealityScan runner documents the same trap).
+        sugar_dir = os.path.join(self.tmp, "SuGaR_é")
+        os.makedirs(sugar_dir)
+        sm = SugarMeshWorkflow(
+            project_path=os.path.join(self.tmp, "proj"),
+            name="t",
+            sugar_dir=sugar_dir,
+            mock_mode=True,
+        )
+        bat = sm._write_run_bat("python train_full_pipeline.py")
+        with open(bat, "rb") as fh:
+            data = fh.read()
+        self.assertIn(f'cd /d "{sugar_dir}"'.encode("oem"), data)
+
+    @unittest.skipUnless(os.name == "nt", "cmd.exe .bat line ends are a Windows concern")
+    def test_run_bat_line_ends_are_exact_crlf(self):
+        # "\r\n".join written through a TEXT-mode handle doubled every CR
+        # (CR CR LF): cmd tolerates it, but it is not the file the code meant
+        # to write. AppLauncher.write_batch_script owns the line ends now.
+        sm = SugarMeshWorkflow(
+            project_path=os.path.join(self.tmp, "proj"), name="t", mock_mode=True
+        )
+        bat = sm._write_run_bat("python train_full_pipeline.py")
+        with open(bat, "rb") as fh:
+            data = fh.read()
+        self.assertNotIn(b"\r\r\n", data)
+        self.assertTrue(data.endswith(b"SUGAR_EXIT=%errorlevel%\r\n"), data)
+
+    @unittest.skipIf(os.name == "nt", "the bash runner is the POSIX half")
+    def test_the_posix_runner_sources_the_env_and_reports_the_pipelines_status(self):
+        # SuGaR is Linux-native, but the runner was `cmd /c <.bat>` -- no such
+        # program there. The bash runner sources sugar_buildenv.sh, starts in
+        # the SuGaR folder, and exits with the pipeline's own status (a failed
+        # run must raise, not pass as success).
+        import subprocess
+
+        sugar_dir = os.path.join(self.tmp, "SuGaR")
+        os.makedirs(sugar_dir)
+        env_script = os.path.join(sugar_dir, "sugar_buildenv.sh")
+        with open(env_script, "w", encoding="utf-8") as fh:
+            fh.write("export PTK_SUGAR_ENV=on\n")
+        sm = SugarMeshWorkflow(
+            project_path=os.path.join(self.tmp, "proj"),
+            name="t",
+            sugar_dir=sugar_dir,
+            mock_mode=True,
+        )
+        self.assertEqual(sm.env_bat, env_script)
+        here = os.path.realpath(sugar_dir)
+        script = sm._write_run_bat(
+            f"sh -c 'test \"$PTK_SUGAR_ENV\" = on && test \"$(pwd -P)\" = \"{here}\" && exit 3'"
+        )
+        proc = subprocess.run(["bash", script], capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
+        self.assertIn("SUGAR_EXIT=3", proc.stdout)
+
     def test_runner_quality_maps_refinement(self):
         colmap = os.path.join(self.tmp, "welding_colmap")
         os.makedirs(os.path.join(colmap, "images"))
@@ -80,7 +140,7 @@ class SugarPresetOverlayTest(unittest.TestCase):
     """--preset lays shared run-template SuGaR knobs over the runner defaults."""
 
     def setUp(self):
-        from pythontk.core_utils.user_config import CONFIG_ROOT_ENV_VAR
+        from pythontk import UserConfig
         from unittest import mock
         import extapps.photogrammetry.profile as pp
 
@@ -88,7 +148,7 @@ class SugarPresetOverlayTest(unittest.TestCase):
         env = mock.patch.dict(os.environ)
         env.start()
         self.addCleanup(env.stop)
-        os.environ[CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
+        os.environ[UserConfig.CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
         os.environ.pop(pp.PROFILE_ENV, None)
         pp.Profile.preset_store("sugar").save("t_mesh", {
             "refinement_time": "long", "regularization": "sdf",

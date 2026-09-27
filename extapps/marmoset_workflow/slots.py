@@ -95,7 +95,7 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
 
     @property
     def params_module(self):
-        return _params
+        return _params.Parameters
 
     @property
     def template_dir(self) -> Path:

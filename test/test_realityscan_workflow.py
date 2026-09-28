@@ -10,6 +10,7 @@ silently producing an empty reconstruction.
 """
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -88,6 +89,50 @@ class RemoteNodeWithoutLocalExeTest(unittest.TestCase):
             self.assertTrue(RealityScanRunner().is_available())
         with mock.patch.dict(os.environ, {"RC_EXE": "", "RC_RSNODE": "0"}):
             self.assertFalse(RealityScanRunner().is_available())
+
+    def test_a_configured_remote_node_runs_and_gets_no_client_path(self):
+        """The Linux shape end to end: no local exe, a node configured by env.
+        Every stage must reach the node (a local exe is the CLI transport's
+        need, not the workflow's), and nothing the node receives may be a
+        client path: the node shares no filesystem with this host."""
+        from extapps.photogrammetry.realityscan_workflow import _rsnode_connection
+
+        try:
+            from .test_rsnode_connection import _FakeClient
+        except ImportError:
+            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+            from test_rsnode_connection import _FakeClient
+
+        fc = _FakeClient()
+        fc.base_url = "http://node:8000"
+        frames = os.path.join(self.tmp, "frames")
+        os.makedirs(frames)
+        open(os.path.join(frames, "a.jpg"), "wb").close()
+        env = {"RC_EXE": "", "RC_RSNODE": "1", "RC_RSNODE_URL": "http://node:8000"}
+        # The env-configured transport builds its own client: hand it the fake,
+        # keeping the real (static) command normalizer.
+        factory = mock.Mock(
+            return_value=fc,
+            normalize_commands=_rsnode_connection.RsNodeClient.normalize_commands,
+        )
+        with mock.patch.dict(os.environ, env), mock.patch.object(
+            _rsnode_connection, "RsNodeClient", factory
+        ):
+            wf = self._workflow()
+            wf.create_chunk("t")
+            wf.add_image_dirs([frames])
+            wf.export_model(save_usdz=False)
+            wf.finalize_run(success=True)
+        self.assertEqual(
+            [name for grp in fc.groups for (name, _) in grp],
+            ["newScene", "addFolder", "exportSelectedModel"],
+        )
+        self.assertEqual(set(fc.saved), {"t"})  # the scene name, every stage
+        sent = [p for grp in fc.groups for (_, ps) in grp for p in ps] + fc.saved
+        for value in sent:
+            self.assertNotRegex(
+                value, r"[\\/]", f"client path shipped to the node: {value!r}"
+            )
 
 
 class AddImagesCommandTest(unittest.TestCase):
@@ -188,6 +233,19 @@ class ConnectionSelectionTest(unittest.TestCase):
         wf = self._wf(use_rsnode=True)
         with mock.patch.object(RsNodeConnection, "is_available", return_value=False):
             with self.assertRaises(RealityScanInteractiveError):
+                wf._connection()
+
+    def test_no_exe_and_no_node_raises_not_found(self):
+        # The exe guard moved onto the CLI fallback (a node needs no local
+        # exe); it still fires when nothing can run the stage.
+        with mock.patch.object(
+            RealityCaptureWorkflow, "find_realitycapture_exe", return_value=None
+        ):
+            wf = RealityCaptureWorkflow(
+                project_path=os.path.join(self.tmp, "proj"), name="t", mock_mode=False
+            )
+        with mock.patch.object(RsNodeConnection, "is_available", return_value=False):
+            with self.assertRaisesRegex(RuntimeError, "executable not found"):
                 wf._connection()
 
     def test_connection_resolved_once_and_cached(self):

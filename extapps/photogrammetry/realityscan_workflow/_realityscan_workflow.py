@@ -281,6 +281,13 @@ class RealityCaptureWorkflow(
 
     def get_license_info(self) -> str:
         if self.rc_exe is None:
+            if self._use_rsnode:
+                # No local install needed: the run drives a node over REST.
+                from ._rsnode_connection import DEFAULT_RSNODE_URL
+
+                return (
+                    f"RealityScan via RSNode ({self._rsnode_url or DEFAULT_RSNODE_URL})"
+                )
             return APP.not_found_message
         product = (
             "RealityScan"
@@ -301,8 +308,8 @@ class RealityCaptureWorkflow(
 
     def _resolve_connection(self):
         forced = self._use_rsnode is True
+        reason = ""
         if self._use_rsnode is not False:  # auto or forced -> try RSNode first
-            reason = ""
             try:
                 from ._rsnode_connection import RsNodeConnection
 
@@ -317,8 +324,18 @@ class RealityCaptureWorkflow(
                 raise RealityScanInteractiveError(
                     "RSNode transport forced (use_rsnode=True) but unavailable: "
                     f"{reason}. Start RealityScan + its Real-time Assistance node, "
-                    "or set RC_RSNODE_URL."
+                    "or set RC_RSNODE_URL. A node on another host answers the "
+                    "token handshake only on its own localhost: tunnel to it "
+                    "(ssh -L 8000:127.0.0.1:8000 <node-host>) and point "
+                    "RC_RSNODE_URL at the local end."
                 )
+        if self.rc_exe is None:
+            # A local exe is the CLI transport's need, not the workflow's: a
+            # host without RealityScan (Linux) still drives a node over REST.
+            raise RuntimeError(
+                "RealityCapture executable not found"
+                + (f", and {reason}." if reason else ".")
+            )
         return RealityScanConnection(self.rc_exe)
 
     def _run_rc(self, *commands: str, label: str = "rc") -> int:
@@ -336,8 +353,6 @@ class RealityCaptureWorkflow(
         if self.mock_mode:
             print(f"[mock:{label}] rc {' '.join(commands)}")
             return 0
-        if self.rc_exe is None:
-            raise RuntimeError("RealityCapture executable not found.")
 
         tail_cmds: List[str] = []
         if self._project_initialized and os.path.isfile(self._project_file):

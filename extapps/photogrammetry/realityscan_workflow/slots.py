@@ -107,7 +107,9 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
             "Headless runs drive RealityScan through its RSNode REST bridge. If a "
             "run can't connect, launch RealityScan, sign in, and enable Workflow ▸ "
             "Real-time Assistance — the CLI fallback works only in an interactive "
-            "desktop session. Set $RC_RSNODE_URL for a node on another host."
+            "desktop session. A node on another host answers only on its own "
+            "localhost: tunnel to it (ssh -L 8000:127.0.0.1:8000 <host>) and set "
+            "$RC_RSNODE=1 + $RC_RSNODE_URL to the tunnel's local end."
         )
 
     def list_template_modes(self) -> List[Tuple[str, str]]:

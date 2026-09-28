@@ -325,8 +325,9 @@ def main(argv=None) -> int:
                         "writes its project during the run (state persistence), "
                         "so by DEFAULT (off) the local .rsproj is removed after "
                         "export, leaving only the deliverables. Note: via --rsnode "
-                        "the project lives in the node session and is never "
-                        "downloaded, so reopening requires a local run (--rsnode off).")
+                        "the project is saved in the node's own project store "
+                        "under --name and is never downloaded, so reopening it "
+                        "here requires a local run (--rsnode off).")
     p.add_argument("--texture-size", default=preset.get("texture_size", "auto"),
                    help="'auto' (default) derives from source long edge (capped "
                         "8192). NOTE: RC's bake size is GUI/settings-controlled, "

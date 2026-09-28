@@ -2646,7 +2646,7 @@
               "kind": "method",
               "signature": "(self, label: str = 'New Chunk')",
               "summary": "Start a fresh RC scene.",
-              "line": 556,
+              "line": 571,
               "deprecated": false
             },
             {
@@ -2655,7 +2655,7 @@
               "kind": "method",
               "signature": "(self, image_sources: Union[str, Sequence[str]])",
               "summary": "Add images from a directory (non-recursive) or list of paths.",
-              "line": 574,
+              "line": 589,
               "deprecated": false
             },
             {
@@ -2664,7 +2664,7 @@
               "kind": "method",
               "signature": "(self, dirs: Sequence[str])",
               "summary": "Add images from multiple directories — RC keeps them in one scene.",
-              "line": 613,
+              "line": 628,
               "deprecated": false
             },
             {
@@ -2673,7 +2673,7 @@
               "kind": "method",
               "signature": "(self, quality_threshold: float = 0.5)",
               "summary": "No direct RC equivalent.",
-              "line": 637,
+              "line": 652,
               "deprecated": false
             },
             {
@@ -2682,7 +2682,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, filter_mask: bool = False)",
               "summary": "Run RC alignment (SfM).",
-              "line": 651,
+              "line": 666,
               "deprecated": false
             },
             {
@@ -2691,7 +2691,7 @@
               "kind": "method",
               "signature": "(self, downscale: int = 2, generic_preselection: bool = True, reference_preselection: bool = True, keypoint_limit: int = 60000, tiepoint_limit: int = 10000, min_aligned_pct: float = 50.0)",
               "summary": "Run alignment;",
-              "line": 702,
+              "line": 717,
               "deprecated": false
             },
             {
@@ -2700,7 +2700,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC performs alignment refinement internally during ``-align``;",
-              "line": 748,
+              "line": 763,
               "deprecated": false
             },
             {
@@ -2709,7 +2709,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No direct RC equivalent.",
-              "line": 761,
+              "line": 776,
               "deprecated": false
             },
             {
@@ -2718,7 +2718,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC applies color correction inside ``-calculateTexture`` via",
-              "line": 769,
+              "line": 784,
               "deprecated": false
             },
             {
@@ -2727,7 +2727,7 @@
               "kind": "method",
               "signature": "(self, source_dir: str, masks_dir: Optional[str] = None, model_name: str = 'u2net') -> Optional[str]",
               "summary": "Run rembg on ``source_dir`` → write per-image alpha masks.",
-              "line": 779,
+              "line": 794,
               "deprecated": false
             },
             {
@@ -2736,7 +2736,7 @@
               "kind": "method",
               "signature": "(self, masks_dir: str, mask_source: str = 'alpha')",
               "summary": "RC accepts per-image masks named ``<image>.png`` next to the",
-              "line": 812,
+              "line": 827,
               "deprecated": false
             },
             {
@@ -2745,7 +2745,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "RC does not expose depth maps as a separate stage — mesh calc",
-              "line": 826,
+              "line": 841,
               "deprecated": false
             },
             {
@@ -2754,7 +2754,7 @@
               "kind": "method",
               "signature": "(self, source_data=None, surface_type=None, interpolation=None, face_count: Optional[str] = None)",
               "summary": "Build a polygon mesh.",
-              "line": 837,
+              "line": 852,
               "deprecated": false
             },
             {
@@ -2763,7 +2763,7 @@
               "kind": "method",
               "signature": "(self, remove_components_face_threshold: int = 100, close_holes_level: int = 30, smooth_strength: int = 0)",
               "summary": "Mesh cleanup via ``-setMinComponentSize N`` + ``-cleanModel``.",
-              "line": 883,
+              "line": 898,
               "deprecated": false
             },
             {
@@ -2772,7 +2772,7 @@
               "kind": "method",
               "signature": "(self, target_face_count: int = 20000000)",
               "summary": "Simplify the densest model to ~``target_face_count`` triangles.",
-              "line": 925,
+              "line": 940,
               "deprecated": false
             },
             {
@@ -2781,7 +2781,7 @@
               "kind": "method",
               "signature": "(self, *args, **kwargs)",
               "summary": "No RC equivalent.",
-              "line": 964,
+              "line": 979,
               "deprecated": false
             },
             {
@@ -2790,7 +2790,7 @@
               "kind": "method",
               "signature": "(self, mesh_path: str)",
               "summary": "Import an external low-poly mesh into the project (Maya-authored",
-              "line": 972,
+              "line": 987,
               "deprecated": false
             },
             {
@@ -2799,7 +2799,7 @@
               "kind": "method",
               "signature": "(self, texture_size: int = 4096, texture_type=None, blending_mode=None, mapping_mode=None, ghosting_filter: bool = True)",
               "summary": "Unwrap (when no mesh was imported) + bake texture from solved",
-              "line": 992,
+              "line": 1007,
               "deprecated": false
             },
             {
@@ -2808,7 +2808,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "RC saves on every CLI call (``-save`` is appended);",
-              "line": 1037,
+              "line": 1052,
               "deprecated": false
             },
             {
@@ -2817,7 +2817,7 @@
               "kind": "method",
               "signature": "(self, export_format: Optional[str] = None, binary: bool = True, precision: int = 6, texture_format=None, save_texture: bool = True, save_normals: bool = True, save_colors: bool = True, save_cameras: bool = False, overwrite: bool = True, save_usdz: bool = True)",
               "summary": "Export the current model.",
-              "line": 1046,
+              "line": 1061,
               "deprecated": false
             },
             {
@@ -2826,7 +2826,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Export RC's processing report XML and append to the QC log.",
-              "line": 1095,
+              "line": 1110,
               "deprecated": false
             },
             {
@@ -2835,7 +2835,7 @@
               "kind": "method",
               "signature": "(self, success: bool = True) -> str",
               "summary": "Flush the QC JSON sidecar + release the transport.",
-              "line": 1123,
+              "line": 1138,
               "deprecated": false
             }
           ]
@@ -3066,7 +3066,7 @@
         {
           "name": "RsNodeConnection",
           "summary": "Run RealityScan CLI command tails over the RSNode REST API.",
-          "line": 76,
+          "line": 101,
           "bases": [],
           "members": [
             {
@@ -3075,7 +3075,7 @@
               "kind": "method",
               "signature": "(self) -> bool",
               "summary": "True if a RealityScan RSNode answers the token handshake at *base_url*.",
-              "line": 119,
+              "line": 164,
               "deprecated": false
             },
             {
@@ -3084,7 +3084,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Best-effort teardown of this connection's own RSNode session.",
-              "line": 138,
+              "line": 185,
               "deprecated": false
             },
             {
@@ -3093,7 +3093,7 @@
               "kind": "method",
               "signature": "(self, commands: Sequence[str], log_path: str, timeout: Optional[float] = None, **_ignored: Any) -> subprocess.CompletedProcess",
               "summary": "Execute a CLI command tail over REST;",
-              "line": 156,
+              "line": 203,
               "deprecated": false
             }
           ]
@@ -3106,7 +3106,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 56,
+          "line": 68,
           "deprecated": false
         }
       ]
@@ -3247,7 +3247,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "",
-              "line": 113,
+              "line": 115,
               "deprecated": false
             },
             {
@@ -3256,7 +3256,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 116,
+              "line": 118,
               "deprecated": false
             },
             {
@@ -3265,7 +3265,7 @@
               "kind": "method",
               "signature": "(self) -> dict",
               "summary": "",
-              "line": 122,
+              "line": 124,
               "deprecated": false
             }
           ]

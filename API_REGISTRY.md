@@ -661,8 +661,8 @@ RSNode REST client — drive a running RealityScan 2.1 over its REST API (headle
 
 RSNode-backed connection — drive a running RealityScan 2.1 over REST.
 
-- [`DEFAULT_RSNODE_URL`](extapps/extapps/photogrammetry/realityscan_workflow/_rsnode_connection.py#L56) — constant
-- **[`class RsNodeConnection`](extapps/extapps/photogrammetry/realityscan_workflow/_rsnode_connection.py#L76)** — Run RealityScan CLI command tails over the RSNode REST API.
+- [`DEFAULT_RSNODE_URL`](extapps/extapps/photogrammetry/realityscan_workflow/_rsnode_connection.py#L68) — constant
+- **[`class RsNodeConnection`](extapps/extapps/photogrammetry/realityscan_workflow/_rsnode_connection.py#L101)** — Run RealityScan CLI command tails over the RSNode REST API.
   - `RsNodeConnection.is_available(self) -> bool` — True if a RealityScan RSNode answers the token handshake at *base_url*.
   - `RsNodeConnection.close(self) -> None` — Best-effort teardown of this connection's own RSNode session.
   - `RsNodeConnection.run(self, commands: Sequence[str], log_path: str, timeout: Optional[float] = None, **_ignored: Any) -> subprocess.CompletedProcess` — Execute a CLI command tail over REST;

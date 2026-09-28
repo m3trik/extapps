@@ -17,18 +17,27 @@ CLI tail ``[-load <proj>] <stage cmds> -save <proj> -quit``):
 * ``-load`` / ``-quit``  -> **dropped** — the REST *session* keeps the project
   loaded across command groups (verified live), and we must never ``-quit`` the
   user's running RealityScan.
-* ``-save <proj>``       -> ``GET /project/save?name=<proj>`` (after the group).
+* ``-save <proj>``       -> ``GET /project/save?name=<scene>`` (after the group),
+  where ``<scene>`` is the project's bare stem: the API names it a *scene name*,
+  and the node keeps the project in its own store (``/node/projects``, reopened
+  by guid), not at a path the caller chose.
 * ``-addFolder`` / ``-add`` with a local path -> the image(s) are **uploaded**
   (``POST /project/upload``) into the session ``data`` folder and the parameter
   is rewritten to the relative name RSNode resolves (it sandboxes inputs to the
   session's private ``_data`` folder, so an absolute disk path never resolves).
+  A name another client path already holds this session is uploaded as
+  ``<stem>~N`` instead of overwriting it (:meth:`_claim`); image layers
+  (``<image>.mask.png``) are renamed with their image. The sidecars RealityScan
+  reads beside an image ride along: each image's ``<stem>.xmp`` (under the
+  image's node stem) and, for a folder, its ``_common.xmp``.
 * model/report export (``-exportSelectedModel`` / ``-exportModel`` /
-  ``-exportReport``) -> the absolute output path is rewritten to a basename
-  (RSNode writes exports into the session ``output`` folder) and the files
-  produced by the run are **downloaded** back to the caller's dir.
-  ``-exportReport``'s 2nd param (the report *template*) is additionally
-  **uploaded** to the ``output`` folder + relativized — RSNode resolves command
-  auxiliary files there, and the template is excluded from the download.
+  ``-exportReport``) -> the output path is rewritten to a bare name (RSNode
+  writes exports into the session ``output`` folder) and the files produced by
+  the run are **downloaded** back to the caller's dir.
+* command-auxiliary files (``-exportReport``'s 2nd param, the report
+  *template*; ``-importModel``'s mesh) -> **uploaded** to the ``output`` folder
+  + referenced by name — RSNode resolves command auxiliary files there. An
+  upload lands before the export snapshot, so it is never pulled back.
 * everything else        -> one ``POST /project/commandgroup`` (async 202
   ``{taskID}``), then poll ``GET /project/tasks`` until the task is
   ``finished`` / ``failed``.
@@ -37,18 +46,21 @@ Session safety: like ``PainterConnection``'s ``force_new_instance``, this create
 its **own** RSNode session via ``/project/create`` — it never attaches to the
 project the user has open in the GUI.
 
-Host independence: the *deliverables* move over REST — inputs are uploaded and
-the exported model/report are downloaded — so the workflow needn't share a
-filesystem with the RSNode/RealityScan and can drive a remote node (the common
-case is still the local GPU host, a same-machine copy). The one exception is
-``-save``: its path is resolved on the node's filesystem, since the ``.rsproj``
-is node-side working state, not a downloaded deliverable.
+Host independence: no client path ever reaches the node. Inputs are uploaded,
+exports are downloaded, and the saved project is named, so the workflow needn't
+share a filesystem with the RSNode/RealityScan (a Linux client driving a
+Windows node). Every client path becomes a bare name via :meth:`_node_name`.
+The token handshake (``/node/connection``) answers only on the node's own
+localhost, so a client on another host reaches the node through a tunnel
+(``ssh -L 8000:127.0.0.1:8000 <node-host>``) with ``RC_RSNODE_URL`` at its
+local end.
 """
 from __future__ import annotations
 
 import os
+import re
 import subprocess
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from ..profile import IMAGE_EXTS
 from ._rsnode_client import RsNodeClient, RsNodeError
@@ -72,9 +84,39 @@ _INPUT_CMDS = frozenset({"addFolder", "add"})
 # back to the caller's directory after a successful run.
 _EXPORT_CMDS = frozenset({"exportSelectedModel", "exportModel", "exportReport"})
 
+# Command -> index of a parameter that names a local command-auxiliary file
+# (report template, imported mesh). RSNode resolves these relative to the
+# session ``output`` folder, so each is uploaded there and referenced by name.
+_AUX_INPUT_PARAMS = {"exportReport": 1, "importModel": 0}
+
+# Sidecars RealityScan reads beside an image by name (rshelp "XMP Metadata
+# Files"): ``<stem>.xmp`` pairs with the image of that stem in the same folder,
+# and ``_common.xmp`` applies to every image in its folder. Uploaded with the
+# images so camera priors survive; kept apart from IMAGE_EXTS, which means
+# images.
+_STEM_SIDECAR_EXTS = (".xmp",)
+_FOLDER_SIDECARS = ("_common.xmp",)
+
 
 class RsNodeConnection:
     """Run RealityScan CLI command tails over the RSNode REST API."""
+
+    @staticmethod
+    def _node_name(path: str) -> str:
+        """The bare name the node resolves for the client's *path*.
+
+        Splits on both separators, not only this host's: a POSIX client's
+        ``/home/...`` must arrive bare too, and on the Windows node either one
+        would read as a directory. The node shares no filesystem with the
+        client, so no client directory may reach it.
+        """
+        return re.split(r"[\\/]", path.rstrip("\\/"))[-1]
+
+    @classmethod
+    def _scene_name(cls, path: str) -> str:
+        """``/project/save``'s scene name for the client's project *path*: its
+        bare stem (``.../job.rsproj`` -> ``job``)."""
+        return os.path.splitext(cls._node_name(path))[0]
 
     @staticmethod
     def _list_images(directory: str) -> List[str]:
@@ -114,6 +156,9 @@ class RsNodeConnection:
         # Keep base_url in sync with an injected client.
         self.base_url = self.client.base_url
         self.exe = exe
+        # (node folder, case-folded name) -> the client path uploaded under it
+        # this session; see _claim.
+        self._claims: Dict[Tuple[str, str], str] = {}
 
     # -- availability ------------------------------------------------------
     def is_available(self) -> bool:
@@ -134,6 +179,8 @@ class RsNodeConnection:
             self.client.connect()
         if not self.client.session:
             self.client.create_session()
+            # A new session has empty folders, so its node names start over.
+            self._claims.clear()
 
     def close(self) -> None:
         """Best-effort teardown of this connection's own RSNode session.
@@ -162,8 +209,9 @@ class RsNodeConnection:
     ) -> subprocess.CompletedProcess:
         """Execute a CLI command tail over REST; return a ``CompletedProcess``.
 
-        ``-load`` / ``-quit`` are dropped, ``-save`` becomes a ``/project/save``,
-        and the remaining stage commands run as one command group whose task is
+        ``-load`` / ``-quit`` are dropped, ``-save`` becomes a ``/project/save``
+        of the project's scene name, and the remaining stage commands run as one
+        command group whose task is
         awaited. ``returncode`` is 0 on a ``finished`` task, non-zero on a
         ``failed`` task or transport error — matching how the CLI connection
         signals failure so :meth:`RealityCaptureWorkflow._run_rc` can read the log
@@ -174,14 +222,14 @@ class RsNodeConnection:
         self._ensure_session()
 
         stage: List[Dict[str, Any]] = []
-        save_path: Optional[str] = None
+        save_name: Optional[str] = None
         had_save = False
         for cmd in RsNodeClient.normalize_commands([list(commands)]):
             name = cmd["commandName"]
             if name == "save":
                 had_save = True
                 if cmd["parameters"]:
-                    save_path = cmd["parameters"][0]
+                    save_name = self._scene_name(cmd["parameters"][0])
                 continue
             if name in _LIFECYCLE:  # load / quit / open / close
                 continue
@@ -217,7 +265,7 @@ class RsNodeConnection:
                         )
             if had_save and rc == 0:
                 try:
-                    self.client.save_project(save_path)
+                    self.client.save_project(save_name)
                 except RsNodeError as e:
                     detail += f"\n[save warning] {e}"
             if rc == 0:
@@ -230,65 +278,190 @@ class RsNodeConnection:
         return subprocess.CompletedProcess(argv, rc)
 
     def _upload_inputs(self, stage: List[Dict[str, Any]]) -> None:
-        """Upload local image inputs to the session, rewriting paths to relative.
+        """Upload local inputs to the session, rewriting paths to node names.
 
         For each ``addFolder``/``add`` whose first parameter is a local dir/file,
         upload the image(s) into the session ``data`` folder and replace the
-        parameter with the relative name RSNode resolves against ``_data``. A
-        parameter that is not a local path (already a relative name) is left
-        untouched, so this is idempotent and safe for re-issued commands.
+        parameter with the relative name RSNode resolves against ``_data``,
+        with each image's XMP sidecars (:meth:`_upload_sidecars`). For
+        each command-auxiliary file (:data:`_AUX_INPUT_PARAMS`: the report
+        template, an imported mesh), upload it to the ``output`` folder, where
+        RSNode resolves those (API docs: "for multiple inputs ... upload with
+        folder=output"). A bare name (already uploaded) is left untouched, so
+        this is idempotent and safe for re-issued commands; a path that is not
+        on this client raises rather than reach the node. Runs before
+        :meth:`_rewrite_exports` snapshots the output folder, so an uploaded
+        file is never pulled back as an output.
         """
         for cmd in stage:
-            if cmd["commandName"] not in _INPUT_CMDS or not cmd["parameters"]:
+            name, params = cmd["commandName"], cmd["parameters"]
+            aux = _AUX_INPUT_PARAMS.get(name)
+            if aux is not None and len(params) > aux:
+                p = params[aux]
+                if os.path.isfile(p):
+                    rel = self._upload_name("output", p)
+                    with open(p, "rb") as fh:
+                        self.client.upload_file(rel, fh.read(), folder="output")
+                    params[aux] = rel
+                else:
+                    self._require_node_name(name, p)
+            if name not in _INPUT_CMDS or not params:
                 continue
-            p = cmd["parameters"][0]
+            p = params[0]
             if os.path.isdir(p):
-                rel = os.path.basename(os.path.normpath(p))
+                rel = self._claim("data", self._node_name(p), p)
+                folder = f"data/{rel}"
                 for img in self._list_images(p):
+                    node = self._upload_name(folder, img)
                     with open(img, "rb") as fh:
-                        self.client.upload_file(f"{rel}/{os.path.basename(img)}", fh.read())
+                        self.client.upload_file(f"{rel}/{node}", fh.read())
+                    self._upload_sidecars(folder, f"{rel}/", img, node)
+                for side in _FOLDER_SIDECARS:
+                    side_path = os.path.join(p, side)
+                    if os.path.isfile(side_path):
+                        node = self._claim(folder, side, side_path)
+                        with open(side_path, "rb") as fh:
+                            self.client.upload_file(f"{rel}/{node}", fh.read())
                 cmd["parameters"] = [rel]
             elif os.path.isfile(p):
-                rel = os.path.basename(p)
+                rel = self._upload_name("data", p)
                 with open(p, "rb") as fh:
                     self.client.upload_file(rel, fh.read())
+                # A single image's own <stem>.xmp only: _common.xmp speaks for
+                # a whole client folder, and the data root mixes folders.
+                self._upload_sidecars("data", "", p, rel)
                 cmd["parameters"] = [rel]
-            # else: not a local path -> already a relative/uploaded name; leave as-is.
+            else:
+                self._require_node_name(name, p)
+
+    def _claim(self, folder: str, name: str, source: str) -> str:
+        """Reserve a session-unique node name in *folder* for client path *source*.
+
+        Uploads land in shared session folders under bare names, so two client
+        files with one name (frames from two capture folders) would overwrite
+        each other there and the run would silently lose images. Returns *name*
+        while no other client path holds it this session -- so non-colliding
+        names never change and a re-issued path gets back the name it had --
+        else the first free ``<stem>~N<ext>`` (N from 2). Claims are keyed by
+        *stem*, held by the client's ``<dir>/<stem>``: RealityScan pairs
+        same-stem files (an image and its ``<stem>.xmp`` act as one), so
+        ``a.jpg`` and ``a.png`` from two folders must not share a node stem, or
+        one image would take the other's camera priors; same-stem files from
+        one folder share it, as they do there. Stems compare case-folded: the
+        node is Windows, where ``IMG.JPG`` and ``img.jpg`` are one file.
+
+        Parameters:
+            folder: The node folder the name lives in (``data``,
+                ``data/<dir>``, ``output``).
+            name: The bare name wanted.
+            source: The client file or directory being uploaded.
+
+        Returns:
+            The node name *source* is uploaded under.
+        """
+        holder = os.path.normcase(os.path.abspath(os.path.splitext(source)[0]))
+        stem, ext = os.path.splitext(name)
+        candidate, n = stem, 1
+        while True:
+            key = (folder.casefold(), candidate.casefold())
+            if self._claims.setdefault(key, holder) == holder:
+                return candidate + ext
+            n += 1
+            candidate = f"{stem}~{n}"
+
+    def _upload_sidecars(self, folder: str, prefix: str, image: str, node: str) -> None:
+        """Upload the stem-paired sidecars beside client *image* (``<stem>.xmp``)
+        under the image's node stem, so a renamed image keeps its priors
+        (``a~2.jpg`` -> ``a~2.xmp``). *prefix* is the upload path of *folder*
+        (``"<dir>/"``, or ``""`` for the data root). An image layer has no
+        sidecar of its own: its image carries it.
+        """
+        if self._layer_owner(image):
+            return
+        base, node_stem = os.path.splitext(image)[0], os.path.splitext(node)[0]
+        for ext in _STEM_SIDECAR_EXTS:
+            # the node (Windows) pairs either case; a POSIX client must look
+            side = next(
+                (base + e for e in (ext, ext.upper()) if os.path.isfile(base + e)), None
+            )
+            if side:
+                name = self._claim(folder, node_stem + ext, side)
+                with open(side, "rb") as fh:
+                    self.client.upload_file(prefix + name, fh.read())
+
+    @staticmethod
+    def _layer_owner(path: str) -> Optional[str]:
+        """The image beside *path* that *path* is a layer of, or None.
+
+        RealityScan pairs an image layer with its image by the image's full
+        name (``DSC_0001.jpg.mask.png``, ``DSC_0001.jpg.texture.jpg``). The
+        owner is the longest ``<prefix>.`` of the name that is an image file in
+        the same directory.
+        """
+        directory, name = os.path.split(path)
+        dot = len(name)
+        while True:
+            dot = name.rfind(".", 0, dot)
+            if dot <= 0:
+                return None
+            owner = os.path.join(directory, name[:dot])
+            if owner.lower().endswith(IMAGE_EXTS) and os.path.isfile(owner):
+                return owner
+
+    def _upload_name(self, folder: str, path: str) -> str:
+        """The session-unique node name client file *path* uploads under.
+
+        An image layer takes its image's node name plus its own suffix, so a
+        renamed image keeps its mask/texture layers paired.
+        """
+        name = self._node_name(path)
+        owner = self._layer_owner(path)
+        if owner:
+            name = (
+                self._upload_name(folder, owner) + name[len(self._node_name(owner)) :]
+            )
+        return self._claim(folder, name, path)
+
+    @classmethod
+    def _require_node_name(cls, command: str, param: str) -> None:
+        """Raise unless *param* is already a bare node name.
+
+        A parameter that is neither a local file/dir nor a bare name is a client
+        path this host doesn't have. Sent as-is, the node would resolve it inside
+        its session sandbox and fail with an opaque "file not found"; failing
+        here names the missing path instead.
+        """
+        if cls._node_name(param) != param:
+            raise RsNodeError(
+                f"-{command} {param!r}: not found on this client, and a client "
+                "path cannot resolve on the RSNode host"
+            )
 
     def _rewrite_exports(self, stage: List[Dict[str, Any]]):
-        """Rewrite absolute export paths to basenames; snapshot the output folder.
+        """Rewrite export paths to bare names; snapshot the output folder.
 
-        Returns ``(target_dir, pre_existing_names)`` so :meth:`_download_outputs`
-        can pull the files produced by this run back to the caller's directory,
-        or ``None`` when the stage has no export command.
+        Any spelling of the client's path -- absolute, relative, POSIX or
+        Windows -- is a client path, so each becomes the bare name RSNode writes
+        into the session ``output`` folder. Returns ``(target_dir,
+        pre_existing_names)`` so :meth:`_download_outputs` can pull the files
+        produced by this run back to the caller's directory, or ``None`` when
+        the stage has no export command. The names the exports write are left
+        out of the snapshot: a re-export under the same name (the workflow's
+        per-stage ``model.xml`` report) overwrites the node's copy and must be
+        pulled back again, not skipped as pre-existing.
         """
         target_dir = None
+        named = set()
         for cmd in stage:
             if cmd["commandName"] in _EXPORT_CMDS and cmd["parameters"]:
                 p = cmd["parameters"][0]
-                if os.path.isabs(p):
-                    target_dir = target_dir or os.path.dirname(p)
-                    cmd["parameters"][0] = os.path.basename(p)
-                # exportReport's 2nd param is a template file RealityScan reads
-                # to render the report. RSNode resolves command auxiliary files
-                # (templates, export configs) relative to the session ``output``
-                # folder (API docs: "for multiple inputs ... upload with
-                # folder=output"), so a local template is uploaded there and the
-                # param rewritten to its basename. Done before the pre-run
-                # snapshot below so the template lands in ``pre`` and is not
-                # pulled back as a produced output.
-                if cmd["commandName"] == "exportReport" and len(cmd["parameters"]) > 1:
-                    tpl = cmd["parameters"][1]
-                    if os.path.isfile(tpl):
-                        with open(tpl, "rb") as fh:
-                            self.client.upload_file(
-                                os.path.basename(tpl), fh.read(), folder="output"
-                            )
-                        cmd["parameters"][1] = os.path.basename(tpl)
+                target_dir = target_dir or os.path.dirname(p) or os.curdir
+                cmd["parameters"][0] = self._node_name(p)
+                named.add(cmd["parameters"][0])
         if target_dir is None:
             return None
         try:
-            pre = set(self.client.list_files("output"))
+            pre = set(self.client.list_files("output")) - named
         except RsNodeError:
             pre = set()
         return (target_dir, pre)

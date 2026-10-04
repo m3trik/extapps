@@ -26,6 +26,13 @@ import pythontk as ptk
 from qtpy import QtCore, QtWidgets
 from qtpy.QtWidgets import QApplication
 
+from uitk.testing import TestSandbox
+
+# A direct `python test/test_webxr_preview.py` loads no conftest, so the sandbox is
+# activated here too -- before the first QSettings, or tearDown's
+# store.clear() would wipe the developer's live panel state. Idempotent.
+TestSandbox.activate()
+
 from pythontk.net_utils.preview import server as _preview_server
 
 

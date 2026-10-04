@@ -2,6 +2,11 @@
 
 ## 2026
 
+- **2026-10-04 -- Floors on the releases Copy Scene Link, the Viewer Scripts list and the Unity panel need; two panel suites sandbox a direct run (`pyproject.toml`, `unity_workflow/_unity_panel.py`, `test/test_webxr_preview.py`, `test/test_unity_workflow.py`, `test/conftest.py`).**
+  - `pythontk>=0.13.0`: Copy Scene Link reads `PreviewServer.scene_url` and `share_info()["scene_url"]`, so on an older pythontk the first copy raised AttributeError (not shared) or KeyError (shared). `uitk>=1.7.0`: the Viewer Scripts list keeps its ticked scripts across sessions.
+  - The `[unity]` extra and the Unity Workflow panel's `UNITYTK_REQ` need `unitytk>=0.1.0`, the release that moved its templates into one folder per component. An older deployer knows only the flat names, so its Install / Update wrote flat copies beside the moved ones: every class twice, and the package's assembly failed to compile. The mixin stays byte-identical to mayatk's and blendertk's.
+  - `python test/test_webxr_preview.py` (or `test_unity_workflow.py`) loads no conftest, so the new tearDown's `store.clear()` deleted the developer's live panel state in HKCU. Both modules now activate `TestSandbox` themselves; `conftest.py` no longer claims to cover a direct run.
+
 - **2026-10-02 -- WebXR Preview: Copy Scene Link (`webxr_preview/slots.py`).** A new action on the Sharing row's option box copies the link to the scene as data (`scene.json`: its glTF and the lighting it renders with), for a remote developer whose agent or tools compare it with their own scene. It copies the share's link when one is up and this machine's otherwise, and never brings up a share by itself. A second share at once through Tailscale now takes its own HTTPS port instead of failing (pythontk `ShareTunnel`).
 
 - **2026-09-27 -- Marmoset panel: the vendored `template_params.py` re-synced with mayatk's host-neutral comments (`marmoset_workflow/template_params.py`).** Comment-only. The bake-source set is "a set" rather than Maya's "objectSet", and Assign Material wires the maps into "a material" rather than a StingrayPBS one. The copy stays byte-identical to mayatk's, as `test_vendor_sync.py` requires.

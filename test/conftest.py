@@ -16,9 +16,10 @@ Two real per-user stores are reachable from these tests without it:
 Both redirects come from the ecosystem SSoT, ``uitk.testing.TestSandbox``
 (this file used to carry a hand-rolled mirror of its QSettings overload
 rewrite — one of three copies of that subtle fix, now retired). Activated at
-import time (not via a pytest fixture) so it also protects direct
-``unittest`` runs, and runs before the first ``QSettings`` / ``PresetStore``
-is constructed.
+import time (not via a pytest fixture), so it runs before the first
+``QSettings`` / ``PresetStore`` is constructed. A module run directly
+(``python test/<module>.py``) loads no conftest: a module whose tearDown
+clears a panel's store activates the sandbox itself.
 """
 from uitk.testing import TestSandbox
 

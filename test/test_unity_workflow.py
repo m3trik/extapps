@@ -21,6 +21,13 @@ from unittest import mock
 
 from qtpy.QtWidgets import QApplication
 
+from uitk.testing import TestSandbox
+
+# A direct `python test/test_unity_workflow.py` loads no conftest, so the sandbox is
+# activated here too -- before the first QSettings, or tearDown's
+# store.clear() would wipe the developer's live panel state. Idempotent.
+TestSandbox.activate()
+
 
 def _ensure_app() -> QApplication:
     return QApplication.instance() or QApplication(sys.argv)

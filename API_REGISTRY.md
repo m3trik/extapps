@@ -1107,6 +1107,7 @@ Slots for the WebXR Preview panel — the single UI for the live preview.
   - `WebXrPreviewSlots.stop_server(self) -> None` — Stop serving and release the port -- ending any share.
   - `WebXrPreviewSlots.share_link(self) -> None` — Share Now: bring the link up without a push, or retry a failed one.
   - `WebXrPreviewSlots.copy_share_link(self) -> None` — Copy Link: the live link to the clipboard, and to the log.
+  - `WebXrPreviewSlots.copy_scene_link(self) -> None` — Copy Scene Link: where the published scene is described as data.
   - `WebXrPreviewSlots.stop_sharing(self) -> None` — Stop Sharing: the row to Off, which takes the link down.
   - `WebXrPreviewSlots.set_source_file(self, path: str) -> None` — Pre-fill Source File and select the file source.
   - `WebXrPreviewSlots.b000(self) -> None` — Build the deliverable for the active source and publish it.

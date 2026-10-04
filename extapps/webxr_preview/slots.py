@@ -185,8 +185,13 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                     "up across pushes; <b>Off</b> takes it down. A guest needs "
                     "only a browser -- and a standalone headset gets its VR "
                     "button, because the link is a secure context. The row's "
-                    "option box has <b>Share Now</b>, <b>Copy Link</b> and "
-                    "<b>Stop Sharing</b>.",
+                    "option box has <b>Share Now</b>, <b>Copy Link</b>, "
+                    "<b>Copy Scene Link</b> and <b>Stop Sharing</b>.",
+                    "<b>Copy Scene Link</b> copies where the scene is "
+                    "described as data (<b>scene.json</b>): its glTF and "
+                    "the lighting it renders with. Send it to a developer whose "
+                    "AI agent or tools need to see how the scene is built -- to "
+                    "work out why it renders differently in their engine.",
                     "The share is a second, <b>view-only</b> door onto the same "
                     "server: guests see every push, and cannot save a setting, "
                     "record, or reach anything but the model and the page.",
@@ -533,15 +538,21 @@ class WebXrPreviewSlots(BridgeSlotsBase):
     # ------------------------------------------------------------------ header actions
     def open_preview_page(self) -> None:
         """Open the live page in a browser, without paying for a push."""
+        server = self._serving()
+        if server is not None:
+            webbrowser.open(server.url)
+
+    def _serving(self):
+        """The running server, or ``None`` -- said in the log: an action that
+        needs one has nothing to act on before the first push."""
         server = self._server()
-        url = getattr(server, "url", "") if server is not None else ""
-        if not url:
-            self.panel_log(
-                "Nothing is being served yet — push once to start the server.",
-                "warning",
-            )
-            return
-        webbrowser.open(url)
+        if server is not None and getattr(server, "url", None):
+            return server
+        self.panel_log(
+            "Nothing is being served yet — push once to start the server.",
+            "warning",
+        )
+        return None
 
     def stop_server(self) -> None:
         """Stop serving and release the port -- ending any share."""
@@ -572,6 +583,15 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             "Copy the live link to the clipboard -- bringing it up first when "
             "the row is on and it is not up.",
             "copy_share_link",
+        ),
+        (
+            "Copy Scene Link",
+            "btn_copy_scene_link",
+            "Copy the link to this scene as data (scene.json): its glTF and "
+            "the lighting it renders with, for a developer's tools or AI agent "
+            "to compare with their own scene. View-only, like the share; while "
+            "nothing is shared, this machine's own.",
+            "copy_scene_link",
         ),
         (
             "Stop Sharing",
@@ -656,6 +676,28 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             )
             return
         self._share(choice, interactive=True)
+
+    def copy_scene_link(self) -> None:
+        """Copy Scene Link: where the published scene is described as data.
+
+        The share's ``scene.json`` -- what to send a developer whose agent or
+        tools compare this scene with their own -- or, while nothing is
+        shared, this machine's, for a reader on it. It never shares by itself:
+        a link to hand out is Copy Link's to bring up.
+        """
+        server = self._serving()
+        if server is None:
+            return
+        info = server.share_info()
+        url = info["scene_url"] if info is not None else None
+        if url:
+            self.panel_log(f"Scene as data: {url}{self._copy(url)}.")
+            return
+        url = server.scene_url
+        self.panel_log(
+            f"Scene as data, on this machine only: {url}{self._copy(url)}. "
+            "Share to send it to someone else."
+        )
 
     @staticmethod
     def _copy(text: str) -> str:

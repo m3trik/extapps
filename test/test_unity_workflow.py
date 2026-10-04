@@ -9,6 +9,7 @@ Unity project's ``Assets/`` via :class:`unitytk.FileToUnityBridge`. Build-time w
 ``set_model_path`` host hand-off, and b000 dispatch are exercised against the real
 panel under the offscreen QPA without launching Unity.
 """
+
 from __future__ import annotations
 
 import os
@@ -28,6 +29,7 @@ def _ensure_app() -> QApplication:
 class TestUnityWorkflowParameters(unittest.TestCase):
     def _P(self):
         from extapps.unity_workflow import parameters as P
+
         return P
 
     def test_defaults_are_unity_side_only(self) -> None:
@@ -47,7 +49,12 @@ class TestUnityWorkflowParameters(unittest.TestCase):
             },
         )
         # No DCC export knobs (this panel takes an already-exported file).
-        for export_key in ("SCOPE", "TRIANGULATE", "EMBED_TEXTURES", "INCLUDE_MATERIALS"):
+        for export_key in (
+            "SCOPE",
+            "TRIANGULATE",
+            "EMBED_TEXTURES",
+            "INCLUDE_MATERIALS",
+        ):
             self.assertNotIn(export_key, P.PARAMS)
 
     def test_referenced_keys_is_token_based(self) -> None:
@@ -79,16 +86,23 @@ class TestUnityWorkflowPanelLoads(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.unity_workflow import UnityWorkflowUI
+
         self.ui = UnityWorkflowUI()
         self.slots = self.ui.sb.get_slots_instance(self.ui)
         self.assertIsNotNone(self.slots, "Switchboard returned no slots instance")
 
     def tearDown(self) -> None:
+        store = self.ui.settings
         self.ui.deleteLater()
         self.app.processEvents()
+        # Rows persist and the sandboxed store outlives the case: cleared once
+        # the panel is gone, so the next case's fresh panel opens on defaults.
+        store.clear()
+        store.sync()
 
     def test_param_widgets_built_for_every_spec(self) -> None:
         from extapps.unity_workflow import parameters as P
+
         for key in P.PARAMS:
             self.assertIn(key, self.slots._param_widgets, f"no widget for {key}")
 
@@ -134,9 +148,7 @@ class TestUnityWorkflowPanelLoads(unittest.TestCase):
         )
         self.assertNotIn("Core", [lw.item(i).text() for i in range(lw.count())])
         # All checked by default == the historical full-set deploy.
-        self.assertEqual(
-            self.slots._script_selection(), [c.key for c in expected]
-        )
+        self.assertEqual(self.slots._script_selection(), [c.key for c in expected])
 
     def test_action_runs_over_the_checked_scripts_only(self) -> None:
         """The action is applied to the checked components — the panel hands
@@ -144,9 +156,7 @@ class TestUnityWorkflowPanelLoads(unittest.TestCase):
         keys = [c.key for c in self.slots._script_components]
         self.slots._write_param("SCRIPTS", keys[:1])
         self.slots._output_dir_edit.setText("C:/proj/MyUnityProject")
-        with mock.patch(
-            "unitytk.TemplateDeployer.run_action", return_value=[]
-        ) as run:
+        with mock.patch("unitytk.TemplateDeployer.run_action", return_value=[]) as run:
             self.slots._manage_unity_scripts("install")
         run.assert_called_once_with("C:/proj/MyUnityProject", "install", keys[:1])
 
@@ -162,7 +172,11 @@ class TestUnityWorkflowVersionPopulate(unittest.TestCase):
 
     def test_unity_version_combo_appends_installed_newest_first(self) -> None:
         from extapps.unity_workflow import UnityWorkflowUI
-        editors = {"2021.3.1f1": "C:/U/2021/Unity.exe", "6000.0.5f1": "C:/U/6000/Unity.exe"}
+
+        editors = {
+            "2021.3.1f1": "C:/U/2021/Unity.exe",
+            "6000.0.5f1": "C:/U/6000/Unity.exe",
+        }
         with mock.patch("unitytk.UnityFinder.find_editors", return_value=editors):
             ui = UnityWorkflowUI()
         try:
@@ -184,6 +198,7 @@ class TestUnityWorkflowDispatch(unittest.TestCase):
 
     def setUp(self) -> None:
         from extapps.unity_workflow import UnityWorkflowUI
+
         self.tmp = tempfile.mkdtemp(prefix="unity_workflow_")
         self.project = os.path.join(self.tmp, "Proj")
         os.makedirs(os.path.join(self.project, "Assets"))
@@ -204,8 +219,13 @@ class TestUnityWorkflowDispatch(unittest.TestCase):
         self.slots.bridge.send = fake_send
 
     def tearDown(self) -> None:
+        store = self.ui.settings
         self.ui.deleteLater()
         self.app.processEvents()
+        # Rows persist and the sandboxed store outlives the case: cleared once
+        # the panel is gone, so the next case's fresh panel opens on defaults.
+        store.clear()
+        store.sync()
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_b000_dispatches_with_model_and_project(self) -> None:

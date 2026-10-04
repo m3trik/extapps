@@ -244,8 +244,14 @@ class _PanelTestCase(unittest.TestCase):
         for name, cls in self._real_classes.items():
             setattr(_preview_server.webbrowser, name, cls)
         self.temp.cleanup()
+        store = self.ui.settings
         self.ui.deleteLater()
         self.app.processEvents()
+        # Every row persists, and the sandboxed store lives for the whole run:
+        # without this a box one case ticks opens ticked in the next case's
+        # fresh panel. Cleared after the panel goes, so nothing re-saves.
+        store.clear()
+        store.sync()
 
 
 class TestSourceWiring(_PanelTestCase):
@@ -390,6 +396,18 @@ class TestPersistence(_PanelTestCase):
 
         self.assertEqual(reopened._active_source(), "file")
 
+    def test_the_viewer_scripts_survive_a_new_session(self):
+        """Regression: the check list persisted on ``itemClicked`` (it carries
+        the clicked item, so nothing was stored) and came back empty."""
+        self.slots._write_param("VIEWER_SCRIPTS", ["inspect", "snapshot"])
+        self.app.processEvents()
+
+        reopened = self._reopen()
+
+        self.assertEqual(
+            reopened._read_param("VIEWER_SCRIPTS"), ["inspect", "snapshot"]
+        )
+
     def test_the_source_file_is_not_persisted(self):
         """The field names one hand-off, not a preference: a path restored from
         last session would be pushed by a press meant to ask for a file."""
@@ -469,12 +487,6 @@ class TestLocomotionSwitch(_PanelTestCase):
 
     def _row(self):
         return self.slots._param_widgets["LOCOMOTION"]
-
-    def tearDown(self) -> None:
-        # The row persists, as every row here does: re-ticked before the panel
-        # goes, so the next one -- the next test's -- opens on the default.
-        self._row().setChecked(True)
-        super().tearDown()
 
     def test_the_row_is_on_by_default_and_reaches_the_deliverer(self):
         self.slots.engine = _FakeHostBridge
@@ -863,7 +875,7 @@ class TestShareLink(_PanelTestCase):
     """Sharing through the panel: one server, one link, view-only.
 
     The Sharing row is the switch -- a provider shares, Off stops -- and its
-    option box carries Share Now, Copy Link and Stop Sharing.
+    option box carries Share Now, Copy Link, Copy Scene Link and Stop Sharing.
 
     The tunnel is a fake provider -- a real child printing a link -- driven
     through pythontk's real ShareTunnel, so the path under test is the panel's
@@ -993,7 +1005,12 @@ class TestShareLink(_PanelTestCase):
         """Beside the switch they act on, not in the header menu."""
         handlers = {item[3] for item in self.slots.HEADER_MENU_ITEMS}
         self.assertFalse(handlers & {"share_link", "stop_sharing"})
-        for name in ("btn_share_now", "btn_copy_share_link", "btn_stop_sharing"):
+        for name in (
+            "btn_share_now",
+            "btn_copy_share_link",
+            "btn_copy_scene_link",
+            "btn_stop_sharing",
+        ):
             self.assertIsNotNone(self._action(name), name)
 
     def test_the_row_starts_off_each_session(self):
@@ -1252,6 +1269,35 @@ class TestShareLink(_PanelTestCase):
         QApplication.clipboard().setText("")
         self._action("btn_copy_share_link").click()
         self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+
+    def test_copy_scene_link_copies_the_shares_scene_as_data(self):
+        """What to send a developer whose agent compares this scene with
+        their own: the share's scene.json, which answers through the tunnel."""
+        self.slots.set_source_file(self.glb)
+        self.slots.b000()
+        self._share()
+        QApplication.clipboard().setText("")
+        self._action("btn_copy_scene_link").click()
+        self.assertEqual(QApplication.clipboard().text(), f"{_FAKE_LINK}/scene.json")
+        self.assertIn(f"{_FAKE_LINK}/scene.json", self._pane_links())
+
+    def test_copy_scene_link_unshared_is_this_machines_and_never_shares(self):
+        """Nothing shared: the link on this machine, said to be local -- and
+        no share brought up behind the user's back."""
+        logged = self._record_log()
+        QApplication.clipboard().setText("")
+        self._action("btn_copy_scene_link").click()
+        self.assertEqual(QApplication.clipboard().text(), "")
+        self.assertTrue(any("push once" in line for line in logged), logged)
+
+        self.slots.set_source_file(self.glb)
+        self.slots.b000()
+        logged.clear()
+        self._action("btn_copy_scene_link").click()
+        server = self.slots._server()
+        self.assertEqual(QApplication.clipboard().text(), server.scene_url)
+        self.assertTrue(any("this machine only" in line for line in logged), logged)
+        self.assertIsNone(server.share_info())
 
     def test_share_link_shares_the_one_server_and_copies_the_link(self):
         self.slots.set_source_file(self.glb)

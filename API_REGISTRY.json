@@ -5114,7 +5114,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 256,
+              "line": 261,
               "deprecated": false
             },
             {
@@ -5123,7 +5123,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 260,
+              "line": 265,
               "deprecated": false
             },
             {
@@ -5132,7 +5132,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "The panel's own, host-free engine.",
-              "line": 266,
+              "line": 271,
               "deprecated": false
             },
             {
@@ -5141,7 +5141,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
-              "line": 281,
+              "line": 286,
               "deprecated": false
             },
             {
@@ -5150,7 +5150,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
-              "line": 422,
+              "line": 427,
               "deprecated": false
             },
             {
@@ -5159,7 +5159,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Open the live page in a browser, without paying for a push.",
-              "line": 534,
+              "line": 539,
               "deprecated": false
             },
             {
@@ -5168,7 +5168,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Stop serving and release the port -- ending any share.",
-              "line": 546,
+              "line": 557,
               "deprecated": false
             },
             {
@@ -5177,7 +5177,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Share Now: bring the link up without a push, or retry a failed one.",
-              "line": 627,
+              "line": 647,
               "deprecated": false
             },
             {
@@ -5186,7 +5186,16 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Copy Link: the live link to the clipboard, and to the log.",
-              "line": 639,
+              "line": 659,
+              "deprecated": false
+            },
+            {
+              "name": "copy_scene_link",
+              "qualname": "WebXrPreviewSlots.copy_scene_link",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Copy Scene Link: where the published scene is described as data.",
+              "line": 680,
               "deprecated": false
             },
             {
@@ -5195,7 +5204,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Stop Sharing: the row to Off, which takes the link down.",
-              "line": 855,
+              "line": 897,
               "deprecated": false
             },
             {
@@ -5204,7 +5213,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill Source File and select the file source.",
-              "line": 902,
+              "line": 944,
               "deprecated": false
             },
             {
@@ -5213,7 +5222,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Build the deliverable for the active source and publish it.",
-              "line": 1009,
+              "line": 1051,
               "deprecated": false
             }
           ]

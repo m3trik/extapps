@@ -4855,7 +4855,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 87,
+              "line": 90,
               "deprecated": false
             },
             {
@@ -4864,7 +4864,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "",
-              "line": 92,
+              "line": 95,
               "deprecated": false
             },
             {
@@ -4873,7 +4873,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 99,
+              "line": 102,
               "deprecated": false
             }
           ]

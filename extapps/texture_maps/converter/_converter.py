@@ -22,6 +22,7 @@ from pythontk import (
     ImgUtils,
     MapFactory,
     MapOptimizer,
+    MapRegistry,
     OutputTemplates,
     StrUtils,
 )
@@ -141,14 +142,15 @@ class MapConverter:
                 *file_type* is empty.
         """
         by_output: Dict[Tuple[str, str, str], Tuple[str, List[str]]] = {}
+        paths = list(paths)
+        # The run's maps read as one batch, as the run itself reads them.
+        map_types = MapFactory.resolve_map_types(paths) if profile else {}
         for path in paths:
             dest = cls.resolve_dest(os.path.dirname(path), folder)
             stem = FileUtils.format_path(path, "name")
             out_ext = (file_type or "").lower().lstrip(".")
             if not out_ext and profile:
-                spec = OutputTemplates.resolve(
-                    MapFactory.resolve_map_type(path, key=True), profile
-                )
+                spec = OutputTemplates.resolve(map_types[path], profile)
                 out_ext = (spec.ext or "").lower().lstrip(".")
             if not out_ext:  # nothing forces a container: each keeps its own
                 out_ext = FileUtils.format_path(path, "ext").lower().lstrip(".")
@@ -170,16 +172,28 @@ class MapConverter:
 
     @classmethod
     def rename_target_path(
-        cls, texture_path, *, file_type, mode, modifier, output_dir
+        cls, texture_path, *, file_type, mode, modifier, output_dir, base_name=None
     ):
         """Output path for rename mode — modifier between base and map-type suffix.
 
         Only meaningful with a non-empty *modifier*; without one the filename is
         whatever ``optimize_map`` resolves, which callers read off the run
         itself rather than re-deriving here.
+
+        *base_name* is the set name the run read the file under
+        (``MapFactory.classify_textures``); a set named for a lobe
+        (``Hero_Coat``) keeps its lobe word ahead of the modifier, so the
+        renamed set stays one set. Omitted, the file's own base name.
         """
-        base_name = ImgUtils.get_base_texture_name(texture_path)
+        own_base = ImgUtils.get_base_texture_name(texture_path)
         map_type = MapFactory.resolve_map_type(texture_path, key=False) or ""
+        stem = FileUtils.format_path(texture_path, "name")
+        if base_name and base_name != own_base and stem.startswith(base_name):
+            # The batch read the lobe word into the set's name: the map suffix
+            # is what follows it, as spelled (`Hero_Coat` + `Roughness`).
+            map_type = stem[len(base_name) :].lstrip(MapRegistry.SEPARATORS)
+        else:
+            base_name = own_base
         out_ext = (
             (file_type or FileUtils.format_path(texture_path, "ext"))
             .lower()
@@ -212,8 +226,15 @@ class MapConverter:
         lossy_quality=None,
         uastc_rdo=None,
         uastc_rdo_dictionary=None,
+        map_type=None,
+        base_name=None,
     ):
         """``ConverterSlots.tb000``'s per-map step — optimize (or, when *dry_run*, assess) one path.
+
+        *map_type* / *base_name* are the run's reading of the map against the
+        rest of the batch (``MapFactory.classify_textures``): a set named for a
+        lobe (``Hero_Coat``) keeps its ``Hero_Coat_Color`` a Base_Color, which
+        the secondary scale must not shrink. Omitted, the file's own reading.
 
         Returns:
             tuple: ``(size_before, size_after)`` in bytes — either measured
@@ -226,7 +247,9 @@ class MapConverter:
         # etc. shrink relative to base color and normals.
         effective_max_size = max_size
         if max_size and secondary_scale != 1.0:
-            map_type_key = MapFactory.resolve_map_type(texture_path, key=True)
+            map_type_key = map_type or MapFactory.resolve_map_type(
+                texture_path, key=True
+            )
             if not registry.is_resolution_critical(map_type_key):
                 effective_max_size = max(1, int(max_size * secondary_scale))
                 print(
@@ -250,6 +273,7 @@ class MapConverter:
             "lossy_quality": lossy_quality,
             "uastc_rdo": uastc_rdo,
             "uastc_rdo_dictionary": uastc_rdo_dictionary,
+            "map_type": map_type,
         }
 
         if dry_run:
@@ -261,6 +285,7 @@ class MapConverter:
                 modifier=modifier,
                 output_dir=output_dir,
                 old_folder=old_folder,
+                base_name=base_name,
                 **target_kwargs,
             )
 
@@ -319,6 +344,7 @@ class MapConverter:
                         mode=mode,
                         modifier=modifier,
                         output_dir=output_dir,
+                        base_name=base_name,
                     )
                     FileUtils.replace_file(temp_result, optimized_map_path)
             else:
@@ -369,12 +395,15 @@ class MapConverter:
         lossy_quality=None,
         uastc_rdo=None,
         uastc_rdo_dictionary=None,
+        map_type=None,
+        base_name=None,
     ):
         """Print what optimizing *texture_path* would do, touching nothing.
 
         Backed by :meth:`MapOptimizer.assess` — the read-only twin of
         ``optimize_map`` — so the planned ops reported here are the same ops
-        the real run would execute.
+        the real run would execute. *map_type* / *base_name* as
+        :meth:`optimize_one` takes them.
         """
         report = MapOptimizer.assess(
             texture_path,
@@ -387,6 +416,7 @@ class MapConverter:
             lossy_quality=lossy_quality,
             uastc_rdo=uastc_rdo,
             uastc_rdo_dictionary=uastc_rdo_dictionary,
+            map_type=map_type,
         )
         if report.get("error"):
             print(f"// {report['error']}")
@@ -404,6 +434,7 @@ class MapConverter:
                 mode=mode,
                 modifier=modifier,
                 output_dir=output_dir,
+                base_name=base_name,
             )
             if modifier
             # assess resolves the filename the way optimize_map does; re-root it

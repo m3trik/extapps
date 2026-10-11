@@ -92,16 +92,16 @@ class RealityScanConnectionTest(unittest.TestCase):
     )
     def test_non_interactive_bat_preserves_non_ascii_path(self):
         # Regression: the cross-session .bat was written encoding="ascii",
-        # errors="replace", so a non-ASCII output path (e.g. C:\Users\José\...)
+        # errors="replace", so a non-ASCII output path (e.g. C:\Users\Zoë\...)
         # was mangled to '?'. cmd then redirected RC output + the .done marker
         # to the wrong file while Python polled the correct one -> 2h hang +
         # TimeoutError. The wrapper must preserve the non-ASCII path verbatim.
         try:
-            "José".encode("oem")  # OEM codepage must be able to represent it
+            "Zoë".encode("oem")  # OEM codepage must be able to represent it
         except UnicodeEncodeError:  # pragma: no cover - depends on host codepage
             self.skipTest("host OEM codepage cannot represent the test path")
 
-        log = os.path.join(self.tmp, "José", "align.log")
+        log = os.path.join(self.tmp, "Zoë", "align.log")
         os.makedirs(os.path.dirname(log), exist_ok=True)
 
         def fake_launch(app, args=None, session=None, **kw):
@@ -119,9 +119,9 @@ class RealityScanConnectionTest(unittest.TestCase):
         bat = log + ".run.bat"
         with open(bat, encoding="oem") as fh:
             text = fh.read()
-        # The non-ASCII directory name must survive verbatim (not become 'Jos?').
-        self.assertIn("José", text)
-        self.assertNotIn("Jos?", text)
+        # The non-ASCII directory name must survive verbatim (not become 'Zo?').
+        self.assertIn("Zoë", text)
+        self.assertNotIn("Zo?", text)
 
     def test_epic_signin_active_heuristic(self):
         with mock.patch(f"{CONN}.AppLauncher.get_running_processes", return_value=[123]):

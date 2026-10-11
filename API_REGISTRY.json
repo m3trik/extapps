@@ -4351,7 +4351,7 @@
         {
           "name": "MapConverter",
           "summary": "Batch rules of the Map Converter panel (stateless;",
-          "line": 30,
+          "line": 31,
           "bases": [],
           "members": [
             {
@@ -4360,7 +4360,7 @@
               "kind": "staticmethod",
               "signature": "(mode: str, modifier: str) -> Tuple[str, str]",
               "summary": "Resolve the Affix mode against the modifier text.",
-              "line": 36,
+              "line": 37,
               "deprecated": false
             },
             {
@@ -4369,7 +4369,7 @@
               "kind": "staticmethod",
               "signature": "(text: str) -> bool",
               "summary": "True when *text* names a full destination rather than a subdirectory.",
-              "line": 64,
+              "line": 65,
               "deprecated": false
             },
             {
@@ -4378,7 +4378,7 @@
               "kind": "classmethod",
               "signature": "(cls, text: str) -> str",
               "summary": "Normalize a destination field to a subdirectory name or full path.",
-              "line": 81,
+              "line": 82,
               "deprecated": false
             },
             {
@@ -4387,7 +4387,7 @@
               "kind": "classmethod",
               "signature": "(cls, paths, file_type, folder, profile=None)",
               "summary": "``[(name, [path, ...]), ...]`` for inputs resolving to ONE file in *folder*.",
-              "line": 100,
+              "line": 101,
               "deprecated": false
             },
             {
@@ -4396,34 +4396,34 @@
               "kind": "classmethod",
               "signature": "(cls, directory: str, folder: str) -> str",
               "summary": "Destination directory for a *folder* field against a texture's *directory*.",
-              "line": 161,
+              "line": 163,
               "deprecated": false
             },
             {
               "name": "rename_target_path",
               "qualname": "MapConverter.rename_target_path",
               "kind": "classmethod",
-              "signature": "(cls, texture_path, *, file_type, mode, modifier, output_dir)",
+              "signature": "(cls, texture_path, *, file_type, mode, modifier, output_dir, base_name=None)",
               "summary": "Output path for rename mode — modifier between base and map-type suffix.",
-              "line": 172,
+              "line": 174,
               "deprecated": false
             },
             {
               "name": "optimize_one",
               "qualname": "MapConverter.optimize_one",
               "kind": "classmethod",
-              "signature": "(cls, texture_path, *, file_type, max_size, secondary_scale, mode, modifier, new_folder, old_folder, registry, dry_run=False, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None)",
+              "signature": "(cls, texture_path, *, file_type, max_size, secondary_scale, mode, modifier, new_folder, old_folder, registry, dry_run=False, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None, map_type=None, base_name=None)",
               "summary": "``ConverterSlots.tb000``'s per-map step — optimize (or, when *dry_run*, assess) one path.",
-              "line": 197,
+              "line": 211,
               "deprecated": false
             },
             {
               "name": "report_optimize_plan",
               "qualname": "MapConverter.report_optimize_plan",
               "kind": "classmethod",
-              "signature": "(cls, texture_path, *, file_type, max_size, mode, modifier, output_dir, old_folder, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None)",
+              "signature": "(cls, texture_path, *, file_type, max_size, mode, modifier, output_dir, old_folder, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None, map_type=None, base_name=None)",
               "summary": "Print what optimizing *texture_path* would do, touching nothing.",
-              "line": 357,
+              "line": 383,
               "deprecated": false
             },
             {
@@ -4432,7 +4432,7 @@
               "kind": "classmethod",
               "signature": "(cls, path, *, swizzle_map, invert_dests, suffix)",
               "summary": "``ConverterSlots.tb002``'s per-map step — flip/swizzle one texture path.",
-              "line": 461,
+              "line": 492,
               "deprecated": false
             }
           ]
@@ -4528,7 +4528,7 @@
               "kind": "staticmethod",
               "signature": "(mode: str, modifier: str) -> Tuple[str, str]",
               "summary": "Moved to :meth:`MapConverter.resolve_affix` (the batch engine).",
-              "line": 268,
+              "line": 271,
               "deprecated": true,
               "remove_in": "0.4.0"
             },
@@ -4538,7 +4538,7 @@
               "kind": "property",
               "signature": "(self) -> Tuple[str, ...]",
               "summary": "The containers Optimize offers: every writable one, then the",
-              "line": 290,
+              "line": 293,
               "deprecated": false
             },
             {
@@ -4547,7 +4547,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Optimize toolbutton's option menu.",
-              "line": 323,
+              "line": 326,
               "deprecated": false
             },
             {
@@ -4556,7 +4556,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Optimize a texture map(s)",
-              "line": 593,
+              "line": 596,
               "deprecated": false
             },
             {
@@ -4565,7 +4565,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 815,
+              "line": 824,
               "deprecated": false
             },
             {
@@ -4574,7 +4574,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 825,
+              "line": 834,
               "deprecated": false
             },
             {
@@ -4583,7 +4583,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 881,
+              "line": 890,
               "deprecated": false
             },
             {
@@ -4592,7 +4592,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 907,
+              "line": 916,
               "deprecated": false
             },
             {
@@ -4601,7 +4601,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
-              "line": 963,
+              "line": 972,
               "deprecated": false
             },
             {
@@ -4610,7 +4610,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
-              "line": 992,
+              "line": 1001,
               "deprecated": false
             },
             {
@@ -4619,7 +4619,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert DirectX to OpenGL",
-              "line": 1046,
+              "line": 1055,
               "deprecated": false
             },
             {
@@ -4628,7 +4628,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert OpenGL to DirectX",
-              "line": 1063,
+              "line": 1072,
               "deprecated": false
             },
             {
@@ -4637,7 +4637,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 1080,
+              "line": 1089,
               "deprecated": false
             },
             {
@@ -4646,7 +4646,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 1123,
+              "line": 1132,
               "deprecated": false
             },
             {
@@ -4655,7 +4655,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 1150,
+              "line": 1159,
               "deprecated": false
             },
             {
@@ -4664,7 +4664,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 1176,
+              "line": 1185,
               "deprecated": false
             },
             {
@@ -4673,7 +4673,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
-              "line": 1202,
+              "line": 1211,
               "deprecated": false
             }
           ]
@@ -4732,7 +4732,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 177,
+              "line": 193,
               "deprecated": false
             },
             {
@@ -4741,7 +4741,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 180,
+              "line": 196,
               "deprecated": false
             },
             {
@@ -4750,7 +4750,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 183,
+              "line": 199,
               "deprecated": false
             },
             {
@@ -4759,7 +4759,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 186,
+              "line": 202,
               "deprecated": false
             },
             {
@@ -4768,7 +4768,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Output-affix field — clearable back to the convention's default.",
-              "line": 189,
+              "line": 205,
               "deprecated": false
             },
             {
@@ -4777,7 +4777,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the output-format combo and react to format changes.",
-              "line": 200,
+              "line": 216,
               "deprecated": false
             },
             {
@@ -4786,7 +4786,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Build the header menu's Pack/Unpack toggle and Missing Maps policy.",
-              "line": 227,
+              "line": 243,
               "deprecated": false
             },
             {
@@ -4795,7 +4795,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 350,
+              "line": 366,
               "deprecated": false
             },
             {
@@ -4804,7 +4804,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 440,
+              "line": 456,
               "deprecated": false
             },
             {
@@ -4813,7 +4813,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 684,
+              "line": 703,
               "deprecated": false
             }
           ]
@@ -5031,7 +5031,7 @@
         {
           "name": "Parameters",
           "summary": "The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 327,
+          "line": 356,
           "bases": [
             "ParamRegistry"
           ],
@@ -5114,7 +5114,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 261,
+              "line": 273,
               "deprecated": false
             },
             {
@@ -5123,7 +5123,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 265,
+              "line": 277,
               "deprecated": false
             },
             {
@@ -5132,7 +5132,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "The panel's own, host-free engine.",
-              "line": 271,
+              "line": 283,
               "deprecated": false
             },
             {
@@ -5141,7 +5141,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
-              "line": 286,
+              "line": 298,
               "deprecated": false
             },
             {
@@ -5150,7 +5150,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
-              "line": 427,
+              "line": 439,
               "deprecated": false
             },
             {
@@ -5159,7 +5159,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Open the live page in a browser, without paying for a push.",
-              "line": 539,
+              "line": 551,
               "deprecated": false
             },
             {
@@ -5168,7 +5168,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Stop serving and release the port -- ending any share.",
-              "line": 557,
+              "line": 569,
               "deprecated": false
             },
             {
@@ -5177,7 +5177,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Share Now: bring the link up without a push, or retry a failed one.",
-              "line": 647,
+              "line": 682,
               "deprecated": false
             },
             {
@@ -5186,7 +5186,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Copy Link: the live link to the clipboard, and to the log.",
-              "line": 659,
+              "line": 694,
               "deprecated": false
             },
             {
@@ -5195,7 +5195,16 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Copy Scene Link: where the published scene is described as data.",
-              "line": 680,
+              "line": 715,
+              "deprecated": false
+            },
+            {
+              "name": "check_share_link",
+              "qualname": "WebXrPreviewSlots.check_share_link",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "Test Link: whether a guest can reach the share now.",
+              "line": 907,
               "deprecated": false
             },
             {
@@ -5204,7 +5213,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Stop Sharing: the row to Off, which takes the link down.",
-              "line": 897,
+              "line": 986,
               "deprecated": false
             },
             {
@@ -5212,8 +5221,17 @@
               "qualname": "WebXrPreviewSlots.set_source_file",
               "kind": "method",
               "signature": "(self, path: str) -> None",
-              "summary": "Pre-fill Source File and select the file source.",
-              "line": 944,
+              "summary": "Pre-fill Source Files with *path* and select the file source.",
+              "line": 1035,
+              "deprecated": false
+            },
+            {
+              "name": "set_source_files",
+              "qualname": "WebXrPreviewSlots.set_source_files",
+              "kind": "method",
+              "signature": "(self, paths: List[str]) -> None",
+              "summary": "Pre-fill Source Files with *paths* -- the parts of one scene, shown",
+              "line": 1045,
               "deprecated": false
             },
             {
@@ -5222,7 +5240,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Build the deliverable for the active source and publish it.",
-              "line": 1051,
+              "line": 1149,
               "deprecated": false
             }
           ]

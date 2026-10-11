@@ -941,15 +941,15 @@ Map Converter — texture conversion, channel packing, PBR-workflow prep.
 
 The Map Converter's batch engine: plan, name and run one map at a time.
 
-- **[`class MapConverter`](extapps/extapps/texture_maps/converter/_converter.py#L30)** — Batch rules of the Map Converter panel (stateless;
+- **[`class MapConverter`](extapps/extapps/texture_maps/converter/_converter.py#L31)** — Batch rules of the Map Converter panel (stateless;
   - `MapConverter.resolve_affix(mode: str, modifier: str) -> Tuple[str, str]` *(static)* — Resolve the Affix mode against the modifier text.
   - `MapConverter.is_abs_dest(text: str) -> bool` *(static)* — True when *text* names a full destination rather than a subdirectory.
   - `MapConverter.folder_name(cls, text: str) -> str` *(class)* — Normalize a destination field to a subdirectory name or full path.
   - `MapConverter.output_collisions(cls, paths, file_type, folder, profile=None)` *(class)* — ``[(name, [path, ...]), ...]`` for inputs resolving to ONE file in *folder*.
   - `MapConverter.resolve_dest(cls, directory: str, folder: str) -> str` *(class)* — Destination directory for a *folder* field against a texture's *directory*.
-  - `MapConverter.rename_target_path(cls, texture_path, *, file_type, mode, modifier, output_dir)` *(class)* — Output path for rename mode — modifier between base and map-type suffix.
-  - `MapConverter.optimize_one(cls, texture_path, *, file_type, max_size, secondary_scale, mode, modifier, new_folder, old_folder, registry, dry_run=False, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None)` *(class)* — ``ConverterSlots.tb000``'s per-map step — optimize (or, when *dry_run*, assess) one path.
-  - `MapConverter.report_optimize_plan(cls, texture_path, *, file_type, max_size, mode, modifier, output_dir, old_folder, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None)` *(class)* — Print what optimizing *texture_path* would do, touching nothing.
+  - `MapConverter.rename_target_path(cls, texture_path, *, file_type, mode, modifier, output_dir, base_name=None)` *(class)* — Output path for rename mode — modifier between base and map-type suffix.
+  - `MapConverter.optimize_one(cls, texture_path, *, file_type, max_size, secondary_scale, mode, modifier, new_folder, old_folder, registry, dry_run=False, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None, map_type=None, base_name=None)` *(class)* — ``ConverterSlots.tb000``'s per-map step — optimize (or, when *dry_run*, assess) one path.
+  - `MapConverter.report_optimize_plan(cls, texture_path, *, file_type, max_size, mode, modifier, output_dir, old_folder, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None, map_type=None, base_name=None)` *(class)* — Print what optimizing *texture_path* would do, touching nothing.
   - `MapConverter.flip_one(cls, path, *, swizzle_map, invert_dests, suffix)` *(class)* — ``ConverterSlots.tb002``'s per-map step — flip/swizzle one texture path.
 
 <a id="texture_maps--converter--launcher"></a>
@@ -1089,7 +1089,7 @@ Tunable parameters surfaced in the WebXR Preview panel.
 - [`GLB_KEYS`](extapps/extapps/webxr_preview/parameters.py#L50) — constant
 - [`LIGHTING_KEYS`](extapps/extapps/webxr_preview/parameters.py#L55) — constant
 - [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L173) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/webxr_preview/parameters.py#L327)** — The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/webxr_preview/parameters.py#L356)** — The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
 
 <a id="webxr_preview--slots"></a>
 ### `webxr_preview/slots.py`
@@ -1108,6 +1108,8 @@ Slots for the WebXR Preview panel — the single UI for the live preview.
   - `WebXrPreviewSlots.share_link(self) -> None` — Share Now: bring the link up without a push, or retry a failed one.
   - `WebXrPreviewSlots.copy_share_link(self) -> None` — Copy Link: the live link to the clipboard, and to the log.
   - `WebXrPreviewSlots.copy_scene_link(self) -> None` — Copy Scene Link: where the published scene is described as data.
+  - `WebXrPreviewSlots.check_share_link(self) -> None` — Test Link: whether a guest can reach the share now.
   - `WebXrPreviewSlots.stop_sharing(self) -> None` — Stop Sharing: the row to Off, which takes the link down.
-  - `WebXrPreviewSlots.set_source_file(self, path: str) -> None` — Pre-fill Source File and select the file source.
+  - `WebXrPreviewSlots.set_source_file(self, path: str) -> None` — Pre-fill Source Files with *path* and select the file source.
+  - `WebXrPreviewSlots.set_source_files(self, paths: List[str]) -> None` — Pre-fill Source Files with *paths* -- the parts of one scene, shown
   - `WebXrPreviewSlots.b000(self) -> None` — Build the deliverable for the active source and publish it.

@@ -173,16 +173,22 @@ def _glb_rows(rows: Dict[str, str], section: str) -> "dict[str, AttributeSpec]":
 PARAMS: "dict[str, AttributeSpec]" = {
     "SOURCE_FILE": AttributeSpec(
         key="SOURCE_FILE",
-        label="Source File",
-        kind="file",
-        default="",
+        label="Source Files",
+        kind="files",
+        default=[],
         choices=SOURCE_FILE_TYPES,
         section="Source",
         # An empty field is the ordinary first state, and it is not idle:
         # pushing from it asks. Saying so on the row is what makes the empty
         # panel usable without reading a tooltip to find that out.
-        placeholder="Leave empty and Push will ask for a file",
-        tooltip="The file to preview.\n\n"
+        placeholder="Leave empty and Push will ask for files",
+        tooltip="The file to preview -- or several, separated by ; (Browse "
+        "picks as many as you select).\n\n"
+        "Several files are the PARTS of one scene -- a room, the props in it, "
+        "a character, each exported on its own: the page shows them together, "
+        "each at its authored place, so they line up as they do in the scene. "
+        "View lists each part, to hide it; Export saves each under its own "
+        "name.\n\n"
         "An FBX runs the full build -- conversion, lightmaps, texture pass -- "
         "so what you see is what a target platform would receive.\n\n"
         "A GLB is published exactly as authored: no re-encode, no sidecar, no "
@@ -191,8 +197,8 @@ PARAMS: "dict[str, AttributeSpec]" = {
         "That makes this a plain viewer too -- open a vendor's asset, or "
         "re-open the GLB an exporter just wrote, on the same page and port a "
         "scene push uses.\n\n"
-        "A lightmap manifest's maps are resolved against this file's own "
-        "folder, so a bake that travelled with its asset needs nothing else.",
+        "A lightmap manifest's maps are resolved against the files' own "
+        "folders, so a bake that travelled with its asset needs nothing else.",
     ),
     "INCLUDE_ANIMATION": AttributeSpec(
         key="INCLUDE_ANIMATION",
@@ -201,9 +207,11 @@ PARAMS: "dict[str, AttributeSpec]" = {
         default=False,
         section="Delivery",
         tooltip="Bake the scene's animation into the pushed GLB so the preview "
-        "can play it. The page grows a clip picker and transport, and an "
-        "Export Playblast button that records the selected clip -- or the "
-        "whole shot sequence -- to a movie beside the deliverable.\n\n"
+        "can play it. The page grows a clip picker and transport, an Export "
+        "menu Playblast item that records the selected clip -- or the whole "
+        "shot sequence -- to a movie beside the deliverable, and, when the "
+        "shots carry descriptions, View menu Clip descriptions to caption "
+        "each as it plays.\n\n"
         "Off by default because baking samples every frame of the scene range, "
         "which costs push time and file size on a scene you are previewing for "
         "its look. A scene with shots declared ships its takes either way.",
@@ -268,7 +276,8 @@ PARAMS: "dict[str, AttributeSpec]" = {
             (
                 "Inspect",
                 "inspect",
-                "A profiler in the page (press i, or its button): frame time "
+                "A profiler in the page (Inspect menu, Performance -- or press "
+                "i): frame time "
                 "against the display's budget -- the headset's own rate in a "
                 "session -- CPU and GPU time, draw calls, estimated GPU memory, "
                 "what the file's bytes are, and how long it took to download, "
@@ -281,7 +290,7 @@ PARAMS: "dict[str, AttributeSpec]" = {
             (
                 "Export Image",
                 "snapshot",
-                "An Export Image button in the page: saves the current view -- "
+                "An Image item in the page's Export menu: saves the current view -- "
                 "the camera where you left it, the pose on screen -- as a PNG, "
                 "at the view's own size or rendered at 1080p / 1440p / 4K. The "
                 "page's overlays are not in it.\n\n"
@@ -305,10 +314,12 @@ PARAMS: "dict[str, AttributeSpec]" = {
         choices=_share_choices(),
         section="Sharing",
         tooltip="Share the preview at a link, through the provider picked here.\n\n"
-        "Picking one brings the link up at once and copies it; it then stays up "
+        "Picking one brings the link up at once, copies it, and checks it "
+        "answers; it then stays up "
         "across pushes, and every push logs it -- a guest's page picks each push "
         "up by itself, so the link is the same one each time. Off takes it down. "
-        "The row's option box has Share Now (also a retry), Copy Link and Stop "
+        "The row's option box has Share Now (also a retry), Copy Link, Test "
+        "Link and Stop "
         "Sharing. It starts Off each session: a link is a door to this machine, "
         "and it opens only when asked -- a preset never carries it, and Reset "
         "to Defaults leaves it as it is.\n\n"
@@ -320,6 +331,24 @@ PARAMS: "dict[str, AttributeSpec]" = {
         # A switch, not a setting: a preset loaded with it on would open a
         # public link unasked, and one saved with it on reopens it on every load.
         preset=False,
+    ),
+    "SHARE_PRIVATE": AttributeSpec(
+        key="SHARE_PRIVATE",
+        label="Private Link",
+        kind="bool",
+        default=False,
+        section="Sharing",
+        tooltip="Give every share a fresh random link: the provider's address "
+        "plus a secret path (https://<name>/<16 random characters>/), and "
+        "nothing outside that path opens.\n\n"
+        "The link is good for one share: the next has another, and the last "
+        "one opens nothing -- send a link for one review and it stops working "
+        "when you share again. Cloudflare's address is random each share "
+        "already; Tailscale's is your machine's name for good, and this is "
+        "what makes its link disposable.\n\n"
+        "Changing it while sharing re-shares at once, with a new link. A "
+        "private share keeps no stable alias (PYTHONTK_PREVIEW_ALIAS): a "
+        "redirect that never changes would be a lasting door to every link.",
     ),
 }
 

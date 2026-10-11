@@ -12,7 +12,7 @@ import pythontk as _ptk
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 # Base of every panel's "detailed docs" link (``BridgeSlotsBase.DOCS_URL`` on
 # the bridge panels, the compositor's intro, Substance's startup line): the

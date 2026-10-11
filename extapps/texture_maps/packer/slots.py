@@ -29,6 +29,22 @@ class PackerSlots:
         "Thickness",
         "Glossiness",
         "Displacement",
+        # The OpenPBR scalar lobes -- glTF packs them in pairs (clearcoat R +
+        # its roughness G, iridescence R + its thickness G). Appended, never
+        # inserted: a saved preset stores each combo by INDEX.
+        "Clearcoat",
+        "Clearcoat_Roughness",
+        "Sheen",
+        "Sheen_Roughness",
+        "Transmission",
+        "Subsurface_Scattering",
+        "Subsurface_Radius",
+        "Specular_Level",
+        "Anisotropy",
+        "Anisotropy_Angle",
+        "Thin_Film",
+        "Thin_Film_Thickness",
+        "Diffuse_Roughness",
     ]
     output_formats = ["PNG", "TGA", "JPG", "BMP", "TIFF", "EXR"]
 
@@ -537,8 +553,11 @@ class PackerSlots:
         assigned = {c: None for c in self.channels}
         requested = dict(zip(self.channels, combos))
         # Resolve each file's map type once: the per-channel search below would
-        # otherwise re-derive every file's type for all four channels.
-        file_types = [(f, MapFactory.resolve_map_type(f)) for f in files]
+        # otherwise re-derive every file's type for all four channels. The set
+        # reads as one batch, so a set named for a lobe (``Hero_Coat``) packs
+        # its ``Hero_Coat_Roughness`` as Roughness.
+        types = MapFactory.resolve_map_types(files)
+        file_types = [(f, types[f]) for f in files]
         available_map_types = {t: f for f, t in file_types}
         used_files = set()
         missing = []

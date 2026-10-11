@@ -68,12 +68,9 @@ so they stay import-safe outside Painter), `env_utils/` (`PainterConnection`,
 
 ## Run
 
-Direct launch:
-
-```powershell
-python -c "from extapps.texture_maps.compositor import CompositorUI; CompositorUI().show(pos='screen', app_exec=True)"
-python -c "from extapps.substance_workflow import SubstanceWorkflowUI; SubstanceWorkflowUI().show(pos='screen', app_exec=True)"
-```
+Standalone: `python -m extapps [panel]` (or the `extapps` gui-script);
+`--shortcut desktop|start_menu` writes a launcher. `__main__.py` only declares
+`HUB` (a `uitk.ExternalAppHub`). Usage: [docs](docs/README.md#launch-standalone).
 
 Via tentacle / mayatk: tools auto-discover through their entry-point group.
 After editing `pyproject.toml` entry points, reinstall (`pip install -e .`) so

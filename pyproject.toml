@@ -63,7 +63,17 @@ classifiers = [
 # uitk 1.7.0: the Viewer Scripts list keeps its ticked scripts across sessions
 # (`check_list`'s `state_signal` / `state_value`); an older uitk keys a
 # QListWidget on `itemClicked`, so the list comes back at its default.
-dependencies = ["pythontk>=0.13.0", "uitk>=1.7.0", "qtpy"]
+# uitk 1.7.1 / pythontk 0.13.1: `python -m extapps` (and the `extapps`
+# command) is a `uitk.ExternalAppHub`, whose desktop shortcuts are written by
+# `ptk.AppLauncher.create_shortcut` from `windowless_python`; an older uitk
+# has no ExternalAppHub (ImportError on `python -m extapps`), an older
+# pythontk neither shortcut member (AttributeError on the first shortcut).
+# The same releases carry the WebXR Preview's Source Files row (uitk's
+# `files` kind: an older uitk raises KeyError building the panel) and its
+# Private Link / Test Link (`PreviewBridge.share(private=)` / `ping_share`:
+# TypeError / AttributeError on the first share), and most of the OpenPBR
+# lobe map types the Map Packer's new channel combos name.
+dependencies = ["pythontk>=0.13.1", "uitk>=1.7.1", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is
@@ -86,6 +96,13 @@ mesh = ["pythontk[mesh]"]
 [project.urls]
 Homepage = "https://github.com/m3trik/extapps"
 Repository = "https://github.com/m3trik/extapps"
+
+# `extapps` opens the panel browser, `extapps <panel>` one panel (the names in
+# the entry-point table below). A gui-script runs under pythonw on Windows, so
+# no console window opens. The hub is uitk's ExternalAppHub, declared in
+# extapps/__main__.py (`python -m extapps` runs the same program).
+[project.gui-scripts]
+extapps = "extapps.__main__:HUB.run"
 
 # Each app self-describes as a uitk external app. uitk's
 # ExternalAppHandler discovers and registers them with hosts (tentacle,
@@ -120,7 +137,7 @@ where = ["."]
 include = ["extapps*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.ui", "*.json", "*.txt", "*.md", "*.html"]
+"*" = ["*.ui", "*.json", "*.txt", "*.md", "*.html", "*.svg"]
 # Built-in run-template presets ship in a plain data subdir (not a package), so
 # the top-level "*" json glob (package-dir only) doesn't reach them. They live in
 # per-engine subdirs (presets/<engine>/*.json) — presets are engine-scoped.

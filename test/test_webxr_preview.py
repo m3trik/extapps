@@ -423,7 +423,7 @@ class TestPersistence(_PanelTestCase):
 
         reopened = self._reopen()
 
-        self.assertEqual(reopened._source_text(), "")
+        self.assertEqual(reopened._source_paths(), [])
 
 
 class TestOneServerPerPanel(_PanelTestCase):
@@ -755,6 +755,30 @@ class TestPushWiring(_PanelTestCase):
         # unticked box unable to turn a script back off.
         self.assertEqual(self.sent[0]["scripts"], [])
 
+    def test_several_source_files_are_pushed_as_the_parts_of_one_scene(self):
+        """File on Disk takes several files -- the parts of one scene: ONE
+        push names them all, in order, and the log names them."""
+        second = Path(self.temp.path(extension=".glb"))
+        second.write_bytes(Path(self.glb).read_bytes())
+        self.slots.set_source_files([self.glb, str(second)])
+        logged = self._record_log()
+        self.slots.b000()
+        self.assertEqual(len(self.sent), 1)
+        self.assertEqual(self.sent[0]["objects"], [self.glb, str(second)])
+        self.assertTrue(
+            any(line.startswith("Sources (2 parts): ") for line in logged), logged
+        )
+
+    def test_a_missing_part_is_refused_by_name_and_nothing_pushed(self):
+        """Every file is checked before the push: a typo in one must not cost
+        the others their build, and the log says which."""
+        gone = self.glb + ".gone"
+        self.slots.set_source_files([self.glb, gone])
+        logged = self._record_log()
+        self.slots.b000()
+        self.assertEqual(self.sent, [])
+        self.assertTrue(any(gone in line for line in logged), logged)
+
     def test_ticked_scripts_are_sent_by_their_registered_name(self):
         from extapps.webxr_preview import parameters as params
 
@@ -840,7 +864,7 @@ class TestPushWiring(_PanelTestCase):
         self.slots.set_source_file("")
         with self._answer_the_prompt(self.glb):
             self.slots.b000()
-        self.assertEqual(self.slots._source_text(), self.glb)
+        self.assertEqual(self.slots._source_paths(), [self.glb])
 
     def test_the_prompt_is_the_rows_own_browse(self):
         """One dialog, declared once, reached two ways.
@@ -952,6 +976,14 @@ class TestShareLink(_PanelTestCase):
         self.addCleanup(env.stop)
         self.messages = []
         self.slots.sb.message_box = lambda text, *a, **k: self.messages.append(text)
+        # Every new link is checked (`_verify_share`), and the fake link names
+        # no real host: the check answers here, never over DNS, and a case
+        # about the check sets what it answers (`_ping`).
+        ping = mock.patch.object(
+            self.slots.bridge, "ping_share", return_value={"ok": True, "ms": 1.0}
+        )
+        ping.start()
+        self.addCleanup(ping.stop)
         # These cases push for real: the share rides the server a push starts.
         # The panel restores its rows between cases, so a KTX2 row an earlier
         # case left (TestPushWiring writes one) sent the push through the KTX2
@@ -1015,6 +1047,7 @@ class TestShareLink(_PanelTestCase):
         for name in (
             "btn_share_now",
             "btn_copy_share_link",
+            "btn_test_share_link",
             "btn_copy_scene_link",
             "btn_stop_sharing",
         ):
@@ -1320,6 +1353,101 @@ class TestShareLink(_PanelTestCase):
         self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
         self.assertIn(f"shared at {_FAKE_LINK} (0 guests)", self.slots._status_text())
         self.assertEqual(self.messages, [])
+
+    def _ping(self, **result):
+        """The bridge's ping answering *result* from here on (see setUp)."""
+        self.slots.bridge.ping_share.return_value = {"ok": True, **result}
+
+    def test_a_new_link_is_checked_and_the_log_says_it_answers(self):
+        """The share is up when the provider says so -- and checked from here
+        as a guest's page asks for it, the answer in the log."""
+        self._ping(ms=42.0)
+        logged = self._record_log()
+        self._share()
+        self._pump_until(lambda: any("Link checked" in line for line in logged))
+        self.assertTrue(any("(42 ms)" in line for line in logged), logged)
+
+    def test_test_link_says_whether_a_guest_can_reach_the_share(self):
+        """Test Link asks again -- and says when there is nothing to ask."""
+        logged = self._record_log()
+        self._action("btn_test_share_link").click()
+        self.assertTrue(any("Nothing is being shared" in line for line in logged))
+        self._share()
+        self._pump_until(lambda: any("Link checked" in line for line in logged))
+        self._ping(ok=False, error="HTTP 502 Bad Gateway")
+        logged.clear()
+        self._action("btn_test_share_link").click()
+        self._pump_until(lambda: any("did not answer" in line for line in logged))
+        self.assertTrue(any("HTTP 502 Bad Gateway" in line for line in logged))
+        self.assertEqual(self.messages, [], "a failed check put up a dialog")
+
+    def test_private_link_reaches_the_share_and_reshares_when_flipped(self):
+        """Private Link shares under a fresh random path; flipped while
+        shared, the link comes up again the new way -- a new link, copied."""
+
+        def restore():
+            # The row persists, and a later case must not share privately.
+            # Sharing off FIRST, so turning privacy back off shares nothing.
+            self.slots._write_param("SHARE_VIA", "off")
+            self.slots._write_param("SHARE_PRIVATE", False)
+
+        self.addCleanup(restore)
+        self._share()
+        self.assertIs(self.slots._server().share_info()["private"], False)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_PRIVATE", True)
+        info = self.slots._server().share_info()
+        self.assertIs(info["private"], True)
+        self.assertTrue(info["url"].startswith(_FAKE_LINK + "/"), info["url"])
+        self.assertEqual(QApplication.clipboard().text(), info["url"])
+
+    def test_private_link_flipped_while_a_share_waits_on_its_step_restarts_it(self):
+        """The wait was opened for the other kind of link. Flipped, it must
+        not come up as that kind once the step is taken -- a stable link where
+        a disposable one was asked for -- so it starts again, private, rather
+        than the old wait's step being offered again."""
+
+        def restore():
+            self.slots._write_param("SHARE_VIA", "off")  # first: see above
+            self.slots._write_param("SHARE_PRIVATE", False)
+
+        self.addCleanup(restore)
+        self._wait_on_the_step()
+        with mock.patch.object(
+            ptk.ShareTunnel, "settle", return_value="fake-step-then-link"
+        ):
+            self.slots._write_param("SHARE_PRIVATE", True)
+        self.assertTrue(self.slots._share_pending, "the share stopped waiting")
+        Path(self.step_taken).touch()  # enabled, in the browser
+        self._pump_until(lambda: not self.slots._share_pending)
+        info = self.slots._server().share_info()
+        self.assertIsNotNone(info, "the restarted share never came up")
+        self.assertIs(info["private"], True)
+
+    def test_a_panel_reopened_on_a_private_share_keeps_its_link(self):
+        """The server outlives the panel: reopened while a private share is
+        up, the row shows it and the link stays -- a guest holding it keeps
+        it, rather than the reopen sharing again under a new one."""
+
+        def restore():
+            self.slots._write_param("SHARE_VIA", "off")
+            self.slots._write_param("SHARE_PRIVATE", False)
+
+        self.addCleanup(restore)
+        self.slots._write_param("SHARE_PRIVATE", True)  # Off: shares nothing yet
+        # A provider the row lists, so the reopened row can show it.
+        fake = ptk.ShareTunnel.PROVIDERS["fake"]
+        with mock.patch.dict(ptk.ShareTunnel.PROVIDERS, {"cloudflared": fake}):
+            with mock.patch.object(
+                ptk.ShareTunnel, "settle", return_value="cloudflared"
+            ):
+                self.slots._write_param("SHARE_VIA", "cloudflared")
+                url = self.slots._server().share_info()["url"]
+                self.assertTrue(url.startswith(_FAKE_LINK + "/"), url)
+                reopened = self._reopen()
+                self.app.processEvents()
+            self.assertEqual(reopened._sharing_choice(), "cloudflared")
+            self.assertEqual(self.slots._server().share_info()["url"], url)
 
     def test_share_link_before_any_push_starts_serving(self):
         """A link can go out before the first model does."""

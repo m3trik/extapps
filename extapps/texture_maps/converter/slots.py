@@ -233,8 +233,11 @@ class ConverterSlots:
             if map_type_filter:
                 wanted = set(map_type_filter)
                 kept, dropped = [], []
+                # The scope's files read as one batch: a set named for a lobe
+                # (``Hero_Coat``) keeps its ``Hero_Coat_Normal`` a Normal.
+                types = MapFactory.resolve_map_types(paths)
                 for p in paths:
-                    key = MapFactory.resolve_map_type(p, key=True)
+                    key = types[p]
                     (kept if key in wanted else dropped).append(p)
                 if dropped:
                     print(
@@ -751,6 +754,9 @@ class ConverterSlots:
         total = len(texture_paths)
         saved_before = saved_after = counted = 0
         failed: List[Tuple[str, str]] = []
+        # The run's maps read as one batch: a set named for a lobe
+        # (``Hero_Coat``) keeps its base maps -- sized and renamed as such.
+        readings = MapFactory.classify_textures(texture_paths)
         with self.sb.progress(
             total=total, text=f"{verb} 0/{total}"
         ) as update:
@@ -759,9 +765,12 @@ class ConverterSlots:
                 # the batch: a read-only source (a DCC's own preset textures
                 # live under Program Files) or a locked file used to raise out
                 # of the loop, leaving the run half-done with no summary.
+                map_type, base_name = readings[texture_path]
                 try:
                     before, after = self.engine.optimize_one(
                         texture_path,
+                        map_type=map_type,
+                        base_name=base_name,
                         file_type=file_type,
                         max_size=max_size,
                         secondary_scale=secondary_scale,

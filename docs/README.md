@@ -32,6 +32,52 @@ pip install extapps
 
 ## Launch (standalone)
 
+Installing extapps adds an `extapps` command (`python -m extapps` runs the same
+program):
+
+| Command | Opens |
+|---|---|
+| `extapps` | A browser listing every panel: search, filter by tag, double-click to open |
+| `extapps compositor` | One panel, by its name in the Tools table (`metashape_workflow`, `mesh_convert`, ...) |
+| `extapps --shortcut desktop` | Writes a desktop shortcut that opens the browser, then exits (`--shortcut start_menu`: the Start menu, or the Linux applications menu) |
+| `extapps compositor --shortcut desktop` | Writes a shortcut that opens one panel (named "extapps Compositor") |
+
+The command opens no console window, and quits once its last window is closed
+or hidden. It is uitk's `ExternalAppHub`; `extapps/__main__.py` only declares its
+name, icon and taskbar identity.
+
+### Desktop and Start-menu shortcuts
+
+Three ways to get one; run any of them again to refresh a shortcut (after moving
+or upgrading the Python it runs, say):
+
+- **From the browser:** its menu, *Launch from the desktop:* section,
+  *Create desktop shortcut* / *Add to Start menu*.
+- **From inside Maya or Blender (tentacle):** open the UI Browser, right-click a
+  panel's row, *Create desktop shortcut* / *Add to Start menu*. The shortcut runs
+  the host's own Python (`mayapy`, Blender's `python`) without opening the host.
+- **From a terminal:** `extapps --shortcut desktop`.
+
+Before writing anything, the shortcut is tried: extapps has to import in that
+Python as the desktop starts it, without the host's startup scripts. When it does
+not (extapps reaches the host only through `userSetup.py` or `Maya.env`), no
+shortcut is written and the message says why. Fix it by installing extapps into
+that Python with pip, or by putting the extapps folder on a `PYTHONPATH` saved in
+your user environment.
+
+A shortcut into a host's Python (which has no console-free twin, unlike a
+python.org or venv Python's `pythonw`) opens a console window for a moment; the
+program closes it as it starts.
+
+### When nothing seems to happen
+
+A program started from the desktop has no console, so its output goes to a log:
+`%LOCALAPPDATA%\uitk\extapps\extapps.log` on Windows (the previous run's is
+`extapps.log.1`); on Linux the desktop session's journal. An uncaught error also
+shows in a message box.
+
+### From Python
+
 ```powershell
 python -c "from extapps.texture_maps.compositor import CompositorUI; CompositorUI().show(pos='screen', app_exec=True)"
 ```

@@ -18,9 +18,12 @@ Standalone [uitk](https://github.com/m3trik/uitk)-Switchboard panels for content
 
 ```bash
 pip install extapps
-python -c "from extapps.texture_maps.compositor import CompositorUI; CompositorUI().show(pos='screen', app_exec=True)"
+extapps                             # a browser listing every panel
+extapps compositor                  # one panel (python -m extapps compositor works too)
+extapps --shortcut desktop          # a desktop shortcut (start_menu: the Start menu)
 ```
 
-From a uitk host: `sb.handlers.external_app.launch("compositor")`.
+From a uitk host: `sb.handlers.external_app.launch("compositor")`; the host's UI
+Browser also offers *Create desktop shortcut* on each panel's row.
 
 Full usage and per-tool docs: [docs/README.md](docs/README.md) · scope and structure: [CLAUDE.md](CLAUDE.md) · history: [CHANGELOG.md](CHANGELOG.md)

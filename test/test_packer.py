@@ -24,6 +24,7 @@ from unittest import mock
 
 from PIL import Image
 
+import pythontk as ptk
 from pythontk import ImgUtils
 
 from extapps.texture_maps.packer.slots import PackerSlots
@@ -252,6 +253,69 @@ class TestMapPackerCompleteness(unittest.TestCase):
         # No selection (currentData() -> None) must not disable the guard.
         combo.data = None
         self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_SKIP)
+
+
+class TestMapPackerOpenPBRLobes(unittest.TestCase):
+    """The glTF lobe packings: clearcoat R + its roughness G from an OpenPBR set.
+
+    The lobe maps classified as base maps (``mat_Coat_Roughness`` was a
+    Roughness) and the channel combos offered no lobe at all, so the pair
+    KHR_materials_clearcoat reads from one texture could not be packed.
+    """
+
+    def setUp(self):
+        self.temp = ptk.TempArtifacts("extapps_packer_lobes", policy="scoped")
+        self.dir = self.temp.dir_path()
+        self.files = []
+        for suffix, value in (
+            ("Coat_Weight", 200),
+            ("Coat_Roughness", 40),
+            ("Roughness", 90),
+        ):
+            path = os.path.join(self.dir, f"mat_{suffix}.png")
+            ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), value), path)
+            self.files.append(path)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_coat_weight_and_roughness_pack_into_one_texture(self):
+        self.assertIn("Clearcoat", PackerSlots.grayscale_types)
+        self.assertIn("Clearcoat_Roughness", PackerSlots.grayscale_types)
+        self.assertTrue(
+            PackerSlots.__new__(PackerSlots)._pack_set(
+                base_name="mat",
+                files=self.files,
+                combos=["Clearcoat", "Clearcoat_Roughness", "None", "None"],
+                suffix="_Clearcoat_Pack",
+                ext="png",
+                fmt="PNG",
+            )
+        )
+        packed = ImgUtils.ensure_image(os.path.join(self.dir, "mat_Clearcoat_Pack.png"))
+        # The coat roughness, never the base Roughness (90).
+        self.assertEqual(packed.getpixel((0, 0))[:2], (200, 40))
+
+    def test_a_set_named_for_a_lobe_packs_its_own_roughness(self):
+        """``Hero_Coat_Roughness`` read alone is a coat roughness; read with its
+        set ``Hero_Coat`` it is that set's roughness."""
+        files = []
+        for suffix, value in (("Metallic", 10), ("Roughness", 90)):
+            path = os.path.join(self.dir, f"Hero_Coat_{suffix}.png")
+            ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), value), path)
+            files.append(path)
+        self.assertTrue(
+            PackerSlots.__new__(PackerSlots)._pack_set(
+                base_name="Hero_Coat",
+                files=files,
+                combos=["Metallic", "Roughness", "None", "None"],
+                suffix="_MR",
+                ext="png",
+                fmt="PNG",
+            )
+        )
+        packed = ImgUtils.ensure_image(os.path.join(self.dir, "Hero_Coat_MR.png"))
+        self.assertEqual(packed.getpixel((0, 0))[:2], (10, 90))
 
 
 class TestMapPackerOutputAffix(unittest.TestCase):

@@ -157,7 +157,9 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         "its next poll. The loop is <b>change the scene, push, look up</b>.",
         "steps": [
             "Pick a <b>Source</b> -- a scope when a DCC opened this panel, or "
-            "a file on disk.",
+            "files on disk: several are the parts of one scene, shown together "
+            "at their authored places, each one hidden from the page's "
+            "<b>View</b> menu.",
             "Set the delivery options and viewer scripts. The <b>Textures</b> "
             "and <b>Lighting</b> rows are the Scene Exporter's own: set them "
             "as the export is set and the preview's textures take the export's "
@@ -186,7 +188,14 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                     "only a browser -- and a standalone headset gets its VR "
                     "button, because the link is a secure context. The row's "
                     "option box has <b>Share Now</b>, <b>Copy Link</b>, "
-                    "<b>Copy Scene Link</b> and <b>Stop Sharing</b>.",
+                    "<b>Test Link</b>, <b>Copy Scene Link</b> and <b>Stop "
+                    "Sharing</b>.",
+                    "Each new link is checked from this machine, the way a "
+                    "guest's page asks for it, and the log says whether it "
+                    "answers -- <b>Test Link</b> asks again.",
+                    "<b>Private Link</b> gives every share a fresh random link "
+                    "that dies when the next share starts -- for Tailscale, "
+                    "whose address is otherwise your machine's for good.",
                     "<b>Copy Scene Link</b> copies where the scene is "
                     "described as data (<b>scene.json</b>): its glTF and "
                     "the lighting it renders with. Send it to a developer whose "
@@ -251,6 +260,9 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             self._param_widgets["LOCOMOTION"], self._apply_locomotion
         )
         self._build_sharing_row()
+        KindFactory.connect_changed(
+            self._param_widgets["SHARE_PRIVATE"], self._private_changed
+        )
         self._adopt_host_deliverer()
         self._build_status_row()
         if self._initial_source_file:
@@ -585,6 +597,14 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             "copy_share_link",
         ),
         (
+            "Test Link",
+            "btn_test_share_link",
+            "Ask the live link for the page from this machine, the way a "
+            "guest's browser does, and say whether it answers -- and how fast. "
+            "A brand-new link can take a few seconds to reach everyone.",
+            "check_share_link",
+        ),
+        (
             "Copy Scene Link",
             "btn_copy_scene_link",
             "Copy the link to this scene as data (scene.json): its glTF and "
@@ -625,16 +645,31 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         """The Sharing row: ``"off"``, ``"auto"`` or a provider."""
         return KindFactory.read_value(self._param_widgets["SHARE_VIA"]) or "off"
 
+    def _share_private(self) -> bool:
+        """The Private Link row: a fresh random link per share."""
+        return bool(KindFactory.read_value(self._param_widgets["SHARE_PRIVATE"]))
+
+    def _private_changed(self, _on) -> None:
+        """The Private Link row, applied at once: a share up -- or asked for
+        -- is shared again the new way, with a new link."""
+        choice = self._sharing_choice()
+        if choice != "off":
+            self._share(choice, interactive=True)
+
     def _show_live_share(self) -> None:
         """A share already up shows on the row, never Off beside a live link.
 
         The server outlives the panel -- a panel reopened in the same session,
         or a host bringing its own deliverer, can find one sharing. The row's
-        change then reports it rather than sharing again.
+        change then reports it rather than sharing again. Private Link is set
+        to the share's first: a row still at its default would read as the
+        other kind of link and share again, under a new one -- the guest
+        holding the private link locked out by a panel merely reopened.
         """
         server = self._server()
         info = server.share_info() if server is not None else None
         if info is not None and self._sharing_choice() == "off":
+            self._write_param("SHARE_PRIVATE", bool(info.get("private")))
             self._write_param("SHARE_VIA", info["provider"])
 
     def _sharing_changed(self, choice) -> None:
@@ -759,21 +794,29 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         panel free meanwhile: the step is a person's, and once it is taken the
         link arrives by itself (:meth:`_share_done`). Asked again while it
         waits, the panel names the step again; asked for another provider, it
-        ends that wait and shares through the one asked for.
+        ends that wait and shares through the one asked for -- as it does when
+        Private Link changed since the wait began, which would otherwise bring
+        up the other kind of link once the step is taken.
         """
+        private = self._share_private()
         if self._share_pending:
             if self._share_step is None:
                 if interactive:
                     self.panel_log("A link is already being opened.", "warning")
                 return
-            if choice in (self._share_choice, self._share_provider):
+            if (
+                choice in (self._share_choice, self._share_provider)
+                and private == self._share_private_wait
+            ):
                 self._offer_step(self._share_step, interactive, waiting=True)
                 return
-            self._unshare(announce_idle=False)  # another provider: that wait ends
+            # Another provider, or the other kind of link: that wait ends.
+            self._unshare(announce_idle=False)
         server = self._server()
         info = server.share_info() if server is not None else None
         if info is not None:
-            if choice == "auto" or info["provider"] == choice:
+            fits = choice == "auto" or info["provider"] == choice
+            if fits and bool(info.get("private")) == private:
                 self.panel_log(f"Already shared at {info['url']}.")
                 return
             server.unshare()
@@ -789,12 +832,14 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             return
         self._share_pending = True
         self._share_choice, self._share_provider = choice, provider
+        self._share_private_wait = private
         stops = self._share_stops
         reported = {}  # the provider's step, set on the share's own thread
         job = _Worker(
             lambda: self.bridge.share(
                 provider=provider,
                 on_step=lambda step: reported.setdefault("step", step),
+                private=private,
             ),
             name="webxr-preview-share",
         )
@@ -857,6 +902,50 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 f"send the link above instead.",
                 "warning",
             )
+        self._verify_share()
+
+    def check_share_link(self) -> None:
+        """Test Link: whether a guest can reach the share now."""
+        server = self._server()
+        if server is None or server.share_info() is None:
+            self.panel_log(
+                "Nothing is being shared -- pick a provider in the Sharing row.",
+                "warning",
+            )
+            return
+        self._verify_share()
+
+    def _verify_share(self) -> None:
+        """Ask the live link for its page from this machine -- off the UI
+        thread, a round trip through the provider taking a second or more --
+        and log whether a guest can reach it (:meth:`pythontk.PreviewServer.ping_share`).
+
+        A link the provider reports up can still not answer: its name not yet
+        in every resolver, a tunnel that dropped as it came up, a provider
+        page in its place. Said in the log, never a dialog: the share is up,
+        and a new name is usually seconds from answering.
+        """
+        self.panel_log("Checking the link answers…")
+        job = _Worker(self.bridge.ping_share, name="webxr-preview-ping")
+
+        def report() -> None:
+            try:
+                ping = job.result()
+            except Exception as error:  # noqa: BLE001 - a check never fails a share
+                ping = {"ok": False, "error": str(error) or type(error).__name__}
+            if ping.get("ok"):
+                self.panel_log(
+                    f"Link checked: a guest can reach it ({ping['ms']:.0f} ms)."
+                )
+                return
+            self.panel_log(
+                f"The link did not answer from here ({ping.get('error')}). A new "
+                "link can take a few more seconds to reach everyone -- Test "
+                "Link asks again.",
+                "warning",
+            )
+
+        job.when_done(self.ui, report)
 
     def _offer_step(self, step, interactive: bool, waiting: bool) -> None:
         """A provider stopped on a one-time step in a browser -- Tailscale,
@@ -933,29 +1022,38 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         return opening
 
     def _clear_share_wait(self) -> None:
-        """No share opening: not pending, and no row choice, provider or step
-        it was opened for (a share waiting on its step is named by these)."""
+        """No share opening: not pending, and no row choice, provider, privacy
+        or step it was opened for (a share waiting on its step is named by
+        these)."""
         self._share_pending = False
         self._share_choice: Optional[str] = None
         self._share_provider: Optional[str] = None
+        self._share_private_wait: Optional[bool] = None
         self._share_step = None
 
     # ------------------------------------------------------------------ public hand-off
     def set_source_file(self, path: str) -> None:
-        """Pre-fill Source File and select the file source.
+        """Pre-fill Source Files with *path* and select the file source.
 
         The hand-off point for a host that already has a file to show -- an
         exporter that just wrote a GLB, say. Selecting the source too, because
         filling a field the active source does not read would look like the
         panel ignored the request.
         """
-        edit = self._source_edit()
-        if edit is not None:
-            edit.setText(path or "")
+        self.set_source_files([path] if path else [])
+
+    def set_source_files(self, paths: List[str]) -> None:
+        """Pre-fill Source Files with *paths* -- the parts of one scene, shown
+        together -- and select the file source (see :meth:`set_source_file`).
+        """
+        row = self._param_widgets.get("SOURCE_FILE")
+        if row is not None:
+            KindFactory.set_value(row, [str(path) for path in paths or []])
         self._select_source(FILE_SOURCE)
 
-    def _prompt_for_source(self) -> str:
-        """Ask for the file to preview, and remember the answer. "" if declined.
+    def _prompt_for_source(self) -> List[str]:
+        """Ask for the files to preview, and remember the answer; ``[]`` if
+        declined.
 
         An empty field is not an error state, it is the first push -- the
         panel opens with nothing chosen. Answering that with "pick a file
@@ -969,23 +1067,23 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         edit = self._source_edit()
         option = edit.option_box.find_option(BrowseOption) if edit else None
         if option is None:  # a row built without its browse button
-            self.panel_log("Pick a Source File first.", "warning")
-            return ""
+            self.panel_log("Pick the Source Files first.", "warning")
+            return []
         # The ROW's own browse, not a second dialog beside it: the filter, the
         # title and the folder it opens on are declared once, on the field, so
         # the two ways into the same choice cannot answer differently. It
         # writes the pick back into the field itself.
         option.browse()
-        return self._source_text()
+        return self._source_paths()
 
     def _source_edit(self):
         """The Source File field's inner line edit; None before it is built."""
         return getattr(self._param_widgets.get("SOURCE_FILE"), "_line_edit", None)
 
-    def _source_text(self) -> str:
-        """Whatever that field holds, for anchoring the dialog. "" if empty."""
-        edit = self._source_edit()
-        return str(edit.text()).strip() if edit is not None else ""
+    def _source_paths(self) -> List[str]:
+        """The files that field names, in order; ``[]`` when empty."""
+        row = self._param_widgets.get("SOURCE_FILE")
+        return list(KindFactory.read_value(row) or []) if row is not None else []
 
     def _select_source(self, key: str) -> None:
         combo = self.ui.cmb000
@@ -1082,19 +1180,23 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         self._share_after_push()
 
     def _push_file(self, values, glb_options, scripts):
-        """Push the chosen file. ``None`` when the run was settled here."""
-        path = str(values.get("SOURCE_FILE") or "").strip()
-        if not path:
-            path = self._prompt_for_source()
-            if not path:
+        """Push the chosen files -- one, or the parts of one scene. ``None``
+        when the run was settled here."""
+        # A list already: the row reads its field as one (uitk ``files``).
+        paths = list(values.get("SOURCE_FILE") or [])
+        if not paths:
+            paths = self._prompt_for_source()
+            if not paths:
                 return None  # the dialog was dismissed; nothing to say
-        if not os.path.isfile(path):
-            self.panel_log(f"Source file not found: {path}", "error")
+        missing = [path for path in paths if not os.path.isfile(path)]
+        if missing:
+            for path in missing:
+                self.panel_log(f"Source file not found: {path}", "error")
             return None
 
         with self.sb.progress(text="Preview: publishing…") as tick:
             result = self.bridge.push(
-                objects=[path],
+                objects=paths,
                 scope=FILE_SOURCE,
                 open_browser="auto",
                 glb_options=glb_options,
@@ -1102,8 +1204,13 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 progress=lambda message: tick(text=message),
                 EMBED_TEXTURES=bool(values.get("EMBED_TEXTURES", True)),
             )
+        names = ", ".join(os.path.basename(path) for path in paths)
         return result, [
-            f"Source: {os.path.basename(path)}",
+            (
+                f"Sources ({len(paths)} parts): {names}"
+                if len(paths) > 1
+                else f"Source: {names}"
+            ),
             self._timing_line(self.bridge, result),
         ]
 

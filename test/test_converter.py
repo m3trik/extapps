@@ -1163,6 +1163,31 @@ class TestConverterOptimize(unittest.TestCase):
         written = os.path.join(self.test_dir, "rock_Roughness.png")
         self.assertEqual(ImgUtils.ensure_image(written).size, (1024, 1024))
 
+    def test_a_set_named_for_a_lobe_keeps_its_base_colour_full_size(self):
+        """``Hero_Coat_Color`` read alone is a coat tint (secondary, shrunk);
+        read with its set ``Hero_Coat`` it is the base colour (kept)."""
+        colour = self._texture(name="Hero_Coat_Color.png", size=(256, 256))
+        rough = self._texture(name="Hero_Coat_Roughness.png", size=(256, 256))
+        self.converter._get_texture_paths = Mock(return_value=[colour, rough])
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.converter.tb000(self._widget(clamp=128, secondary=0.5, old=""))
+
+        self.assertEqual(ImgUtils.ensure_image(colour).size, (128, 128))
+        self.assertEqual(ImgUtils.ensure_image(rough).size, (64, 64))
+
+    def test_rename_keeps_a_lobe_named_set_whole(self):
+        """The modifier lands after the set's whole name, never inside it."""
+        target = MapConverter.rename_target_path(
+            os.path.join(self.test_dir, "Hero_Coat_Roughness.png"),
+            file_type="png",
+            mode="suffix",
+            modifier="LD",
+            output_dir=self.test_dir,
+            base_name="Hero_Coat",
+        )
+        self.assertEqual(os.path.basename(target), "Hero_Coat_LD_Roughness.png")
+
     def test_clamp_target_keeps_a_non_square_maps_aspect(self):
         """'Clamp: Target' also inherits the profile budget's POT rule, and
         that rule used to snap each axis on its own: a 1024x768 source came out

@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Substance Workflow — Adobe Substance 3D Painter integration.
+"""Create a Substance Painter project from a mesh and bake lighting into base color.
 
 A Switchboard panel (``SubstanceWorkflowUI``) drives the Painter engine that
 lives in this package: an op **registry**, a client **``PainterConnection``**

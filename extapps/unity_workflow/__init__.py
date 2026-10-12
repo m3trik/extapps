@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Unity Workflow — send a model file into a Unity project (DCC-agnostic).
+"""Copy a model file into a Unity project's Assets and optionally launch the Editor.
 
 A standalone Switchboard :class:`uitk.bridge.BridgeSlotsBase` panel driven by a
 picked **model file** (the file-input sibling of mayatk's / blendertk's
@@ -11,6 +11,7 @@ Project' field's option menu. Runs from any host that loads uitk — and is the 
 the Blender 'Unity Bridge' reuses (export the selection to FBX, then
 ``set_model_path``).
 """
+
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps.unity_workflow"

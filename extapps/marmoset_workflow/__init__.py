@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Marmoset Workflow — launch Marmoset Toolbag and set up a project.
+"""Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 
 A standalone Switchboard panel over the DCC-agnostic Toolbag engine
 bundled in this subpackage (:mod:`._marmoset_engine`). The engine is

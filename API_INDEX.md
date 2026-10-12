@@ -8,7 +8,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 ### `_panel_launcher.py` — The one launcher every extapps panel is.
 - `class PanelLauncher(_PanelLauncherInternal)`
 
-### `marmoset_workflow/__init__.py` — Marmoset Workflow — launch Marmoset Toolbag and set up a project.
+### `marmoset_workflow/__init__.py` — Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 - constants: DEFAULT_INCLUDE
 
 ### `marmoset_workflow/_marmoset_engine.py` — Drive Marmoset Toolbag from the outside -- launch + templated automation.
@@ -49,7 +49,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class ToolbagLog`
   - methods: resolve_toolbag_log_path, classify_log_line, dispatch_log_lines, start_toolbag_log_tail
 
-### `mesh_convert/__init__.py` — Mesh Convert — FBX → glTF / GLB conversion.
+### `mesh_convert/__init__.py` — Batch-convert FBX files to binary glTF (GLB) with FBX2glTF.
 - constants: DEFAULT_INCLUDE
 
 ### `mesh_convert/launcher.py` — Application shell for the Mesh Convert UI.
@@ -82,7 +82,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class WorkflowEngine(ProgressNotifyMixin)`
   - methods: finalize_run
 
-### `photogrammetry/gaussian_splat_workflow/__init__.py` — Gaussian-splat workflow — train a 3D Gaussian Splat and publish it to engines.
+### `photogrammetry/gaussian_splat_workflow/__init__.py` — Train a Gaussian splat with Brush from COLMAP data and export it for Unity or web.
 - constants: DEFAULT_INCLUDE
 
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py` — Local, async runner the Brush (gaussian-splat) panel dispatches to.
@@ -123,7 +123,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class MeshStagesMixin`
   - methods: measure_mesh, refine_mesh, bake_vertex_color, run_mesh_stages, clean_mesh_advanced
 
-### `photogrammetry/metashape_workflow/__init__.py` — Metashape Workflow — Agisoft Metashape photogrammetry automation.
+### `photogrammetry/metashape_workflow/__init__.py` — Turn photos or video frames into a textured mesh with headless Metashape.
 - constants: DEFAULT_INCLUDE
 
 ### `photogrammetry/metashape_workflow/_metashape_connection.py` — Headless launch connection for Agisoft Metashape.
@@ -165,7 +165,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class Profile(_ProfileInternal)`
   - methods: get_profile, configured_app_path, resolve_app, preset_store, get_preset, init_user_profile, discover_source_dirs
 
-### `photogrammetry/realityscan_workflow/__init__.py` — RealityCapture / RealityScan workflow.
+### `photogrammetry/realityscan_workflow/__init__.py` — Turn photos or video frames into a textured mesh with headless RealityCapture.
 - constants: DEFAULT_INCLUDE
 
 ### `photogrammetry/realityscan_workflow/_realityscan_connection.py` — Launch connection for RealityScan / RealityCapture.
@@ -215,7 +215,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 ### `photogrammetry/sugar_mesh_workflow/run_combined.py` — Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``.obj``.
 - `main(argv=None) -> int`
 
-### `substance_workflow/__init__.py` — Substance Workflow — Adobe Substance 3D Painter integration.
+### `substance_workflow/__init__.py` — Create a Substance Painter project from a mesh and bake lighting into base color.
 - constants: DEFAULT_INCLUDE
 
 ### `substance_workflow/bake_utils.py` — Bake operations — iray-backed mesh-map bakes and lighting composites.
@@ -298,7 +298,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `channels(name: str) -> List[str]`
 - `add_channel(name: str, channel: str, fmt: str = 'sRGB8') -> None`
 
-### `texture_maps/compositor/__init__.py` — Map Compositor — multi-layer texture compositing tool.
+### `texture_maps/compositor/__init__.py` — Merge several texture maps of each type into one image, converting normal formats.
 - constants: DEFAULT_INCLUDE
 
 ### `texture_maps/compositor/launcher.py` — Application shell for the Map Compositor UI.
@@ -308,7 +308,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class CompositorSlots(_CompositorSlotsInternal)`
   - methods: output_dir, map_name, header_init, txt000_init, txt001_init, txt002_init, b002, process
 
-### `texture_maps/converter/__init__.py` — Map Converter — texture conversion, channel packing, PBR-workflow prep.
+### `texture_maps/converter/__init__.py` — Convert normal, roughness, spec-gloss and bump maps, and pack or optimize textures.
 - constants: DEFAULT_INCLUDE
 
 ### `texture_maps/converter/_converter.py` — The Map Converter's batch engine: plan, name and run one map at a time.
@@ -322,7 +322,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class ConverterSlots`
   - methods: source_dir, scopes, register_scope, unregister_scope, texture_provider, header_init, resolve_affix, optimize_formats, tb000_init, tb000, tb001_init, tb001, tb003_init, tb003, tb002_init, tb002, b000, b001, b004, b007, b010, b011, b012
 
-### `texture_maps/packer/__init__.py` — Map Packer — channel-pack textures from per-channel source maps.
+### `texture_maps/packer/__init__.py` — Pack per-channel source maps into one RGBA texture, or unpack a packed one.
 - constants: DEFAULT_INCLUDE
 
 ### `texture_maps/packer/launcher.py` — Application shell for the Map Packer UI.
@@ -332,7 +332,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class PackerSlots`
   - methods: cmbR_init, cmbG_init, cmbB_init, cmbA_init, txtSuffix_init, cmbFormat_init, header_init, source_dir, b000, b001
 
-### `unity_workflow/__init__.py` — Unity Workflow — send a model file into a Unity project (DCC-agnostic).
+### `unity_workflow/__init__.py` — Copy a model file into a Unity project's Assets and optionally launch the Editor.
 - constants: DEFAULT_INCLUDE
 
 ### `unity_workflow/_unity_panel.py` — What every Unity panel shares: the 'Unity Project' row, the Editor combo, script management.
@@ -350,7 +350,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase)`
   - methods: params_module, make_bridge, resolved_model_path, set_model_path, b000
 
-### `webxr_preview/__init__.py` — WebXR Preview — the live browser / headset preview panel.
+### `webxr_preview/__init__.py` — Preview a scene or FBX/GLB file live in a browser or XR headset.
 - constants: DEFAULT_INCLUDE
 
 ### `webxr_preview/launcher.py` — Application shell for the WebXR Preview UI.

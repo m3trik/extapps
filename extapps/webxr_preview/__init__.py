@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""WebXR Preview — the live browser / headset preview panel.
+"""Preview a scene or FBX/GLB file live in a browser or XR headset.
 
 The single UI for the preview loop, for every source. Transport and build
 logic live in :mod:`pythontk.net_utils.preview` (``PreviewServer``,

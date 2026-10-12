@@ -47,7 +47,7 @@
     },
     {
       "relpath": "marmoset_workflow/__init__.py",
-      "summary": "Marmoset Workflow — launch Marmoset Toolbag and set up a project.",
+      "summary": "Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -729,7 +729,7 @@
     },
     {
       "relpath": "mesh_convert/__init__.py",
-      "summary": "Mesh Convert — FBX → glTF / GLB conversion.",
+      "summary": "Batch-convert FBX files to binary glTF (GLB) with FBX2glTF.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -739,7 +739,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 13,
+          "line": 14,
           "deprecated": false
         }
       ]
@@ -1116,7 +1116,7 @@
     },
     {
       "relpath": "photogrammetry/gaussian_splat_workflow/__init__.py",
-      "summary": "Gaussian-splat workflow — train a 3D Gaussian Splat and publish it to engines.",
+      "summary": "Train a Gaussian splat with Brush from COLMAP data and export it for Unity or web.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -1126,7 +1126,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 32,
+          "line": 33,
           "deprecated": false
         }
       ]
@@ -1674,7 +1674,7 @@
     },
     {
       "relpath": "photogrammetry/metashape_workflow/__init__.py",
-      "summary": "Metashape Workflow — Agisoft Metashape photogrammetry automation.",
+      "summary": "Turn photos or video frames into a textured mesh with headless Metashape.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -2467,7 +2467,7 @@
     },
     {
       "relpath": "photogrammetry/realityscan_workflow/__init__.py",
-      "summary": "RealityCapture / RealityScan workflow.",
+      "summary": "Turn photos or video frames into a textured mesh with headless RealityCapture.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -2477,7 +2477,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 17,
+          "line": 19,
           "deprecated": false
         }
       ]
@@ -3347,7 +3347,7 @@
     },
     {
       "relpath": "substance_workflow/__init__.py",
-      "summary": "Substance Workflow — Adobe Substance 3D Painter integration.",
+      "summary": "Create a Substance Painter project from a mesh and bake lighting into base color.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -4204,7 +4204,7 @@
     },
     {
       "relpath": "texture_maps/compositor/__init__.py",
-      "summary": "Map Compositor — multi-layer texture compositing tool.",
+      "summary": "Merge several texture maps of each type into one image, converting normal formats.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -4214,7 +4214,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 13,
+          "line": 14,
           "deprecated": false
         }
       ]
@@ -4328,7 +4328,7 @@
     },
     {
       "relpath": "texture_maps/converter/__init__.py",
-      "summary": "Map Converter — texture conversion, channel packing, PBR-workflow prep.",
+      "summary": "Convert normal, roughness, spec-gloss and bump maps, and pack or optimize textures.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -4338,7 +4338,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 15,
+          "line": 16,
           "deprecated": false
         }
       ]
@@ -4683,7 +4683,7 @@
     },
     {
       "relpath": "texture_maps/packer/__init__.py",
-      "summary": "Map Packer — channel-pack textures from per-channel source maps.",
+      "summary": "Pack per-channel source maps into one RGBA texture, or unpack a packed one.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -4693,7 +4693,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 14,
+          "line": 15,
           "deprecated": false
         }
       ]
@@ -4823,7 +4823,7 @@
     },
     {
       "relpath": "unity_workflow/__init__.py",
-      "summary": "Unity Workflow — send a model file into a Unity project (DCC-agnostic).",
+      "summary": "Copy a model file into a Unity project's Assets and optionally launch the Editor.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -4833,7 +4833,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 19,
+          "line": 20,
           "deprecated": false
         }
       ]
@@ -4991,7 +4991,7 @@
     },
     {
       "relpath": "webxr_preview/__init__.py",
-      "summary": "WebXR Preview — the live browser / headset preview panel.",
+      "summary": "Preview a scene or FBX/GLB file live in a browser or XR headset.",
       "functions": [],
       "classes": [],
       "constants": [

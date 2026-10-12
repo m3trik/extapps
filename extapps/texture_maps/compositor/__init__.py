@@ -1,10 +1,11 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Map Compositor — multi-layer texture compositing tool.
+"""Merge several texture maps of each type into one image, converting normal formats.
 
 Engine lives in :mod:`pythontk.core_utils.engines.textures.map_compositor`; this package
 holds only the Switchboard panel and launcher.
 """
+
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps.texture_maps.compositor"

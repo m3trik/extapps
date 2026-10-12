@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Gaussian-splat workflow — train a 3D Gaussian Splat and publish it to engines.
+"""Train a Gaussian splat with Brush from COLMAP data and export it for Unity or web.
 
 Engine wrappers for the splat track, plus a Switchboard panel (titled "Brush"):
 
@@ -24,6 +24,7 @@ SuGaR track is a *separate* package (clear separation of concerns) —
 The panel is exposed via :func:`pythontk.bootstrap_package` (lazy) so importing
 the headless runner never eagerly pulls in Qt through the UI launcher.
 """
+
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps.photogrammetry.gaussian_splat_workflow"

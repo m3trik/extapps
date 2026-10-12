@@ -1,8 +1,8 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Metashape Workflow — Agisoft Metashape photogrammetry automation.
+"""Turn photos or video frames into a textured mesh with headless Metashape.
 
-The Metashape SDK wrapper lives here (SDK-specific, not generic). The
+The Agisoft Metashape SDK wrapper lives here (SDK-specific, not generic). The
 generic ``FrameExtractor`` carve-out lives in
 :mod:`pythontk.vid_utils.frame_extractor`.
 """

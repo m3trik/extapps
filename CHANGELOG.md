@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026
+- **2026-10-12 -- Every panel's package docstring opens with one sentence saying what it does (the 11 `uitk.external_apps.in_process` entry points' `__init__.py`).** The launcher (`python -m extapps`) shows it in a Description column in place of the tags, which were the same on every row; a host's UI Browser reads it too.
 - **2026-10-10 -- The Map Packer packs the OpenPBR lobes (`texture_maps/packer/slots.py` `PackerSlots.grayscale_types`).** Coat, coat roughness, sheen, sheen roughness, transmission, subsurface weight / radius, specular level, anisotropy (and its angle), thin film (and its thickness) and diffuse roughness join the channel combos -- appended, so a saved preset's combo indices hold -- and resolve through pythontk's new lobe map types, so the pairs glTF reads from one texture (KHR_materials_clearcoat R + G, KHR_materials_iridescence R + G) pack from an OpenPBR set.
   - Test(s): `test_packer.py` `TestMapPackerOpenPBRLobes` (a coat roughness, never the base Roughness, lands in G).
 

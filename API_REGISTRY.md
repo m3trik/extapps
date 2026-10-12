@@ -6,7 +6,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 
 - [`__init__.py`](#__init__) — extapps — standalone Switchboard panels for content-pipeline workflows.
 - [`_panel_launcher.py`](#_panel_launcher) — The one launcher every extapps panel is.
-- [`marmoset_workflow/__init__.py`](#marmoset_workflow--__init__) — Marmoset Workflow — launch Marmoset Toolbag and set up a project.
+- [`marmoset_workflow/__init__.py`](#marmoset_workflow--__init__) — Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 - [`marmoset_workflow/_marmoset_engine.py`](#marmoset_workflow--_marmoset_engine) — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - [`marmoset_workflow/_toolbag_helpers.py`](#marmoset_workflow--_toolbag_helpers) — Shared helpers for Marmoset Toolbag template scripts.
 - [`marmoset_workflow/launcher.py`](#marmoset_workflow--launcher) — Application shell for the Marmoset Workflow UI.
@@ -16,7 +16,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`marmoset_workflow/templates/import.py`](#marmoset_workflow--templates--import) — Open the model in Toolbag and wire materials from the manifest.
 - [`marmoset_workflow/templates/lookdev.py`](#marmoset_workflow--templates--lookdev) — Open the model in Toolbag, apply a Sky preset, and frame the model.
 - [`marmoset_workflow/toolbag_log.py`](#marmoset_workflow--toolbag_log) — Marmoset Toolbag log-file resolution, classification, and live tailing.
-- [`mesh_convert/__init__.py`](#mesh_convert--__init__) — Mesh Convert — FBX → glTF / GLB conversion.
+- [`mesh_convert/__init__.py`](#mesh_convert--__init__) — Batch-convert FBX files to binary glTF (GLB) with FBX2glTF.
 - [`mesh_convert/launcher.py`](#mesh_convert--launcher) — Application shell for the Mesh Convert UI.
 - [`mesh_convert/slots.py`](#mesh_convert--slots)
 - [`photogrammetry/_panel_slots.py`](#photogrammetry--_panel_slots) — Shared scaffolding for the photogrammetry workflow panels.
@@ -24,7 +24,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`photogrammetry/_progress_notify.py`](#photogrammetry--_progress_notify) — The one progress-notify shim the photogrammetry engines share.
 - [`photogrammetry/_shared_params.py`](#photogrammetry--_shared_params) — Input pre-processing parameter specs shared by the image-in engines.
 - [`photogrammetry/_workflow_engine.py`](#photogrammetry--_workflow_engine) — The lifecycle every photogrammetry engine shares: one base, five engines.
-- [`photogrammetry/gaussian_splat_workflow/__init__.py`](#photogrammetry--gaussian_splat_workflow--__init__) — Gaussian-splat workflow — train a 3D Gaussian Splat and publish it to engines.
+- [`photogrammetry/gaussian_splat_workflow/__init__.py`](#photogrammetry--gaussian_splat_workflow--__init__) — Train a Gaussian splat with Brush from COLMAP data and export it for Unity or web.
 - [`photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py`](#photogrammetry--gaussian_splat_workflow--_gaussian_splat_runner) — Local, async runner the Brush (gaussian-splat) panel dispatches to.
 - [`photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py`](#photogrammetry--gaussian_splat_workflow--_gaussian_splat_workflow) — Brush gaussian-splat workflow engine.
 - [`photogrammetry/gaussian_splat_workflow/_install_brush.py`](#photogrammetry--gaussian_splat_workflow--_install_brush) — Headless entry point: download + install Brush via pythontk.AppInstaller.
@@ -34,7 +34,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`photogrammetry/gaussian_splat_workflow/run_combined.py`](#photogrammetry--gaussian_splat_workflow--run_combined) — Driver for the gaussian-splat track: Brush splat training + engine publish.
 - [`photogrammetry/gaussian_splat_workflow/slots.py`](#photogrammetry--gaussian_splat_workflow--slots) — Slots for the Brush (gaussian-splat) Workflow panel.
 - [`photogrammetry/mesh_stages.py`](#photogrammetry--mesh_stages) — Shared, SDK-agnostic mesh post-processing stages (PyMeshLab-backed).
-- [`photogrammetry/metashape_workflow/__init__.py`](#photogrammetry--metashape_workflow--__init__) — Metashape Workflow — Agisoft Metashape photogrammetry automation.
+- [`photogrammetry/metashape_workflow/__init__.py`](#photogrammetry--metashape_workflow--__init__) — Turn photos or video frames into a textured mesh with headless Metashape.
 - [`photogrammetry/metashape_workflow/_metashape_connection.py`](#photogrammetry--metashape_workflow--_metashape_connection) — Headless launch connection for Agisoft Metashape.
 - [`photogrammetry/metashape_workflow/_metashape_runner.py`](#photogrammetry--metashape_workflow--_metashape_runner) — Local, async runner the Metashape panel dispatches to.
 - [`photogrammetry/metashape_workflow/_metashape_workflow.py`](#photogrammetry--metashape_workflow--_metashape_workflow)
@@ -44,7 +44,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`photogrammetry/metashape_workflow/slots.py`](#photogrammetry--metashape_workflow--slots) — Slots for the Metashape Workflow panel.
 - [`photogrammetry/prep_stages.py`](#photogrammetry--prep_stages) — Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
 - [`photogrammetry/profile.py`](#photogrammetry--profile) — Photogrammetry I/O + tuning **profile** — site/personal config kept out of source.
-- [`photogrammetry/realityscan_workflow/__init__.py`](#photogrammetry--realityscan_workflow--__init__) — RealityCapture / RealityScan workflow.
+- [`photogrammetry/realityscan_workflow/__init__.py`](#photogrammetry--realityscan_workflow--__init__) — Turn photos or video frames into a textured mesh with headless RealityCapture.
 - [`photogrammetry/realityscan_workflow/_realityscan_connection.py`](#photogrammetry--realityscan_workflow--_realityscan_connection) — Launch connection for RealityScan / RealityCapture.
 - [`photogrammetry/realityscan_workflow/_realityscan_runner.py`](#photogrammetry--realityscan_workflow--_realityscan_runner) — Local, async runner the RealityCapture panel dispatches to.
 - [`photogrammetry/realityscan_workflow/_realityscan_workflow.py`](#photogrammetry--realityscan_workflow--_realityscan_workflow) — RealityCapture / RealityScan workflow engine.
@@ -56,7 +56,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`photogrammetry/realityscan_workflow/slots.py`](#photogrammetry--realityscan_workflow--slots) — Slots for the RealityCapture Workflow panel.
 - [`photogrammetry/sugar_mesh_workflow/_sugar_mesh.py`](#photogrammetry--sugar_mesh_workflow--_sugar_mesh) — SuGaR mesh-extraction workflow engine.
 - [`photogrammetry/sugar_mesh_workflow/run_combined.py`](#photogrammetry--sugar_mesh_workflow--run_combined) — Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``.obj``.
-- [`substance_workflow/__init__.py`](#substance_workflow--__init__) — Substance Workflow — Adobe Substance 3D Painter integration.
+- [`substance_workflow/__init__.py`](#substance_workflow--__init__) — Create a Substance Painter project from a mesh and bake lighting into base color.
 - [`substance_workflow/bake_utils.py`](#substance_workflow--bake_utils) — Bake operations — iray-backed mesh-map bakes and lighting composites.
 - [`substance_workflow/channel_utils.py`](#substance_workflow--channel_utils) — Channel operations — query and modify per-channel state on a texture set.
 - [`substance_workflow/env_utils/painter_connection.py`](#substance_workflow--env_utils--painter_connection) — Painter Connection Module.
@@ -72,22 +72,22 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`substance_workflow/resource_utils.py`](#substance_workflow--resource_utils) — Shelf / resource operations — query and import shelf assets.
 - [`substance_workflow/slots.py`](#substance_workflow--slots) — Switchboard slots for the Substance Workflow UI.
 - [`substance_workflow/texture_set_utils.py`](#substance_workflow--texture_set_utils) — Texture set operations — list, resolution, channel inventory.
-- [`texture_maps/compositor/__init__.py`](#texture_maps--compositor--__init__) — Map Compositor — multi-layer texture compositing tool.
+- [`texture_maps/compositor/__init__.py`](#texture_maps--compositor--__init__) — Merge several texture maps of each type into one image, converting normal formats.
 - [`texture_maps/compositor/launcher.py`](#texture_maps--compositor--launcher) — Application shell for the Map Compositor UI.
 - [`texture_maps/compositor/slots.py`](#texture_maps--compositor--slots) — UI slot bindings for the compositor window.
-- [`texture_maps/converter/__init__.py`](#texture_maps--converter--__init__) — Map Converter — texture conversion, channel packing, PBR-workflow prep.
+- [`texture_maps/converter/__init__.py`](#texture_maps--converter--__init__) — Convert normal, roughness, spec-gloss and bump maps, and pack or optimize textures.
 - [`texture_maps/converter/_converter.py`](#texture_maps--converter--_converter) — The Map Converter's batch engine: plan, name and run one map at a time.
 - [`texture_maps/converter/launcher.py`](#texture_maps--converter--launcher) — Application shell for the Map Converter UI.
 - [`texture_maps/converter/slots.py`](#texture_maps--converter--slots) — Map Converter UI — slot file for ``converter.ui``.
-- [`texture_maps/packer/__init__.py`](#texture_maps--packer--__init__) — Map Packer — channel-pack textures from per-channel source maps.
+- [`texture_maps/packer/__init__.py`](#texture_maps--packer--__init__) — Pack per-channel source maps into one RGBA texture, or unpack a packed one.
 - [`texture_maps/packer/launcher.py`](#texture_maps--packer--launcher) — Application shell for the Map Packer UI.
 - [`texture_maps/packer/slots.py`](#texture_maps--packer--slots) — Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
-- [`unity_workflow/__init__.py`](#unity_workflow--__init__) — Unity Workflow — send a model file into a Unity project (DCC-agnostic).
+- [`unity_workflow/__init__.py`](#unity_workflow--__init__) — Copy a model file into a Unity project's Assets and optionally launch the Editor.
 - [`unity_workflow/_unity_panel.py`](#unity_workflow--_unity_panel) — What every Unity panel shares: the 'Unity Project' row, the Editor combo, script management.
 - [`unity_workflow/launcher.py`](#unity_workflow--launcher) — Application shell for the Unity Workflow launcher UI.
 - [`unity_workflow/parameters.py`](#unity_workflow--parameters) — User-tunable parameters for the standalone Unity Workflow panel.
 - [`unity_workflow/slots.py`](#unity_workflow--slots) — Slots for the standalone Unity Workflow panel.
-- [`webxr_preview/__init__.py`](#webxr_preview--__init__) — WebXR Preview — the live browser / headset preview panel.
+- [`webxr_preview/__init__.py`](#webxr_preview--__init__) — Preview a scene or FBX/GLB file live in a browser or XR headset.
 - [`webxr_preview/launcher.py`](#webxr_preview--launcher) — Application shell for the WebXR Preview UI.
 - [`webxr_preview/parameters.py`](#webxr_preview--parameters) — Tunable parameters surfaced in the WebXR Preview panel.
 - [`webxr_preview/slots.py`](#webxr_preview--slots) — Slots for the WebXR Preview panel — the single UI for the live preview.
@@ -112,7 +112,7 @@ The one launcher every extapps panel is.
 <a id="marmoset_workflow--__init__"></a>
 ### `marmoset_workflow/__init__.py`
 
-Marmoset Workflow — launch Marmoset Toolbag and set up a project.
+Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 
 - [`DEFAULT_INCLUDE`](extapps/extapps/marmoset_workflow/__init__.py#L20) — constant
 
@@ -238,9 +238,9 @@ Marmoset Toolbag log-file resolution, classification, and live tailing.
 <a id="mesh_convert--__init__"></a>
 ### `mesh_convert/__init__.py`
 
-Mesh Convert — FBX → glTF / GLB conversion.
+Batch-convert FBX files to binary glTF (GLB) with FBX2glTF.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/mesh_convert/__init__.py#L13) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/mesh_convert/__init__.py#L14) — constant
 
 <a id="mesh_convert--launcher"></a>
 ### `mesh_convert/launcher.py`
@@ -320,9 +320,9 @@ The lifecycle every photogrammetry engine shares: one base, five engines.
 <a id="photogrammetry--gaussian_splat_workflow--__init__"></a>
 ### `photogrammetry/gaussian_splat_workflow/__init__.py`
 
-Gaussian-splat workflow — train a 3D Gaussian Splat and publish it to engines.
+Train a Gaussian splat with Brush from COLMAP data and export it for Unity or web.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/gaussian_splat_workflow/__init__.py#L32) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/gaussian_splat_workflow/__init__.py#L33) — constant
 
 <a id="photogrammetry--gaussian_splat_workflow--_gaussian_splat_runner"></a>
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py`
@@ -432,7 +432,7 @@ Shared, SDK-agnostic mesh post-processing stages (PyMeshLab-backed).
 <a id="photogrammetry--metashape_workflow--__init__"></a>
 ### `photogrammetry/metashape_workflow/__init__.py`
 
-Metashape Workflow — Agisoft Metashape photogrammetry automation.
+Turn photos or video frames into a textured mesh with headless Metashape.
 
 - [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/metashape_workflow/__init__.py#L15) — constant
 
@@ -568,9 +568,9 @@ Photogrammetry I/O + tuning **profile** — site/personal config kept out of sou
 <a id="photogrammetry--realityscan_workflow--__init__"></a>
 ### `photogrammetry/realityscan_workflow/__init__.py`
 
-RealityCapture / RealityScan workflow.
+Turn photos or video frames into a textured mesh with headless RealityCapture.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/realityscan_workflow/__init__.py#L17) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/realityscan_workflow/__init__.py#L19) — constant
 
 <a id="photogrammetry--realityscan_workflow--_realityscan_connection"></a>
 ### `photogrammetry/realityscan_workflow/_realityscan_connection.py`
@@ -726,7 +726,7 @@ Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``
 <a id="substance_workflow--__init__"></a>
 ### `substance_workflow/__init__.py`
 
-Substance Workflow — Adobe Substance 3D Painter integration.
+Create a Substance Painter project from a mesh and bake lighting into base color.
 
 - [`DEFAULT_INCLUDE`](extapps/extapps/substance_workflow/__init__.py#L30) — constant
 
@@ -903,9 +903,9 @@ Texture set operations — list, resolution, channel inventory.
 <a id="texture_maps--compositor--__init__"></a>
 ### `texture_maps/compositor/__init__.py`
 
-Map Compositor — multi-layer texture compositing tool.
+Merge several texture maps of each type into one image, converting normal formats.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/compositor/__init__.py#L13) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/compositor/__init__.py#L14) — constant
 
 <a id="texture_maps--compositor--launcher"></a>
 ### `texture_maps/compositor/launcher.py`
@@ -932,9 +932,9 @@ UI slot bindings for the compositor window.
 <a id="texture_maps--converter--__init__"></a>
 ### `texture_maps/converter/__init__.py`
 
-Map Converter — texture conversion, channel packing, PBR-workflow prep.
+Convert normal, roughness, spec-gloss and bump maps, and pack or optimize textures.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/converter/__init__.py#L15) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/converter/__init__.py#L16) — constant
 
 <a id="texture_maps--converter--_converter"></a>
 ### `texture_maps/converter/_converter.py`
@@ -992,9 +992,9 @@ Map Converter UI — slot file for ``converter.ui``.
 <a id="texture_maps--packer--__init__"></a>
 ### `texture_maps/packer/__init__.py`
 
-Map Packer — channel-pack textures from per-channel source maps.
+Pack per-channel source maps into one RGBA texture, or unpack a packed one.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/packer/__init__.py#L14) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/packer/__init__.py#L15) — constant
 
 <a id="texture_maps--packer--launcher"></a>
 ### `texture_maps/packer/launcher.py`
@@ -1023,9 +1023,9 @@ Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
 <a id="unity_workflow--__init__"></a>
 ### `unity_workflow/__init__.py`
 
-Unity Workflow — send a model file into a Unity project (DCC-agnostic).
+Copy a model file into a Unity project's Assets and optionally launch the Editor.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/unity_workflow/__init__.py#L19) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/unity_workflow/__init__.py#L20) — constant
 
 <a id="unity_workflow--_unity_panel"></a>
 ### `unity_workflow/_unity_panel.py`
@@ -1067,7 +1067,7 @@ Slots for the standalone Unity Workflow panel.
 <a id="webxr_preview--__init__"></a>
 ### `webxr_preview/__init__.py`
 
-WebXR Preview — the live browser / headset preview panel.
+Preview a scene or FBX/GLB file live in a browser or XR headset.
 
 - [`DEFAULT_INCLUDE`](extapps/extapps/webxr_preview/__init__.py#L20) — constant
 

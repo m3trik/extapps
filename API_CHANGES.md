@@ -1,8 +1,8 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ 629eb33)._
+_Diff vs the last release (origin/main @ 83c8a1a)._
 
-No public API changes since the last release (origin/main @ 629eb33).
+No public API changes since the last release (origin/main @ 83c8a1a).
 
 ## Deprecations (1)
 

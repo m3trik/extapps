@@ -73,7 +73,11 @@ classifiers = [
 # Private Link / Test Link (`PreviewBridge.share(private=)` / `ping_share`:
 # TypeError / AttributeError on the first share), and most of the OpenPBR
 # lobe map types the Map Packer's new channel combos name.
-dependencies = ["pythontk>=0.13.1", "uitk>=1.7.1", "qtpy"]
+# pythontk 0.15.0: the photogrammetry profile's scratch root reads
+# UserConfig.cache_dir and the Map Converter's rename scratch is
+# TempArtifacts.scoped -- both first ship there (an older pythontk raises
+# AttributeError on profile load and on every rename).
+dependencies = ["pythontk>=0.15.0", "uitk>=1.7.1", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

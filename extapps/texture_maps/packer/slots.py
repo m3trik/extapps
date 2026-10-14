@@ -126,7 +126,8 @@ class PackerSlots:
         """Cross-widget wiring, deferred until the whole UI is registered.
 
         Runs once after ``register_children`` (via ``on_first_show``), so every
-        channel combo, the header menu, and the action buttons exist. Per-combo
+        channel combo, the preset combo, the header menu, and the action buttons
+        exist. Per-combo
         population/restore already ran in the ``*_init`` methods, so this only
         does the wiring that spans multiple widgets.
         """
@@ -137,13 +138,20 @@ class PackerSlots:
         self._on_mode_changed(self.ui.header.menu.cmb_mode.currentText())
 
     def _setup_presets(self):
-        """Register the channel/format/suffix widgets with the header preset menu."""
-        presets = self.ui.header.menu.presets
+        """Wire the in-window preset combo to the channel/format/affix widgets.
+
+        The window's ``PresetManager`` drives ``cmbPreset`` (the canonical
+        Refresh / Save / menu toolbar comes from ``wire_combo``). It runs here,
+        not in ``cmbPreset_init``: the preset combo registers before the channel
+        combos it captures. The store (``PRESET_DIR``) and its ``.active``
+        pointer are the ones the header-menu selector used, so saved presets and
+        the last pick carry over.
+        """
+        presets = self.ui.presets
         presets.preset_dir = self.PRESET_DIR
-        # Seed built-in presets BEFORE setup so the combo is populated on first launch.
+        # Seed built-in presets BEFORE wiring so the combo is populated on first launch.
         self._seed_builtin_presets(presets)
         presets.setup(
-            preset_dir=self.PRESET_DIR,
             widgets=[
                 self.ui.cmbR,
                 self.ui.cmbG,
@@ -162,6 +170,12 @@ class PackerSlots:
             },
             on_metadata_loaded=self._apply_preset_affix_mode,
         )
+        presets.wire_combo(self.ui.cmbPreset, placeholder="Preset…")
+
+    def cmbPreset_init(self, widget):
+        """Preset selector -- its pick persists via the store's ``.active`` pointer
+        (restored by ``wire_combo``), not as a per-widget combo index."""
+        widget.restore_state = False
 
     def _affix_option(self):
         """The placement picker beside the output-affix field, or None."""
@@ -244,9 +258,8 @@ class PackerSlots:
         """Build the header menu's Pack/Unpack toggle and Missing Maps policy.
 
         The channel layout (R/G/B/A → map type) is direction-agnostic, so a
-        single set of presets serves both packing and unpacking; those presets
-        reference the channel combos, which register *after* the header, so they
-        are wired in :meth:`_setup_presets` once the whole UI exists. The Mode
+        single set of presets serves both packing and unpacking; they live on
+        the in-window ``cmbPreset`` (wired in :meth:`_setup_presets`). The Mode
         toggle decides the direction (see :meth:`_on_mode_changed`); the
         Missing Maps combo decides what an incomplete set does when packing
         (see :meth:`_pack_set`).

@@ -58,6 +58,15 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         self.assertNotIn("{graphics_root}", prof["input_root"])
         self.assertTrue(prof["input_root"].replace("\\", "/").endswith("/input"))
         self.assertTrue(prof["input_root"].startswith(self.tmp))
+        # Scratch is the per-user CACHE (durable, regenerable, swept by nothing
+        # behind the user's back) -- never a raw folder in the system temp dir,
+        # which nothing ever swept. Added: 2026-10-13
+        from pythontk import UserConfig
+
+        self.assertEqual(
+            os.path.normcase(os.path.normpath(prof["scratch_root"])),
+            os.path.normcase(os.path.normpath(str(UserConfig.cache_dir("photogrammetry")))),
+        )
 
     def test_token_interpolation_and_expand(self):
         path = self._write({"graphics_root": "Z:/g", "scratch_root": "Y:/s"})
@@ -204,6 +213,17 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         pp.Profile.init_user_profile(target, force=True)
         with open(target, encoding="utf-8") as fh:
             self.assertEqual(json.load(fh)["curate"]["sharpness_percentile"], 0)
+
+    def test_init_user_profile_scratch_is_the_user_cache_not_temp(self):
+        """A scaffolded profile must not re-plant the unswept temp folder."""
+        target = os.path.join(self.tmp, "scratch", "photogrammetry.json")
+        pp.Profile.init_user_profile(target)
+        with open(target, encoding="utf-8") as fh:
+            data = json.load(fh)
+        self.assertEqual(
+            data["scratch_root"], str(pp.UserConfig.cache_dir("photogrammetry"))
+        )
+        self.assertNotIn("TEMP", json.dumps(data))
 
     def test_init_user_profile_default_location_under_config_root(self):
         # With no explicit path, it lands under the (temp) user-config root.

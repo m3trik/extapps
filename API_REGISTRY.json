@@ -116,18 +116,18 @@
               "name": "send",
               "qualname": "MarmosetEngine.send",
               "kind": "method",
-              "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, output_dir: Optional[str] = None, texture_dir: Optional[str] = None, texture_set_aliases: Optional[Dict[str, str]] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]",
+              "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, output_dir: Optional[str] = None, texture_dir: Optional[str] = None, texture_set_aliases: Optional[Dict[str, str]] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, scene_dir: Optional[str] = None) -> Optional[Dict[str, Any]]",
               "summary": "Render *template* in *mode* against *model_path* and hand off to Toolbag.",
-              "line": 186,
+              "line": 187,
               "deprecated": false
             },
             {
               "name": "render_template",
               "qualname": "MarmosetEngine.render_template",
               "kind": "method",
-              "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None) -> Optional[str]",
+              "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, save_dir: Optional[str] = None) -> Optional[str]",
               "summary": "Return the rendered Toolbag Python script body, or *None* on miss.",
-              "line": 451,
+              "line": 461,
               "deprecated": false
             },
             {
@@ -136,7 +136,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Path]",
               "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
-              "line": 721,
+              "line": 737,
               "deprecated": false
             },
             {
@@ -145,7 +145,7 @@
               "kind": "staticmethod",
               "signature": "(template_path: Path) -> Tuple[str, ...]",
               "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
-              "line": 726,
+              "line": 742,
               "deprecated": false
             },
             {
@@ -154,7 +154,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Tuple[str, str]]",
               "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
-              "line": 735,
+              "line": 751,
               "deprecated": false
             }
           ]
@@ -2319,7 +2319,7 @@
         {
           "name": "Profile",
           "summary": "Resolution + lookup entry points for the photogrammetry profile.",
-          "line": 230,
+          "line": 231,
           "bases": [
             "_ProfileInternal"
           ],
@@ -2330,7 +2330,7 @@
               "kind": "staticmethod",
               "signature": "(path=None) -> dict",
               "summary": "Resolve the active photogrammetry profile (fully interpolated).",
-              "line": 240,
+              "line": 241,
               "deprecated": false
             },
             {
@@ -2339,7 +2339,7 @@
               "kind": "staticmethod",
               "signature": "(key: str, path=None) -> Optional[str]",
               "summary": "Return the profile-configured install path for an engine, or ``None``.",
-              "line": 258,
+              "line": 259,
               "deprecated": false
             },
             {
@@ -2348,7 +2348,7 @@
               "kind": "staticmethod",
               "signature": "(env_var: str, config_key: Optional[str] = None, *, validate: Optional[Callable[[str], bool]] = None, spec=None, fallbacks: Sequence[Callable[[], Optional[str]]] = (), path=None) -> Optional[str]",
               "summary": "Resolve an engine's install location; the first hit wins.",
-              "line": 281,
+              "line": 282,
               "deprecated": false
             },
             {
@@ -2357,7 +2357,7 @@
               "kind": "staticmethod",
               "signature": "(engine: str) -> PresetStore",
               "summary": "The run-template store for *engine*: shipped built-ins (``presets/<engine>/``)",
-              "line": 348,
+              "line": 349,
               "deprecated": false
             },
             {
@@ -2366,7 +2366,7 @@
               "kind": "staticmethod",
               "signature": "(name: Optional[str], engine: str) -> dict",
               "summary": "Return the named opt-in run-template overlay for *engine* (``_comment`` stripped).",
-              "line": 369,
+              "line": 370,
               "deprecated": false
             },
             {
@@ -2375,7 +2375,7 @@
               "kind": "staticmethod",
               "signature": "(path: Optional[str] = None, force: bool = False) -> str",
               "summary": "Write :data:`EXAMPLE_PROFILE` to the user-config location (or *path*).",
-              "line": 392,
+              "line": 393,
               "deprecated": false
             },
             {
@@ -2384,7 +2384,7 @@
               "kind": "staticmethod",
               "signature": "(input_root: str) -> List[str]",
               "summary": "Return immediate subdirs of ``input_root`` that contain images.",
-              "line": 410,
+              "line": 414,
               "deprecated": false
             }
           ]
@@ -2397,7 +2397,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 37,
+          "line": 36,
           "deprecated": false
         },
         {
@@ -2406,7 +2406,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 38,
+          "line": 37,
           "deprecated": false
         },
         {
@@ -2415,7 +2415,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 39,
+          "line": 38,
           "deprecated": false
         },
         {
@@ -2424,7 +2424,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 50,
+          "line": 49,
           "deprecated": false
         },
         {
@@ -2433,7 +2433,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 51,
+          "line": 50,
           "deprecated": false
         },
         {
@@ -2442,7 +2442,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 55,
+          "line": 54,
           "deprecated": false
         },
         {
@@ -2451,7 +2451,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 61,
+          "line": 60,
           "deprecated": false
         },
         {
@@ -2460,7 +2460,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 428,
+          "line": 432,
           "deprecated": false
         }
       ]
@@ -4423,7 +4423,7 @@
               "kind": "classmethod",
               "signature": "(cls, texture_path, *, file_type, max_size, mode, modifier, output_dir, old_folder, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None, map_type=None, base_name=None)",
               "summary": "Print what optimizing *texture_path* would do, touching nothing.",
-              "line": 383,
+              "line": 390,
               "deprecated": false
             },
             {
@@ -4432,7 +4432,7 @@
               "kind": "classmethod",
               "signature": "(cls, path, *, swizzle_map, invert_dests, suffix)",
               "summary": "``ConverterSlots.tb002``'s per-map step — flip/swizzle one texture path.",
-              "line": 492,
+              "line": 499,
               "deprecated": false
             }
           ]
@@ -4727,12 +4727,21 @@
           "bases": [],
           "members": [
             {
+              "name": "cmbPreset_init",
+              "qualname": "PackerSlots.cmbPreset_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "Preset selector -- its pick persists via the store's ``.active`` pointer",
+              "line": 175,
+              "deprecated": false
+            },
+            {
               "name": "cmbR_init",
               "qualname": "PackerSlots.cmbR_init",
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 193,
+              "line": 207,
               "deprecated": false
             },
             {
@@ -4741,7 +4750,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 196,
+              "line": 210,
               "deprecated": false
             },
             {
@@ -4750,7 +4759,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 199,
+              "line": 213,
               "deprecated": false
             },
             {
@@ -4759,7 +4768,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 202,
+              "line": 216,
               "deprecated": false
             },
             {
@@ -4768,7 +4777,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Output-affix field — clearable back to the convention's default.",
-              "line": 205,
+              "line": 219,
               "deprecated": false
             },
             {
@@ -4777,7 +4786,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the output-format combo and react to format changes.",
-              "line": 216,
+              "line": 230,
               "deprecated": false
             },
             {
@@ -4786,7 +4795,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Build the header menu's Pack/Unpack toggle and Missing Maps policy.",
-              "line": 243,
+              "line": 257,
               "deprecated": false
             },
             {
@@ -4795,7 +4804,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 366,
+              "line": 379,
               "deprecated": false
             },
             {
@@ -4804,7 +4813,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 456,
+              "line": 469,
               "deprecated": false
             },
             {
@@ -4813,7 +4822,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 703,
+              "line": 716,
               "deprecated": false
             }
           ]

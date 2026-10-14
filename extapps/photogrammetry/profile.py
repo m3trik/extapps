@@ -29,7 +29,6 @@ from __future__ import annotations
 import copy
 import json
 import os
-import tempfile
 from typing import Callable, List, Optional, Sequence
 
 from pythontk import PresetStore, UserConfig
@@ -201,11 +200,13 @@ class _ProfileInternal:
     def _packaged_default() -> dict:
         """Generic, non-personal fallback profile.
 
-        Lands under the user's own config dir + system temp so a clone with no
-        profile still runs without touching any specific machine's drives.
+        Lands under the user's own config dir + the per-user cache
+        (``UserConfig.cache_dir``: durable, regenerable -- a raw folder in the
+        system temp dir was swept by nothing) so a clone with no profile still
+        runs without touching any specific machine's drives.
         """
         base = str(UserConfig.user_config_root() / PROFILE_PACKAGE / "photogrammetry")
-        scratch = os.path.join(tempfile.gettempdir(), "photogrammetry")
+        scratch = str(UserConfig.cache_dir("photogrammetry"))
         return _ProfileInternal._skeleton(base, scratch)
 
     @staticmethod
@@ -402,8 +403,11 @@ class Profile(_ProfileInternal):
         parent = os.path.dirname(target)
         if parent:
             os.makedirs(parent, exist_ok=True)
+        profile = dict(
+            EXAMPLE_PROFILE, scratch_root=str(UserConfig.cache_dir("photogrammetry"))
+        )
         with open(target, "w", encoding="utf-8") as fh:
-            json.dump(EXAMPLE_PROFILE, fh, indent=4)
+            json.dump(profile, fh, indent=4)
         return target
 
     @staticmethod
@@ -421,8 +425,8 @@ class Profile(_ProfileInternal):
         return results
 
 
-# Copy-me template written by :func:`init_user_profile`. Friendly ``~`` /
-# ``${TEMP}`` tokens + a schema note in ``_comment`` (deep-merge ignores unknown
+# Copy-me template written by :func:`init_user_profile`. A friendly ``~`` token
+# (``scratch_root`` is filled with the per-user cache dir at write time) + a schema note in ``_comment`` (deep-merge ignores unknown
 # keys downstream). Replaces a committed ``*.example.json`` so the repo carries
 # no profile artifact at all.
 EXAMPLE_PROFILE = {
@@ -435,5 +439,5 @@ EXAMPLE_PROFILE = {
         "engine install, set the matching path under 'apps' (e.g. apps."
         "metashape_exe); empty = auto-discover."
     ),
-    **Profile._skeleton("~/photogrammetry", "${TEMP}/photogrammetry"),
+    **Profile._skeleton("~/photogrammetry", ""),
 }

@@ -15,6 +15,12 @@ touches no UI, so it is exercised directly.
 
 import io
 import os
+
+# The preset-combo test constructs the real panel; force the offscreen Qt
+# platform so it runs headless (and never flashes a window on a dev display).
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+import sys
 import types
 import tempfile
 import shutil
@@ -26,6 +32,13 @@ from PIL import Image
 
 import pythontk as ptk
 from pythontk import ImgUtils
+
+from uitk.testing import TestSandbox
+
+# A direct `python test/test_packer.py` loads no conftest, so the sandbox is
+# activated here too -- before the preset-combo test's panel seeds the built-in
+# presets and restores widget state. Idempotent.
+TestSandbox.activate()
 
 from extapps.texture_maps.packer.slots import PackerSlots
 
@@ -562,6 +575,59 @@ class TestMapPackerPresets(unittest.TestCase):
                 with Image.open(out) as img:
                     self.assertEqual(img.mode, "RGB")
                     self.assertEqual(img.getpixel((0, 0)), rgb)
+
+
+class TestMapPackerPresetCombo(unittest.TestCase):
+    """The preset selector lives in the main window, not the header menu."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Built-ins are seeded into the presets root on first show; conftest's
+        # TestSandbox keeps that (and QSettings) out of the real user stores.
+        from qtpy.QtWidgets import QApplication
+        from extapps.texture_maps.packer import PackerUI
+
+        cls.app = QApplication.instance() or QApplication(sys.argv)
+        cls.ui = PackerUI()
+        cls.ui.show()  # offscreen -- drives run_when_ready / the deferred wiring
+        for _ in range(20):
+            cls.app.processEvents()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.ui.deleteLater()
+        cls.app.processEvents()
+
+    def test_preset_combo_is_in_the_window(self):
+        combo = self.ui.cmbPreset
+        listed = sorted(combo.itemText(i) for i in range(combo.count()))
+        self.assertEqual(listed, sorted(self.ui.presets.list()))
+        self.assertEqual(len(listed), len(PackerSlots.BUILTIN_PRESETS))
+
+    def test_header_menu_has_no_preset_combo(self):
+        from qtpy.QtWidgets import QComboBox
+
+        # The menu wraps a wired combo in its option-box container, so look
+        # through the whole menu rather than at its top-level items.
+        names = [c.objectName() for c in self.ui.header.menu.findChildren(QComboBox)]
+        self.assertNotIn("cmb_presets", names)
+
+    def test_picking_a_preset_loads_the_channel_layout(self):
+        combo = self.ui.cmbPreset
+        name = "MRAO (Metallic, Roughness, AO)"
+        # The store lists file stems, which sanitize the punctuation.
+        index = next(
+            i for i in range(combo.count()) if combo.itemText(i).startswith("MRAO")
+        )
+        combo.setCurrentIndex(index)
+        combo.activated.emit(index)
+        self.app.processEvents()
+        preset = PackerSlots.BUILTIN_PRESETS[name]
+        self.assertEqual(
+            [getattr(self.ui, f"cmb{c}").currentText() for c in "RGBA"],
+            [preset[c] for c in "RGBA"],
+        )
+        self.assertEqual(self.ui.txtSuffix.text(), preset["suffix"])
 
 
 class _FakeCombo:

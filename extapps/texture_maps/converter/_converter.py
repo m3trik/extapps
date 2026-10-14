@@ -14,7 +14,6 @@ would collide on one output, and the dry-run report that must agree with the
 real run.
 """
 import os
-import tempfile
 from typing import Dict, List, Tuple
 
 from pythontk import (
@@ -25,6 +24,7 @@ from pythontk import (
     MapRegistry,
     OutputTemplates,
     StrUtils,
+    TempArtifacts,
 )
 
 
@@ -322,7 +322,12 @@ class MapConverter:
                 # writes to a temp dir first; same-drive (inside output_dir)
                 # so the final replace is a fast rename that overwrites
                 # cleanly on re-run.
-                with tempfile.TemporaryDirectory(dir=output_dir) as temp_dir:
+                # Through ptk.TempArtifacts (prefix-swept), not a raw
+                # TemporaryDirectory: a converter killed mid-run left its
+                # tmpXXXX folder in the user's output folder for good.
+                scratch = TempArtifacts.scoped("_map_convert", dir=output_dir)
+                try:
+                    temp_dir = scratch.dir_path()
                     temp_result = MapOptimizer.optimize_map(
                         texture_path,
                         output_dir=temp_dir,
@@ -347,6 +352,8 @@ class MapConverter:
                         base_name=base_name,
                     )
                     FileUtils.replace_file(temp_result, optimized_map_path)
+                finally:
+                    scratch.cleanup()
             else:
                 # New folder, original name: a distinct destination (the
                 # in-place case branched above), so optimize_map writes

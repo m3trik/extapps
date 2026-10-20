@@ -5,7 +5,7 @@
 A Switchboard panel (``SubstanceWorkflowUI``) drives the Painter engine that
 lives in this package: an op **registry**, a client **``PainterConnection``**
 (launches a fresh Painter and talks JSON-RPC), the **``Job.run_batch``** wrapper,
-and the in-Painter **bridge plugin** (``plugins/substance_workflow_bridge``).
+and the in-Painter **bridge plugin** (``plugins/startup/substance_workflow_bridge``).
 The RPC itself is pythontk's shared pair -- the registry is a
 :class:`pythontk.RpcPlugin`, the client a :class:`pythontk.RpcClient`, the batch
 loop :class:`pythontk.RpcJob` over :class:`pythontk.Call` / :class:`pythontk.Result`.

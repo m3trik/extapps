@@ -46,7 +46,8 @@ class Job:
 
         Parameters:
             calls: Sequence of :class:`pythontk.Call` to execute.
-            gui: Show Painter's UI. Default ``False``.
+            gui: Show Painter's window. Default ``False``: windowless, on Qt's
+                offscreen platform (Painter has no headless option).
             app_path: Override Painter executable.
             timeout: Seconds to wait for the bridge to come up.
             launch_args: Extra CLI args forwarded to Painter.

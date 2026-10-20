@@ -102,7 +102,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>How the model is delivered to the Unity project (copy the file into Assets/).</string>
+            <string>What Send to Unity does: Copy to Project copies the model into Assets/; Manage Unity Scripts installs, updates or removes unitytk's import scripts.</string>
            </property>
            <property name="maxVisibleItems">
             <number>40</number>

@@ -30,7 +30,7 @@ PARAMS: "dict[str, AttributeSpec]" = {
         default="Imported",
         tooltip=(
             "Subfolder under the project's <b>Assets/</b> the model is copied into\n"
-            "(created if absent). Blank = drop directly in Assets/."
+            "(created if absent). Blank = <i>Imported</i>; <i>/</i> = Assets/ itself."
         ),
     ),
     "ASSET_NAME": AttributeSpec(
@@ -73,8 +73,8 @@ PARAMS: "dict[str, AttributeSpec]" = {
         choices=[("Auto (newest)", "")],
         tooltip=(
             "Which installed Unity Editor to create/launch with (used by\n"
-            "'Launch Editor' and 'New Unity Project…'). Auto uses the newest\n"
-            "installed version."
+            "Launch Unity's Open Editor and Headless, and 'New Unity Project…').\n"
+            "Auto uses the newest installed version."
         ),
     ),
     # Shown only when the 'Manage Unity Scripts' template is selected

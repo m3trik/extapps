@@ -1,7 +1,8 @@
 """substance_workflow_bridge — Painter-side Python plugin.
 
-Painter loads this whenever its containing directory appears in
-``SUBSTANCE_PAINTER_PLUGINS_PATH``. On enable it starts the JSON-RPC HTTP
+A Painter *startup* module: Painter starts it at launch whenever the plugin
+root holding its ``startup/`` folder (``PainterConnection.plugins_dir()``)
+is on ``SUBSTANCE_PAINTER_PLUGINS_PATH``. On start it runs the JSON-RPC HTTP
 server of :data:`extapps.substance_workflow.registry.PLUGIN` -- a
 :class:`pythontk.RpcPlugin`, so the routes, the main-thread marshalling and the
 wire format are the shared core's, not a copy -- on ``SUBSTANCE_WORKFLOW_PORT``
@@ -27,12 +28,13 @@ logger = logging.getLogger(__name__)
 # ``SUBSTANCE_PAINTER_PLUGINS_PATH``; it is never copied), so the walk-up below
 # is a reliable way back to the checkout.
 #
-# Layout: _scripts/extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/
-#   parent[1] = plugins
-#   parent[2] = substance_workflow
-#   parent[3] = extapps      (the package)
-#   parent[4] = extapps      (the repo)   <- holds the `extapps` PACKAGE
-#   parent[5] = _scripts     (monorepo root)
+# Layout: _scripts/extapps/extapps/substance_workflow/plugins/startup/substance_workflow_bridge/
+#   parent[1] = startup
+#   parent[2] = plugins      (the plugin root Painter is given)
+#   parent[3] = substance_workflow
+#   parent[4] = extapps      (the package)
+#   parent[5] = extapps      (the repo)   <- holds the `extapps` PACKAGE
+#   parent[6] = _scripts     (monorepo root)
 #
 # Add each package's PARENT — never the monorepo root. Two reasons, both proven
 # by probe rather than assumed:
@@ -74,7 +76,7 @@ def _ensure_importable(module_name: str, package_parent: str) -> None:
 
 
 _extapps_repo = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..")
 )
 _scripts_root = os.path.dirname(_extapps_repo)
 

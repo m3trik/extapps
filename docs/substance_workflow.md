@@ -5,7 +5,9 @@ Adobe Substance 3D Painter automation as a Switchboard panel + headless engine.
 ## What it is
 
 `substance_workflow` drives Painter over a JSON-RPC bridge. An in-Painter plugin
-(`plugins/substance_workflow_bridge`) loads the op **registry** and serves it over
+(`plugins/startup/substance_workflow_bridge` -- a Painter *startup* module of the plugin
+root the launch puts on `SUBSTANCE_PAINTER_PLUGINS_PATH`, so Painter always starts it)
+loads the op **registry** and serves it over
 HTTP; the client side (`PainterConnection`, `Job.run_batch`) launches a fresh Painter
 and invokes ops by name. The RPC is pythontk's shared pair, not a private stack: the
 registry is a `pythontk.RpcPlugin` (op table + main-thread marshaller + server), the
@@ -15,6 +17,10 @@ client a `pythontk.RpcClient`, the batch loop `pythontk.RpcJob` over `pythontk.C
 - **`SubstanceWorkflowUI`** — the Switchboard panel. Set a mesh and/or project
   save path, pick which Painter to launch, choose stages (open/create → bake
   lighting→diffuse → save → export), tune advanced bake parameters, and Run.
+  The stages run one at a time in the background, so the panel and its host stay
+  responsive; Run reads **Cancel** while they run (holding Esc on the footer does
+  the same), and a cancel stops before the next stage — an op Painter is already
+  running (a bake) finishes first.
 - **`PainterConnection`** — agent/session client: `connect()` then
   `invoke("project.info", ...)`.
 - **`Job.run_batch([ptk.Call(...), ...])`** — one-shot pipelines (launch → run → shut down).
@@ -64,6 +70,9 @@ $env:SUBSTANCE_WORKFLOW_RUN_INTEGRATION = '1'
 
 - Many ops beyond `project.*` and `bake.lighting_to_diffuse` are stubs
   (`NotImplementedError`) — `export.*`, `bake.mesh_maps`, etc.
-- Headless flag (`--no-display`) and Painter's Qt binding for main-thread
-  dispatch are unverified against the installed Painter version. The in-Painter
-  bridge path has not yet been validated end-to-end in a live Painter.
+- Painter has no headless option: `gui=False` (the `Job.run_batch` default) runs
+  it on Qt's offscreen platform, with no window. Verified end-to-end in fresh
+  Painters (2026-10-19), windowed and offscreen alike: the bridge starts,
+  `project.create`, `bake.lighting_to_diffuse` (AO baked, its layer added) and
+  `project.save_as` run. Only `project.*` and `bake.lighting_to_diffuse` have been
+  run live.

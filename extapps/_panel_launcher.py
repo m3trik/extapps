@@ -82,12 +82,14 @@ class PanelLauncher(_PanelLauncherInternal):
             hint; ``None`` (the compact tools) leaves the ``.ui``'s own title
             and size.
         STYLE_CLASS: The uitk style class of the window.
-        HEADER_BUTTONS: The header's window controls, in order.
+        HEADER_BUTTONS: The header's window controls, in order. No
+            ``fullscreen``: every panel is a parameter form over a log, which
+            fullscreen only stretches.
     """
 
     TITLE: Optional[str] = None
     STYLE_CLASS: str = "bgWithBorder"
-    HEADER_BUTTONS: Tuple[str, ...] = ("menu", "minimize", "fullscreen", "hide")
+    HEADER_BUTTONS: Tuple[str, ...] = ("menu", "minimize", "hide")
 
     def __new__(cls, *args, **kwargs):
         from qtpy import QtCore

@@ -5,7 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "extapps"
 dynamic = ["version", "readme"]
-description = "Standalone Switchboard panels for content-pipeline workflows (map compositing, photogrammetry, Substance Painter automation, texture conversion, mesh conversion)."
+description = "Standalone Qt tools for content pipelines: texture map compositing and conversion, photogrammetry, Substance Painter automation and mesh conversion."
+keywords = ["m3trik", "photogrammetry", "pbr", "substance-painter", "gltf", "technical-art", "pyside6"]
 authors = [{name = "Ryan Simpson", email = "m3trik@outlook.com"}]
 license = {text = "MIT"}
 requires-python = ">=3.9"
@@ -14,6 +15,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Multimedia :: Graphics",
 ]
 
 # Floors are HAND-RATCHETED here: extapps is off-chain from m3trik/push.ps1
@@ -77,7 +80,14 @@ classifiers = [
 # UserConfig.cache_dir and the Map Converter's rename scratch is
 # TempArtifacts.scoped -- both first ship there (an older pythontk raises
 # AttributeError on profile load and on every rename).
-dependencies = ["pythontk>=0.15.0", "uitk>=1.7.1", "qtpy"]
+# pythontk 0.16.0 / uitk 1.7.5: Look Match stands on pythontk's look-match
+# engine (LookMatch, LookCapture, LookSession, JobQueue, LightRigPayload) and
+# uitk's ImageView / CompareView / ValueBarDelegate / BackgroundTask -- and
+# WebXR Preview imports BackgroundTask at module load (ImportError on an older
+# uitk) and its log's [copy] links need the log pane's action://copy; the
+# vendored Marmoset engine asks AppLauncher.can_hide / run(hidden=)
+# (AttributeError / TypeError on an older pythontk).
+dependencies = ["pythontk>=0.16.0", "uitk>=1.7.5", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is
@@ -100,6 +110,8 @@ mesh = ["pythontk[mesh]"]
 [project.urls]
 Homepage = "https://github.com/m3trik/extapps"
 Repository = "https://github.com/m3trik/extapps"
+Changelog = "https://github.com/m3trik/extapps/blob/main/CHANGELOG.md"
+Issues = "https://github.com/m3trik/extapps/issues"
 
 # `extapps` opens the panel browser, `extapps <panel>` one panel (the names in
 # the entry-point table below). A gui-script runs under pythonw on Windows, so
@@ -131,6 +143,7 @@ mesh_convert = "extapps.mesh_convert:MeshConvertUI"
 marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI [hide_maya]"
 unity_workflow = "extapps.unity_workflow:UnityWorkflowUI"
 webxr_preview = "extapps.webxr_preview:WebXrPreviewUI"
+look_match = "extapps.look_match:LookMatchUI"
 
 [tool.setuptools.dynamic]
 version = {attr = "extapps.__version__"}

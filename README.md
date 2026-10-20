@@ -10,9 +10,9 @@ Standalone [uitk](https://github.com/m3trik/uitk)-Switchboard panels for content
 - **converter** / **packer** — PBR map conversion (DX↔GL normals, spec→PBR, bump→normal, smoothness↔roughness) and channel pack/unpack (ORM / MRAO / MSAO templates)
 - **photogrammetry** — end-to-end runs: frame extraction/curation → align → mesh → texture, with per-engine presets (Metashape, RealityScan, gaussian splat)
 - **substance_workflow** — Substance 3D Painter automation over a bundled JSON-RPC bridge
-- **marmoset_workflow** — Marmoset Toolbag automation (RPC bridge + render templates)
+- **marmoset_workflow** — open a model file in a new Marmoset Toolbag (import / lookdev templates)
 - **mesh_convert** — FBX → glTF / GLB conversion
-- **unity_workflow** — Unity workflow panel
+- **unity_workflow** — copy a model file into a Unity project's Assets; manage unitytk's import scripts
 
 ## Install & run
 

@@ -13,13 +13,16 @@ A delivery param is answered by the deliverer for every source alike. Keeping
 the distinction in the registry rather than in panel branches is what lets one
 panel serve a DCC selection and a file on disk without a conditional.
 
-The **Textures** and **Lighting** rows are not this panel's own: they are the
-Scene Exporter's rows that decide a GLB deliverable
-(:attr:`pythontk.ExportProfile.GLB_ROWS`) -- its images, and the lighting
-recipe it publishes -- built from the same tables with the same labels and
-defaults, and the push resolves them with the methods the exporters call. Set
-them the same in both panels and the GLB texture pass and recipe are the same
-in both. The flow is one way: nothing here is read by an export.
+The **Textures** rows are not this panel's own: they are the Scene Exporter's
+rows that decide a GLB deliverable (:attr:`pythontk.ExportProfile.GLB_ROWS`) --
+its images -- built from the same tables with the same labels and defaults, and
+the push resolves them with the methods the exporters call. Set them the same in
+both panels and the GLB texture pass is the same in both. The flow is one way:
+nothing here is read by an export. They are shown only where the pass reads
+them: for a push that re-encodes images (a scope with Include Textures on, or an
+FBX -- never a GLB, published as authored), and KTX2 RDO with a KTX2 container
+as the exporter shows it. The lighting recipe has no row: both publish the
+recipe's own.
 """
 
 from __future__ import annotations
@@ -36,10 +39,15 @@ from uitk.bridge import AttributeSpec, ParamRegistry
 #: anything else, and this keeps the refusal out of the file dialog.
 SOURCE_FILE_TYPES = ["*.fbx", "*.glb"]
 
+#: The carrier published as authored (``GlbPipeline.build``'s identity build):
+#: no pass runs on it, so no texture row applies to a source made only of it.
+AUTHORED_EXTENSION = ".glb"
+
 
 #: Export params: meaningful only when a host is producing the export. Hidden
-#: for the file source, whose "export" already happened.
-EXPORT_KEYS = frozenset({"INCLUDE_ANIMATION", "SCENE_SIDECAR"})
+#: for the file source, whose "export" already happened -- Include Textures
+#: too: a file's FBX already chose what it embeds.
+EXPORT_KEYS = frozenset({"INCLUDE_ANIMATION", "SCENE_SIDECAR", "EMBED_TEXTURES"})
 
 #: Params the file source owns and no host scope has.
 FILE_KEYS = frozenset({"SOURCE_FILE"})
@@ -49,12 +57,16 @@ FILE_KEYS = frozenset({"SOURCE_FILE"})
 #: this registry; derived, so a row added upstream arrives by itself.
 GLB_KEYS: Dict[str, str] = {row.upper(): row for row in ptk.ExportProfile.GLB_ROWS}
 
-#: The lighting rows. The recipe they decide rides the scene sidecar's
-#: envelope, which only a host push builds, so they are hidden for the file
-#: source: there a row would change nothing.
-LIGHTING_KEYS = frozenset(
-    key for key, row in GLB_KEYS.items() if row in ptk.ExportProfile.GLB_LIGHTING_ROWS
+#: The texture rows: read by the texture pass, which re-encodes the images a
+#: push carries -- a scope's with Include Textures on, an FBX file's -- and
+#: never a GLB published as authored.
+TEXTURE_KEYS = frozenset(
+    key for key, row in GLB_KEYS.items() if row in ptk.ExportProfile.GLB_TEXTURE_ROWS
 )
+
+#: Texture rows only a KTX2 container reads (ETC1S / UASTC are its encodes),
+#: shown with it as the Scene Exporter shows them.
+KTX2_KEYS = frozenset({"UASTC_RDO"})
 
 #: What each GLB row does, in the preview's words. The rows themselves --
 #: labels, choices, order, defaults -- come from the Scene Exporter's tables;
@@ -95,18 +107,6 @@ _ROW_TOOLTIPS: Dict[str, str] = {
     "optimisation for the UASTC encodes (normal and data maps), trading a "
     "controlled quality cost for smaller files at 3-4x the encode time. Only "
     "with a KTX2 texture file type.",
-    "baked_reflections": "The Scene Exporter's Baked Reflections row: how "
-    "strongly a lightmapped material reflects the page's environment. The "
-    "bake already holds its diffuse light, so a baked material takes only the "
-    "environment's specular, at this level.\n\n"
-    "The environment is a bright studio, not the room the bake lit: at Full "
-    "its reflections lift every dark glossy baked surface (measured on a "
-    "production room, the darkest read 0.06 of display baked alone, 0.22 at "
-    "Full, 0.11 at Quarter). Off shows the pure bake.\n\n"
-    "Published in the GLB's lighting recipe, where the page reads it -- set it "
-    "as the export is set and the preview lights the bake the way the "
-    "deliverable will be lit. Rides the scene sidecar, so it needs Scene "
-    "Sidecar on.",
 }
 
 
@@ -123,7 +123,13 @@ _PROVIDER_TOOLTIPS: Dict[str, str] = {
     "machine's tailnet name -- bookmark it once in a headset -- with the HTTPS "
     "ending on this machine. Funnel must be enabled for the tailnet once; the "
     "first share offers to open the page that does it, and the link comes up "
-    "by itself once it is enabled. Relayed, so a large push loads slower.",
+    "by itself once it is enabled. Relayed, so a large push loads slower.\n\n"
+    "Each share's name takes minutes to reach public DNS -- measured 5.5, and "
+    "over 25 -- and leaves it when the share ends: until then no one else can "
+    "open the link. "
+    "The panel says so in red and tells you when it opens. Guests need no "
+    "Tailscale of their own. Three scenes at most share at once (ports 443, "
+    "8443 and 10000).",
     "tailscale_serve": "Tailscale, reachable only by devices on your tailnet: "
     "nothing public. A standalone headset needs the Tailscale app to open it.",
 }
@@ -150,7 +156,7 @@ def _glb_rows(rows: Dict[str, str], section: str) -> "dict[str, AttributeSpec]":
 
     Each starts where the Scene Exporter starts it
     (:meth:`pythontk.ExportProfile.glb_defaults`), so an untouched panel runs
-    the texture pass an untouched export runs and publishes the same recipe.
+    the texture pass an untouched export runs.
     """
     options = ptk.ExportProfile.glb_options()
     defaults = ptk.ExportProfile.glb_defaults()
@@ -198,7 +204,10 @@ PARAMS: "dict[str, AttributeSpec]" = {
         "re-open the GLB an exporter just wrote, on the same page and port a "
         "scene push uses.\n\n"
         "A lightmap manifest's maps are resolved against the files' own "
-        "folders, so a bake that travelled with its asset needs nothing else.",
+        "folders, so a bake that travelled with its asset needs nothing else.\n\n"
+        "The + beside the field adds another SCENE: its own files, page and "
+        "server -- and, while Sharing is on, its own link -- live beside this "
+        "one. Push publishes every scene.",
     ),
     "INCLUDE_ANIMATION": AttributeSpec(
         key="INCLUDE_ANIMATION",
@@ -233,8 +242,10 @@ PARAMS: "dict[str, AttributeSpec]" = {
         kind="bool",
         default=True,
         section="Textures",
-        tooltip="Embed textures in the published GLB, at the container and "
-        "size the rows below set.\n\n"
+        tooltip="Embed the scene's textures in the export the preview builds "
+        "from, at the container and size the rows below set -- off, those "
+        "rows hide, with no image for them to set. A scene push only: a "
+        "file's FBX already chose what it embeds.\n\n"
         "Unchecked is much smaller over the wire and skips the texture passes, "
         "but the preview shows flat materials -- and it is not much faster: "
         "the conversion's cost is the animation it bakes over every node, not "
@@ -242,7 +253,6 @@ PARAMS: "dict[str, AttributeSpec]" = {
         "export converted in the same minutes as the 366 MB one.",
     ),
     **_glb_rows(ptk.ExportProfile.GLB_TEXTURE_ROWS, "Textures"),
-    **_glb_rows(ptk.ExportProfile.GLB_LIGHTING_ROWS, "Lighting"),
     "LOCOMOTION": AttributeSpec(
         key="LOCOMOTION",
         label="Locomotion",
@@ -315,14 +325,19 @@ PARAMS: "dict[str, AttributeSpec]" = {
         section="Sharing",
         tooltip="Share the preview at a link, through the provider picked here.\n\n"
         "Picking one brings the link up at once, copies it, and checks it "
-        "answers; it then stays up "
+        "opens from outside, the way a guest's browser reaches it -- a link "
+        "no one else can open is said in red, and checked again until it "
+        "opens. Each scene the Source Files row's + adds is shared at a link "
+        "of its own. It then stays up "
         "across pushes, and every push logs it -- a guest's page picks each push "
         "up by itself, so the link is the same one each time. Off takes it down. "
         "The row's option box has Share Now (also a retry), Copy Link, Test "
-        "Link and Stop "
-        "Sharing. It starts Off each session: a link is a door to this machine, "
-        "and it opens only when asked -- a preset never carries it, and Reset "
-        "to Defaults leaves it as it is.\n\n"
+        "Link, Copy Scene Link, Stop Sharing and Remember Sharing. It starts "
+        "Off each session -- a link is a door to this machine, and it opens "
+        "only when asked -- unless Remember Sharing keeps it: then it comes "
+        "back as left and the link opens with the first push, never with the "
+        "panel. A preset never carries it, and Reset to Defaults leaves it as "
+        "it is.\n\n"
         "A share is a link anyone can open in a browser -- desktop, phone, or "
         "a standalone headset, which gets its VR button because the link is "
         "HTTPS. It is VIEW-ONLY and LIVE: every push reaches it, and nothing a "

@@ -6,6 +6,9 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 
 - [`__init__.py`](#__init__) — extapps — standalone Switchboard panels for content-pipeline workflows.
 - [`_panel_launcher.py`](#_panel_launcher) — The one launcher every extapps panel is.
+- [`look_match/__init__.py`](#look_match--__init__) — Light a baked scene to match a reference image, by eye and region by region.
+- [`look_match/launcher.py`](#look_match--launcher) — Application shell for the Look Match UI.
+- [`look_match/slots.py`](#look_match--slots) — Slots for the Look Match panel (see :mod:`extapps.look_match`).
 - [`marmoset_workflow/__init__.py`](#marmoset_workflow--__init__) — Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 - [`marmoset_workflow/_marmoset_engine.py`](#marmoset_workflow--_marmoset_engine) — Drive Marmoset Toolbag from the outside -- launch + templated automation.
 - [`marmoset_workflow/_toolbag_helpers.py`](#marmoset_workflow--_toolbag_helpers) — Shared helpers for Marmoset Toolbag template scripts.
@@ -66,7 +69,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`substance_workflow/launcher.py`](#substance_workflow--launcher) — Application shell for the Substance Workflow UI.
 - [`substance_workflow/layer_utils.py`](#substance_workflow--layer_utils) — Layer stack operations — list, add, remove, reorder, set properties.
 - [`substance_workflow/material_utils.py`](#substance_workflow--material_utils) — Smart-material / preset operations — apply shelf materials onto layers.
-- [`substance_workflow/plugins/substance_workflow_bridge/__init__.py`](#substance_workflow--plugins--substance_workflow_bridge--__init__) — substance_workflow_bridge — Painter-side Python plugin.
+- [`substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py`](#substance_workflow--plugins--startup--substance_workflow_bridge--__init__) — substance_workflow_bridge — Painter-side Python plugin.
 - [`substance_workflow/project_utils.py`](#substance_workflow--project_utils) — Project-level operations — open, save, close, info, mesh swap.
 - [`substance_workflow/registry.py`](#substance_workflow--registry) — Op registry — the callable Painter surface, on the shared RPC core.
 - [`substance_workflow/resource_utils.py`](#substance_workflow--resource_utils) — Shelf / resource operations — query and import shelf assets.
@@ -109,6 +112,69 @@ The one launcher every extapps panel is.
 
 - **[`class PanelLauncher(_PanelLauncherInternal)`](extapps/extapps/_panel_launcher.py#L76)** — Base of every extapps ``<Tool>UI``: calling it returns the built panel.
 
+<a id="look_match--__init__"></a>
+### `look_match/__init__.py`
+
+Light a baked scene to match a reference image, by eye and region by region.
+
+- [`DEFAULT_INCLUDE`](extapps/extapps/look_match/__init__.py#L17) — constant
+
+<a id="look_match--launcher"></a>
+### `look_match/launcher.py`
+
+Application shell for the Look Match UI.
+
+- **[`class LookMatchUI(PanelLauncher)`](extapps/extapps/look_match/launcher.py#L14)**
+
+<a id="look_match--slots"></a>
+### `look_match/slots.py`
+
+Slots for the Look Match panel (see :mod:`extapps.look_match`).
+
+- [`DOCS_URL`](extapps/extapps/look_match/slots.py#L29) — constant
+- **[`class LookMatchSlots(_LookMatchSlotsInternal)`](extapps/extapps/look_match/slots.py#L92)** — The Look Match panel (see the module docstring).
+  - `LookMatchSlots.header_init(self, widget) -> None`
+  - `LookMatchSlots.cmb_session_init(self, widget) -> None`
+  - `LookMatchSlots.cmb_mix_init(self, widget) -> None`
+  - `LookMatchSlots.b_undo_init(self, widget) -> None`
+  - `LookMatchSlots.b_redo_init(self, widget) -> None`
+  - `LookMatchSlots.b_undo(self) -> None`
+  - `LookMatchSlots.b_redo(self) -> None`
+  - `LookMatchSlots.b_fit_init(self, widget) -> None`
+  - `LookMatchSlots.tbl_mix_init(self, widget) -> None`
+  - `LookMatchSlots.chk_all_init(self, widget) -> None`
+  - `LookMatchSlots.tbl_regions_init(self, widget) -> None`
+  - `LookMatchSlots.cmb_mode_init(self, widget) -> None`
+  - `LookMatchSlots.cmb_a_init(self, widget) -> None`
+  - `LookMatchSlots.cmb_b_init(self, widget) -> None`
+  - `LookMatchSlots.cmb_solve_init(self, widget) -> None`
+  - `LookMatchSlots.cmp_view_init(self, widget) -> None`
+  - `LookMatchSlots.browse_session(self) -> None`
+  - `LookMatchSlots.open_session(self, path: str) -> bool` — Start opening the session file at *path*;
+  - `LookMatchSlots.save_mix(self) -> None`
+  - `LookMatchSlots.save_mix_as(self) -> None`
+  - `LookMatchSlots.delete_mix(self) -> None`
+  - `LookMatchSlots.b_solve(self) -> None`
+  - `LookMatchSlots.b_fit(self) -> None`
+  - `LookMatchSlots.b_accept(self) -> None`
+  - `LookMatchSlots.b_discard(self) -> None`
+  - `LookMatchSlots.b_render(self) -> None`
+  - `LookMatchSlots.stop_service(self, wait: bool = True) -> None` — End the WebXR viewer this panel started (never one it did not): its
+  - `LookMatchSlots.b_edit_regions(self) -> None`
+  - `LookMatchSlots.b_draw_rect(self) -> None`
+  - `LookMatchSlots.b_draw_ellipse(self) -> None`
+  - `LookMatchSlots.b_draw_poly(self) -> None`
+  - `LookMatchSlots.b_draw_line(self) -> None`
+  - `LookMatchSlots.b_region_delete(self) -> None`
+  - `LookMatchSlots.b_paint(self) -> None`
+  - `LookMatchSlots.b_reload(self) -> None`
+  - `LookMatchSlots.b_update(self) -> None`
+  - `LookMatchSlots.stop_worker(self) -> None` — End the bake workers this panel launched (never one it did not),
+  - `LookMatchSlots.b_save_rig(self) -> None`
+  - `LookMatchSlots.mix_key(mix) -> str` *(static)* — A mix's identity: what a render records, so it can say it is stale.
+  - `LookMatchSlots.status_glyph(row: Dict[str, Any]) -> str` *(static)* — A region's state in a shape, not only a colour: within, brighter,
+  - `LookMatchSlots.brightness_text(value: Optional[float]) -> str` *(static)*
+
 <a id="marmoset_workflow--__init__"></a>
 ### `marmoset_workflow/__init__.py`
 
@@ -121,10 +187,10 @@ Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 
 Drive Marmoset Toolbag from the outside -- launch + templated automation.
 
-- [`APP`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L44) — constant
-- [`SEND_TO`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L63) — constant
-- [`ROUND_TRIP`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L64) — constant
-- **[`class MarmosetEngine(pythontk.Deliverer, pythontk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L75)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
+- [`APP`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L45) — constant
+- [`SEND_TO`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L64) — constant
+- [`ROUND_TRIP`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L65) — constant
+- **[`class MarmosetEngine(pythontk.Deliverer, pythontk.LoggingMixin)`](extapps/extapps/marmoset_workflow/_marmoset_engine.py#L76)** — Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.
   - `MarmosetEngine.toolbag_path(self) -> Optional[str]` *(property)* — Resolve the Toolbag executable path.
   - `MarmosetEngine.toolbag_log_path(self) -> Optional[str]` *(property)* — Resolve Toolbag's application log file (script prints + tracebacks).
   - `MarmosetEngine.preflight(self, bridge, request) -> bool` — Validate the (template, mode) before the bridge produces its payload.
@@ -140,9 +206,9 @@ Drive Marmoset Toolbag from the outside -- launch + templated automation.
 
 Shared helpers for Marmoset Toolbag template scripts.
 
-- [`SLOT_MAP`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L645) — constant
-- [`MODULE_NEUTRAL_FIELDS`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L668) — constant
-- [`SUBROUTINE_FIXES`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L681) — constant
+- [`SLOT_MAP`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L656) — constant
+- [`MODULE_NEUTRAL_FIELDS`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L679) — constant
+- [`SUBROUTINE_FIXES`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L692) — constant
 - **[`class ToolbagHelpers(_ToolbagHelpersInternal)`](extapps/extapps/marmoset_workflow/_toolbag_helpers.py#L200)** — ToolbagHelpers — module namespace.
   - `ToolbagHelpers.derive_per_run_log_path(manifest_path)` *(static)* — Return the ``<base>.toolbag.log`` path next to *manifest_path*.
   - `ToolbagHelpers.begin_log(reference_path)` *(static)* — Start a fresh log file alongside *reference_path*.
@@ -175,7 +241,7 @@ Tunable parameters surfaced in the Marmoset Workflow panel.
 
 Slots for the standalone Marmoset Workflow panel.
 
-- **[`class MarmosetWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/marmoset_workflow/slots.py#L54)** — Switchboard slots wired to ``marmoset_workflow.ui``.
+- **[`class MarmosetWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/marmoset_workflow/slots.py#L55)** — Switchboard slots wired to ``marmoset_workflow.ui``.
   - `MarmosetWorkflowSlots.params_module(self)` *(property)*
   - `MarmosetWorkflowSlots.template_dir(self) -> Path` *(property)*
   - `MarmosetWorkflowSlots.make_bridge(self) -> MarmosetEngine`
@@ -191,7 +257,7 @@ Slots for the standalone Marmoset Workflow panel.
 Plain default values + literal formatting for Marmoset template tokens.
 
 - [`DEFAULTS`](extapps/extapps/marmoset_workflow/template_params.py#L26) — constant
-- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L97)** — TemplateParams — module namespace.
+- **[`class TemplateParams`](extapps/extapps/marmoset_workflow/template_params.py#L101)** — TemplateParams — module namespace.
   - `TemplateParams.derive_auto_maps(manifest: Dict[str, Any]) -> Dict[str, bool]` *(static)* — Return the ``{MAP_*: bool}`` roster *manifest*'s textures imply.
   - `TemplateParams.derive_bake_values(values: Dict[str, Any]) -> Dict[str, Any]` *(static)* — Return the managed bake tokens derived from *values*.
   - `TemplateParams.python_literal(value: Any) -> str` *(static)* — Format *value* as a Python source literal for template substitution.
@@ -735,10 +801,10 @@ Create a Substance Painter project from a mesh and bake lighting into base color
 
 Bake operations — iray-backed mesh-map bakes and lighting composites.
 
-- [`lighting_to_diffuse(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L211) — Bake iray-backed AO (+ optional curvature) and composite onto base color.
-- [`mesh_maps(texture_set: str, maps: Optional[List[str]] = None, high_poly: Optional[str] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L330) — Bake the named mesh maps.
-- [`all_texture_sets(maps: Optional[List[str]] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L343) — Bake mesh maps for every texture set in the project.
-- [`set_resolution(texture_set: str, width: int, height: int) -> None`](extapps/extapps/substance_workflow/bake_utils.py#L349) — Set the baking resolution for the named texture set.
+- [`lighting_to_diffuse(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L301) — Bake iray-backed AO (+ optional curvature) and composite onto base color.
+- [`mesh_maps(texture_set: str, maps: Optional[List[str]] = None, high_poly: Optional[str] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L425) — Bake the named mesh maps.
+- [`all_texture_sets(maps: Optional[List[str]] = None) -> dict`](extapps/extapps/substance_workflow/bake_utils.py#L438) — Bake mesh maps for every texture set in the project.
+- [`set_resolution(texture_set: str, width: int, height: int) -> None`](extapps/extapps/substance_workflow/bake_utils.py#L444) — Set the baking resolution for the named texture set.
 
 <a id="substance_workflow--channel_utils"></a>
 ### `substance_workflow/channel_utils.py`
@@ -756,10 +822,11 @@ Channel operations — query and modify per-channel state on a texture set.
 Painter Connection Module.
 
 - **[`class PainterConnection`](extapps/extapps/substance_workflow/env_utils/painter_connection.py#L36)** — Live JSON-RPC connection to a Substance 3D Painter session.
-  - `PainterConnection.plugins_dir() -> str` *(static)* — Absolute path to the ``substance_workflow/plugins`` directory.
+  - `PainterConnection.plugins_dir() -> str` *(static)* — Absolute path to the plugin root, ``substance_workflow/plugins``.
   - `PainterConnection.build_painter_env(port: int = 0) -> dict` *(static)* — Compose the environment block passed to a Painter launch.
   - `PainterConnection.launch_painter(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen` *(static)* — Spawn a detached Painter process via ``pythontk.AppLauncher``.
   - `PainterConnection.get_instance(cls) -> 'PainterConnection'` *(class)*
+  - `PainterConnection.is_connected(self) -> bool` *(property)* — Connected to the bridge of a Painter that is still running.
   - `PainterConnection.get_available_port(start_port: int = 5050, max_check: int = 100) -> int` *(static)* — Return the lowest TCP port a NEW bridge server could bind on localhost.
   - `PainterConnection.connect(self, force_new_instance: bool = True, gui: bool = False, port: int = 5050, app_path: Optional[str] = None, launch_args: Optional[List[str]] = None, timeout: float = 180.0) -> bool` — Launch a fresh Painter and connect over the bridge HTTP server.
   - `PainterConnection.client(self) -> RpcClient` *(property)* — The shared JSON-RPC client, bound to this connection's bridge.
@@ -825,14 +892,14 @@ Smart-material / preset operations — apply shelf materials onto layers.
 - [`apply_smart(texture_set: str, material_url: str, target_layer_uid: Optional[str] = None) -> str`](extapps/extapps/substance_workflow/material_utils.py#L15) — Apply a smart material.
 - [`import_to_shelf(path: str, shelf_name: str = 'your_assets') -> str`](extapps/extapps/substance_workflow/material_utils.py#L28) — Import an ``.spsm`` smart material into the named shelf.
 
-<a id="substance_workflow--plugins--substance_workflow_bridge--__init__"></a>
-### `substance_workflow/plugins/substance_workflow_bridge/__init__.py`
+<a id="substance_workflow--plugins--startup--substance_workflow_bridge--__init__"></a>
+### `substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py`
 
 substance_workflow_bridge — Painter-side Python plugin.
 
-- [`start_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L112) — Painter plugin entry point — start the JSON-RPC bridge server.
-- [`close_plugin() -> None`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L124) — Painter plugin teardown.
-- [`OP_MODULES`](extapps/extapps/substance_workflow/plugins/substance_workflow_bridge/__init__.py#L88) — constant
+- [`start_plugin() -> None`](extapps/extapps/substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py#L114) — Painter plugin entry point — start the JSON-RPC bridge server.
+- [`close_plugin() -> None`](extapps/extapps/substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py#L126) — Painter plugin teardown.
+- [`OP_MODULES`](extapps/extapps/substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py#L90) — constant
 
 <a id="substance_workflow--project_utils"></a>
 ### `substance_workflow/project_utils.py`
@@ -868,12 +935,12 @@ Shelf / resource operations — query and import shelf assets.
 
 Switchboard slots for the Substance Workflow UI.
 
-- [`MESH_EXTS`](extapps/extapps/substance_workflow/slots.py#L27) — constant
-- [`PIPELINE_STAGES`](extapps/extapps/substance_workflow/slots.py#L43) — constant
-- [`BLEND_MODES`](extapps/extapps/substance_workflow/slots.py#L70) — constant
-- [`BAKE_RESOLUTIONS`](extapps/extapps/substance_workflow/slots.py#L71) — constant
-- [`ADVANCED_PARAMS`](extapps/extapps/substance_workflow/slots.py#L79) — constant
-- **[`class SubstanceWorkflowSlots(pythontk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L194)** — Switchboard slots for the Substance Workflow UI.
+- [`MESH_EXTS`](extapps/extapps/substance_workflow/slots.py#L31) — constant
+- [`PIPELINE_STAGES`](extapps/extapps/substance_workflow/slots.py#L47) — constant
+- [`BLEND_MODES`](extapps/extapps/substance_workflow/slots.py#L74) — constant
+- [`BAKE_RESOLUTIONS`](extapps/extapps/substance_workflow/slots.py#L75) — constant
+- [`ADVANCED_PARAMS`](extapps/extapps/substance_workflow/slots.py#L83) — constant
+- **[`class SubstanceWorkflowSlots(pythontk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L234)** — Switchboard slots for the Substance Workflow UI.
   - `SubstanceWorkflowSlots.header_init(self, widget) -> None`
   - `SubstanceWorkflowSlots.txt000_init(self, widget) -> None` — Mesh File
   - `SubstanceWorkflowSlots.txt001_init(self, widget) -> None` — Template (optional)
@@ -883,7 +950,7 @@ Switchboard slots for the Substance Workflow UI.
   - `SubstanceWorkflowSlots.btn_advanced_init(self, widget) -> None` — Advanced-params popup — labeled form inside a QMenu via QWidgetAction.
   - `SubstanceWorkflowSlots.cmb003(self, widget) -> None` — Log level changed
   - `SubstanceWorkflowSlots.btn_launch(self, widget) -> None` — Toggle the Painter session.
-  - `SubstanceWorkflowSlots.b000(self) -> None` — Run Workflow
+  - `SubstanceWorkflowSlots.b000(self) -> None` — Run Workflow -- while a run is in flight, the button is its Cancel.
   - `SubstanceWorkflowSlots.set_mesh_path(self, path: str) -> None` — Pre-fill the mesh field (e.g.
   - `SubstanceWorkflowSlots.btn_browse_mesh(self) -> None`
   - `SubstanceWorkflowSlots.btn_browse_template(self) -> None`
@@ -1026,7 +1093,7 @@ Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
 
 Copy a model file into a Unity project's Assets and optionally launch the Editor.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/unity_workflow/__init__.py#L20) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/unity_workflow/__init__.py#L19) — constant
 
 <a id="unity_workflow--_unity_panel"></a>
 ### `unity_workflow/_unity_panel.py`
@@ -1084,33 +1151,37 @@ Application shell for the WebXR Preview UI.
 
 Tunable parameters surfaced in the WebXR Preview panel.
 
-- [`SOURCE_FILE_TYPES`](extapps/extapps/webxr_preview/parameters.py#L37) — constant
-- [`EXPORT_KEYS`](extapps/extapps/webxr_preview/parameters.py#L42) — constant
-- [`FILE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L45) — constant
-- [`GLB_KEYS`](extapps/extapps/webxr_preview/parameters.py#L50) — constant
-- [`LIGHTING_KEYS`](extapps/extapps/webxr_preview/parameters.py#L55) — constant
-- [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L173) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/webxr_preview/parameters.py#L356)** — The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- [`SOURCE_FILE_TYPES`](extapps/extapps/webxr_preview/parameters.py#L40) — constant
+- [`AUTHORED_EXTENSION`](extapps/extapps/webxr_preview/parameters.py#L44) — constant
+- [`EXPORT_KEYS`](extapps/extapps/webxr_preview/parameters.py#L50) — constant
+- [`FILE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L53) — constant
+- [`GLB_KEYS`](extapps/extapps/webxr_preview/parameters.py#L58) — constant
+- [`TEXTURE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L63) — constant
+- [`KTX2_KEYS`](extapps/extapps/webxr_preview/parameters.py#L69) — constant
+- [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L179) — constant
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/webxr_preview/parameters.py#L371)** — The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
 
 <a id="webxr_preview--slots"></a>
 ### `webxr_preview/slots.py`
 
 Slots for the WebXR Preview panel — the single UI for the live preview.
 
-- [`FILE_SOURCE`](extapps/extapps/webxr_preview/slots.py#L44) — constant
-- **[`class WebXrPreviewSlots(BridgeSlotsBase)`](extapps/extapps/webxr_preview/slots.py#L107)** — Switchboard slots wired to ``webxr_preview.ui``.
+- [`FILE_SOURCE`](extapps/extapps/webxr_preview/slots.py#L47) — constant
+- **[`class WebXrPreviewSlots(BridgeSlotsBase)`](extapps/extapps/webxr_preview/slots.py#L117)** — Switchboard slots wired to ``webxr_preview.ui``.
   - `WebXrPreviewSlots.params_module(self)` *(property)*
   - `WebXrPreviewSlots.template_dir(self) -> Path` *(property)*
   - `WebXrPreviewSlots.make_bridge(self)` — The panel's own, host-free engine.
   - `WebXrPreviewSlots.engine(self)` *(property)* — The host bridge class this panel pushes scopes through, or ``None``.
   - `WebXrPreviewSlots.list_template_modes(self) -> List[Tuple[str, str]]` — Sources, in the ``(template, mode)`` shape the base's combo reads.
   - `WebXrPreviewSlots.open_preview_page(self) -> None` — Open the live page in a browser, without paying for a push.
-  - `WebXrPreviewSlots.stop_server(self) -> None` — Stop serving and release the port -- ending any share.
+  - `WebXrPreviewSlots.stop_server(self) -> None` — Stop serving and release the port -- every scene's -- ending any share.
+  - `WebXrPreviewSlots.add_scene(self, paths: Optional[List[str]] = None) -> _Scene` — Another scene: a Source Files row of its own under the last one,
+  - `WebXrPreviewSlots.remove_scene(self, scene: _Scene) -> None` — Take an added scene away: its server stops, and its link with it.
   - `WebXrPreviewSlots.share_link(self) -> None` — Share Now: bring the link up without a push, or retry a failed one.
-  - `WebXrPreviewSlots.copy_share_link(self) -> None` — Copy Link: the live link to the clipboard, and to the log.
+  - `WebXrPreviewSlots.copy_share_link(self) -> None` — Copy Link: the live links to the clipboard -- one per line, scene
   - `WebXrPreviewSlots.copy_scene_link(self) -> None` — Copy Scene Link: where the published scene is described as data.
-  - `WebXrPreviewSlots.check_share_link(self) -> None` — Test Link: whether a guest can reach the share now.
-  - `WebXrPreviewSlots.stop_sharing(self) -> None` — Stop Sharing: the row to Off, which takes the link down.
+  - `WebXrPreviewSlots.check_share_link(self) -> None` — Test Link: whether a guest can reach each share now.
+  - `WebXrPreviewSlots.stop_sharing(self) -> None` — Stop Sharing: the row to Off, which takes every link down.
   - `WebXrPreviewSlots.set_source_file(self, path: str) -> None` — Pre-fill Source Files with *path* and select the file source.
   - `WebXrPreviewSlots.set_source_files(self, paths: List[str]) -> None` — Pre-fill Source Files with *paths* -- the parts of one scene, shown
-  - `WebXrPreviewSlots.b000(self) -> None` — Build the deliverable for the active source and publish it.
+  - `WebXrPreviewSlots.b000(self) -> None` — Build the deliverable for the active source and publish it -- for

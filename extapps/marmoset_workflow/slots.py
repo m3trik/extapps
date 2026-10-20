@@ -26,6 +26,7 @@ from uitk.bridge import BridgeSlotsBase
 # Toolbag engine bundled in this subpackage (the panel cannot import mayatk,
 # so the DCC-agnostic engine is vendored here, mirroring substance_workflow).
 from extapps.marmoset_workflow._marmoset_engine import (
+    APP,
     MarmosetEngine,
     SEND_TO,
     _TEMPLATE_DIR,
@@ -65,21 +66,28 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
     # user-facing artifact dir to require -- the rendered script is a throwaway.
     REQUIRE_OUTPUT_DIR = False
 
-    # Uses the base's default header menu (Open Templates / Refresh / Clear
-    # Log); only the help differs, so it's declared as data.
+    # Uses the base's default header menu (Clear Log; the template rows are on
+    # the template combo's context menu); only the help differs, so it's
+    # declared as data. It says where this panel differs from the DCC
+    # Marmoset Bridge, which a user may know first.
     HELP_SPEC = {
         "title": "Marmoset Workflow",
-        "body": "Launch Marmoset Toolbag and set up a project from a "
-        "model file on disk. No DCC required.",
+        "body": "Open a model file from disk in Marmoset Toolbag, ready for "
+        "look-dev. No DCC required -- each click starts a new Toolbag.",
         "steps": [
-            "Pick a <b>Model File</b> (FBX / OBJ / USD / glTF).",
-            "Choose a <b>Template</b> (import or lookdev).",
-            "Tweak the exposed parameters (sky, framing).",
+            "Pick a <b>Model File</b> (FBX, OBJ, USD, Alembic, glTF / GLB, "
+            "or a mesh PLY).",
+            "Choose a template: <b>import</b> (the model only) or "
+            "<b>lookdev</b> (plus a sky and framing; the default).",
+            "For lookdev, set the <b>Sky</b> and <b>Frame on Open</b>.",
             "Click <b>Set Up in Marmoset</b>.",
         ],
         "notes": [
-            "Gaussian-splat PLYs are not meshes and won't render "
-            "in Toolbag -- use a dedicated 3DGS viewer for those.",
+            "Nothing is saved for you: save the scene in Toolbag.",
+            "Unlike the Maya / Blender <b>Marmoset Bridge</b>, no textures are "
+            "wired (the materials are what Toolbag's import of the file gives) "
+            "and there is no bake: both stay with the bridge.",
+            "Gaussian-splat PLYs are not meshes and won't render in Toolbag.",
         ],
     }
 
@@ -190,8 +198,8 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
     def set_model_path(self, path: str) -> None:
         """Pre-fill the Model File field (e.g. a host exported the current selection to it).
 
-        Public hand-off point for hosts that drive this panel — the Blender Marmoset *bridge*
-        exports the selection to FBX and calls this before showing the panel."""
+        Public hand-off point for a host that drives this panel. (Blender no
+        longer does: it has a native Marmoset Bridge panel of its own.)"""
         self._initial_model = path or ""
         if self._model_edit is not None:
             self._model_edit.setText(self._initial_model)
@@ -225,10 +233,7 @@ class MarmosetWorkflowSlots(BridgeSlotsBase):
         template, mode = pair
 
         if not self.bridge.toolbag_path:
-            self.bridge.logger.error(
-                "Marmoset Toolbag not found. Install Toolbag and ensure it "
-                "is on PATH, or set MarmosetEngine.toolbag_path manually."
-            )
+            self.bridge.logger.error(APP.not_found_msg)
             return
 
         self.bridge.logger.info(

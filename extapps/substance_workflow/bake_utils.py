@@ -12,7 +12,7 @@ import logging
 import math
 from typing import List, Optional
 
-from .registry import register
+from .registry import PLUGIN, register
 
 logger = logging.getLogger(__name__)
 
@@ -41,32 +41,122 @@ def _ts_name(ts) -> str:
     return n() if callable(n) else n
 
 
-def _configure_bake_params(ts, bake_resolution: int, ao_kwargs: dict) -> List[str]:
-    """Set common + AO baker parameters for the given texture set.
+def _uid(layer, fallback: str):
+    """A layer's id: ``uid`` is a method on current Painter (``ReadOnlyUid.uid``),
+    an attribute on older builds; *fallback* when it has neither."""
+    uid = getattr(layer, "uid", None)
+    uid = uid() if callable(uid) else uid
+    return fallback if uid is None else uid
 
-    Returns the list of parameter labels we successfully wrote, for debug.
+
+def _subsampling(factor: int) -> int:
+    """Painter's ``SubSampling`` (Antialiasing) index for a supersampling factor:
+    1 none, 2 / 4 / 8 its 2x2 / 4x4 / 8x8; others round to the nearest."""
+    return min(3, max(0, round(math.log2(max(1, int(factor))))))
+
+
+def _in_range(prop, value):
+    """*value* held to the range Painter publishes for *prop* (its slider's
+    ``min`` / ``max``); a value of any other kind is returned as is."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return value
+    kind = type(value)
+    try:
+        bounds = prop.properties() or {}
+        lo, hi = (bounds.get(k) for k in ("min", "max"))
+        lo, hi = (None if b is None else kind(float(b)) for b in (lo, hi))
+    except Exception:  # no ranges published (an older Painter): write what was asked
+        return value
+    if lo is not None:
+        value = max(value, lo)
+    if hi is not None:
+        value = min(value, hi)
+    return value
+
+
+def _configure_bake_params(params, common_kwargs: dict, ao_kwargs: dict) -> List[str]:
+    """Write *common_kwargs* and *ao_kwargs* -- Painter's own property names --
+    on a texture set's ``BakingParameters``, each held to Painter's range.
+
+    Returns the parameter labels written, for debug.
+
+    Raises:
+        ValueError: a property Painter does not have (its names change between
+            releases); the message lists the ones it has. Nothing is written
+            then -- a bake with other settings than the ones asked for is not
+            the bake that was asked for.
     """
     import substance_painter.baking as baking
 
-    written: List[str] = []
-    params = baking.BakingParameters.from_texture_set(ts)
+    groups = (
+        ("", "common", params.common(), common_kwargs),
+        ("AO.", "AO baker", params.baker(baking.MeshMapUsage.AO), ao_kwargs),
+    )
+    for _, label, props, values in groups:
+        missing = sorted(set(values) - set(props))
+        if missing:
+            raise ValueError(f"Painter's {label} parameters have no {missing}; it has: {sorted(props)}")
 
-    log2_size = int(math.log2(bake_resolution))
-    settings = {}
-
-    common = params.common()
-    if "OutputSize" in common:
-        settings[common["OutputSize"]] = (log2_size, log2_size)
-        written.append(f"OutputSize=({log2_size},{log2_size})")
-
-    ao_baker = params.baker(baking.MeshMapUsage.AO)
-    for key, value in ao_kwargs.items():
-        if key in ao_baker:
-            settings[ao_baker[key]] = value
-            written.append(f"AO.{key}={value}")
-
+    settings, written = {}, []
+    for prefix, _, props, values in groups:
+        for key, value in values.items():
+            value = _in_range(props[key], value)
+            settings[props[key]] = value
+            written.append(f"{prefix}{key}={value}")
     baking.BakingParameters.set(settings)
     return written
+
+
+def _has_maps(ts, usages) -> bool:
+    """Whether *ts* already has a mesh map for every one of *usages*."""
+    return all(ts.get_mesh_map_resource(usage) is not None for usage in usages)
+
+
+def _bake(ts, params, usages, timeout: float) -> None:
+    """Bake *usages* of *ts* alone and return once Painter says it is done.
+
+    ``baking.bake_async`` takes ONE texture set and returns a ``StopSource``,
+    not a future: the end arrives as a ``BakingProcessEnded`` event on the main
+    thread -- the thread this op runs on -- so the wait is a nested event loop,
+    never a sleep. Only *usages* bake (the project's other mesh maps, baked or
+    imported, are left alone), and the project's own enabled bakers come back
+    afterwards.
+
+    Raises:
+        RuntimeError: Painter ended the bake without success.
+        TimeoutError: it did not end within *timeout* seconds (it is stopped).
+    """
+    import substance_painter.baking as baking
+    import substance_painter.event as event
+    from PySide6 import QtCore  # Painter's own binding; this runs only inside Painter
+
+    ended = []
+    loop = QtCore.QEventLoop()
+
+    def on_ended(e) -> None:  # held here: the dispatcher keeps only a weak reference
+        ended.append(e.status)
+        loop.quit()
+
+    timer = QtCore.QTimer()
+    timer.setSingleShot(True)
+    timer.timeout.connect(loop.quit)
+    previous = params.get_enabled_bakers()
+    event.DISPATCHER.connect(event.BakingProcessEnded, on_ended)
+    try:
+        params.set_enabled_bakers(list(usages))
+        stop = baking.bake_async(ts)
+        if not ended:
+            timer.start(int(timeout * 1000))
+            loop.exec()
+        if not ended:
+            stop.request_stop()
+            raise TimeoutError(f"the bake did not end within {timeout:.0f} s")
+    finally:
+        timer.stop()
+        event.DISPATCHER.disconnect(event.BakingProcessEnded, on_ended)
+        params.set_enabled_bakers(previous)
+    if ended[0] != baking.BakingStatus.Success:
+        raise RuntimeError(f"Painter ended the bake: {getattr(ended[0], 'name', ended[0])}")
 
 
 def _apply_layer_intensity(layer, channel, intensity: float) -> None:
@@ -184,7 +274,7 @@ def _add_lighting_layer(
             "[bake] No mesh-map-to-fill-channel setter on substance_painter.layerstack. "
             "Layer was created but base color source is not driven by the AO map."
         )
-        return getattr(layer, "uid", _ts_name(ts) + "/" + layer_name)
+        return _uid(layer, _ts_name(ts) + "/" + layer_name)
 
     import substance_painter.baking as baking
 
@@ -199,7 +289,7 @@ def _add_lighting_layer(
         mesh_map_setter(curv_layer, base_color, baking.MeshMapUsage.Curvature)
         _apply_layer_intensity(curv_layer, base_color, curvature_intensity)
 
-    return getattr(layer, "uid", _ts_name(ts) + "/" + layer_name)
+    return _uid(layer, _ts_name(ts) + "/" + layer_name)
 
 
 # ---------------------------------------------------------------------------
@@ -230,17 +320,22 @@ def lighting_to_diffuse(
         texture_set: Name of a single texture set to bake, or ``None`` for all.
         bake_resolution: Bake output size (power of two). ``1024`` → 1024².
         ao_intensity: Multiplier applied to AO contribution when compositing.
-        ao_secondary_rays: AO sample count. Higher = cleaner, slower.
-        ao_max_distance: AO ray maximum length in world units.
-        ao_min_distance: AO ray minimum length (helps avoid self-shadow noise).
-        ao_spread_angle: Hemisphere spread angle in degrees.
-        ao_subsample: Supersampling factor (1 = none).
+        ao_secondary_rays: AO sample count (Painter: 1-256). Higher = cleaner, slower.
+        ao_max_distance: Max occluder distance, a fraction of the mesh's bounding
+            box (Painter's default, up to 1.0).
+        ao_min_distance: Min occluder distance (bias against self-shadow noise),
+            the same fraction; 0 is Painter's smallest.
+        ao_spread_angle: Spread angle of the occlusion rays in degrees (0-180).
+        ao_subsample: Antialiasing by supersampling: 1 none, 2, 4 or 8 (others
+            round to the nearest).
         include_curvature: Also bake curvature and stack as an overlay layer.
         curvature_intensity: Curvature multiplier when ``include_curvature``.
         layer_name: Name of the inserted fill layer.
         blend_mode: Blend mode for the AO layer (default ``Multiply``).
         skip_existing_bakes: If True, only bake when mesh maps are missing.
         save_project: Save the project after applying the layer.
+
+    Every bake value is held to the range Painter publishes for it.
 
     Returns:
         ``{texture_sets, baked_maps, layers_created, parameters, saved, errors}``.
@@ -256,12 +351,16 @@ def lighting_to_diffuse(
         "errors": [],
     }
 
+    # Painter's own property names (read from Painter 2026-10-19; the op once
+    # wrote names Painter never had). Subsampling is Painter's common
+    # "Antialiasing", not an AO setting.
+    size = int(math.log2(bake_resolution))
+    common_kwargs = {"OutputSize": (size, size), "SubSampling": _subsampling(ao_subsample)}
     ao_kwargs = {
-        "SecondaryRays": ao_secondary_rays,
-        "MaxOccluderDistance": ao_max_distance,
-        "MinOccluderDistance": ao_min_distance,
-        "SpreadAngle": ao_spread_angle,
-        "Subsampling": ao_subsample,
+        "NbSecondary": ao_secondary_rays,
+        "MaxDistance": ao_max_distance,
+        "MinDistance": ao_min_distance,
+        "Spread": ao_spread_angle,
     }
 
     try:
@@ -270,35 +369,31 @@ def lighting_to_diffuse(
         result["errors"].append(f"resolve_texture_sets: {type(e).__name__}: {e}")
         return result
 
+    usages = [baking.MeshMapUsage.AO] + ([baking.MeshMapUsage.Curvature] if include_curvature else [])
     for ts in ts_list:
         name = _ts_name(ts)
         result["texture_sets"].append(name)
 
-        try:
-            written = _configure_bake_params(ts, bake_resolution, ao_kwargs)
-            result["parameters"].append({name: written})
-        except Exception as e:
-            result["errors"].append(f"{name}/configure: {type(e).__name__}: {e}")
-            continue
-
-        if skip_existing_bakes:
-            # Best-effort guard. ``has_mesh_map`` isn't on every Painter
-            # release; fall back to always-bake on AttributeError.
+        if skip_existing_bakes and _has_maps(ts, usages):
+            # Only the bake is skipped (its settings untouched): the maps it
+            # has still composite.
+            result["baked_maps"].append({name: "skipped"})
+        else:
             try:
-                if baking.has_mesh_map(ts, baking.MeshMapUsage.AO):
-                    result["baked_maps"].append({name: "skipped"})
-                    continue
-            except AttributeError:
-                pass
+                params = baking.BakingParameters.from_texture_set(ts)
+                written = _configure_bake_params(params, common_kwargs, ao_kwargs)
+                result["parameters"].append({name: written})
+            except Exception as e:
+                result["errors"].append(f"{name}/configure: {type(e).__name__}: {e}")
+                continue
 
-        try:
-            future = baking.bake_async([ts])
-            future.result()
-            baked = ["AO"] + (["Curvature"] if include_curvature else [])
-            result["baked_maps"].append({name: baked})
-        except Exception as e:
-            result["errors"].append(f"{name}/bake: {type(e).__name__}: {e}")
-            continue
+            try:
+                _bake(ts, params, usages, PLUGIN.marshaller.timeout)  # the op's own bound
+                baked = ["AO"] + (["Curvature"] if include_curvature else [])
+                result["baked_maps"].append({name: baked})
+            except Exception as e:
+                result["errors"].append(f"{name}/bake: {type(e).__name__}: {e}")
+                continue
 
         try:
             uid = _add_lighting_layer(

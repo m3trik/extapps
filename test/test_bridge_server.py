@@ -79,7 +79,7 @@ class TestServedOverTheWire(SubstanceWorkflowTestCase):
 
     def test_real_ops_are_served(self) -> None:
         """The bridge package's op modules register onto the served table."""
-        import extapps.substance_workflow.plugins.substance_workflow_bridge as bridge
+        import extapps.substance_workflow.plugins.startup.substance_workflow_bridge as bridge
 
         self.assertTrue(bridge.OP_MODULES)
         self.assertIn("project.info", self.conn.client.list_ops())
@@ -90,7 +90,7 @@ class TestPluginLifecycle(SubstanceWorkflowTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        import extapps.substance_workflow.plugins.substance_workflow_bridge as bridge
+        import extapps.substance_workflow.plugins.startup.substance_workflow_bridge as bridge
 
         self.bridge = bridge
         self.addCleanup(registry.PLUGIN.stop)

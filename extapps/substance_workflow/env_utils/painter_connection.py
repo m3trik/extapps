@@ -9,7 +9,7 @@ The wire is the shared one: :attr:`PainterConnection.client` is a
 :class:`pythontk.RpcClient` bound to the launched bridge, and the bridge is a
 :class:`pythontk.RpcPlugin` (``extapps.substance_workflow.registry.PLUGIN``).
 What this class adds is the Painter launch -- the hard block, a bind-probed
-port pinned through ``SUBSTANCE_WORKFLOW_PORT``, the plugin folder on
+port pinned through ``SUBSTANCE_WORKFLOW_PORT``, the plugin root on
 ``SUBSTANCE_PAINTER_PLUGINS_PATH`` -- and teardown of exactly that process.
 """
 
@@ -41,13 +41,18 @@ class PainterConnection:
     module docstring's session-safety block.
     """
 
+    #: The bridge plugin's module name inside Painter.
+    BRIDGE = "substance_workflow_bridge"
+
     @staticmethod
     def plugins_dir() -> str:
-        """Absolute path to the ``substance_workflow/plugins`` directory.
+        """Absolute path to the plugin root, ``substance_workflow/plugins``.
 
-        Painter's ``SUBSTANCE_PAINTER_PLUGINS_PATH`` should be set to this so
-        the ``substance_workflow_bridge`` plugin is discovered without a global
-        install.
+        Painter reads each ``SUBSTANCE_PAINTER_PLUGINS_PATH`` entry as a root
+        holding ``plugins/``, ``startup/`` and ``modules/``; the bridge is
+        ``startup/substance_workflow_bridge``, which Painter starts at every
+        launch (a ``plugins/`` module waits for its menu setting, off by
+        default). No global install.
         """
         here = Path(__file__).resolve().parent
         return str((here.parent / "plugins").resolve())
@@ -56,9 +61,11 @@ class PainterConnection:
     def build_painter_env(port: int = 0) -> dict:
         """Compose the environment block passed to a Painter launch.
 
-        Prepends the bridge plugin directory to ``SUBSTANCE_PAINTER_PLUGINS_PATH``
-        and pins ``SUBSTANCE_WORKFLOW_PORT`` so the plugin's HTTP server binds
-        where the client expects it.
+        Prepends the plugin root to ``SUBSTANCE_PAINTER_PLUGINS_PATH`` and pins
+        ``SUBSTANCE_WORKFLOW_PORT`` so the plugin's HTTP server binds where
+        the client expects it. A set ``SUBSTANCE_PAINTER_STARTUP_PLUGINS``
+        replaces Painter's whole startup list, so it gains the bridge; an
+        unset one stays unset (Painter then starts every startup module).
         """
         env = os.environ.copy()
         existing = env.get("SUBSTANCE_PAINTER_PLUGINS_PATH", "")
@@ -66,9 +73,18 @@ class PainterConnection:
         env["SUBSTANCE_PAINTER_PLUGINS_PATH"] = (
             f"{plug}{os.pathsep}{existing}" if existing else plug
         )
+        startup = env.get("SUBSTANCE_PAINTER_STARTUP_PLUGINS")
+        if startup is not None:  # Painter splits it on ":" (not os.pathsep)
+            names = [name for name in startup.split(":") if name]
+            if PainterConnection.BRIDGE not in names:
+                names.append(PainterConnection.BRIDGE)
+            env["SUBSTANCE_PAINTER_STARTUP_PLUGINS"] = ":".join(names)
         if port:
             env["SUBSTANCE_WORKFLOW_PORT"] = str(port)
         return env
+
+    #: Qt platforms that open no window.
+    _WINDOWLESS = ("offscreen", "minimal")
 
     @staticmethod
     def launch_painter(
@@ -77,13 +93,22 @@ class PainterConnection:
         gui: bool = False,
         extra_args: Optional[List[str]] = None,
     ) -> subprocess.Popen:
-        """Spawn a detached Painter process via ``pythontk.AppLauncher``."""
-        args: List[str] = []
+        """Spawn a detached Painter process via ``pythontk.AppLauncher``.
+
+        Painter has no headless option (its own option list has none, and an
+        unknown one such as ``--no-display`` makes it exit), so ``gui=False``
+        runs it on Qt's offscreen platform: no window, with project create,
+        bake and save as a windowed Painter does them (verified 2026-10-19).
+        ``gui=True`` drops a windowless platform the caller's own process
+        carries (a test run's), so the window shows; *env* is not modified.
+        """
+        env = dict(env)
+        platform = env.get("QT_QPA_PLATFORM", "").split(":")[0]
         if not gui:
-            # TODO: verify the correct headless flag for the installed Painter version.
-            args.append("--no-display")
-        if extra_args:
-            args.extend(extra_args)
+            env["QT_QPA_PLATFORM"] = "offscreen"
+        elif platform in PainterConnection._WINDOWLESS:
+            env.pop("QT_QPA_PLATFORM")
+        args: List[str] = list(extra_args or [])
 
         logger.info(f"[PainterConnection] Launching: {exe} {args}")
         process = AppLauncher.launch(exe, args=args, env=env, detached=True)
@@ -105,7 +130,23 @@ class PainterConnection:
         self.host: str = "127.0.0.1"
         self.port: int = 0
         self.process: Optional[subprocess.Popen] = None
-        self.is_connected: bool = False
+        self._connected: bool = False
+
+    @property
+    def is_connected(self) -> bool:
+        """Connected to the bridge of a Painter that is still running.
+
+        Read from the process, not only the flag set at launch: a Painter quit
+        from its own window reads False (and the flag clears). With no process
+        to ask (a test's fake bridge), the flag stands.
+        """
+        if self._connected and self.process is not None and self.process.poll() is not None:
+            self._connected = False
+        return self._connected
+
+    @is_connected.setter
+    def is_connected(self, value: bool) -> None:
+        self._connected = bool(value)
 
     # ---- port helpers ----------------------------------------------------
 
@@ -139,7 +180,8 @@ class PainterConnection:
 
         Parameters:
             force_new_instance: HARD-CODED safe default. ``False`` is rejected.
-            gui: Show Painter's UI. Default ``False``.
+            gui: Show Painter's window. Default ``False``: windowless, on Qt's
+                offscreen platform (Painter has no headless option).
             port: Starting port for auto-negotiation.
             app_path: Override Painter executable.
             launch_args: Extra CLI args forwarded to Painter.
@@ -150,6 +192,10 @@ class PainterConnection:
         """
         if not force_new_instance:
             raise RuntimeError(_HARD_BLOCK)
+        if self.is_connected:
+            # The Painter THIS connection launched is still up: another launch
+            # would orphan it. (The user's own sessions stay refused above.)
+            return True
 
         exe = app_path or PainterFinder.resolve()
         if not exe:
@@ -224,7 +270,9 @@ class PainterConnection:
         """Close the bridge and terminate the Painter process we launched."""
         if not self.is_connected and self.process is None:
             return
-        if self.process is not None:
+        # A Painter that already exited is not killed: its PID may be another
+        # process's by now (POSIX ``poll()`` reaped it).
+        if self.process is not None and self.process.poll() is None:
             try:
                 AppLauncher.close_process(self.process.pid, force=force)
             except Exception as e:

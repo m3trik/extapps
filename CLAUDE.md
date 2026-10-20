@@ -63,8 +63,8 @@ files are uitk load-time compile caches — gitignored, never edited.
 (`@register` — the SSoT for callable ops; check it before adding a helper),
 `*_utils.py` op modules (lazy-import `substance_painter` inside function bodies
 so they stay import-safe outside Painter), `env_utils/` (`PainterConnection`,
-`PainterFinder`), `job.py` (`run_batch`), and `plugins/substance_workflow_bridge/`
-(loaded via `SUBSTANCE_PAINTER_PLUGINS_PATH`), all on pythontk's RPC pair.
+`PainterFinder`), `job.py` (`run_batch`), and `plugins/startup/substance_workflow_bridge/`
+(a startup module of the root on `SUBSTANCE_PAINTER_PLUGINS_PATH`), all on pythontk's RPC pair.
 
 ## Run
 

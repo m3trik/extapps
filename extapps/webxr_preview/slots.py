@@ -2,13 +2,16 @@
 # coding=utf-8
 """Slots for the WebXR Preview panel — the single UI for the live preview.
 
-One panel serves every source. A host that opened it injects its own bridge
+One panel serves every source. Standalone it previews files on disk, driven by
+:class:`pythontk.FilePreviewBridge`, and there is no Source combo -- one entry
+is no choice, so it hides. A host that opened it injects its own bridge
 (:attr:`WebXrPreviewSlots.engine` — ``mtk.WebXrPreview`` / ``btk.WebXrPreview``)
-and the Source combo grows that host's scopes; with no host it offers a file on
-disk, driven by :class:`pythontk.FilePreviewBridge`. Which source is active
-changes *which bridge produces the payload* and nothing else: the build, the
-texture pass, the version bump and the page are one chain either way, which is
-why the panel body carries no per-host branch.
+and the combo appears with that host's scopes above File on Disk. Which source
+is active changes *which bridge produces the payload* and nothing else: the
+build, the texture pass, the version bump and the page are one chain either
+way, which is why the panel body carries no per-host branch. The rows follow
+what the push will build (:meth:`WebXrPreviewSlots._relevant_param_keys`), so
+the hosted panel is the standalone one plus the rows a scene answers.
 
 **Lookdev, not validation.** A push is the hand-off mixin's FBX write -- fast,
 no export tasks or checks -- but the GLB is built by ``pythontk.GlbPipeline``,
@@ -25,7 +28,6 @@ uses: the panel owns the Source picker, the host owns what each scope means.
 from __future__ import annotations
 
 import os
-import threading
 import traceback
 import webbrowser
 from pathlib import Path
@@ -33,6 +35,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pythontk as ptk
 from qtpy import QtCore
+from uitk import BackgroundTask
 from uitk.bridge import BridgeSlotsBase, KindFactory, Parameters as _BridgeParams
 
 from extapps.webxr_preview import parameters as _params
@@ -48,60 +51,67 @@ FILE_SOURCE = "file"
 #: panel is a UI over an engine that lives in pythontk, and the document that
 #: explains what survives the trip lives with that engine. Pointing at an
 #: extapps path would mean either a stub to maintain or a broken link.
-_DOCS_URL = (
-    "https://github.com/m3trik/pythontk/blob/main/pythontk/docs/webxr_preview.md"
-)
+_DOCS_URL = "https://github.com/m3trik/pythontk/blob/main/docs/webxr_preview.md"
 
 
-class _Worker:
-    """*work* on a daemon thread, its outcome read back on the UI thread.
+class _Scene:
+    """One scene the panel publishes -- and shares, at a link of its own.
 
-    A share waits on its provider for seconds -- a quick tunnel's new name
-    takes 6-18 s to resolve -- and on a person for minutes when the provider
-    stops on a one-time step. On the UI thread, either froze the panel and the
-    DCC hosting it for the whole wait.
+    The first is the panel's own bridge and the Source Files row; each one the
+    row's + adds (:meth:`WebXrPreviewSlots.add_scene`) is a file bridge with a
+    deliverer of its own -- its own server, port, page and share -- and *row*,
+    ``(container, files field, label)``. A share being opened is per scene:
+    *pending*, the row *choice*, *provider* and *private* it was opened for,
+    the provider's *step* it waits on, and *stops*, so a wait a stop ended
+    ends quietly. *reach* is the last link check's answer (``None``
+    unchecked); *recheck* the timer checking a link that did not open.
     """
 
-    def __init__(self, work, name: str):
-        self._outcome: Dict[str, Any] = {}
-        self._thread = threading.Thread(
-            target=self._run, args=(work,), name=name, daemon=True
-        )
-        self._thread.start()
+    def __init__(self, bridge, row: Optional[tuple] = None):
+        self.bridge = bridge
+        self.row = row
+        self.stops = 0
+        self.reach: Optional[Dict[str, Any]] = None
+        self.recheck = None
+        self.clear_wait()
 
-    def _run(self, work) -> None:
-        try:
-            self._outcome["value"] = work()
-        except BaseException as error:  # noqa: BLE001 -- re-raised by result()
-            self._outcome["error"] = error
+    def clear_wait(self) -> None:
+        """No share opening: not pending, and nothing it was opened for."""
+        self.pending = False
+        self.choice: Optional[str] = None
+        self.provider: Optional[str] = None
+        self.private: Optional[bool] = None
+        self.step = None
+
+    def end_wait(self) -> bool:
+        """Forget a share still opening, which the stop about to run ends
+        (its outcome then stays silent), and the link's checks; whether one
+        was opening."""
+        opening = self.pending
+        self.stops += 1
+        self.clear_wait()
+        self.reach = None
+        self.stop_recheck()
+        return opening
+
+    def stop_recheck(self, timer=None) -> None:
+        """End the link's re-checks -- only *timer*'s, when named."""
+        current = self.recheck
+        if current is None or (timer is not None and current is not timer):
+            return
+        self.recheck = None
+        current.stop()
+        current.deleteLater()
 
     @property
-    def done(self) -> bool:
-        return not self._thread.is_alive()
+    def server(self):
+        """The scene's server, or ``None`` before anything started one."""
+        deliverer = getattr(self.bridge, "deliverer", None)
+        return getattr(deliverer, "server", None) if deliverer else None
 
-    def wait(self, seconds: float) -> None:
-        self._thread.join(seconds)
-
-    def result(self) -> Any:
-        """What *work* returned; re-raises what it raised."""
-        if "error" in self._outcome:
-            raise self._outcome["error"]
-        return self._outcome["value"]
-
-    def when_done(self, parent, callback) -> None:
-        """*callback* on the UI thread once *work* ends, off a timer *parent*
-        owns -- nothing crosses threads but the outcome."""
-        timer = QtCore.QTimer(parent)
-        timer.setInterval(250)
-
-        def check() -> None:
-            if self.done:
-                timer.stop()
-                timer.deleteLater()
-                callback()
-
-        timer.timeout.connect(check)
-        timer.start()
+    def share_info(self) -> Optional[Dict[str, Any]]:
+        server = self.server
+        return server.share_info() if server is not None else None
 
 
 class WebXrPreviewSlots(BridgeSlotsBase):
@@ -142,93 +152,71 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             "Stop serving and release the port.\n\n"
             "The server outlives every push on purpose, so a page left open in "
             "a headset keeps receiving them. Stop it only to free the port; "
-            "the next push starts a new one, on a new port, and any page still "
-            "open is then watching a closed socket.",
+            "the next push starts a new one. A page left open says the server "
+            "is unreachable until then, and resumes if its server returns on "
+            "the same port: the first scene's usually does, an added scene's "
+            "does not.",
             "stop_server",
         ),
         ("Clear Log", "btn_clear_log", "Clear the log panel below.", "clear_log"),
     )
 
+    # One card for both launches: a DCC-only line says so, since standalone
+    # (and a host left on File on Disk) is files only. Detail lives in the
+    # DOCS_URL page the card links.
     HELP_SPEC = {
         "title": "WebXR Preview",
-        "body": "Push geometry to a live browser page and keep pushing. The "
-        "page does not reload and needs no interaction -- a tab left open, "
-        "including one in a PC-tethered headset, picks up each new version on "
-        "its next poll. The loop is <b>change the scene, push, look up</b>.",
+        "body": "Publish a model to a live browser page and keep pushing: an "
+        "open tab -- one in a PC-tethered headset too -- swaps to each new "
+        "version on its next poll, with no reload. On its own it previews "
+        "<b>FBX</b> and <b>GLB</b> files; opened from Maya or Blender it can "
+        "push the scene as well.",
         "steps": [
-            "Pick a <b>Source</b> -- a scope when a DCC opened this panel, or "
-            "files on disk: several are the parts of one scene, shown together "
-            "at their authored places, each one hidden from the page's "
-            "<b>View</b> menu.",
-            "Set the delivery options and viewer scripts. The <b>Textures</b> "
-            "and <b>Lighting</b> rows are the Scene Exporter's own: set them "
-            "as the export is set and the preview's textures take the export's "
-            "container and size, and its bake the export's reflections.",
-            "Click <b>Push to Preview</b>. The first push opens a tab.",
+            "Choose the <b>Source Files</b> (or leave the field empty and Push "
+            "asks). Several files are the parts of one scene; the page's "
+            "<b>View</b> menu can hide each.",
+            "<i>From Maya or Blender:</i> the <b>Source</b> list on top offers "
+            "Selected, Entire Scene or Visible Only, then File on Disk.",
+            "Click <b>Push to Preview</b>. A tab opens when none is watching; "
+            "after that, push and look up.",
         ],
         "sections": [
             (
-                "Why it works in a headset",
+                "Rows",
                 [
-                    "The server binds <b>127.0.0.1</b>, and localhost is a "
-                    "<i>secure context</i> -- which is the only reason "
-                    "<b>navigator.xr</b> exists on the page at all. The same "
-                    "page is an orbit preview on a desktop and a real "
-                    "immersive-vr session with a headset attached.",
-                    "Reaching the same server at a LAN address instead gives "
-                    "no VR button and no error explaining why.",
+                    "A row shows only when the push reads it. The "
+                    "<b>Textures</b> rows need an FBX (a GLB is published "
+                    "exactly as authored) or a scene pushed with its textures.",
+                    "<i>Scene push only:</i> <b>Delivery</b> and <b>Include "
+                    "Textures</b>. Set the texture rows as the Scene "
+                    "Exporter's are set and the preview matches the export.",
+                    "<b>+</b> beside Source Files adds another scene with its "
+                    "own page and link; <b>\u2212</b> removes one. Push "
+                    "publishes them all.",
                 ],
             ),
             (
-                "Sharing a link",
+                "Sharing",
                 [
-                    "Pick a provider in the <b>Sharing</b> row and the preview "
-                    "is published at an HTTPS link through a tunnel, which stays "
-                    "up across pushes; <b>Off</b> takes it down. A guest needs "
-                    "only a browser -- and a standalone headset gets its VR "
-                    "button, because the link is a secure context. The row's "
-                    "option box has <b>Share Now</b>, <b>Copy Link</b>, "
-                    "<b>Test Link</b>, <b>Copy Scene Link</b> and <b>Stop "
-                    "Sharing</b>.",
-                    "Each new link is checked from this machine, the way a "
-                    "guest's page asks for it, and the log says whether it "
-                    "answers -- <b>Test Link</b> asks again.",
-                    "<b>Private Link</b> gives every share a fresh random link "
-                    "that dies when the next share starts -- for Tailscale, "
-                    "whose address is otherwise your machine's for good.",
-                    "<b>Copy Scene Link</b> copies where the scene is "
-                    "described as data (<b>scene.json</b>): its glTF and "
-                    "the lighting it renders with. Send it to a developer whose "
-                    "AI agent or tools need to see how the scene is built -- to "
-                    "work out why it renders differently in their engine.",
-                    "The share is a second, <b>view-only</b> door onto the same "
-                    "server: guests see every push, and cannot save a setting, "
-                    "record, or reach anything but the model and the page.",
-                    "Each guest downloads the model and renders it on their "
-                    "own device. The link IS the deliverable: a guest can save "
-                    "the GLB. Stop sharing when the review is over.",
-                ],
-            ),
-            (
-                "What survives the trip",
-                [
-                    "The deliverable is self-describing: the lightmap "
-                    "manifest and the scene sidecar ride inside the GLB's own "
-                    "<b>extras</b>. There are no side files to keep together, "
-                    "and a third-party glTF tool opens it and gets a sane, if "
-                    "plainer, result.",
-                    "A baked scene previews lit with no extra step, because "
-                    "the bake's manifest travels with the export.",
+                    "<b>Sharing</b> (Auto or a provider) publishes a view-only "
+                    "HTTPS link anyone can open in a browser -- a standalone "
+                    "headset too -- except the tailnet-only Tailscale option. "
+                    "It stays up across pushes; <b>Off</b> takes it down, and "
+                    "its option box copies and tests the link.",
+                    "A link no one else can open yet shows in <b>red</b> and is "
+                    "re-checked for 15 minutes: a new Tailscale Funnel link "
+                    "takes minutes to open, a Cloudflare one seconds.",
+                    "A guest can save the GLB: stop sharing when the review is over.",
                 ],
             ),
         ],
         "notes": [
-            "This is a lookdev push, not an export: it runs no export tasks "
-            "or validation checks. To check an exporter's whole run, export "
-            "the GLB and pick it as the Source File.",
-            "A GLB source is published exactly as authored -- no re-encode, "
-            "no sidecar, no lightmap rewiring -- so this doubles as a plain "
-            "viewer on the same page and port.",
+            "The page is served on 127.0.0.1, so any other device needs a share.",
+            "<i>Scene push:</i> lookdev, not an export -- no export tasks or "
+            "checks. To check an export, push the GLB it wrote from File on "
+            "Disk.",
+            "Closed the tab? <b>Open Preview Page</b> in the header menu "
+            "brings it back without a push.",
         ],
     }
 
@@ -240,12 +228,16 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         self._engine = kwargs.get("engine", None)
         self._host_bridge = None
         self._status = None
-        #: Counts stops, so a share's wait that a stop ended ends quietly; the
-        #: share still opening, if any, is _clear_share_wait's to describe.
-        self._share_stops = 0
-        self._clear_share_wait()
+        #: Every scene this panel publishes, the first the panel's own bridge
+        #: (:class:`_Scene`); the Source Files row's + adds the rest.
+        self._scenes: List[_Scene] = []
+        self._scene_serial = 0
         self._initial_source_file: str = kwargs.get("source_file", "") or ""
         super().__init__(switchboard)
+        self._scenes.append(_Scene(self.bridge))
+        # The added scenes' servers are this panel's alone: they go with it.
+        scenes = self._scenes
+        self.ui.destroyed.connect(lambda *_: [s.bridge.stop() for s in scenes[1:]])
         # By LABEL, not position. The list is host-dependent -- File on Disk is
         # entry 0 without a host and entry 3 with one -- so a stored index means
         # a different source in each, and the host's scopes arrive only after
@@ -259,11 +251,25 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         KindFactory.connect_changed(
             self._param_widgets["LOCOMOTION"], self._apply_locomotion
         )
+        # The rows follow what the push will build (_relevant_param_keys): the
+        # files chosen, whether a scene's images ride, and the container the
+        # KTX2-only rows need. A refresh that changes no row is a no-op.
+        for key in (
+            "SOURCE_FILE",
+            "EMBED_TEXTURES",
+            "TEXTURE_FILE_TYPE",
+        ):
+            KindFactory.connect_changed(
+                self._param_widgets[key],
+                lambda _value: self._refresh_param_visibility(),
+            )
         self._build_sharing_row()
+        self._build_scene_controls()
         KindFactory.connect_changed(
             self._param_widgets["SHARE_PRIVATE"], self._private_changed
         )
         self._adopt_host_deliverer()
+        self._restore_sharing()  # after: a live share's row wins
         self._build_status_row()
         if self._initial_source_file:
             self.set_source_file(self._initial_source_file)
@@ -378,13 +384,14 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         re-export: the running server takes it now, and the deliverer keeps it
         for every later publish, which re-applies it.
         """
-        deliverer = self._deliverer()
-        if deliverer is None:
-            return
-        deliverer.locomotion = bool(on)
-        server = getattr(deliverer, "server", None)
-        if server is not None:
-            server.locomotion = bool(on)
+        added = [scene.bridge.deliverer for scene in getattr(self, "_scenes", [])[1:]]
+        for deliverer in [self._deliverer(), *added]:
+            if deliverer is None:
+                continue
+            deliverer.locomotion = bool(on)
+            server = getattr(deliverer, "server", None)
+            if server is not None:
+                server.locomotion = bool(on)
 
     def _deliverer(self):
         """The one deliverer this panel's pushes land on, whatever the source.
@@ -426,7 +433,8 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         The host scopes come off the SHARED spec rather than a list written
         here: scope is the same control every other hand-off bridge offers, so
         reading the spec means this panel's vocabulary cannot fork from theirs.
-        File on Disk is appended last. The combo persists by label, so neither
+        File on Disk is appended last -- alone without a host, where the combo
+        hides (one entry is no choice). The combo persists by label, so neither
         the order nor a host's presence changes what a stored choice means.
         """
         entries: List[Tuple[str, str]] = []
@@ -475,19 +483,52 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         return pair[0] if pair else FILE_SOURCE
 
     def _relevant_param_keys(self) -> Optional[set]:
-        """Which rows the active source actually answers.
+        """Which rows the push the panel would make now actually reads.
 
         Explicit rather than file-driven: this panel renders no templates, and
         visibility must never depend on the absence of a file in the package
         dir. A file source exports nothing, so the export rows are not merely
-        unused -- they would be lying.
+        unused -- they would be lying. The same holds a level down: no texture
+        row is read by a push that re-encodes no image, and KTX2 RDO means
+        nothing without a KTX2 container.
         """
+        # Only the rows built so far: visibility is asked during construction.
+        values = self.collect_param_values()
         keys = set(self.params_module.PARAMS)
+        if not self._texture_pass_runs(values):
+            keys -= _params.TEXTURE_KEYS
+        elif not self._encodes_ktx2(self._glb_options(values)):
+            keys -= _params.KTX2_KEYS
         if self._active_source() == FILE_SOURCE:
-            # The lighting recipe rides the scene sidecar, which a file push
-            # never builds -- a row there would change nothing.
-            return keys - _params.EXPORT_KEYS - _params.LIGHTING_KEYS
+            return keys - _params.EXPORT_KEYS
         return keys - _params.FILE_KEYS
+
+    def _texture_pass_runs(self, values: Dict[str, Any]) -> bool:
+        """Whether a push of the active source with *values* re-encodes an
+        image -- the work the texture rows set.
+
+        A scope's images ride its export only with Include Textures on. A file
+        source re-encodes only an FBX among its files: a GLB is published as
+        authored, and an empty field shows no texture row -- the rows come
+        with the FBX that reads them, and a push gates on the files it was
+        actually handed (:meth:`b000` resolves them first).
+        """
+        if self._active_source() != FILE_SOURCE:
+            return bool(values.get("EMBED_TEXTURES", True))
+        paths = list(values.get("SOURCE_FILE") or [])
+        for scene in getattr(self, "_scenes", [])[1:]:
+            paths += self._row_paths(scene.row[1])
+        return any(
+            Path(path).suffix.lower() != _params.AUTHORED_EXTENSION for path in paths
+        )
+
+    @staticmethod
+    def _encodes_ktx2(glb_options: Dict[str, Any]) -> bool:
+        """Whether *glb_options* resolve to the KTX2 container -- read the way
+        the push reads them (``ExportRun.for_glb``), so both KTX2 entries,
+        alone and with its twin, answer yes and nothing else does."""
+        run, _notes = ptk.ExportRun.for_glb(glb_options)
+        return run.texture_file_type == "ktx2"
 
     # ------------------------------------------------------------------ status row
     def _build_status_row(self) -> None:
@@ -519,10 +560,31 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             self._refresh_status()
 
     def _status_text(self) -> str:
-        """One line describing the live preview, for the footer."""
-        server = self._server()
+        """One line describing the live preview -- every scene's, in order."""
+        parts = [self._scene_status(scene) for scene in self._scenes]
+        if len(parts) == 1:
+            return parts[0]
+        return " | ".join(f"Scene {i}: {part}" for i, part in enumerate(parts, 1))
+
+    def _unreachable_scenes(self) -> List[_Scene]:
+        """Scenes shared at a link whose last check found it closed to guests."""
+        return [
+            scene
+            for scene in self._scenes
+            if scene.reach is not None
+            and not scene.reach.get("ok")
+            and scene.share_info() is not None
+        ]
+
+    def _scene_status(self, scene: _Scene) -> str:
+        server = scene.server
+        # A Sharing row that is on with no link up and none opening -- a
+        # remembered row before the first push, a share that dropped -- is
+        # armed: the next push brings the link up, and the footer says so.
+        armed = self._sharing_choice() != "off" and not scene.pending
         if server is None or not getattr(server, "url", ""):
-            return "No preview server running."
+            note = " · shares with the first push" if armed else ""
+            return f"No preview server running{note}."
         try:
             # Not manifest(): that reads the OpenXR runtime from the registry,
             # every time -- and the footer re-reads this every few seconds.
@@ -535,8 +597,12 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         if share:
             guests = share["guests"]
             text += f" · shared at {share['url']} ({guests} guest{'s' * (guests != 1)})"
-        elif self._share_step is not None:
-            text += f" · sharing once {self._share_step.label} is enabled"
+            if scene.reach is not None and not scene.reach.get("ok"):
+                text += " -- NOT reachable from outside"
+        elif scene.step is not None:
+            text += f" · sharing once {scene.step.label} is enabled"
+        elif armed:
+            text += " · shares with the next push"
         return text
 
     def _refresh_status(self) -> None:
@@ -544,6 +610,11 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         if self._status is not None:
             try:
                 self._status.update()
+                # Red while a link is up that no one else can open; the
+                # update above clears it otherwise.
+                if self._unreachable_scenes():
+                    footer = self.ui.footer
+                    footer.setStatusText(footer.statusText(), "error")
             except RuntimeError:  # the widget went away under us
                 pass
 
@@ -567,15 +638,180 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         return None
 
     def stop_server(self) -> None:
-        """Stop serving and release the port -- ending any share."""
-        server = self._server()
-        if server is None:
+        """Stop serving and release the port -- every scene's -- ending any share."""
+        running = [scene for scene in self._scenes if scene.server is not None]
+        if not running:
             self.panel_log("No preview server is running.", "warning")
             return
-        self._end_pending_share()  # the stop ends the share too
-        server.stop()
-        self.panel_log("Preview server stopped; the port is released.")
+        for scene in running:
+            scene.end_wait()  # the stop ends the share too
+            scene.server.stop()
+        if len(running) == 1:
+            self.panel_log("Preview server stopped; the port is released.")
+        else:
+            self.panel_log(
+                f"{len(running)} preview servers stopped; their ports are released."
+            )
         self._refresh_status()
+
+    # ------------------------------------------------------------------ scenes
+    #: The Source Files row's + : what it adds.
+    ADD_SCENE_TIP = (
+        "Add a scene: another set of files with its own page, its own server "
+        "and -- while Sharing is on -- its own link, all live at once. Push "
+        "publishes every scene; the rows above it apply to them all."
+    )
+
+    def _build_scene_controls(self) -> None:
+        """The + on the Source Files row, which adds a scene below it."""
+        from qtpy import QtWidgets
+
+        row = self._param_rows.get("SOURCE_FILE")
+        if row is None or row.layout() is None:
+            return
+        button = QtWidgets.QPushButton("+", row)
+        button.setObjectName("btn_add_scene")
+        button.setFixedSize(19, 19)
+        button.setToolTip(self.ADD_SCENE_TIP)
+        button.clicked.connect(lambda *_: self.add_scene())
+        row.layout().addWidget(button)
+        self._add_scene_button = button
+
+    def add_scene(self, paths: Optional[List[str]] = None) -> _Scene:
+        """Another scene: a Source Files row of its own under the last one,
+        published by its own server -- its own page, port and share link.
+
+        Parameters:
+            paths: Files to fill its row with; empty asks nothing until a
+                push (an empty added scene is left out of it).
+
+        Returns:
+            The scene.
+        """
+        from qtpy import QtWidgets
+        from uitk.managers.window_height import WindowHeight
+
+        spec = self.params_module.PARAMS["SOURCE_FILE"]
+        group = self._param_group
+        container = QtWidgets.QWidget(group)
+        hbox = QtWidgets.QHBoxLayout(container)
+        hbox.setContentsMargins(0, 0, 0, 0)
+        hbox.setSpacing(2)
+        label = QtWidgets.QLabel("", container)
+        label.setMinimumWidth(self.LABEL_MIN_WIDTH)
+        label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        field = KindFactory.make_widget(spec, container)
+        self._scene_serial += 1
+        field.setObjectName(f"param_scene_{self._scene_serial}")
+        field.setToolTip(self.format_param_tooltip(spec))
+        # A hand-off, like the first row's: never restored from last session.
+        field.restore_state = False
+        remove = QtWidgets.QPushButton("−", container)
+        remove.setObjectName(f"btn_remove_scene_{self._scene_serial}")
+        remove.setFixedSize(19, 19)
+        remove.setToolTip("Remove this scene: its page stops and its link closes.")
+        hbox.addWidget(label)
+        hbox.addWidget(field, 1)
+        hbox.addWidget(remove)
+
+        layout = group.layout()
+        anchor = (
+            self._scenes[-1].row[0]
+            if len(self._scenes) > 1
+            else self._param_rows["SOURCE_FILE"]
+        )
+        layout.insertWidget(layout.indexOf(anchor) + 1, container)
+
+        bridge = ptk.FilePreviewBridge()
+        # An INSTANCE deliverer: a server of its own, apart from the first
+        # scene's (the class's -- or the host's, adopted).
+        bridge.deliverer = ptk.PreviewDeliverer(
+            title="Preview",
+            locomotion=bool(KindFactory.read_value(self._param_widgets["LOCOMOTION"])),
+        )
+        scene = _Scene(bridge, row=(container, field, label))
+        self._scenes.append(scene)
+        remove.clicked.connect(lambda *_: self.remove_scene(scene))
+        KindFactory.connect_changed(
+            field, lambda _value: self._refresh_param_visibility()
+        )
+        if paths:
+            KindFactory.set_value(field, [str(path) for path in paths])
+        self._renumber_scenes()
+        self._sync_scene_rows()
+        self._refresh_status()
+        WindowHeight.fit_host_later(group)
+        return scene
+
+    def remove_scene(self, scene: _Scene) -> None:
+        """Take an added scene away: its server stops, and its link with it."""
+        from uitk.managers.window_height import WindowHeight
+
+        if scene not in self._scenes[1:]:
+            return
+        tag = self._tag(scene)
+        shared = scene.share_info() is not None
+        scene.end_wait()
+        if scene.server is not None:
+            scene.server.stop()
+        self._scenes.remove(scene)
+        container = scene.row[0]
+        container.setParent(None)
+        container.deleteLater()
+        self._renumber_scenes()
+        self.panel_log(
+            f"{tag}removed{' -- its link no longer opens' if shared else ''}."
+        )
+        self._refresh_param_visibility()
+        self._refresh_status()
+        WindowHeight.fit_host_later(self._param_group)
+
+    def _renumber_scenes(self) -> None:
+        """Scene N labels, in order; the first row is Source Files when alone."""
+        first = self._param_labels.get("SOURCE_FILE")
+        if first is not None:
+            spec = self.params_module.PARAMS["SOURCE_FILE"]
+            alone = len(self._scenes) < 2
+            first.setText(f"{spec.display_label}:" if alone else "Scene 1:")
+        for number, scene in enumerate(self._scenes[1:], 2):
+            scene.row[2].setText(f"Scene {number}:")
+
+    def _sync_scene_rows(self) -> None:
+        """Added scene rows show exactly when the Source Files row does --
+        for the file source, with its section unfolded."""
+        from uitk.managers.field_visibility import FieldVisibility
+
+        first = self._param_rows.get("SOURCE_FILE")
+        shown = first is not None and not first.isHidden()
+        for scene in self._scenes[1:]:
+            FieldVisibility.set_widget_visible(scene.row[0], shown)
+
+    def _refresh_param_visibility(self) -> None:
+        super()._refresh_param_visibility()
+        if getattr(self, "_scenes", None):
+            self._sync_scene_rows()
+
+    def _fold_section(self, section: str, folded: bool) -> None:
+        super()._fold_section(section, folded)
+        self._sync_scene_rows()
+
+    def _added_scene_files(self) -> List[Tuple[_Scene, List[str]]]:
+        """``(scene, files)`` for each added scene a push publishes: one with
+        files, all of them on disk -- an empty row is left out, and one naming
+        a missing file is said and left out."""
+        chosen = []
+        for scene in self._scenes[1:]:
+            paths = self._row_paths(scene.row[1])
+            if paths and not self._missing_files(paths, self._tag(scene)):
+                chosen.append((scene, paths))
+        return chosen
+
+    def _tag(self, scene: _Scene) -> str:
+        """``"Scene N: "`` before a scene's lines while there are several;
+        ``""`` for the one scene of a panel without added ones."""
+        if len(self._scenes) < 2 or scene not in self._scenes:
+            return ""
+        return f"Scene {self._scenes.index(scene) + 1}: "
 
     # ------------------------------------------------------------------ sharing
     #: The Sharing row's option-box actions: ``(label, objectName, tooltip,
@@ -592,16 +828,16 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         (
             "Copy Link",
             "btn_copy_share_link",
-            "Copy the live link to the clipboard -- bringing it up first when "
-            "the row is on and it is not up.",
+            "Copy the live link to the clipboard -- every scene's, one per line "
+            "-- bringing it up first when the row is on and it is not up.",
             "copy_share_link",
         ),
         (
             "Test Link",
             "btn_test_share_link",
-            "Ask the live link for the page from this machine, the way a "
-            "guest's browser does, and say whether it answers -- and how fast. "
-            "A brand-new link can take a few seconds to reach everyone.",
+            "Ask the live link for the page the way a guest's browser does -- "
+            "through public DNS, to the provider's public door -- and say whether "
+            "it answers, and how fast. A link no one else can open is said in red.",
             "check_share_link",
         ),
         (
@@ -622,12 +858,32 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         ),
     )
 
+    #: Custom-store keys (``StateManager.save_custom``): whether the Sharing
+    #: row is remembered across sessions, and the row it remembers. The
+    #: window's store, so every host's panel -- and the standalone one --
+    #: shares the one answer.
+    _REMEMBER_SHARING_KEY = "remember_sharing"
+    _SHARING_KEY = "sharing"
+
+    #: How long a link that does not open from outside is checked again, and
+    #: how often. A new Tailscale Funnel name reached public DNS 5.5 minutes
+    #: after its share began on one run, and on two others was not published
+    #: within 8 and 25 (ts.net's own authoritative servers said NXDOMAIN;
+    #: measured 2026-10-15, Tailscale 1.102.2); it leaves within a minute of
+    #: the share ending, so every Funnel share opens that way. A Cloudflare
+    #: quick tunnel's name answers in 6-18 s.
+    RECHECK_FOR_S = 900.0
+    RECHECK_MS = 15000
+
     def _build_sharing_row(self) -> None:
         """The Sharing row as the switch, with its actions on its option box.
 
-        Not restored from the last session: a link is a door to this machine,
+        Not restored by the widget store: a link is a door to this machine,
         and a session opens it only when asked -- a switch left on yesterday
         would otherwise share the first push of the next day unprompted.
+        **Remember Sharing** on the option box keeps the row anyway, as a
+        preference (:meth:`_restore_sharing`): it comes back as left and the
+        link opens with the first push, never with the panel.
         """
         row = self._param_widgets["SHARE_VIA"]
         row.restore_state = False
@@ -639,7 +895,57 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 "QPushButton", setText=text, setObjectName=name, setToolTip=tip
             )
             button.clicked.connect(getattr(self, handler))
+        menu.add("QSeparator")
+        remember = menu.add(
+            "QCheckBox",
+            setText="Remember Sharing",
+            setObjectName="chk_remember_sharing",
+            setToolTip="Keep the Sharing row across sessions, here and in every "
+            "app that opens this panel. It comes back as you left it and the "
+            "link opens with the first push (or Share Now), never when the "
+            "panel opens. Private Link is always kept.",
+        )
+        # Its own store, read now: the widget store restores a menu's items
+        # only once the menu registers, after this panel is built.
+        remember.restore_state = False
+        remember.setChecked(self._remember_sharing())
+        remember.toggled.connect(self._remember_sharing_changed)
         KindFactory.connect_changed(row, self._sharing_changed)
+
+    def _state(self):
+        """The window's state store (widget values and custom keys), or
+        ``None`` on a UI without one."""
+        return getattr(self.ui, "state", None)
+
+    def _remember_sharing(self) -> bool:
+        store = self._state()
+        return bool(store and store.load_custom(self._REMEMBER_SHARING_KEY, False))
+
+    def _remember_sharing_changed(self, on: bool) -> None:
+        """Remember Sharing: keep the row from now on, or forget it."""
+        store = self._state()
+        if store is None:
+            return
+        store.save_custom(self._REMEMBER_SHARING_KEY, bool(on))
+        store.save_custom(self._SHARING_KEY, self._sharing_choice() if on else "off")
+        self._refresh_status()
+
+    def _restore_sharing(self) -> None:
+        """Put back the remembered row -- with its change silenced, so the link
+        waits for a push (:meth:`_share_after_push`) or Share Now. A row a live
+        share already set (:meth:`_show_live_share`) wins."""
+        if not self._remember_sharing() or self._sharing_choice() != "off":
+            return
+        choice = self._state().load_custom(self._SHARING_KEY, "off") or "off"
+        if choice == "off":
+            return
+        row = self._param_widgets["SHARE_VIA"]
+        was_blocked = row.blockSignals(True)
+        try:
+            KindFactory.set_value(row, choice)
+        finally:
+            row.blockSignals(was_blocked)
+        self._refresh_status()
 
     def _sharing_choice(self) -> str:
         """The Sharing row: ``"off"``, ``"auto"`` or a provider."""
@@ -649,12 +955,23 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         """The Private Link row: a fresh random link per share."""
         return bool(KindFactory.read_value(self._param_widgets["SHARE_PRIVATE"]))
 
+    def _sharing_scenes(self) -> List[_Scene]:
+        """The scenes the row shares now: the first always -- a link can go
+        out before its first model -- and each added one once it serves; an
+        added scene not pushed yet shares with its first push."""
+        return [
+            scene
+            for index, scene in enumerate(self._scenes)
+            if index == 0 or scene.server is not None
+        ]
+
     def _private_changed(self, _on) -> None:
         """The Private Link row, applied at once: a share up -- or asked for
         -- is shared again the new way, with a new link."""
         choice = self._sharing_choice()
         if choice != "off":
-            self._share(choice, interactive=True)
+            for scene in self._sharing_scenes():
+                self._share(choice, interactive=True, scene=scene)
 
     def _show_live_share(self) -> None:
         """A share already up shows on the row, never Off beside a live link.
@@ -673,11 +990,15 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             self._write_param("SHARE_VIA", info["provider"])
 
     def _sharing_changed(self, choice) -> None:
-        """The row, applied at once: a provider shares now, Off stops."""
+        """The row, applied at once: a provider shares now, Off stops -- and
+        a remembered row keeps the change."""
+        if self._remember_sharing():
+            self._state().save_custom(self._SHARING_KEY, choice or "off")
         if (choice or "off") == "off":
             self._unshare(announce_idle=False)
         else:
-            self._share(choice, interactive=True)
+            for scene in self._sharing_scenes():
+                self._share(choice, interactive=True, scene=scene)
 
     def share_link(self) -> None:
         """Share Now: bring the link up without a push, or retry a failed one.
@@ -689,50 +1010,83 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         if choice == "off":
             self._write_param("SHARE_VIA", "auto")
         else:
-            self._share(choice, interactive=True)
+            for scene in self._sharing_scenes():
+                self._share(choice, interactive=True, scene=scene)
 
     def copy_share_link(self) -> None:
-        """Copy Link: the live link to the clipboard, and to the log.
+        """Copy Link: the live links to the clipboard -- one per line, scene
+        by scene -- and to the log.
 
-        With the row on and its link not up -- a share that failed, or one
-        still waiting on a step -- it shares instead, which copies the link as
-        it arrives or says what it waits on. Only Off has nothing to copy.
+        With the row on and a scene's link not up -- a share that failed, or
+        one still waiting on a step -- that scene shares instead, which copies
+        the link as it arrives or says what it waits on. Only Off has nothing
+        to copy.
         """
-        server = self._server()
-        info = server.share_info() if server is not None else None
-        if info is not None:
-            self.panel_log(f"Share link: {info['url']}{self._copy(info['url'])}.")
-            return
+        live = [
+            (scene, info)
+            for scene in self._scenes
+            for info in (scene.share_info(),)
+            if info is not None
+        ]
         choice = self._sharing_choice()
+        if live:
+            copied = self._copy("\n".join(info["url"] for _scene, info in live))
+            for index, (scene, info) in enumerate(live, 1):
+                note = copied if index == len(live) else ""
+                link = self._launch_link(info["url"])
+                self.panel_log(f"{self._tag(scene)}Share link: {link}{note}.")
+            if choice != "off":
+                for scene in self._sharing_scenes():
+                    if scene.share_info() is None:
+                        self._share(choice, interactive=True, scene=scene)
+            return
         if choice == "off":
             self.panel_log(
                 "Nothing is being shared -- pick a provider in the Sharing row.",
                 "warning",
             )
             return
-        self._share(choice, interactive=True)
+        for scene in self._sharing_scenes():
+            self._share(choice, interactive=True, scene=scene)
 
     def copy_scene_link(self) -> None:
         """Copy Scene Link: where the published scene is described as data.
 
         The share's ``scene.json`` -- what to send a developer whose agent or
         tools compare this scene with their own -- or, while nothing is
-        shared, this machine's, for a reader on it. It never shares by itself:
-        a link to hand out is Copy Link's to bring up.
+        shared, this machine's, for a reader on it. Every served scene's, one
+        per line. It never shares by itself: a link to hand out is Copy
+        Link's to bring up.
         """
-        server = self._serving()
-        if server is None:
+        served = [
+            scene
+            for scene in self._scenes
+            if scene.server is not None and getattr(scene.server, "url", None)
+        ]
+        if not served:
+            self._serving()  # says to push once
             return
-        info = server.share_info()
-        url = info["scene_url"] if info is not None else None
-        if url:
-            self.panel_log(f"Scene as data: {url}{self._copy(url)}.")
-            return
-        url = server.scene_url
-        self.panel_log(
-            f"Scene as data, on this machine only: {url}{self._copy(url)}. "
-            "Share to send it to someone else."
-        )
+        lines = []
+        for scene in served:
+            info = scene.server.share_info()
+            url = info["scene_url"] if info is not None else None
+            lines.append((scene, url or scene.server.scene_url, bool(url)))
+        copied = self._copy("\n".join(url for _scene, url, _shared in lines))
+        for index, (scene, url, shared) in enumerate(lines, 1):
+            note = copied if index == len(lines) else ""
+            if shared:
+                self.panel_log(f"{self._tag(scene)}Scene as data: {url}{note}.")
+            else:
+                self.panel_log(
+                    f"{self._tag(scene)}Scene as data, on this machine only: "
+                    f"{url}{note}. Share to send it to someone else."
+                )
+
+    @staticmethod
+    def _launch_link(url: str) -> str:
+        """*url* followed by a [copy] link -- every page address the log gives
+        (the log pane's ``copy`` action puts it on the clipboard)."""
+        return f"{url} {ptk.LoggingMixin.log_link('[copy]', 'copy', text=url)}"
 
     @staticmethod
     def _copy(text: str) -> str:
@@ -745,8 +1099,8 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         except Exception:  # noqa: BLE001 - no clipboard is not a failed share
             return ""
 
-    def _share_after_push(self) -> None:
-        """With sharing on, a push keeps the link up and says where it is.
+    def _share_after_push(self, scene: _Scene) -> None:
+        """With sharing on, a push keeps *scene*'s link up and says where it is.
 
         The same link each time -- a guest's page picks the push up by itself,
         and a new link per push would strand everyone holding the last one. A
@@ -757,23 +1111,28 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         choice = self._sharing_choice()
         if choice == "off":
             return
-        server = self._server()
-        info = server.share_info() if server is not None else None
+        info = scene.share_info()
         if info is not None:
             # The guest tabs open right now (polled within the viewer timeout)
             # -- a push resets nothing, so a bare "0" only read as stuck.
             guests = info["guests"]
             watching = (
-                f"({guests} guest{'s' * (guests != 1)} watching)"
+                f"{guests} guest{'s' * (guests != 1)} watching"
                 if guests
-                else "-- no guest has it open right now"
+                else "no guest has it open right now"
             )
-            self.panel_log(f"Live at {info['url']} for guests too {watching}.")
+            self.panel_log(
+                f"{self._tag(scene)}Share link: {self._launch_link(info['url'])} "
+                f"-- {watching}."
+            )
             return
-        self._share(choice, interactive=False)
+        self._share(choice, interactive=False, scene=scene)
 
-    def _share(self, choice: str, interactive: bool) -> None:
-        """Share the preview through *choice*, and report the link.
+    def _share(
+        self, choice: str, interactive: bool, scene: Optional[_Scene] = None
+    ) -> None:
+        """Share *scene* (the first by default) through *choice*, and report
+        the link.
 
         The provider is settled first, the way a KTX2 push settles its
         encoder: a missing tunnel client is OFFERED (cloudflared downloads),
@@ -783,9 +1142,10 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         line the next step, in a dialog when *interactive*; the client's own
         output follows in the log. A share already up through a fitting
         provider is reported, not restarted; one through another provider is
-        replaced.
+        replaced. Each scene is its own share: Tailscale gives each its own
+        HTTPS port, Cloudflare its own name.
 
-        The share runs off the UI thread (:class:`_Worker`): a provider takes
+        The share runs off the UI thread (:class:`uitk.BackgroundTask`): a provider takes
         seconds to bring a link up, and a quick tunnel's new name 6-18 s more
         to resolve, which on the UI thread froze the panel -- and the DCC
         hosting it -- for the whole wait. A provider that stops on a one-time
@@ -798,46 +1158,50 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         Private Link changed since the wait began, which would otherwise bring
         up the other kind of link once the step is taken.
         """
+        scene = scene or self._scenes[0]
+        tag = self._tag(scene)
         private = self._share_private()
-        if self._share_pending:
-            if self._share_step is None:
+        if scene.pending:
+            if scene.step is None:
                 if interactive:
-                    self.panel_log("A link is already being opened.", "warning")
+                    self.panel_log(f"{tag}A link is already being opened.", "warning")
                 return
-            if (
-                choice in (self._share_choice, self._share_provider)
-                and private == self._share_private_wait
-            ):
-                self._offer_step(self._share_step, interactive, waiting=True)
+            if choice in (scene.choice, scene.provider) and private == scene.private:
+                self._offer_step(scene.step, interactive, waiting=True, scene=scene)
                 return
             # Another provider, or the other kind of link: that wait ends.
-            self._unshare(announce_idle=False)
-        server = self._server()
-        info = server.share_info() if server is not None else None
+            self._unshare(announce_idle=False, scenes=[scene])
+        info = scene.share_info()
         if info is not None:
             fits = choice == "auto" or info["provider"] == choice
             if fits and bool(info.get("private")) == private:
-                self.panel_log(f"Already shared at {info['url']}.")
+                link = self._launch_link(info["url"])
+                self.panel_log(f"{tag}Already shared at {link}.")
                 return
-            server.unshare()
+            scene.server.unshare()
         provider = ptk.ShareTunnel.settle(
             choice,
             prompt=self.sb.confirm if interactive else (lambda _question: False),
-            refused=lambda text: self._refused(f"Not shared: {text}", interactive),
+            refused=lambda text: self._refused(f"{tag}Not shared: {text}", interactive),
             installed=lambda path: self.sb.message_box(
                 f"Installed the tunnel client: <hl>{path}</hl>"
             ),
         )
         if provider is None:
             return
-        self._share_pending = True
-        self._share_choice, self._share_provider = choice, provider
-        self._share_private_wait = private
-        stops = self._share_stops
+        scene.pending = True
+        scene.choice, scene.provider = choice, provider
+        scene.private = private
+        stops = scene.stops
         reported = {}  # the provider's step, set on the share's own thread
-        job = _Worker(
-            lambda: self.bridge.share(
+        # The stable alias (PYTHONTK_PREVIEW_ALIAS) is the first scene's: a
+        # second share writing it would take it from the first, whose stop
+        # would then say the share ended while this one is live.
+        alias = None if scene is self._scenes[0] else False
+        job = BackgroundTask(
+            lambda: scene.bridge.share(
                 provider=provider,
+                alias=alias,
                 on_step=lambda step: reported.setdefault("step", step),
                 private=private,
             ),
@@ -846,108 +1210,238 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         # The tick pumps the host's loop by the host's own input policy -- a
         # DCC admits no clicks mid-slot -- so the panel repaints and the host
         # stays responsive without a raw processEvents bypassing that policy.
-        with self.sb.progress(text="Sharing: opening the link…") as tick:
+        with self.sb.progress(text=f"{tag}Sharing: opening the link…") as tick:
             while not job.done and "step" not in reported:
                 tick()
                 job.wait(0.05)
         if job.done:
-            self._share_done(job, stops, interactive, waited=False)
+            self._share_done(scene, job, stops, interactive, waited=False)
             return
-        self._share_step = reported["step"]
+        scene.step = reported["step"]
         self._refresh_status()
-        self._offer_step(self._share_step, interactive, waiting=True)
+        self._offer_step(scene.step, interactive, waiting=True, scene=scene)
         job.when_done(
-            self.ui, lambda: self._share_done(job, stops, interactive, waited=True)
+            self.ui,
+            lambda: self._share_done(scene, job, stops, interactive, waited=True),
         )
 
-    def _share_done(self, job, stops: int, interactive: bool, waited: bool) -> None:
+    def _share_done(
+        self, scene: _Scene, job, stops: int, interactive: bool, waited: bool
+    ) -> None:
         """Report a share's outcome on the UI thread -- at once, or when one
         that *waited* on a step in the background ends.
 
         Silent when a stop ended it (*stops* is the count it began with): the
-        stop has already said so, and a later share may be under way.
+        stop has already said so, and a later share may be under way -- and
+        when its scene was removed meanwhile.
         """
-        if self._share_stops != stops:
+        if scene not in self._scenes or scene.stops != stops:
             return
-        self._clear_share_wait()
+        tag = self._tag(scene)
+        scene.clear_wait()
         self._refresh_status()
         try:
             info = job.result()
         except ptk.ShareTunnel.StepRequired as step:
             if not waited:  # stopped at the step at once: offer it
-                self._offer_step(step, interactive, waiting=False)
+                self._offer_step(step, interactive, waiting=False, scene=scene)
                 return
             # Ran out, or the client stopped waiting: either way, not taken.
             self.panel_log(
-                f"Sharing stopped waiting on {step.label}'s one-time step. "
+                f"{tag}Sharing stopped waiting on {step.label}'s one-time step. "
                 f"Enable it at {step.url}, then Share Now -- or just push again.",
                 "warning",
             )
             return
         except (OSError, RuntimeError) as error:  # incl. TimeoutError
             detail = str(error)
-            self.panel_log(f"Sharing failed:\n{detail}", "error")
+            self.panel_log(f"{tag}Sharing failed:\n{detail}", "error")
             if interactive:
                 self.sb.message_box(detail.splitlines()[0])
             return
+        scene.reach = None  # a new link: unchecked
         copied = self._copy(info["url"])
-        reach = "anyone with it" if info["public"] else "your tailnet only"
+        reach = "anyone with the link" if info["public"] else "your tailnet only"
         self.panel_log(
-            f"Shared, view-only, at {info['url']}{copied}. Opens for "
-            f"{reach}; every push reaches it."
+            f"{tag}Shared at {self._launch_link(info['url'])}{copied}. View-only, "
+            f"open to {reach}; every push updates it."
         )
         if info.get("alias_error"):
             self.panel_log(
-                f"The stable alias was not updated ({info['alias_error']}); "
+                f"{tag}The stable alias was not updated ({info['alias_error']}); "
                 f"send the link above instead.",
                 "warning",
             )
-        self._verify_share()
+        self._verify_share(scene, follow=True)
 
     def check_share_link(self) -> None:
-        """Test Link: whether a guest can reach the share now."""
-        server = self._server()
-        if server is None or server.share_info() is None:
+        """Test Link: whether a guest can reach each share now."""
+        shared = [scene for scene in self._scenes if scene.share_info() is not None]
+        if not shared:
             self.panel_log(
                 "Nothing is being shared -- pick a provider in the Sharing row.",
                 "warning",
             )
             return
-        self._verify_share()
+        for scene in shared:
+            self._verify_share(scene, follow=False)
 
-    def _verify_share(self) -> None:
-        """Ask the live link for its page from this machine -- off the UI
-        thread, a round trip through the provider taking a second or more --
-        and log whether a guest can reach it (:meth:`pythontk.PreviewServer.ping_share`).
+    def _verify_share(self, scene: _Scene, follow: bool) -> None:
+        """Ask *scene*'s live link for its page the way a guest's browser does
+        -- off the UI thread, a round trip through the provider taking a second
+        or more -- and log whether someone else can open it
+        (:meth:`pythontk.PreviewServer.ping_share`: public DNS, then the
+        provider's public door).
 
-        A link the provider reports up can still not answer: its name not yet
-        in every resolver, a tunnel that dropped as it came up, a provider
-        page in its place. Said in the log, never a dialog: the share is up,
-        and a new name is usually seconds from answering.
+        A link the provider reports up can still not open: its name not yet in
+        public DNS (a new Tailscale Funnel name took 5.5 minutes), a tunnel
+        that dropped as it came up, a provider page in its place. Said in the
+        log in red, never a dialog -- and the footer turns red with it -- since
+        the share is up and the cause is usually minutes from clearing; with
+        *follow* (a new link) the panel keeps checking (:meth:`_recheck_share`)
+        and says when it opens. Announced only when asked (Test Link): a new
+        link's own line is already there, and its answer follows in a second.
         """
-        self.panel_log("Checking the link answers…")
-        job = _Worker(self.bridge.ping_share, name="webxr-preview-ping")
+        info = scene.share_info()
+        if info is None:
+            return
+        link = info["tunnel_url"]
+        if not follow:
+            self.panel_log(f"{self._tag(scene)}Checking the link opens from outside…")
+        job = BackgroundTask(scene.bridge.ping_share, name="webxr-preview-ping")
 
         def report() -> None:
-            try:
-                ping = job.result()
-            except Exception as error:  # noqa: BLE001 - a check never fails a share
-                ping = {"ok": False, "error": str(error) or type(error).__name__}
+            ping = self._ping_result(job)
+            if not self._still_shared(scene, link):
+                return  # removed, stopped, or another link by now
+            scene.reach = ping
+            self._refresh_status()
             if ping.get("ok"):
-                self.panel_log(
-                    f"Link checked: a guest can reach it ({ping['ms']:.0f} ms)."
-                )
+                scene.stop_recheck()
+                self._log_reachable(scene, ping)
                 return
-            self.panel_log(
-                f"The link did not answer from here ({ping.get('error')}). A new "
-                "link can take a few more seconds to reach everyone -- Test "
-                "Link asks again.",
-                "warning",
-            )
+            self.panel_log(self._unreachable_text(scene, ping, follow), "critical")
+            if follow:
+                self._recheck_share(scene, link)
 
         job.when_done(self.ui, report)
 
-    def _offer_step(self, step, interactive: bool, waiting: bool) -> None:
+    @staticmethod
+    def _ping_result(job) -> Dict[str, Any]:
+        try:
+            return job.result()
+        except Exception as error:  # noqa: BLE001 - a check never fails a share
+            return {"ok": False, "error": str(error) or type(error).__name__}
+
+    def _still_shared(self, scene: _Scene, link: Optional[str]) -> bool:
+        """Whether *scene* is still shared at *link* -- a check answering after
+        a stop, a new share or a removal has nothing left to say."""
+        if scene not in self._scenes:
+            return False
+        info = scene.share_info()
+        return info is not None and info["tunnel_url"] == link
+
+    def _log_reachable(self, scene: _Scene, ping: Dict[str, Any], now=False) -> None:
+        """A link that opens from outside, said in green."""
+        when = " now" if now else ""
+        route = (
+            ", via public DNS -- the same lookup their browser makes"
+            if ping.get("route") == "public"
+            else ""
+        )
+        text = (
+            f"{self._tag(scene)}Link checked: a guest can{when} reach it "
+            f"({ping.get('ms') or 0:.0f} ms{route})."
+        )
+        if ping.get("verified") is False:
+            text += (
+                " This machine could not verify the link's certificate (its "
+                "store lacks the provider's root); a guest's browser checks it "
+                "with its own."
+            )
+        self.panel_log(text, "success")
+
+    def _unreachable_text(
+        self, scene: _Scene, ping: Dict[str, Any], follow: bool
+    ) -> str:
+        """Why no one else can open *scene*'s link, and what happens next."""
+        error = ping.get("error") or "no answer"
+        url = (scene.share_info() or {}).get("url") or ping.get("url") or "The link"
+        text = (
+            f"{self._tag(scene)}NOT REACHABLE FROM OUTSIDE: {url} did not answer "
+            f"as a guest's browser asks it ({error}). No one else can open it "
+            "right now."
+        )
+        if "public DNS" in error:
+            text += (
+                " A new link's name takes time to reach public DNS: minutes for "
+                "Tailscale Funnel -- sometimes far longer -- every share. For a "
+                "link that opens in seconds, pick Cloudflare quick tunnel in the "
+                "Sharing row."
+            )
+        if follow:
+            minutes = round(self.RECHECK_FOR_S / 60)
+            text += (
+                f" The panel keeps checking for {minutes} minutes and says when "
+                "it opens; Test Link asks now."
+            )
+        else:
+            text += " Test Link asks again."
+        return text
+
+    def _recheck_share(self, scene: _Scene, link: str) -> None:
+        """Check *scene*'s link again every :attr:`RECHECK_MS`, quietly, until it
+        opens (said in green) or :attr:`RECHECK_FOR_S` runs out (said in red).
+        Ends by itself when the share stops, changes or its scene goes."""
+        import time
+
+        scene.stop_recheck()
+        deadline = time.monotonic() + self.RECHECK_FOR_S
+        timer = QtCore.QTimer(self.ui)
+        timer.setInterval(self.RECHECK_MS)
+        running: Dict[str, Any] = {}
+
+        def tick() -> None:
+            if scene.recheck is not timer or not self._still_shared(scene, link):
+                scene.stop_recheck(timer)
+                return
+            job = running.pop("job", None)
+            if job is not None and not job.done:
+                running["job"] = job  # still asking
+                return
+            if job is not None:
+                ping = self._ping_result(job)
+                if ping.get("ok"):
+                    scene.reach = ping
+                    scene.stop_recheck(timer)
+                    self._log_reachable(scene, ping, now=True)
+                    self._refresh_status()
+                    return
+                scene.reach = ping
+                if time.monotonic() > deadline:
+                    scene.stop_recheck(timer)
+                    minutes = round(self.RECHECK_FOR_S / 60)
+                    self.panel_log(
+                        f"{self._tag(scene)}STILL NOT REACHABLE FROM OUTSIDE after "
+                        f"{minutes} minutes ({ping.get('error') or 'no answer'}). "
+                        "Share again (Stop Sharing, then Share Now), or pick "
+                        "another provider in the Sharing row.",
+                        "critical",
+                    )
+                    self._refresh_status()
+                    return
+            running["job"] = BackgroundTask(
+                lambda: scene.bridge.ping_share(attempts=1),
+                name="webxr-preview-recheck",
+            )
+
+        timer.timeout.connect(tick)
+        scene.recheck = timer
+        timer.start()
+
+    def _offer_step(
+        self, step, interactive: bool, waiting: bool, scene: _Scene
+    ) -> None:
         """A provider stopped on a one-time step in a browser -- Tailscale,
         before the tailnet enables Funnel -- offered, never a dead end.
 
@@ -962,8 +1456,8 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             else "then Share Now -- or just push again"
         )
         self.panel_log(
-            f"{step.label} needs a one-time step first: enable it at "
-            f"{step.url} -- {then}.",
+            f"{self._tag(scene)}{step.label} needs a one-time "
+            f"step first: enable it at {step.url} -- {then}.",
             "warning",
         )
         follows = ", and the link follows by itself" if waiting else ""
@@ -984,14 +1478,17 @@ class WebXrPreviewSlots(BridgeSlotsBase):
             self.sb.message_box(text)
 
     def stop_sharing(self) -> None:
-        """Stop Sharing: the row to Off, which takes the link down."""
+        """Stop Sharing: the row to Off, which takes every link down."""
         if self._sharing_choice() != "off":
             self._write_param("SHARE_VIA", "off")  # its change unshares
         else:
             self._unshare()
 
-    def _unshare(self, announce_idle: bool = True) -> None:
-        """Take the link down; the owner's page and server are untouched.
+    def _unshare(
+        self, announce_idle: bool = True, scenes: Optional[List[_Scene]] = None
+    ) -> None:
+        """Take the links of *scenes* (every scene by default) down; the
+        owner's pages and servers are untouched.
 
         Unshares even when nothing reads as shared: a share whose client died
         on its own reads that way while it still holds its guest listener and
@@ -1000,11 +1497,13 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         there was nothing to stop -- right for Stop Sharing pressed, noise for
         the row turned Off.
         """
-        opening = self._end_pending_share()
-        server = self._server()
-        shared = server is not None and server.share_info() is not None
-        if server is not None:
-            server.unshare()
+        shared = opening = False
+        for scene in self._scenes if scenes is None else scenes:
+            opening = scene.end_wait() or opening
+            server = scene.server
+            shared = (server is not None and server.share_info() is not None) or shared
+            if server is not None:
+                server.unshare()
         if shared:
             self.panel_log("Stopped sharing; the link no longer opens.")
         elif opening:
@@ -1012,24 +1511,6 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         elif announce_idle:
             self.panel_log("Nothing is being shared.", "warning")
         self._refresh_status()
-
-    def _end_pending_share(self) -> bool:
-        """Forget a share still opening, which the stop about to run ends
-        (:meth:`_share_done` then stays silent); whether there was one."""
-        opening = self._share_pending
-        self._share_stops += 1
-        self._clear_share_wait()
-        return opening
-
-    def _clear_share_wait(self) -> None:
-        """No share opening: not pending, and no row choice, provider, privacy
-        or step it was opened for (a share waiting on its step is named by
-        these)."""
-        self._share_pending = False
-        self._share_choice: Optional[str] = None
-        self._share_provider: Optional[str] = None
-        self._share_private_wait: Optional[bool] = None
-        self._share_step = None
 
     # ------------------------------------------------------------------ public hand-off
     def set_source_file(self, path: str) -> None:
@@ -1082,8 +1563,19 @@ class WebXrPreviewSlots(BridgeSlotsBase):
 
     def _source_paths(self) -> List[str]:
         """The files that field names, in order; ``[]`` when empty."""
-        row = self._param_widgets.get("SOURCE_FILE")
+        return self._row_paths(self._param_widgets.get("SOURCE_FILE"))
+
+    @staticmethod
+    def _row_paths(row) -> List[str]:
+        """The files a Source Files field names, in order; ``[]`` when empty."""
         return list(KindFactory.read_value(row) or []) if row is not None else []
+
+    def _missing_files(self, paths: List[str], tag: str = "") -> bool:
+        """Whether any of *paths* is not on disk -- each one said."""
+        missing = [path for path in paths if not os.path.isfile(path)]
+        for path in missing:
+            self.panel_log(f"{tag}Source file not found: {path}", "error")
+        return bool(missing)
 
     def _select_source(self, key: str) -> None:
         combo = self.ui.cmb000
@@ -1095,7 +1587,7 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 # the only entry before a host arrives, so selecting it emits
                 # nothing. Unsaved, the host's repopulate would re-apply last
                 # session's scope over a file this call just handed over.
-                state = getattr(self.ui, "state", None)
+                state = self._state()
                 if state is not None:
                     state.save(combo)
                 return
@@ -1125,14 +1617,14 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         doing. A missing tool means *offer the managed install*, never *abort
         and go read a log*.
 
-        Gated on the resolved container, read the way the push will read it
-        (``ExportRun.for_glb``), so both KTX2 entries -- alone and
-        with its twin -- ask and nothing else does: WebP needs no tool, and
-        probing for one the push will not use would ask about a control the
-        user never touched.
+        Gated on the resolved container (:meth:`_encodes_ktx2`), so both KTX2
+        entries ask and nothing else does: WebP needs no tool, and probing for
+        one the push will not use would ask about a control the user never
+        touched. The push asks only when it re-encodes an image at all
+        (:meth:`_texture_pass_runs`) -- a GLB published as authored, or a scene
+        pushed without its textures, needs no encoder whatever the row says.
         """
-        run, _notes = ptk.ExportRun.for_glb(glb_options)
-        if run.texture_file_type != "ktx2":
+        if not self._encodes_ktx2(glb_options):
             return True
         # Declined, or the install failed: the refusal is the fix-shaped
         # message naming the manual install, so it IS the dialog -- and stays
@@ -1147,15 +1639,26 @@ class WebXrPreviewSlots(BridgeSlotsBase):
 
     # ------------------------------------------------------------------ b000 — the push
     def b000(self) -> None:
-        """Build the deliverable for the active source and publish it."""
+        """Build the deliverable for the active source and publish it -- for
+        the file source, every scene's, each on its own page."""
         values = self.collect_param_values()
         source = self._active_source()
+        # The files first: the encoder gate below asks only for a push that
+        # re-encodes an image, and that depends on what is being pushed.
+        added: List[Tuple[_Scene, List[str]]] = []
+        if source == FILE_SOURCE:
+            values["SOURCE_FILE"] = self._chosen_files(values)
+            if not values["SOURCE_FILE"]:
+                return  # dismissed, or refused and already said why
+            added = self._added_scene_files()
 
         # Every row, every push: the panel IS the answer, so an untouched row
         # says "the Scene Exporter's default" rather than leaving the
         # deliverer's own setting in force.
         glb_options = self._glb_options(values)
-        if not self._texture_tool_ready(glb_options):
+        if self._texture_pass_runs(values) and not self._texture_tool_ready(
+            glb_options
+        ):
             return
 
         # An explicit list every push, never None: the checkboxes ARE the
@@ -1165,44 +1668,56 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         # The panel is the answer for the switch too, whatever set it last.
         self._apply_locomotion(values.get("LOCOMOTION", True))
 
+        first = self._scenes[0]
         try:
             if source == FILE_SOURCE:
-                outcome = self._push_file(values, glb_options, scripts)
+                outcome = self._push_file(values["SOURCE_FILE"], glb_options, scripts)
             else:
                 outcome = self._push_scope(source, values, glb_options, scripts)
         except Exception:
             self.bridge.logger.error("Preview raised:\n" + traceback.format_exc())
-            return
+            outcome = None
+        else:
+            if outcome is not None:  # None: the step settled it and said why
+                self._report(*outcome, scene=first)
+                self._share_after_push(first)
+        # Each added scene on its own: one that fails costs only its page.
+        for scene, paths in added:
+            try:
+                outcome = self._push_file(paths, glb_options, scripts, scene=scene)
+            except Exception:
+                self.bridge.logger.error(
+                    f"{self._tag(scene)}preview raised:\n" + traceback.format_exc()
+                )
+                continue
+            self._report(*outcome, scene=scene)
+            self._share_after_push(scene)
 
-        if outcome is None:
-            return  # the step settled the run and has already said why
-        self._report(*outcome)
-        self._share_after_push()
+    def _chosen_files(self, values) -> List[str]:
+        """The files to push -- asked for when the field is empty -- or ``[]``
+        when the run was settled here (dismissed, or a file is missing)."""
+        # A list already: the row reads its field as one (uitk ``files``). An
+        # empty one asks; dismissed, that is [] and there is nothing to say.
+        paths = list(values.get("SOURCE_FILE") or []) or self._prompt_for_source()
+        return [] if self._missing_files(paths) else paths
 
-    def _push_file(self, values, glb_options, scripts):
-        """Push the chosen files -- one, or the parts of one scene. ``None``
-        when the run was settled here."""
-        # A list already: the row reads its field as one (uitk ``files``).
-        paths = list(values.get("SOURCE_FILE") or [])
-        if not paths:
-            paths = self._prompt_for_source()
-            if not paths:
-                return None  # the dialog was dismissed; nothing to say
-        missing = [path for path in paths if not os.path.isfile(path)]
-        if missing:
-            for path in missing:
-                self.panel_log(f"Source file not found: {path}", "error")
-            return None
+    def _push_file(self, paths, glb_options, scripts, scene=None):
+        """Push the chosen files -- one, or the parts of one scene -- through
+        *scene*'s bridge (the first scene's by default).
 
-        with self.sb.progress(text="Preview: publishing…") as tick:
-            result = self.bridge.push(
+        No export params: Include Textures is the host's FBX export switch,
+        and a file's FBX already chose what it embeds.
+        """
+        bridge = scene.bridge if scene is not None else self.bridge
+        tag = self._tag(scene) if scene is not None else ""
+        with self.sb.progress(text=f"{tag}Preview: publishing…") as tick:
+            result = bridge.push(
                 objects=paths,
                 scope=FILE_SOURCE,
                 open_browser="auto",
                 glb_options=glb_options,
                 scripts=scripts,
                 progress=lambda message: tick(text=message),
-                EMBED_TEXTURES=bool(values.get("EMBED_TEXTURES", True)),
             )
         names = ", ".join(os.path.basename(path) for path in paths)
         return result, [
@@ -1211,7 +1726,7 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 if len(paths) > 1
                 else f"Source: {names}"
             ),
-            self._timing_line(self.bridge, result),
+            self._timing_line(bridge, result),
         ]
 
     def _push_scope(self, scope, values, glb_options, scripts):
@@ -1268,12 +1783,24 @@ class WebXrPreviewSlots(BridgeSlotsBase):
         summary = getattr(bridge, "timing_summary", None)
         return summary(result) if callable(summary) else ""
 
-    def _report(self, result: Optional[Dict[str, Any]], extra: List[str]) -> None:
-        """Say what the page is showing now, or why it is not."""
+    def _report(
+        self,
+        result: Optional[Dict[str, Any]],
+        extra: List[str],
+        scene: Optional[_Scene] = None,
+    ) -> None:
+        """Say what *scene*'s page is showing now, or why it is not."""
+        tag = self._tag(scene) if scene is not None else ""
         if not result:
-            self.panel_log("Preview failed — see the log above for details.", "error")
+            self.panel_log(
+                f"{tag}Preview failed — see the log above for details.", "error"
+            )
             return
-        lines = [f"Preview v{result['version']} live at {result['url']}", *extra]
+        lines = [
+            f"{tag}Preview v{result['version']} live at "
+            f"{self._launch_link(result['url'])}",
+            *extra,
+        ]
         for line in lines:
             if line:
                 self.panel_log(line)

@@ -41,6 +41,7 @@ PANEL_CLASSES = [
     ("MarmosetWorkflowUI", "MarmosetWorkflowSlots"),
     ("UnityWorkflowUI", "UnityWorkflowSlots"),
     ("WebXrPreviewUI", "WebXrPreviewSlots"),
+    ("LookMatchUI", "LookMatchSlots"),
 ]
 
 

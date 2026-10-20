@@ -14,7 +14,6 @@ from extapps._panel_launcher import PanelLauncher
 
 class ConverterUI(PanelLauncher):
     STYLE_CLASS = "translucentBgWithBorder"
-    HEADER_BUTTONS = ("menu", "minimize", "hide")
 
 
 # -----------------------------------------------------------------------------

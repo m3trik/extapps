@@ -22,10 +22,17 @@ import urllib.request
 from pathlib import Path
 from unittest import mock
 
+# Offscreen, as test_compositor / test_packer do: on the native platform the
+# clipboard these cases set and read is the desktop's -- a run overwrote the
+# user's, and another process holding it read back as "" (two different
+# clipboard asserts failed on two runs; both pass offscreen).
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
 from qtpy.QtWidgets import QApplication
 
+from uitk.bridge import KindFactory
 from uitk.testing import TestSandbox
 
 # A direct `python test/test_webxr_preview.py` loads no conftest, so the sandbox is
@@ -298,10 +305,34 @@ class TestSourceWiring(_PanelTestCase):
         self.assertFalse(visible & params.FILE_KEYS)
         self.assertTrue(params.EXPORT_KEYS <= visible)
 
+    def test_include_textures_is_a_host_row(self):
+        """A file's textures are whatever its FBX embedded -- the push embeds
+        nothing, so the row would claim a switch it does not have."""
+        self.slots._select_source("file")
+        self.assertNotIn("EMBED_TEXTURES", self.slots._relevant_param_keys())
+        self.slots.engine = _FakeHostBridge
+        self.slots._select_source("selected")
+        self.assertIn("EMBED_TEXTURES", self.slots._relevant_param_keys())
+
+
+class TestSourceComboShowsOnlyAChoice(_PanelTestCase):
+    """Standalone there is one source, so there is no Source combo to read; a
+    host's scopes bring it back, and taking the host away hides it again."""
+
+    def test_standalone_shows_no_source_combo(self):
+        self.assertTrue(self.slots.ui.cmb000.isHidden())
+        self.assertEqual(self.slots._active_source(), "file")
+
+    def test_a_host_brings_the_combo_back_and_its_removal_hides_it(self):
+        self.slots.engine = _FakeHostBridge
+        self.assertFalse(self.slots.ui.cmb000.isHidden())
+        self.slots.engine = None
+        self.assertTrue(self.slots.ui.cmb000.isHidden())
+        self.assertEqual(self.slots._active_source(), "file")
+
 
 class TestGlbRowsMirrorTheExporter(_PanelTestCase):
-    """The Textures and Lighting rows ARE the Scene Exporter's -- nothing to
-    keep in sync.
+    """The Textures rows ARE the Scene Exporter's -- nothing to keep in sync.
 
     The preview used to offer WebP / KTX2 and nothing else, so every push was
     cut to the web ceiling (2048 px) whatever the export was set to.
@@ -326,11 +357,9 @@ class TestGlbRowsMirrorTheExporter(_PanelTestCase):
                 )
 
     def test_the_rows_default_to_the_exporters_defaults(self):
-        """Where the Scene Exporter starts each row (the off state, and the
-        lighting recipe's own level for Baked Reflections), so a fresh preview
-        and a fresh export build the same texture pass and publish the same
-        recipe. Pinned on the registry, not a live panel -- a panel restores
-        its last session."""
+        """Where the Scene Exporter starts each row (the off state), so a
+        fresh preview and a fresh export build the same texture pass. Pinned on
+        the registry, not a live panel -- a panel restores its last session."""
         from extapps.webxr_preview import parameters as params
 
         exporter = ptk.ExportProfile.glb_defaults()
@@ -338,30 +367,76 @@ class TestGlbRowsMirrorTheExporter(_PanelTestCase):
         for key, row in params.GLB_KEYS.items():
             with self.subTest(row=row):
                 self.assertEqual(defaults[key], exporter[row])
+
+    def _texture_rows_shown(self) -> set:
+        """The texture rows on screen now, KTX2 RDO aside (its own case)."""
+        from extapps.webxr_preview import parameters as params
+
+        return {
+            key
+            for key in params.TEXTURE_KEYS - params.KTX2_KEYS
+            if not self.slots._param_rows[key].isHidden()
+        }
+
+    def test_an_fbx_source_shows_the_texture_rows(self):
+        """An FBX is converted, and the texture pass re-encodes what it
+        embedded -- the rows answer it as they answer a scope."""
+        from extapps.webxr_preview import parameters as params
+
+        self.slots.set_source_file("C:/assets/prop.fbx")
         self.assertEqual(
-            defaults["BAKED_REFLECTIONS"], ptk.ExportProfile.baked_reflections_default()
+            self._texture_rows_shown(), params.TEXTURE_KEYS - params.KTX2_KEYS
         )
 
-    def test_the_texture_rows_answer_every_source(self):
-        """Textures are the deliverer's, so a file source shows them too."""
+    def test_an_empty_field_shows_none_until_an_fbx_is_chosen(self):
+        """The standalone panel opens empty, and most files it is handed are
+        finished GLBs: the rows come with the FBX that reads them."""
+        self.slots.set_source_file("C:/assets/prop.fbx")
+        self.slots.set_source_files([])
+        self.assertEqual(self._texture_rows_shown(), set())
+
+    def test_a_glb_only_source_hides_them_as_it_is_typed(self):
+        """A GLB is published as authored: no pass reads a texture row, so
+        none is offered -- re-evaluated as the field changes, with no push."""
+        self.slots.set_source_files(["C:/a/room.glb", "C:/a/props.GLB"])
+        self.assertEqual(self._texture_rows_shown(), set())
+        self.slots.set_source_files(["C:/a/room.glb", "C:/a/prop.fbx"])
+        self.assertTrue(self._texture_rows_shown(), "one FBX part is built")
+
+    def test_a_scene_pushed_without_textures_hides_them(self):
+        """Include Textures off, the scene's export carries no image: the
+        texture pass has nothing to re-encode, so its rows go with it."""
         from extapps.webxr_preview import parameters as params
 
-        textures = set(params.GLB_KEYS) - params.LIGHTING_KEYS
-        self.slots._select_source("file")
-        self.assertTrue(textures <= self.slots._relevant_param_keys())
-
-    def test_the_lighting_rows_answer_a_host_source_only(self):
-        """The recipe rides the scene sidecar, which a file push never builds:
-        a Lighting row there would change nothing, so it is not offered."""
-        from extapps.webxr_preview import parameters as params
-
-        self.assertEqual(params.LIGHTING_KEYS, {"BAKED_REFLECTIONS"})
-        self.assertEqual(params.PARAMS["BAKED_REFLECTIONS"].section, "Lighting")
-        self.slots._select_source("file")
-        self.assertFalse(params.LIGHTING_KEYS & self.slots._relevant_param_keys())
         self.slots.engine = _FakeHostBridge
         self.slots._select_source("selected")
-        self.assertTrue(params.LIGHTING_KEYS <= self.slots._relevant_param_keys())
+        self.slots._write_param("EMBED_TEXTURES", False)
+        self.assertEqual(self._texture_rows_shown(), set())
+        self.slots._write_param("EMBED_TEXTURES", True)
+        self.assertEqual(
+            self._texture_rows_shown(), params.TEXTURE_KEYS - params.KTX2_KEYS
+        )
+
+    def test_ktx2_rdo_shows_only_with_a_ktx2_file_type(self):
+        """As the Scene Exporter shows it: ETC1S / UASTC are KTX2's encodes."""
+        rdo = self.slots._param_rows["UASTC_RDO"]
+        self.slots.set_source_file("C:/assets/prop.fbx")
+        for value, shown in (("", False), ("webp", False), ("ktx2", True)):
+            with self.subTest(texture_file_type=value):
+                self.slots._write_param("TEXTURE_FILE_TYPE", value)
+                self.assertIs(rdo.isHidden(), not shown)
+        self.slots._write_param("TEXTURE_FILE_TYPE", ptk.ExportRun.KTX2_WITH_FALLBACK)
+        self.assertFalse(rdo.isHidden())
+
+    def test_no_row_decides_the_lighting(self):
+        """Baked Reflections retired 2026-10-19: its default, the lighting
+        recipe's own level, was already right, so the preview publishes the
+        recipe as the export does and no Lighting section is built."""
+        from extapps.webxr_preview import parameters as params
+
+        self.assertNotIn("BAKED_REFLECTIONS", params.PARAMS)
+        self.assertNotIn("Lighting", {spec.section for spec in params.PARAMS.values()})
+        self.assertNotIn("BAKED_REFLECTIONS", self.slots._param_widgets)
 
 
 class TestPersistence(_PanelTestCase):
@@ -721,13 +796,70 @@ class TestTextureToolGate(_PanelTestCase):
             self.assertFalse(self.slots._texture_tool_ready(self.KTX2))
         self.assertIn(page, self._pane_links())
 
+    def _fbx(self) -> str:
+        """An FBX on disk -- the source a texture pass runs for. The gate
+        stops before the build, so its bytes are never read."""
+        path = self.temp.path(extension=".fbx")
+        Path(path).write_bytes(b"Kaydara FBX Binary  \x00")
+        return path
+
     def test_a_declined_install_never_reaches_the_server(self):
         error = FileNotFoundError("toktx not found")
-        self.slots.set_source_file(self.glb)
+        self.slots.set_source_file(self._fbx())
         self.slots._write_param("TEXTURE_FILE_TYPE", "ktx2")
         with mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder", side_effect=error):
             self.slots.b000()
         self.assertIsNone(self.slots._deliverer().server)
+
+    def test_a_glb_push_asks_nothing_whatever_the_file_type(self):
+        """A GLB is published as authored, so no texture pass runs and no
+        encoder is needed -- KTX2 left picked from a scene push must not stop
+        a GLB push to offer an install it would never use."""
+        self.slots.set_source_file(self.glb)
+        self.slots._write_param("TEXTURE_FILE_TYPE", "ktx2")
+        with mock.patch(
+            "pythontk.ImgUtils.ensure_ktx2_encoder",
+            side_effect=FileNotFoundError("toktx not found"),
+        ) as ensure:
+            self.slots.b000()
+        ensure.assert_not_called()
+        self.assertEqual(self.answers, [])
+        self.assertIsNotNone(self.slots._deliverer().server)
+
+    def test_a_scene_pushed_without_textures_asks_nothing(self):
+        """No image rides the export, so no pass needs the encoder: the push
+        goes on to the scope (reported empty here) without asking."""
+        _FakeHostBridge.scope_result = []
+        self.slots.engine = _FakeHostBridge
+        self.slots._select_source("selected")
+        self.slots._write_param("TEXTURE_FILE_TYPE", "ktx2")
+        self.slots._write_param("EMBED_TEXTURES", False)
+        logged = self._record_log()
+        with mock.patch(
+            "pythontk.ImgUtils.ensure_ktx2_encoder",
+            side_effect=FileNotFoundError("toktx not found"),
+        ) as ensure:
+            self.slots.b000()
+        ensure.assert_not_called()
+        self.assertIn(self.slots.empty_scope_message("selected"), logged)
+
+    def test_an_empty_field_is_asked_for_before_the_gate(self):
+        """The gate reads what the push will build, so the file is chosen
+        first -- a GLB picked at the prompt asks nothing either."""
+        from uitk import BrowseOption
+
+        self.slots.set_source_file("")
+        self.slots._write_param("TEXTURE_FILE_TYPE", "ktx2")
+        option = self.slots._source_edit().option_box.find_option(BrowseOption)
+        pick = mock.patch.object(
+            option,
+            "browse",
+            side_effect=lambda: self.slots._source_edit().setText(self.glb),
+        )
+        with pick, mock.patch("pythontk.ImgUtils.ensure_ktx2_encoder") as ensure:
+            self.slots.b000()
+        ensure.assert_not_called()
+        self.assertIsNotNone(self.slots._deliverer().server)
 
 
 class TestPushWiring(_PanelTestCase):
@@ -804,7 +936,6 @@ class TestPushWiring(_PanelTestCase):
         deliverer resolves them with the exporters' own methods."""
         self.slots._write_param("TEXTURE_FILE_TYPE", "ktx2")
         self.slots._write_param("OPTIMIZE_TEXTURES", 4096)
-        self.slots._write_param("BAKED_REFLECTIONS", "half")
         self.slots.set_source_file(self.glb)
         self.slots.b000()
         self.assertEqual(
@@ -814,9 +945,16 @@ class TestPushWiring(_PanelTestCase):
                 "optimize_textures": 4096,
                 "secondary_max_size": 0,
                 "uastc_rdo": 0,
-                "baked_reflections": "half",
             },
         )
+
+    def test_a_file_push_carries_no_export_switch(self):
+        """Include Textures is the host's FBX export switch: left off from a
+        scene push, it must not reach a file push, whose FBX already chose."""
+        self.slots._write_param("EMBED_TEXTURES", False)
+        self.slots.set_source_file(self.glb)
+        self.slots.b000()
+        self.assertNotIn("EMBED_TEXTURES", self.sent[0])
 
     def test_open_browser_is_always_auto(self):
         # "auto" reuses a page that can pick the version up -- including one
@@ -1018,7 +1156,7 @@ class TestShareLink(_PanelTestCase):
         again while the share waits for it. The dialog is answered Not Now."""
         self.slots.sb.confirm = lambda *args, **kwargs: False
         self._share(provider="fake-step-then-link")
-        self.assertTrue(self.slots._share_pending, "the share did not wait")
+        self.assertTrue(self.slots._scenes[0].pending, "the share did not wait")
         self.assertIsNone(self.slots._server().share_info())
 
     def test_the_row_offers_every_provider_pythontk_drives(self):
@@ -1066,6 +1204,55 @@ class TestShareLink(_PanelTestCase):
 
         self.assertEqual(reopened._sharing_choice(), "off")
 
+    def _remember(self, slots, on=True):
+        """Tick (or untick) Remember Sharing on *slots*' Sharing option box."""
+        box = slots._param_widgets["SHARE_VIA"].option_box.menu.chk_remember_sharing
+        box.setChecked(on)
+        return box
+
+    def test_remember_sharing_brings_the_row_back_without_opening_a_link(self):
+        """Remembered, the row is a preference: the next session opens on it,
+        and nothing is shared until a push (or Share Now) asks."""
+        self._remember(self.slots)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+        # A new session: no server, as in a fresh host.
+        self.slots._server().stop()
+
+        reopened = self._reopen()
+
+        self.assertEqual(reopened._sharing_choice(), "auto")
+        self.assertTrue(reopened._param_widgets["SHARE_VIA"].isEnabled())
+        self.assertIsNone(reopened._server().share_info(), "shared on open")
+        self.assertFalse(reopened._scenes[0].pending)
+        self.assertIn("shares with the first push", reopened._status_text())
+
+    def test_a_remembered_row_shares_with_the_first_push(self):
+        self._remember(self.slots)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+        self.slots._server().unshare()
+        reopened = self._reopen()
+        reopened.sb.message_box = self.slots.sb.message_box
+        reopened.set_source_file(self.glb)
+        ping = mock.patch.object(
+            reopened.bridge, "ping_share", return_value={"ok": True, "ms": 1.0}
+        )
+        with ping, mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            reopened.b000()
+        self.assertEqual(reopened._server().share_url, _FAKE_LINK)
+
+    def test_the_remember_option_is_itself_remembered_and_off_forgets(self):
+        self._remember(self.slots)
+        reopened = self._reopen()
+        box = reopened._param_widgets["SHARE_VIA"].option_box.menu
+        self.assertTrue(box.chk_remember_sharing.isChecked())
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            reopened._write_param("SHARE_VIA", "auto")
+        reopened._server().unshare()
+        self._remember(reopened, on=False)
+        self.assertEqual(self._reopen()._sharing_choice(), "off")
+
     def test_a_panel_opened_on_a_live_share_shows_it_on_the_row(self):
         """The server outlives the panel: reopened while a share is up, the
         row shows its provider rather than Off beside a live link."""
@@ -1089,7 +1276,7 @@ class TestShareLink(_PanelTestCase):
         self.slots._share("fake", interactive=True)
         self.assertEqual(asked, [], "the first provider's step was offered again")
         self.assertEqual(self.slots._server().share_url, _FAKE_LINK)
-        self.assertFalse(self.slots._share_pending)
+        self.assertFalse(self.slots._scenes[0].pending)
         Path(self.step_taken).touch()  # the old wait's step, taken late
         self._pump_until(lambda: True)
         self.assertEqual(self.slots._server().share_url, _FAKE_LINK)
@@ -1128,7 +1315,7 @@ class TestShareLink(_PanelTestCase):
         self.assertIsNot(
             server._tunnel._process, first, "the dropped share stayed down"
         )
-        self.assertTrue(any("Shared, view-only" in line for line in logged), logged)
+        self.assertTrue(any("Shared at" in line for line in logged), logged)
         self.assertEqual(self.messages, [], "a push put a share in a dialog")
 
     def test_with_sharing_off_a_push_shares_nothing(self):
@@ -1190,7 +1377,7 @@ class TestShareLink(_PanelTestCase):
         self.assertIn(_STEP_PAGE, self._pane_links(), "the step page is not a link")
         Path(self.step_taken).touch()  # enabled, in the browser
         server = self.slots._server()
-        self._pump_until(lambda: not self.slots._share_pending)
+        self._pump_until(lambda: not self.slots._scenes[0].pending)
         self.assertEqual(server.share_url, _FAKE_LINK)
         self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
         self.assertIn(_FAKE_LINK, self._pane_links())
@@ -1203,7 +1390,7 @@ class TestShareLink(_PanelTestCase):
         with mock.patch.object(ptk.ShareTunnel, "_STEP_WAIT", 1.0):
             self._wait_on_the_step()
             logged = self._record_log()
-            self._pump_until(lambda: not self.slots._share_pending, timeout=15)
+            self._pump_until(lambda: not self.slots._scenes[0].pending, timeout=15)
         self.assertTrue(
             any("stopped waiting" in line and _STEP_PAGE in line for line in logged),
             logged,
@@ -1215,7 +1402,7 @@ class TestShareLink(_PanelTestCase):
         self._wait_on_the_step()
         logged = self._record_log()
         self.slots._write_param("SHARE_VIA", "off")
-        self._pump_until(lambda: not self.slots._share_pending, timeout=10)
+        self._pump_until(lambda: not self.slots._scenes[0].pending, timeout=10)
         Path(self.step_taken).touch()  # taken after all: nothing comes up
         self.app.processEvents()
         self.assertIsNone(self.slots._server().share_info())
@@ -1228,7 +1415,7 @@ class TestShareLink(_PanelTestCase):
         logged = self._record_log()
         self.slots.b000()
         self.assertTrue(any(_STEP_PAGE in line for line in logged), logged)
-        self.assertTrue(self.slots._share_pending, "the push dropped the wait")
+        self.assertTrue(self.slots._scenes[0].pending, "the push dropped the wait")
 
     def test_copy_link_with_the_row_on_brings_the_link_up(self):
         """Reported: with the row on and its link down, Copy Link said to
@@ -1253,6 +1440,41 @@ class TestShareLink(_PanelTestCase):
         with urllib.request.urlopen(request, timeout=10) as response:
             self.assertEqual(response.status, 200)
 
+    def test_every_launch_link_is_followed_by_a_copy_link(self):
+        """Asked for: each page address the log gives -- the owner's page and
+        the share link -- carries a [copy] link that puts it on the clipboard.
+        Said once: pythontk's own "Sharing the preview at" stays out of the
+        pane, and a new link's check is not announced before its answer."""
+        from urllib.parse import parse_qs, urlsplit
+
+        self._ping(ms=42.0, route="public")
+        self.slots.set_source_file(self.glb)
+        pane = self.slots.ui.txt000
+        pane.clear()
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+            self._pump_until(lambda: "Link checked" in pane.toPlainText())
+            self.slots.b000()
+        copies = {
+            parse_qs(urlsplit(href).query)["text"][0]: href
+            for href in self._pane_links()
+            if href.startswith("action://copy")
+        }
+        local = self.slots._server().url
+        self.assertEqual(set(copies), {_FAKE_LINK, local})
+
+        text = pane.toPlainText()
+        self.assertEqual(text.count(f"{_FAKE_LINK} [copy]"), 2, text)  # share + push
+        self.assertIn(f"{local} [copy]", text)
+        self.assertNotIn("Sharing the preview at", text)
+        self.assertNotIn("Checking the link", text)
+        self.assertNotIn("stranger", text)
+        self.assertIn("public DNS", text)
+
+        QApplication.clipboard().setText("")
+        pane.anchorClicked.emit(QtCore.QUrl(copies[_FAKE_LINK]))
+        self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+
     def test_a_push_says_who_has_the_link_open_never_a_bare_zero(self):
         """Reported: "(0 watching)" read like a counter stuck at zero. It
         counts the guest tabs open right now -- a push resets nothing -- so
@@ -1262,7 +1484,7 @@ class TestShareLink(_PanelTestCase):
             self.slots._write_param("SHARE_VIA", "auto")
             logged = self._record_log()
             self.slots.b000()
-            live = [line for line in logged if line.startswith("Live at")]
+            live = [line for line in logged if line.startswith("Share link:")]
             self.assertEqual(len(live), 1, logged)
             self.assertIn("no guest has it open", live[0])
             self.assertNotIn("0 watching", live[0])
@@ -1270,9 +1492,9 @@ class TestShareLink(_PanelTestCase):
             self._open_as_guest()
             logged.clear()
             self.slots.b000()
-        live = [line for line in logged if line.startswith("Live at")]
+        live = [line for line in logged if line.startswith("Share link:")]
         self.assertEqual(len(live), 1, logged)
-        self.assertIn("(1 guest watching)", live[0])
+        self.assertIn("1 guest watching", live[0])
 
     def test_the_footer_counts_a_guest_without_the_panel_doing_anything(self):
         """The footer's count moved only when the panel acted -- a guest who
@@ -1417,9 +1639,9 @@ class TestShareLink(_PanelTestCase):
             ptk.ShareTunnel, "settle", return_value="fake-step-then-link"
         ):
             self.slots._write_param("SHARE_PRIVATE", True)
-        self.assertTrue(self.slots._share_pending, "the share stopped waiting")
+        self.assertTrue(self.slots._scenes[0].pending, "the share stopped waiting")
         Path(self.step_taken).touch()  # enabled, in the browser
-        self._pump_until(lambda: not self.slots._share_pending)
+        self._pump_until(lambda: not self.slots._scenes[0].pending)
         info = self.slots._server().share_info()
         self.assertIsNotNone(info, "the restarted share never came up")
         self.assertIs(info["private"], True)
@@ -1513,6 +1735,169 @@ class TestShareLink(_PanelTestCase):
         self.assertGreater(len(ticks), 3, "the panel was not kept turning")
         self.assertTrue(all(t is threading.main_thread() for t in ticks))
         self.assertEqual(QApplication.clipboard().text(), _FAKE_LINK)
+
+    # ------------------------------------------------------------ scenes
+    def _ping_every_scene(self, **result):
+        """Every added scene's bridge answers its link check with *result*
+        (the first scene's is set up in setUp)."""
+        ping = mock.patch.object(
+            ptk.FilePreviewBridge,
+            "ping_share",
+            return_value={"ok": True, "ms": 1.0, **result},
+        )
+        ping.start()
+        self.addCleanup(ping.stop)
+
+    def _two_scenes(self):
+        """The fixture as scene 1 and scene 2 -- the + pressed -- pushed."""
+        self._ping_every_scene()
+        self.slots.set_source_file(self.glb)
+        self.slots._add_scene_button.click()
+        scene = self.slots._scenes[1]
+        KindFactory.set_value(scene.row[1], [self.glb])
+        self.slots.b000()
+        return scene
+
+    def test_the_plus_adds_a_scene_with_a_page_and_server_of_its_own(self):
+        """Asked for: several scenes live at once, each its own page and
+        link. The + adds a row; a push publishes both, apart."""
+        scene = self._two_scenes()
+        labels = [self.slots._param_labels["SOURCE_FILE"].text(), scene.row[2].text()]
+        self.assertEqual(labels, ["Scene 1:", "Scene 2:"])
+        first, second = self.slots._server(), scene.server
+        self.assertIsNotNone(second, "the added scene was not pushed")
+        self.assertIsNot(first, second)
+        self.assertNotEqual(first.url, second.url)
+        self.assertIn(second.url, self.opened, "the scene's page did not open")
+
+        scene.row[0].findChild(QtWidgets.QPushButton).click()  # its -
+
+        self.assertEqual(len(self.slots._scenes), 1)
+        self.assertFalse(second.is_running, "a removed scene kept serving")
+        self.assertEqual(
+            self.slots._param_labels["SOURCE_FILE"].text(), "Source Files:"
+        )
+
+    def test_an_empty_added_scene_is_left_out_of_the_push(self):
+        self.slots.set_source_file(self.glb)
+        scene = self.slots.add_scene()
+        self.slots.b000()
+        self.assertIsNotNone(self.slots._server())
+        self.assertIsNone(scene.server)
+
+    def test_each_scene_shares_at_a_link_of_its_own(self):
+        """One switch, a link per scene; Copy Link copies them all."""
+        scene = self._two_scenes()
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+        first, second = self.slots._server().share_info(), scene.share_info()
+        self.assertIsNotNone(first)
+        self.assertIsNotNone(second)
+        self.assertNotEqual(first["guest_url"], second["guest_url"])
+        QApplication.clipboard().setText("")
+        self._action("btn_copy_share_link").click()
+        self.assertEqual(QApplication.clipboard().text().splitlines(), [_FAKE_LINK] * 2)
+        self._action("btn_stop_sharing").click()
+        self.assertIsNone(scene.share_info())
+
+    def test_only_the_first_scene_keeps_the_stable_alias(self):
+        """A second share writing the alias would take it from the first --
+        whose stop would then say the share ended while the other is live."""
+        scene = self._two_scenes()
+        asked = {}
+        for index, each in enumerate(self.slots._scenes):
+            real = each.bridge.share
+
+            def record(*args, _index=index, _real=real, **kwargs):
+                asked[_index] = kwargs.get("alias")
+                return _real(*args, **kwargs)
+
+            each.bridge.share = record
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+        self.assertEqual(asked, {0: None, 1: False})
+        self.assertIsNotNone(scene.share_info())
+
+    def test_a_scene_added_while_sharing_shares_with_its_first_push(self):
+        """Sharing turned on first, the scene after: it is shared as soon as
+        it serves -- whichever came first."""
+        self._ping_every_scene()
+        self.slots.set_source_file(self.glb)
+        with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
+            self.slots._write_param("SHARE_VIA", "auto")
+            scene = self.slots.add_scene([self.glb])
+            self.assertIsNone(scene.share_info(), "shared before it served")
+            self.slots.b000()
+        self.assertIsNotNone(scene.share_info())
+        self.assertIn("Scene 2", self.slots._status_text())
+
+    # ------------------------------------------------------------ reachability
+    def _record_levels(self):
+        """``[(text, level), ...]`` the panel logs from here on."""
+        logged = []
+        real = self.slots.panel_log
+
+        def record(text, level="info"):
+            logged.append((str(text), level))
+            return real(text, level)
+
+        self.slots.panel_log = record
+        return logged
+
+    def test_a_link_no_one_else_can_open_is_said_in_red_and_rechecked(self):
+        """Reported: a share looked up while no guest could open it -- a new
+        Tailscale Funnel name reaches public DNS minutes later. Said in red,
+        in the log and the footer, and checked again until it opens."""
+        unreachable = "public DNS does not have the link's name"
+        self._ping(ok=False, error=unreachable)
+        logged = self._record_levels()
+        with mock.patch.object(type(self.slots), "RECHECK_MS", 50):
+            self._share()
+            self._pump_until(lambda: any(lv == "critical" for _t, lv in logged))
+        red = [text for text, level in logged if level == "critical"]
+        self.assertIn("NOT REACHABLE FROM OUTSIDE", red[0])
+        self.assertIn("Cloudflare quick tunnel in the Sharing row", red[0])
+        self.assertEqual(self.slots.ui.footer._status_level, "error")
+        self.assertIn("NOT reachable", self.slots._status_text())
+        self.assertIsNotNone(self.slots._scenes[0].recheck, "nothing re-checks")
+
+        self._ping(ms=9.0)  # the name arrived
+        self._pump_until(lambda: any("can now reach" in t for t, _lv in logged))
+        self.assertIsNone(self.slots._scenes[0].recheck)
+        self.assertIsNone(self.slots.ui.footer._status_level, "the footer stayed red")
+        green = [lv for t, lv in logged if "can now reach" in t]
+        self.assertEqual(green, ["success"])
+
+    def test_a_link_that_never_opens_says_so_when_the_checks_run_out(self):
+        self._ping(ok=False, error="HTTP 502 Bad Gateway")
+        logged = self._record_levels()
+        cls = type(self.slots)
+        with (
+            mock.patch.object(cls, "RECHECK_MS", 50),
+            mock.patch.object(cls, "RECHECK_FOR_S", 0.2),
+        ):
+            self._share()
+            self._pump_until(lambda: any("STILL NOT" in t for t, _lv in logged))
+        self.assertIsNone(self.slots._scenes[0].recheck)
+
+    def test_stopping_the_share_ends_its_rechecks(self):
+        self._ping(ok=False, error="HTTP 502 Bad Gateway")
+        logged = self._record_levels()
+        self._share()
+        self._pump_until(lambda: any(lv == "critical" for _t, lv in logged))
+        self.assertIsNotNone(self.slots._scenes[0].recheck)
+        self._action("btn_stop_sharing").click()
+        self.assertIsNone(self.slots._scenes[0].recheck)
+        self.assertIsNone(self.slots.ui.footer._status_level)
+
+    def test_a_certificate_only_this_machine_doubts_is_still_a_pass(self):
+        self._ping(ms=5.0, route="public", verified=False)
+        logged = self._record_levels()
+        self._share()
+        self._pump_until(lambda: any("Link checked" in t for t, _lv in logged))
+        line = next(t for t, _lv in logged if "Link checked" in t)
+        self.assertIn("could not verify the link's certificate", line)
+        self.assertIn("public DNS", line)
 
     def test_stop_sharing_retires_a_share_whose_client_died(self):
         """A share whose tunnel client exited on its own reads as not shared,

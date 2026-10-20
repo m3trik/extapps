@@ -5,8 +5,10 @@
 Unit tests run standalone (no Painter, no Qt). The live spike at the bottom
 is gated behind ``SUBSTANCE_WORKFLOW_RUN_INTEGRATION=1``.
 """
+import importlib.util
 import os
 import sys
+import types
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -96,6 +98,86 @@ class TestBuildPainterEnv(SubstanceWorkflowTestCase):
         PainterConnection.build_painter_env(port=9999)
         self.assertEqual(dict(os.environ), before)
 
+    def test_a_startup_list_override_keeps_the_bridge(self) -> None:
+        """``SUBSTANCE_PAINTER_STARTUP_PLUGINS`` REPLACES Painter's startup list
+        (``:``-separated names), so a set one gains the bridge and an unset one
+        stays unset (setting it would drop Painter's own startup modules)."""
+        with patch.dict(os.environ, {"SUBSTANCE_PAINTER_STARTUP_PLUGINS": "a:b"}):
+            env = PainterConnection.build_painter_env()
+        self.assertEqual(
+            env["SUBSTANCE_PAINTER_STARTUP_PLUGINS"], f"a:b:{PainterConnection.BRIDGE}"
+        )
+        with patch.dict(os.environ):
+            os.environ.pop("SUBSTANCE_PAINTER_STARTUP_PLUGINS", None)
+            env = PainterConnection.build_painter_env()
+        self.assertNotIn("SUBSTANCE_PAINTER_STARTUP_PLUGINS", env)
+
+
+def _painter_plugins_module() -> str:
+    """The installed Painter's own plugin-discovery module, or ``""``."""
+    from extapps.substance_workflow.env_utils.painter_finder import PainterFinder
+
+    exe = PainterFinder.resolve()
+    path = os.path.join(
+        os.path.dirname(exe or ""), "resources", "python", "modules", "substance_painter_plugins.py"
+    )
+    return path if exe and os.path.isfile(path) else ""
+
+
+def _painter_discovery(env: dict) -> dict:
+    """What Painter itself lists for *env*: its startup and plugins module names.
+
+    Runs the install's ``substance_painter_plugins`` (``substance_painter.logging``
+    stubbed) under a private name, and restores ``sys.path`` and the modules it
+    added, so the suite sees no trace of it.
+    """
+    saved_path, saved_modules = list(sys.path), set(sys.modules)
+    painter = types.ModuleType("substance_painter")
+    painter.logging = types.ModuleType("substance_painter.logging")
+    sys.modules.setdefault("substance_painter", painter)
+    sys.modules.setdefault("substance_painter.logging", painter.logging)
+    try:
+        spec = importlib.util.spec_from_file_location("_painter_plugins", _painter_plugins_module())
+        plugins = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(plugins)
+        with patch.dict(os.environ, env, clear=True):
+            plugins.update_sys_path()
+            return {"startup": plugins.startup_module_names(), "plugins": plugins.plugin_module_names()}
+    finally:
+        sys.path[:] = saved_path
+        for name in ("substance_painter", "substance_painter.logging", PainterConnection.BRIDGE):
+            if name not in saved_modules:
+                sys.modules.pop(name, None)
+
+
+class TestPainterFindsTheBridge(SubstanceWorkflowTestCase):
+    """Painter reads each ``SUBSTANCE_PAINTER_PLUGINS_PATH`` entry as a ROOT that
+    holds ``plugins/``, ``startup/`` and ``modules/``, and starts only ``startup/``
+    modules by itself: a ``plugins/`` one waits for its ``launch_at_start``
+    setting in Painter's Python menu, off by default."""
+
+    def test_the_bridge_is_a_startup_module_of_the_root(self) -> None:
+        root = PainterConnection.plugins_dir()
+        bridge = os.path.join(root, "startup", PainterConnection.BRIDGE, "__init__.py")
+        self.assertTrue(os.path.isfile(bridge), bridge)
+
+    def test_the_bridge_bootstrap_finds_the_checkout(self) -> None:
+        """Inside Painter nothing is installed: the bridge walks up from its own
+        folder to the directory holding the ``extapps`` package. A dev shell's
+        PYTHONPATH hides a wrong depth, so the walk is pinned here."""
+        from extapps.substance_workflow.plugins.startup import substance_workflow_bridge as bridge
+
+        self.assertTrue(
+            os.path.isfile(os.path.join(bridge._extapps_repo, "extapps", "__init__.py")),
+            bridge._extapps_repo,
+        )
+
+    @unittest.skipUnless(_painter_plugins_module(), "Substance 3D Painter is not installed")
+    def test_painters_own_discovery_starts_the_bridge(self) -> None:
+        found = _painter_discovery(PainterConnection.build_painter_env(port=5050))
+        self.assertIn(PainterConnection.BRIDGE, found["startup"])
+        self.assertNotIn(PainterConnection.BRIDGE, found["plugins"])
+
 
 class TestGetAvailablePort(SubstanceWorkflowTestCase):
     """Bind-probed (2026-07-10): the question is "can a NEW bridge server bind
@@ -135,23 +217,31 @@ class TestGetAvailablePort(SubstanceWorkflowTestCase):
 
 class TestLaunchPainter(SubstanceWorkflowTestCase):
 
-    def test_appends_no_display_when_not_gui(self) -> None:
+    def _launched(self, **kwargs):
+        """``(args, env)`` AppLauncher was handed for ``launch_painter(**kwargs)``."""
         with patch(
             "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
         ) as MockAL:
             MockAL.launch.return_value = MagicMock()
-            PainterConnection.launch_painter("/fake/painter.exe", env={}, gui=False)
-        args = MockAL.launch.call_args.kwargs["args"]
-        self.assertIn("--no-display", args)
+            PainterConnection.launch_painter("/fake/painter.exe", **kwargs)
+        call = MockAL.launch.call_args.kwargs
+        return call["args"], call["env"]
 
-    def test_omits_no_display_when_gui(self) -> None:
-        with patch(
-            "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
-        ) as MockAL:
-            MockAL.launch.return_value = MagicMock()
-            PainterConnection.launch_painter("/fake/painter.exe", env={}, gui=True)
-        args = MockAL.launch.call_args.kwargs["args"]
+    def test_no_gui_runs_painter_offscreen_not_with_an_unknown_flag(self) -> None:
+        """Painter has no headless option: ``--no-display`` made it exit within
+        6 s (live, 2026-10-19). Qt's offscreen platform runs it windowless --
+        create, bake and save matched a windowed Painter."""
+        caller_env = {"FOO": "bar"}
+        args, env = self._launched(env=caller_env, gui=False)
         self.assertNotIn("--no-display", args)
+        self.assertEqual(env["QT_QPA_PLATFORM"], "offscreen")
+        self.assertEqual(caller_env, {"FOO": "bar"})  # the caller's env is not touched
+
+    def test_gui_shows_a_window_even_from_an_offscreen_caller(self) -> None:
+        _, env = self._launched(env={"QT_QPA_PLATFORM": "offscreen"}, gui=True)
+        self.assertNotIn("QT_QPA_PLATFORM", env)
+        _, env = self._launched(env={"QT_QPA_PLATFORM": "windows:darkmode=2"}, gui=True)
+        self.assertEqual(env["QT_QPA_PLATFORM"], "windows:darkmode=2")  # a user's choice stays
 
     def test_appends_extra_args(self) -> None:
         with patch(
@@ -169,7 +259,7 @@ class TestLaunchPainter(SubstanceWorkflowTestCase):
             "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
         ) as MockAL:
             MockAL.launch.return_value = MagicMock()
-            PainterConnection.launch_painter("/x.exe", env={"FOO": "bar"})
+            PainterConnection.launch_painter("/x.exe", env={"FOO": "bar"}, gui=True)
         self.assertEqual(MockAL.launch.call_args.kwargs["env"], {"FOO": "bar"})
 
     def test_raises_when_app_launcher_fails(self) -> None:
@@ -199,7 +289,7 @@ class TestShutdown(SubstanceWorkflowTestCase):
 
     def test_kills_process_when_present(self) -> None:
         conn = PainterConnection()
-        fake_proc = MagicMock()
+        fake_proc = MagicMock(**{"poll.return_value": None})  # running, as Popen says
         fake_proc.pid = 12345
         conn.process = fake_proc
         conn.is_connected = True
@@ -215,7 +305,7 @@ class TestShutdown(SubstanceWorkflowTestCase):
 
     def test_continues_when_close_fails(self) -> None:
         conn = PainterConnection()
-        fake_proc = MagicMock()
+        fake_proc = MagicMock(**{"poll.return_value": None})
         fake_proc.pid = 99
         conn.process = fake_proc
         conn.is_connected = True
@@ -229,6 +319,51 @@ class TestShutdown(SubstanceWorkflowTestCase):
 
         self.assertFalse(conn.is_connected)
         self.assertIsNone(conn.process)
+
+
+class TestPainterQuitByItself(SubstanceWorkflowTestCase):
+    """A connection answers from the Painter process, not from a flag set at
+    launch: Painter quit from its own window left ``is_connected`` True, and
+    shutdown then killed the PID it had recorded."""
+
+    _AL = "extapps.substance_workflow.env_utils.painter_connection.AppLauncher"
+
+    def _conn(self, exit_code):
+        conn = PainterConnection()
+        conn.process = MagicMock(pid=4242, **{"poll.return_value": exit_code})
+        conn.is_connected = True
+        return conn
+
+    def test_a_painter_that_quit_is_not_connected_and_a_running_one_is(self) -> None:
+        self.assertFalse(self._conn(exit_code=0).is_connected)
+        self.assertTrue(self._conn(exit_code=None).is_connected)
+
+    def test_shutdown_never_kills_a_painter_that_already_exited(self) -> None:
+        """POSIX ``poll()`` reaps the exited child and frees its PID for reuse."""
+        conn = self._conn(exit_code=0)
+        with patch(self._AL) as MockAL:
+            conn.shutdown(force=True)
+        MockAL.close_process.assert_not_called()
+        self.assertIsNone(conn.process)
+
+    def test_connecting_again_keeps_the_painter_it_launched(self) -> None:
+        """A second connect launched another Painter and orphaned the first."""
+        conn = self._conn(exit_code=None)
+        first = conn.process
+        with patch.object(PainterConnection, "launch_painter") as launch:
+            self.assertTrue(conn.connect(app_path="/fake/painter.exe"))
+        launch.assert_not_called()
+        self.assertIs(conn.process, first)
+
+    def test_connecting_after_a_quit_launches_a_fresh_painter(self) -> None:
+        conn = self._conn(exit_code=0)
+        fresh = MagicMock(pid=5151, **{"poll.return_value": None})
+        with patch.object(PainterConnection, "launch_painter", return_value=fresh), patch.object(
+            PainterConnection, "_wait_for_health", return_value=True
+        ), patch.object(PainterConnection, "get_available_port", return_value=5050):
+            self.assertTrue(conn.connect(app_path="/fake/painter.exe"))
+        self.assertIs(conn.process, fresh)
+        self.assertTrue(conn.is_connected)
 
 
 class TestContextManager(SubstanceWorkflowTestCase):

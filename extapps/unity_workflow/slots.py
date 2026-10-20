@@ -6,8 +6,8 @@ A DCC-agnostic sibling of mayatk's / blendertk's ``UnityBridgeSlots``: all three
 subclass uitk's :class:`BridgeSlotsBase` (parameter widgets, presets, log routing,
 the relabeled 'Unity Project' row, the project-actions menu), but this one is driven
 by a picked **model file** instead of a live DCC selection — so it runs from any host
-that loads uitk (tentacle, a bare ``python -c`` launch) and is the panel the Blender
-'Unity Bridge' reuses (export the selection to FBX, then :meth:`set_model_path`).
+that loads uitk (tentacle, a bare ``python -c`` launch). A host can pre-fill the file
+through :meth:`set_model_path`.
 
 Delivery is the single copy-to-Assets target via :class:`unitytk.FileToUnityBridge`
 (the file-input engine sharing ``unitytk.CopyToAssetsDeliverer`` with the DCC
@@ -73,40 +73,43 @@ class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase):
     )
     UNITY_FEATURE = "Unity Workflow"  # names the unitytk install prompt
 
+    # Says where this panel differs from the DCC Unity Bridge, which a user may
+    # know first: it copies a file as exported and exports nothing itself.
     HELP_SPEC = {
         "title": "Unity Workflow",
-        "body": "Copy a model file (FBX / OBJ / USD / glTF) into a Unity project's "
-        "<b>Assets/</b> folder. Unity imports the asset automatically on its next "
-        "window focus -- no script, no fresh-instance launch, your open editor is "
-        "never disturbed.",
+        "body": "Copy an exported model file into a Unity project's "
+        "<b>Assets/</b> folder. Safe with Unity open: the copy lands whole, and "
+        "Unity imports it on its next window focus.",
         "steps": [
-            "Pick a <b>Model File</b> to send.",
-            "Set the <b>Unity Project</b> folder (or create one via the field menu).",
-            "Tweak the parameters, then click <b>Send to Unity</b>.",
+            "Pick a <b>Model File</b> (FBX, OBJ, USD, Alembic, glTF or PLY).",
+            "Set the <b>Unity Project</b> (the folder holding Assets/); the "
+            "field's menu also opens or creates one.",
+            "With <b>Copy to Project</b> in the top combo, click <b>Send to Unity</b>.",
         ],
         "sections": [
             (
                 "Parameters",
                 [
-                    "<b>Assets Subfolder</b> — where under Assets/ the file lands.",
-                    "<b>Asset Name</b> — optional; blank uses the file's name.",
-                    "<b>Launch Unity</b> — after copying: <i>Don't launch</i> (Unity "
-                    "imports on focus), <i>Open Editor</i> (windowed), or "
-                    "<i>Headless</i> (batch import).",
+                    "<b>Assets Subfolder</b> — where under Assets/ the file "
+                    "lands (blank = <i>Imported</i>; <i>/</i> = Assets/ itself).",
+                    "<b>Asset Name</b> — optional; blank uses the file's name. "
+                    "A same-named asset is replaced.",
+                    "<b>Launch Unity</b> — after copying: <i>Don't launch</i>, "
+                    "<i>Open Editor</i>, or <i>Headless (batch)</i> (import, then "
+                    "quit; needs a batch-capable license). <b>Unity Version</b> "
+                    "picks the Editor.",
                 ],
             ),
         ],
         "notes": [
-            "The Blender 'Unity Bridge' opens this panel with the exported "
-            "selection pre-filled in Model File.",
-            "Copying into Assets/ is non-destructive to a running Unity session.",
-            "The <b>Manage Unity Scripts</b> template installs, updates, "
-            "inspects or removes unitytk's C# import automation in the project "
-            "(the embedded <i>com.m3trik.unitytk</i> package). Check the "
-            "scripts to act on — one row per import channel, all on by "
-            "default; the shared core files ride along with any install. "
-            "Per-channel runtime toggles live in Unity under Project "
-            "Settings ▸ unitytk.",
+            "Unlike the Maya / Blender <b>Unity Bridge</b>, nothing is exported "
+            "here (no Scope, material or texture rows): the file is copied as "
+            "it is. unitytk's import scripts act on <b>.fbx</b> files only.",
+            "<b>Manage Unity Scripts</b> (top combo): check the scripts, pick an "
+            "<b>Action</b> (Status, Install / Update, Uninstall) for the "
+            "project's embedded <i>com.m3trik.unitytk</i> package, and click "
+            "Send to Unity. Per-channel import toggles: in Unity, Edit ▸ "
+            "Project Settings ▸ unitytk.",
         ],
     }
 
@@ -165,8 +168,7 @@ class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase):
         edit.setMaximumHeight(19)
         edit.setToolTip(
             "Model file copied into the Unity project (FBX, OBJ, USD, Alembic,\n"
-            "glTF, or a polygon-mesh PLY). The Blender 'Unity Bridge' pre-fills\n"
-            "this with the exported selection."
+            "glTF, or a polygon-mesh PLY), as exported: nothing is re-exported."
         )
         if self._initial_model:
             edit.setText(self._initial_model)
@@ -220,8 +222,7 @@ class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase):
     def set_model_path(self, path: str) -> None:
         """Pre-fill the Model File field (public hand-off point for hosts).
 
-        The Blender 'Unity Bridge' exports the selection to FBX and calls this
-        before showing the panel."""
+        (Blender no longer calls it: it has a native Unity Bridge panel.)"""
         self._initial_model = path or ""
         if self._model_edit is not None:
             self._model_edit.setText(self._initial_model)
@@ -236,8 +237,7 @@ class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase):
         model = self.resolved_model_path()
         if not model:
             self.bridge.logger.warning(
-                "Pick a model file first (use the Model File field's browse button), "
-                "or send the selection from your DCC's 'Unity Bridge'."
+                "Pick a model file first (use the Model File field's browse button)."
             )
             return
         if not os.path.isfile(model):

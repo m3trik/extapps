@@ -8,6 +8,17 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 ### `_panel_launcher.py` — The one launcher every extapps panel is.
 - `class PanelLauncher(_PanelLauncherInternal)`
 
+### `look_match/__init__.py` — Light a baked scene to match a reference image, by eye and region by region.
+- constants: DEFAULT_INCLUDE
+
+### `look_match/launcher.py` — Application shell for the Look Match UI.
+- `class LookMatchUI(PanelLauncher)`
+
+### `look_match/slots.py` — Slots for the Look Match panel (see :mod:`extapps.look_match`).
+- constants: DOCS_URL
+- `class LookMatchSlots(_LookMatchSlotsInternal)`
+  - methods: header_init, cmb_session_init, cmb_mix_init, b_undo_init, b_redo_init, b_undo, b_redo, b_fit_init, tbl_mix_init, chk_all_init, tbl_regions_init, cmb_mode_init, cmb_a_init, cmb_b_init, cmb_solve_init, cmp_view_init, browse_session, open_session, save_mix, save_mix_as, delete_mix, b_solve, b_fit, b_accept, b_discard, b_render, stop_service, b_edit_regions, b_draw_rect, b_draw_ellipse, b_draw_poly, b_draw_line, b_region_delete, b_paint, b_reload, b_update, stop_worker, b_save_rig, mix_key, status_glyph, brightness_text
+
 ### `marmoset_workflow/__init__.py` — Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 - constants: DEFAULT_INCLUDE
 
@@ -232,7 +243,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 
 ### `substance_workflow/env_utils/painter_connection.py` — Painter Connection Module.
 - `class PainterConnection`
-  - methods: plugins_dir, build_painter_env, launch_painter, get_instance, get_available_port, connect, client, invoke, describe, shutdown
+  - methods: plugins_dir, build_painter_env, launch_painter, get_instance, is_connected, get_available_port, connect, client, invoke, describe, shutdown
 
 ### `substance_workflow/env_utils/painter_finder.py` — Locate installed Substance 3D Painter.
 - `class PainterFinder`
@@ -264,7 +275,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `apply_smart(texture_set: str, material_url: str, target_layer_uid: Optional[str] = None) -> str`
 - `import_to_shelf(path: str, shelf_name: str = 'your_assets') -> str`
 
-### `substance_workflow/plugins/substance_workflow_bridge/__init__.py` — substance_workflow_bridge — Painter-side Python plugin.
+### `substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py` — substance_workflow_bridge — Painter-side Python plugin.
 - `start_plugin() -> None`
 - `close_plugin() -> None`
 - constants: OP_MODULES
@@ -357,10 +368,10 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 - `class WebXrPreviewUI(PanelLauncher)`
 
 ### `webxr_preview/parameters.py` — Tunable parameters surfaced in the WebXR Preview panel.
-- constants: SOURCE_FILE_TYPES, EXPORT_KEYS, FILE_KEYS, GLB_KEYS, LIGHTING_KEYS, PARAMS
+- constants: SOURCE_FILE_TYPES, AUTHORED_EXTENSION, EXPORT_KEYS, FILE_KEYS, GLB_KEYS, TEXTURE_KEYS, KTX2_KEYS, PARAMS
 - `class Parameters(ParamRegistry)`
 
 ### `webxr_preview/slots.py` — Slots for the WebXR Preview panel — the single UI for the live preview.
 - constants: FILE_SOURCE
 - `class WebXrPreviewSlots(BridgeSlotsBase)`
-  - methods: params_module, template_dir, make_bridge, engine, list_template_modes, open_preview_page, stop_server, share_link, copy_share_link, copy_scene_link, check_share_link, stop_sharing, set_source_file, set_source_files, b000
+  - methods: params_module, template_dir, make_bridge, engine, list_template_modes, open_preview_page, stop_server, add_scene, remove_scene, share_link, copy_share_link, copy_scene_link, check_share_link, stop_sharing, set_source_file, set_source_files, b000

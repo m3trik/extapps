@@ -46,6 +46,437 @@
       "constants": []
     },
     {
+      "relpath": "look_match/__init__.py",
+      "summary": "Light a baked scene to match a reference image, by eye and region by region.",
+      "functions": [],
+      "classes": [],
+      "constants": [
+        {
+          "name": "DEFAULT_INCLUDE",
+          "qualname": "DEFAULT_INCLUDE",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 17,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "relpath": "look_match/launcher.py",
+      "summary": "Application shell for the Look Match UI.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "LookMatchUI",
+          "summary": "",
+          "line": 14,
+          "bases": [
+            "PanelLauncher"
+          ],
+          "members": []
+        }
+      ],
+      "constants": []
+    },
+    {
+      "relpath": "look_match/slots.py",
+      "summary": "Slots for the Look Match panel (see :mod:`extapps.look_match`).",
+      "functions": [],
+      "classes": [
+        {
+          "name": "LookMatchSlots",
+          "summary": "The Look Match panel (see the module docstring).",
+          "line": 92,
+          "bases": [
+            "_LookMatchSlotsInternal"
+          ],
+          "members": [
+            {
+              "name": "header_init",
+              "qualname": "LookMatchSlots.header_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 236,
+              "deprecated": false
+            },
+            {
+              "name": "cmb_session_init",
+              "qualname": "LookMatchSlots.cmb_session_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 267,
+              "deprecated": false
+            },
+            {
+              "name": "cmb_mix_init",
+              "qualname": "LookMatchSlots.cmb_mix_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 293,
+              "deprecated": false
+            },
+            {
+              "name": "b_undo_init",
+              "qualname": "LookMatchSlots.b_undo_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 309,
+              "deprecated": false
+            },
+            {
+              "name": "b_redo_init",
+              "qualname": "LookMatchSlots.b_redo_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 312,
+              "deprecated": false
+            },
+            {
+              "name": "b_undo",
+              "qualname": "LookMatchSlots.b_undo",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 315,
+              "deprecated": false
+            },
+            {
+              "name": "b_redo",
+              "qualname": "LookMatchSlots.b_redo",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 318,
+              "deprecated": false
+            },
+            {
+              "name": "b_fit_init",
+              "qualname": "LookMatchSlots.b_fit_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 321,
+              "deprecated": false
+            },
+            {
+              "name": "tbl_mix_init",
+              "qualname": "LookMatchSlots.tbl_mix_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 360,
+              "deprecated": false
+            },
+            {
+              "name": "chk_all_init",
+              "qualname": "LookMatchSlots.chk_all_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 421,
+              "deprecated": false
+            },
+            {
+              "name": "tbl_regions_init",
+              "qualname": "LookMatchSlots.tbl_regions_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 425,
+              "deprecated": false
+            },
+            {
+              "name": "cmb_mode_init",
+              "qualname": "LookMatchSlots.cmb_mode_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 439,
+              "deprecated": false
+            },
+            {
+              "name": "cmb_a_init",
+              "qualname": "LookMatchSlots.cmb_a_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 444,
+              "deprecated": false
+            },
+            {
+              "name": "cmb_b_init",
+              "qualname": "LookMatchSlots.cmb_b_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 447,
+              "deprecated": false
+            },
+            {
+              "name": "cmb_solve_init",
+              "qualname": "LookMatchSlots.cmb_solve_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 450,
+              "deprecated": false
+            },
+            {
+              "name": "cmp_view_init",
+              "qualname": "LookMatchSlots.cmp_view_init",
+              "kind": "method",
+              "signature": "(self, widget) -> None",
+              "summary": "",
+              "line": 454,
+              "deprecated": false
+            },
+            {
+              "name": "browse_session",
+              "qualname": "LookMatchSlots.browse_session",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 488,
+              "deprecated": false
+            },
+            {
+              "name": "open_session",
+              "qualname": "LookMatchSlots.open_session",
+              "kind": "method",
+              "signature": "(self, path: str) -> bool",
+              "summary": "Start opening the session file at *path*;",
+              "line": 507,
+              "deprecated": false
+            },
+            {
+              "name": "save_mix",
+              "qualname": "LookMatchSlots.save_mix",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 618,
+              "deprecated": false
+            },
+            {
+              "name": "save_mix_as",
+              "qualname": "LookMatchSlots.save_mix_as",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 631,
+              "deprecated": false
+            },
+            {
+              "name": "delete_mix",
+              "qualname": "LookMatchSlots.delete_mix",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 654,
+              "deprecated": false
+            },
+            {
+              "name": "b_solve",
+              "qualname": "LookMatchSlots.b_solve",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1268,
+              "deprecated": false
+            },
+            {
+              "name": "b_fit",
+              "qualname": "LookMatchSlots.b_fit",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1305,
+              "deprecated": false
+            },
+            {
+              "name": "b_accept",
+              "qualname": "LookMatchSlots.b_accept",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1395,
+              "deprecated": false
+            },
+            {
+              "name": "b_discard",
+              "qualname": "LookMatchSlots.b_discard",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1403,
+              "deprecated": false
+            },
+            {
+              "name": "b_render",
+              "qualname": "LookMatchSlots.b_render",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1434,
+              "deprecated": false
+            },
+            {
+              "name": "stop_service",
+              "qualname": "LookMatchSlots.stop_service",
+              "kind": "method",
+              "signature": "(self, wait: bool = True) -> None",
+              "summary": "End the WebXR viewer this panel started (never one it did not): its",
+              "line": 1489,
+              "deprecated": false
+            },
+            {
+              "name": "b_edit_regions",
+              "qualname": "LookMatchSlots.b_edit_regions",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1517,
+              "deprecated": false
+            },
+            {
+              "name": "b_draw_rect",
+              "qualname": "LookMatchSlots.b_draw_rect",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1542,
+              "deprecated": false
+            },
+            {
+              "name": "b_draw_ellipse",
+              "qualname": "LookMatchSlots.b_draw_ellipse",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1545,
+              "deprecated": false
+            },
+            {
+              "name": "b_draw_poly",
+              "qualname": "LookMatchSlots.b_draw_poly",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1548,
+              "deprecated": false
+            },
+            {
+              "name": "b_draw_line",
+              "qualname": "LookMatchSlots.b_draw_line",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1551,
+              "deprecated": false
+            },
+            {
+              "name": "b_region_delete",
+              "qualname": "LookMatchSlots.b_region_delete",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1609,
+              "deprecated": false
+            },
+            {
+              "name": "b_paint",
+              "qualname": "LookMatchSlots.b_paint",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1621,
+              "deprecated": false
+            },
+            {
+              "name": "b_reload",
+              "qualname": "LookMatchSlots.b_reload",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1639,
+              "deprecated": false
+            },
+            {
+              "name": "b_update",
+              "qualname": "LookMatchSlots.b_update",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1682,
+              "deprecated": false
+            },
+            {
+              "name": "stop_worker",
+              "qualname": "LookMatchSlots.stop_worker",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "End the bake workers this panel launched (never one it did not),",
+              "line": 1755,
+              "deprecated": false
+            },
+            {
+              "name": "b_save_rig",
+              "qualname": "LookMatchSlots.b_save_rig",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "summary": "",
+              "line": 1763,
+              "deprecated": false
+            },
+            {
+              "name": "mix_key",
+              "qualname": "LookMatchSlots.mix_key",
+              "kind": "staticmethod",
+              "signature": "(mix) -> str",
+              "summary": "A mix's identity: what a render records, so it can say it is stale.",
+              "line": 69,
+              "deprecated": false
+            },
+            {
+              "name": "status_glyph",
+              "qualname": "LookMatchSlots.status_glyph",
+              "kind": "staticmethod",
+              "signature": "(row: Dict[str, Any]) -> str",
+              "summary": "A region's state in a shape, not only a colour: within, brighter,",
+              "line": 75,
+              "deprecated": false
+            },
+            {
+              "name": "brightness_text",
+              "qualname": "LookMatchSlots.brightness_text",
+              "kind": "staticmethod",
+              "signature": "(value: Optional[float]) -> str",
+              "summary": "",
+              "line": 88,
+              "deprecated": false
+            }
+          ]
+        }
+      ],
+      "constants": [
+        {
+          "name": "DOCS_URL",
+          "qualname": "DOCS_URL",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 29,
+          "deprecated": false
+        }
+      ]
+    },
+    {
       "relpath": "marmoset_workflow/__init__.py",
       "summary": "Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.",
       "functions": [],
@@ -70,7 +501,7 @@
         {
           "name": "MarmosetEngine",
           "summary": "Export-agnostic Marmoset Toolbag automation -- a hand-off :class:`pythontk.Deliverer`.",
-          "line": 75,
+          "line": 76,
           "bases": [
             "pythontk.Deliverer",
             "pythontk.LoggingMixin"
@@ -82,7 +513,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve the Toolbag executable path.",
-              "line": 114,
+              "line": 124,
               "deprecated": false
             },
             {
@@ -91,7 +522,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[str]",
               "summary": "Resolve Toolbag's application log file (script prints + tracebacks).",
-              "line": 134,
+              "line": 144,
               "deprecated": false
             },
             {
@@ -100,7 +531,7 @@
               "kind": "method",
               "signature": "(self, bridge, request) -> bool",
               "summary": "Validate the (template, mode) before the bridge produces its payload.",
-              "line": 145,
+              "line": 155,
               "deprecated": false
             },
             {
@@ -109,7 +540,7 @@
               "kind": "method",
               "signature": "(self, bridge, payload, request) -> Optional[Dict[str, Any]]",
               "summary": "Hand the produced model + manifests to Toolbag via :meth:`send`.",
-              "line": 161,
+              "line": 171,
               "deprecated": false
             },
             {
@@ -118,7 +549,7 @@
               "kind": "method",
               "signature": "(self, model_path: str, manifest_path: Optional[str] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, output_dir: Optional[str] = None, texture_dir: Optional[str] = None, texture_set_aliases: Optional[Dict[str, str]] = None, output_name: Optional[str] = None, toolbag_exe: Optional[str] = None, template: str = 'import', mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, scene_dir: Optional[str] = None) -> Optional[Dict[str, Any]]",
               "summary": "Render *template* in *mode* against *model_path* and hand off to Toolbag.",
-              "line": 187,
+              "line": 197,
               "deprecated": false
             },
             {
@@ -127,7 +558,7 @@
               "kind": "method",
               "signature": "(self, template: str, model_path: str, manifest_path: str, output_dir: str, mode: str = SEND_TO, params: Optional[Dict[str, Any]] = None, headless: Optional[bool] = None, pairs_path: Optional[str] = None, source_model_path: Optional[str] = None, save_dir: Optional[str] = None) -> Optional[str]",
               "summary": "Return the rendered Toolbag Python script body, or *None* on miss.",
-              "line": 461,
+              "line": 486,
               "deprecated": false
             },
             {
@@ -136,7 +567,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Path]",
               "summary": "Return user-visible templates in ``templates/`` (skips underscore-prefixed).",
-              "line": 737,
+              "line": 786,
               "deprecated": false
             },
             {
@@ -145,7 +576,7 @@
               "kind": "staticmethod",
               "signature": "(template_path: Path) -> Tuple[str, ...]",
               "summary": "Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.",
-              "line": 742,
+              "line": 791,
               "deprecated": false
             },
             {
@@ -154,7 +585,7 @@
               "kind": "staticmethod",
               "signature": "() -> List[Tuple[str, str]]",
               "summary": "Return ``[(stem, mode), ...]`` for every (template, mode) pairing.",
-              "line": 751,
+              "line": 800,
               "deprecated": false
             }
           ]
@@ -167,7 +598,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 44,
+          "line": 45,
           "deprecated": false
         },
         {
@@ -176,7 +607,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 63,
+          "line": 64,
           "deprecated": false
         },
         {
@@ -185,7 +616,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 64,
+          "line": 65,
           "deprecated": false
         }
       ]
@@ -263,7 +694,7 @@
               "kind": "staticmethod",
               "signature": "(objects, high_suffix, low_suffix, pre_classified=None, include_children=True)",
               "summary": "Group *objects* into ``(sources, targets, others)`` by name suffix.",
-              "line": 447,
+              "line": 458,
               "deprecated": false
             },
             {
@@ -272,7 +703,7 @@
               "kind": "staticmethod",
               "signature": "(root)",
               "summary": "Recursively gather ``mset.MeshObject`` descendants of *root*.",
-              "line": 541,
+              "line": 552,
               "deprecated": false
             },
             {
@@ -281,7 +712,7 @@
               "kind": "staticmethod",
               "signature": "(preset_path)",
               "summary": "Load a ``.tbsky`` preset onto the scene's existing SkyObject.",
-              "line": 581,
+              "line": 592,
               "deprecated": false
             },
             {
@@ -290,7 +721,7 @@
               "kind": "staticmethod",
               "signature": "()",
               "summary": "Frame the imported scene in the viewport (best-effort).",
-              "line": 607,
+              "line": 618,
               "deprecated": false
             }
           ]
@@ -303,7 +734,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 645,
+          "line": 656,
           "deprecated": false
         },
         {
@@ -312,7 +743,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 668,
+          "line": 679,
           "deprecated": false
         },
         {
@@ -321,7 +752,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 681,
+          "line": 692,
           "deprecated": false
         }
       ]
@@ -378,7 +809,7 @@
         {
           "name": "MarmosetWorkflowSlots",
           "summary": "Switchboard slots wired to ``marmoset_workflow.ui``.",
-          "line": 54,
+          "line": 55,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -389,7 +820,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 97,
+              "line": 105,
               "deprecated": false
             },
             {
@@ -398,7 +829,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 101,
+              "line": 109,
               "deprecated": false
             },
             {
@@ -407,7 +838,7 @@
               "kind": "method",
               "signature": "(self) -> MarmosetEngine",
               "summary": "",
-              "line": 104,
+              "line": 112,
               "deprecated": false
             },
             {
@@ -416,7 +847,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Engine templates filtered to the 'set up a project' subset.",
-              "line": 107,
+              "line": 115,
               "deprecated": false
             },
             {
@@ -425,7 +856,7 @@
               "kind": "method",
               "signature": "(self, pairs: List[Tuple[str, str]]) -> int",
               "summary": "Prefer 'lookdev (send_to)', else first entry.",
-              "line": 115,
+              "line": 123,
               "deprecated": false
             },
             {
@@ -434,7 +865,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 185,
+              "line": 193,
               "deprecated": false
             },
             {
@@ -443,7 +874,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (e.g.",
-              "line": 190,
+              "line": 198,
               "deprecated": false
             },
             {
@@ -452,7 +883,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Set up the picked model in Toolbag using the chosen template + mode.",
-              "line": 207,
+              "line": 215,
               "deprecated": false
             }
           ]
@@ -468,7 +899,7 @@
         {
           "name": "TemplateParams",
           "summary": "TemplateParams — module namespace.",
-          "line": 97,
+          "line": 101,
           "bases": [],
           "members": [
             {
@@ -477,7 +908,7 @@
               "kind": "staticmethod",
               "signature": "(manifest: Dict[str, Any]) -> Dict[str, bool]",
               "summary": "Return the ``{MAP_*: bool}`` roster *manifest*'s textures imply.",
-              "line": 151,
+              "line": 155,
               "deprecated": false
             },
             {
@@ -486,7 +917,7 @@
               "kind": "staticmethod",
               "signature": "(values: Dict[str, Any]) -> Dict[str, Any]",
               "summary": "Return the managed bake tokens derived from *values*.",
-              "line": 182,
+              "line": 186,
               "deprecated": false
             },
             {
@@ -495,7 +926,7 @@
               "kind": "staticmethod",
               "signature": "(value: Any) -> str",
               "summary": "Format *value* as a Python source literal for template substitution.",
-              "line": 214,
+              "line": 218,
               "deprecated": false
             },
             {
@@ -504,7 +935,7 @@
               "kind": "staticmethod",
               "signature": "() -> Dict[str, Any]",
               "summary": "Return a copy of :data:`DEFAULTS`.",
-              "line": 225,
+              "line": 229,
               "deprecated": false
             },
             {
@@ -513,7 +944,7 @@
               "kind": "staticmethod",
               "signature": "(values: Dict[str, Any]) -> Dict[str, str]",
               "summary": "Map ``{KEY: value}`` to ``{KEY: python-literal-string}``.",
-              "line": 230,
+              "line": 234,
               "deprecated": false
             }
           ]
@@ -3372,7 +3803,7 @@
           "kind": "function",
           "signature": "(texture_set: Optional[str] = None, bake_resolution: int = 1024, ao_intensity: float = 1.0, ao_secondary_rays: int = 64, ao_max_distance: float = 1.0, ao_min_distance: float = 0.0, ao_spread_angle: float = 162.0, ao_subsample: int = 1, include_curvature: bool = False, curvature_intensity: float = 0.3, layer_name: str = 'iray AO Lighting', blend_mode: str = 'Multiply', skip_existing_bakes: bool = False, save_project: bool = False) -> dict",
           "summary": "Bake iray-backed AO (+ optional curvature) and composite onto base color.",
-          "line": 211,
+          "line": 301,
           "deprecated": false
         },
         {
@@ -3381,7 +3812,7 @@
           "kind": "function",
           "signature": "(texture_set: str, maps: Optional[List[str]] = None, high_poly: Optional[str] = None) -> dict",
           "summary": "Bake the named mesh maps.",
-          "line": 330,
+          "line": 425,
           "deprecated": false
         },
         {
@@ -3390,7 +3821,7 @@
           "kind": "function",
           "signature": "(maps: Optional[List[str]] = None) -> dict",
           "summary": "Bake mesh maps for every texture set in the project.",
-          "line": 343,
+          "line": 438,
           "deprecated": false
         },
         {
@@ -3399,7 +3830,7 @@
           "kind": "function",
           "signature": "(texture_set: str, width: int, height: int) -> None",
           "summary": "Set the baking resolution for the named texture set.",
-          "line": 349,
+          "line": 444,
           "deprecated": false
         }
       ],
@@ -3466,8 +3897,8 @@
               "qualname": "PainterConnection.plugins_dir",
               "kind": "staticmethod",
               "signature": "() -> str",
-              "summary": "Absolute path to the ``substance_workflow/plugins`` directory.",
-              "line": 45,
+              "summary": "Absolute path to the plugin root, ``substance_workflow/plugins``.",
+              "line": 48,
               "deprecated": false
             },
             {
@@ -3476,7 +3907,7 @@
               "kind": "staticmethod",
               "signature": "(port: int = 0) -> dict",
               "summary": "Compose the environment block passed to a Painter launch.",
-              "line": 56,
+              "line": 61,
               "deprecated": false
             },
             {
@@ -3485,7 +3916,7 @@
               "kind": "staticmethod",
               "signature": "(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen",
               "summary": "Spawn a detached Painter process via ``pythontk.AppLauncher``.",
-              "line": 74,
+              "line": 90,
               "deprecated": false
             },
             {
@@ -3494,7 +3925,16 @@
               "kind": "classmethod",
               "signature": "(cls) -> 'PainterConnection'",
               "summary": "",
-              "line": 97,
+              "line": 122,
+              "deprecated": false
+            },
+            {
+              "name": "is_connected",
+              "qualname": "PainterConnection.is_connected",
+              "kind": "property",
+              "signature": "(self) -> bool",
+              "summary": "Connected to the bridge of a Painter that is still running.",
+              "line": 136,
               "deprecated": false
             },
             {
@@ -3503,7 +3943,7 @@
               "kind": "staticmethod",
               "signature": "(start_port: int = 5050, max_check: int = 100) -> int",
               "summary": "Return the lowest TCP port a NEW bridge server could bind on localhost.",
-              "line": 113,
+              "line": 154,
               "deprecated": false
             },
             {
@@ -3512,7 +3952,7 @@
               "kind": "method",
               "signature": "(self, force_new_instance: bool = True, gui: bool = False, port: int = 5050, app_path: Optional[str] = None, launch_args: Optional[List[str]] = None, timeout: float = 180.0) -> bool",
               "summary": "Launch a fresh Painter and connect over the bridge HTTP server.",
-              "line": 129,
+              "line": 170,
               "deprecated": false
             },
             {
@@ -3521,7 +3961,7 @@
               "kind": "property",
               "signature": "(self) -> RpcClient",
               "summary": "The shared JSON-RPC client, bound to this connection's bridge.",
-              "line": 196,
+              "line": 242,
               "deprecated": false
             },
             {
@@ -3530,7 +3970,7 @@
               "kind": "method",
               "signature": "(self, op: str, timeout: float = 60.0, **kwargs: Any) -> Any",
               "summary": "Call a registered op over the bridge and return its value.",
-              "line": 206,
+              "line": 252,
               "deprecated": false
             },
             {
@@ -3539,7 +3979,7 @@
               "kind": "method",
               "signature": "(self, op: str = '') -> Any",
               "summary": "The registry's ``{name, doc, params}`` for *op*, or a list for all.",
-              "line": 217,
+              "line": 263,
               "deprecated": false
             },
             {
@@ -3548,7 +3988,7 @@
               "kind": "method",
               "signature": "(self, force: bool = False) -> None",
               "summary": "Close the bridge and terminate the Painter process we launched.",
-              "line": 223,
+              "line": 269,
               "deprecated": false
             }
           ]
@@ -3801,7 +4241,7 @@
       "constants": []
     },
     {
-      "relpath": "substance_workflow/plugins/substance_workflow_bridge/__init__.py",
+      "relpath": "substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py",
       "summary": "substance_workflow_bridge — Painter-side Python plugin.",
       "functions": [
         {
@@ -3810,7 +4250,7 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin entry point — start the JSON-RPC bridge server.",
-          "line": 112,
+          "line": 114,
           "deprecated": false
         },
         {
@@ -3819,7 +4259,7 @@
           "kind": "function",
           "signature": "() -> None",
           "summary": "Painter plugin teardown.",
-          "line": 124,
+          "line": 126,
           "deprecated": false
         }
       ],
@@ -3831,7 +4271,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 88,
+          "line": 90,
           "deprecated": false
         }
       ]
@@ -3967,7 +4407,7 @@
         {
           "name": "SubstanceWorkflowSlots",
           "summary": "Switchboard slots for the Substance Workflow UI.",
-          "line": 194,
+          "line": 234,
           "bases": [
             "pythontk.LoggingMixin"
           ],
@@ -3978,7 +4418,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "",
-              "line": 243,
+              "line": 332,
               "deprecated": false
             },
             {
@@ -3987,7 +4427,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Mesh File",
-              "line": 278,
+              "line": 348,
               "deprecated": false
             },
             {
@@ -3996,7 +4436,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Template (optional)",
-              "line": 292,
+              "line": 362,
               "deprecated": false
             },
             {
@@ -4005,7 +4445,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Project Save Path",
-              "line": 307,
+              "line": 377,
               "deprecated": false
             },
             {
@@ -4014,7 +4454,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Painter install picker",
-              "line": 321,
+              "line": 391,
               "deprecated": false
             },
             {
@@ -4023,7 +4463,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Stages popup — QMenu of checkboxes attached to the button.",
-              "line": 328,
+              "line": 398,
               "deprecated": false
             },
             {
@@ -4032,7 +4472,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Advanced-params popup — labeled form inside a QMenu via QWidgetAction.",
-              "line": 345,
+              "line": 415,
               "deprecated": false
             },
             {
@@ -4041,7 +4481,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Log level changed",
-              "line": 387,
+              "line": 457,
               "deprecated": false
             },
             {
@@ -4050,7 +4490,7 @@
               "kind": "method",
               "signature": "(self, widget) -> None",
               "summary": "Toggle the Painter session.",
-              "line": 391,
+              "line": 461,
               "deprecated": false
             },
             {
@@ -4058,8 +4498,8 @@
               "qualname": "SubstanceWorkflowSlots.b000",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Run Workflow",
-              "line": 401,
+              "summary": "Run Workflow -- while a run is in flight, the button is its Cancel.",
+              "line": 477,
               "deprecated": false
             },
             {
@@ -4068,7 +4508,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the mesh field (e.g.",
-              "line": 410,
+              "line": 486,
               "deprecated": false
             },
             {
@@ -4077,7 +4517,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 417,
+              "line": 493,
               "deprecated": false
             },
             {
@@ -4086,7 +4526,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 428,
+              "line": 504,
               "deprecated": false
             },
             {
@@ -4095,7 +4535,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "",
-              "line": 439,
+              "line": 515,
               "deprecated": false
             }
           ]
@@ -4108,7 +4548,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 27,
+          "line": 31,
           "deprecated": false
         },
         {
@@ -4117,7 +4557,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 43,
+          "line": 47,
           "deprecated": false
         },
         {
@@ -4126,7 +4566,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 70,
+          "line": 74,
           "deprecated": false
         },
         {
@@ -4135,7 +4575,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 71,
+          "line": 75,
           "deprecated": false
         },
         {
@@ -4144,7 +4584,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 79,
+          "line": 83,
           "deprecated": false
         }
       ]
@@ -4842,7 +5282,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 20,
+          "line": 19,
           "deprecated": false
         }
       ]
@@ -4954,7 +5394,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 123,
+              "line": 126,
               "deprecated": false
             },
             {
@@ -4963,7 +5403,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Build the unitytk engine, or ``None`` when it is absent.",
-              "line": 126,
+              "line": 129,
               "deprecated": false
             },
             {
@@ -4972,7 +5412,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 215,
+              "line": 217,
               "deprecated": false
             },
             {
@@ -4981,7 +5421,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill the Model File field (public hand-off point for hosts).",
-              "line": 220,
+              "line": 222,
               "deprecated": false
             },
             {
@@ -4990,7 +5430,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Run the selected template: copy the model, or script management.",
-              "line": 231,
+              "line": 232,
               "deprecated": false
             }
           ]
@@ -5040,7 +5480,7 @@
         {
           "name": "Parameters",
           "summary": "The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 356,
+          "line": 371,
           "bases": [
             "ParamRegistry"
           ],
@@ -5054,7 +5494,16 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 37,
+          "line": 40,
+          "deprecated": false
+        },
+        {
+          "name": "AUTHORED_EXTENSION",
+          "qualname": "AUTHORED_EXTENSION",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 44,
           "deprecated": false
         },
         {
@@ -5063,7 +5512,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 42,
+          "line": 50,
           "deprecated": false
         },
         {
@@ -5072,7 +5521,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 45,
+          "line": 53,
           "deprecated": false
         },
         {
@@ -5081,16 +5530,25 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 50,
+          "line": 58,
           "deprecated": false
         },
         {
-          "name": "LIGHTING_KEYS",
-          "qualname": "LIGHTING_KEYS",
+          "name": "TEXTURE_KEYS",
+          "qualname": "TEXTURE_KEYS",
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 55,
+          "line": 63,
+          "deprecated": false
+        },
+        {
+          "name": "KTX2_KEYS",
+          "qualname": "KTX2_KEYS",
+          "kind": "constant",
+          "signature": "",
+          "summary": "",
+          "line": 69,
           "deprecated": false
         },
         {
@@ -5099,7 +5557,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 173,
+          "line": 179,
           "deprecated": false
         }
       ]
@@ -5112,7 +5570,7 @@
         {
           "name": "WebXrPreviewSlots",
           "summary": "Switchboard slots wired to ``webxr_preview.ui``.",
-          "line": 107,
+          "line": 117,
           "bases": [
             "BridgeSlotsBase"
           ],
@@ -5123,7 +5581,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 273,
+              "line": 279,
               "deprecated": false
             },
             {
@@ -5132,7 +5590,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 277,
+              "line": 283,
               "deprecated": false
             },
             {
@@ -5141,7 +5599,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "The panel's own, host-free engine.",
-              "line": 283,
+              "line": 289,
               "deprecated": false
             },
             {
@@ -5150,7 +5608,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
-              "line": 298,
+              "line": 304,
               "deprecated": false
             },
             {
@@ -5159,7 +5617,7 @@
               "kind": "method",
               "signature": "(self) -> List[Tuple[str, str]]",
               "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
-              "line": 439,
+              "line": 447,
               "deprecated": false
             },
             {
@@ -5168,7 +5626,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Open the live page in a browser, without paying for a push.",
-              "line": 551,
+              "line": 622,
               "deprecated": false
             },
             {
@@ -5176,8 +5634,26 @@
               "qualname": "WebXrPreviewSlots.stop_server",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Stop serving and release the port -- ending any share.",
-              "line": 569,
+              "summary": "Stop serving and release the port -- every scene's -- ending any share.",
+              "line": 640,
+              "deprecated": false
+            },
+            {
+              "name": "add_scene",
+              "qualname": "WebXrPreviewSlots.add_scene",
+              "kind": "method",
+              "signature": "(self, paths: Optional[List[str]] = None) -> _Scene",
+              "summary": "Another scene: a Source Files row of its own under the last one,",
+              "line": 680,
+              "deprecated": false
+            },
+            {
+              "name": "remove_scene",
+              "qualname": "WebXrPreviewSlots.remove_scene",
+              "kind": "method",
+              "signature": "(self, scene: _Scene) -> None",
+              "summary": "Take an added scene away: its server stops, and its link with it.",
+              "line": 746,
               "deprecated": false
             },
             {
@@ -5186,7 +5662,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Share Now: bring the link up without a push, or retry a failed one.",
-              "line": 682,
+              "line": 1003,
               "deprecated": false
             },
             {
@@ -5194,8 +5670,8 @@
               "qualname": "WebXrPreviewSlots.copy_share_link",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Copy Link: the live link to the clipboard, and to the log.",
-              "line": 694,
+              "summary": "Copy Link: the live links to the clipboard -- one per line, scene",
+              "line": 1016,
               "deprecated": false
             },
             {
@@ -5204,7 +5680,7 @@
               "kind": "method",
               "signature": "(self) -> None",
               "summary": "Copy Scene Link: where the published scene is described as data.",
-              "line": 715,
+              "line": 1052,
               "deprecated": false
             },
             {
@@ -5212,8 +5688,8 @@
               "qualname": "WebXrPreviewSlots.check_share_link",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Test Link: whether a guest can reach the share now.",
-              "line": 907,
+              "summary": "Test Link: whether a guest can reach each share now.",
+              "line": 1277,
               "deprecated": false
             },
             {
@@ -5221,8 +5697,8 @@
               "qualname": "WebXrPreviewSlots.stop_sharing",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Stop Sharing: the row to Off, which takes the link down.",
-              "line": 986,
+              "summary": "Stop Sharing: the row to Off, which takes every link down.",
+              "line": 1480,
               "deprecated": false
             },
             {
@@ -5231,7 +5707,7 @@
               "kind": "method",
               "signature": "(self, path: str) -> None",
               "summary": "Pre-fill Source Files with *path* and select the file source.",
-              "line": 1035,
+              "line": 1516,
               "deprecated": false
             },
             {
@@ -5240,7 +5716,7 @@
               "kind": "method",
               "signature": "(self, paths: List[str]) -> None",
               "summary": "Pre-fill Source Files with *paths* -- the parts of one scene, shown",
-              "line": 1045,
+              "line": 1526,
               "deprecated": false
             },
             {
@@ -5248,8 +5724,8 @@
               "qualname": "WebXrPreviewSlots.b000",
               "kind": "method",
               "signature": "(self) -> None",
-              "summary": "Build the deliverable for the active source and publish it.",
-              "line": 1149,
+              "summary": "Build the deliverable for the active source and publish it -- for",
+              "line": 1641,
               "deprecated": false
             }
           ]
@@ -5262,7 +5738,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 44,
+          "line": 47,
           "deprecated": false
         }
       ]

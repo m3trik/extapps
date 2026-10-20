@@ -260,6 +260,19 @@ class TestEveryPanelUsesTheCleanFlagSet(unittest.TestCase):
                 stray.append(target)
         self.assertEqual([], stray, "panels not built by PanelLauncher: %s" % stray)
 
+    def test_no_panel_offers_fullscreen(self):
+        """Every panel is a parameter form over a log: fullscreen has nothing
+        to show, and the DCC panels never offer it either."""
+        import importlib
+
+        offering = []
+        for target in sorted(_roster_targets()):
+            module, cls_name = _split_target(target)
+            cls = getattr(importlib.import_module(module), cls_name)
+            if "fullscreen" in cls.HEADER_BUTTONS:
+                offering.append(cls_name)
+        self.assertEqual([], offering, "panels offering fullscreen: %s" % offering)
+
     def test_the_shared_launcher_sets_the_clean_set(self):
         src = (
             Path(__file__).resolve().parents[1] / "extapps" / "_panel_launcher.py"

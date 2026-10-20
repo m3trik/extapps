@@ -157,7 +157,7 @@ class TestBridgeOpModuleList(SubstanceWorkflowTestCase):
     """
 
     def test_op_modules_match_disk(self) -> None:
-        from extapps.substance_workflow.plugins import substance_workflow_bridge
+        from extapps.substance_workflow.plugins.startup import substance_workflow_bridge
 
         pkg_dir = os.path.join(REPO_ROOT, "extapps", "substance_workflow")
         on_disk = {

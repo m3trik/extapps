@@ -102,5 +102,29 @@ class TestWireMaterialsNullTexturePath(unittest.TestCase):
         self.assertIs(tex_obj.sRGB, False)  # normal maps load Linear
 
 
+class TestWireMaterialsWithoutAManifest(unittest.TestCase):
+    """No manifest is the standalone panel's normal case, not a fault.
+
+    Bug: every Marmoset Workflow run (a model file, no sending DCC) logged
+    "Manifest empty or missing" and "check Maya-side MatManifest.build()".
+    Fixed: 2026-10-17
+    """
+
+    def test_no_manifest_says_the_import_supplies_the_materials(self):
+        with mock.patch.object(tbh.ToolbagHelpers, "log") as log:
+            wired = tbh.ToolbagHelpers.wire_materials_from_manifest("")
+        self.assertEqual(wired, 0)
+        logged = " ".join(str(c.args[0]) for c in log.call_args_list)
+        self.assertNotIn("missing", logged)
+        self.assertNotIn("Maya", logged)
+        self.assertIn("No material manifest", logged)
+        # Routed into the panel log as info: the normal case is not yellow.
+        from extapps.marmoset_workflow.toolbag_log import ToolbagLog
+
+        for line in logged.split("[toolbag_helpers]")[1:]:
+            level, _ = ToolbagLog.classify_log_line("[toolbag_helpers]" + line)
+            self.assertEqual(level, "info", line)
+
+
 if __name__ == "__main__":
     unittest.main()

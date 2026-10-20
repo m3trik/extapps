@@ -12,7 +12,7 @@ import pythontk as _ptk
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.3.5"
+__version__ = "0.4.0"
 
 # Base of every panel's "detailed docs" link (``BridgeSlotsBase.DOCS_URL`` on
 # the bridge panels, the compositor's intro, Substance's startup line): the
@@ -48,6 +48,8 @@ DEFAULT_INCLUDE = {
     "unity_workflow.slots": ["UnityWorkflowSlots"],
     "webxr_preview.launcher": ["WebXrPreviewUI"],
     "webxr_preview.slots": ["WebXrPreviewSlots"],
+    "look_match.launcher": ["LookMatchUI"],
+    "look_match.slots": ["LookMatchSlots"],
 }
 
 

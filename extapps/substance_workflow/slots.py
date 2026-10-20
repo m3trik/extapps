@@ -5,21 +5,25 @@
 The panel wires the UI to :class:`PainterConnection`: launch a fresh
 Painter, then dispatch registered ops (``project.*``, ``bake.*``, …) over
 the JSON-RPC bridge. Engine/domain logic lives in the op modules — these
-slots only collect widget state and invoke ops by name.
+slots only collect widget state and invoke ops by name. A run's stages go
+off the GUI thread (``uitk.BackgroundTask``), one after another: a bake can
+take minutes, and the panel -- and a DCC hosting it -- stays live and can
+cancel.
 """
 
 import logging
 import os
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, NamedTuple, Optional
 
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
-from uitk import AttributeSpec, KindFactory
+from uitk import AttributeSpec, BackgroundTask, KindFactory
 from uitk.widgets.textEditLogHandler import TextEditLogHandler
 from extapps import DOCS_BASE_URL
 from .env_utils.painter_connection import PainterConnection
 from .env_utils.painter_finder import PainterFinder
+from .registry import PLUGIN
 
 # ---------------------------------------------------------------------------
 # Mesh formats Painter accepts for project creation.
@@ -91,20 +95,20 @@ ADVANCED_PARAMS = [
         kind="int",
         default=64,
         minimum=1,
-        maximum=1024,
+        maximum=256,
         step=8,
-        tooltip="AO secondary-ray sample count. Higher = cleaner, slower.",
+        tooltip="AO secondary-ray sample count (Painter: 1-256). Higher = cleaner, slower.",
     ),
     AttributeSpec(
         key="spn_ao_max",
         label="AO Max Dist:",
         kind="float",
         default=1.0,
-        minimum=0.0,
-        maximum=100.0,
-        step=0.1,
+        minimum=0.001,
+        maximum=1.0,
+        step=0.01,
         decimals=3,
-        tooltip="AO ray maximum length in world units.",
+        tooltip="Max occluder distance, as a fraction of the mesh's bounding box.",
     ),
     AttributeSpec(
         key="spn_ao_min",
@@ -112,10 +116,10 @@ ADVANCED_PARAMS = [
         kind="float",
         default=0.0,
         minimum=0.0,
-        maximum=100.0,
-        step=0.1,
+        maximum=1.0,
+        step=0.001,
         decimals=3,
-        tooltip="AO ray minimum length (helps avoid self-shadow noise).",
+        tooltip="Min occluder distance (bias against self-shadow noise), as a fraction of the bounding box.",
     ),
     AttributeSpec(
         key="spn_ao_spread",
@@ -135,7 +139,7 @@ ADVANCED_PARAMS = [
         default=1,
         minimum=1,
         maximum=8,
-        tooltip="Supersampling factor (1 = none).",
+        tooltip="Antialiasing: 1 none, 2 / 4 / 8 for 2x2 / 4x4 / 8x8 subsampling.",
     ),
     AttributeSpec(
         key="spn_ao_intensity",
@@ -191,6 +195,42 @@ _LOG_LEVELS = {
 }
 
 
+class _Stage(NamedTuple):
+    """One stage of a run, ready to go off the GUI thread."""
+
+    #: The stage's name in the Stages menu (and in the run's messages).
+    label: str
+    #: The work: bridge calls only, no widget -- it runs on a BackgroundTask.
+    #: Returns the stage's line for the run's report.
+    call: Callable[[], str]
+    #: Set: a failure only warns (this text, then the error) and the run goes on.
+    skip_note: str = ""
+
+
+class _WorkflowRun:
+    """One Run Workflow in flight: its stages, how far it got, its cancel.
+
+    The GUI thread alone reads and writes it (the stages only return values),
+    and the panel holds the run it is on: a callback that finds another one --
+    or none -- belongs to a run that has already ended.
+    """
+
+    def __init__(self, report: bool, run_label: str):
+        self.stages: List[_Stage] = []
+        self.index = 0  # the stage running, or next to run
+        self.lines: List[str] = []  # the report lines of the stages that ran
+        self.report = report  # INFO on: the run's boxes and groups are logged
+        self.run_label = run_label  # the Run button's own text, given back at the end
+        #: Cancel button and the footer's Esc-hold both land here; checked
+        #: between stages -- an op mid-call cannot be stopped over the bridge.
+        self.cancel = ptk.CancelScope("Substance Workflow")
+
+    @property
+    def stage(self) -> Optional[_Stage]:
+        """The stage running (or next to run); ``None`` past the last."""
+        return self.stages[self.index] if self.index < len(self.stages) else None
+
+
 class SubstanceWorkflowSlots(ptk.LoggingMixin):
     """Switchboard slots for the Substance Workflow UI."""
 
@@ -199,6 +239,39 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
     # line is emitted here rather than by ``BridgeSlotsBase._show_docs_link``.
     DOCS_URL = DOCS_BASE_URL + "docs/substance_workflow.md"
     DOCS_LABEL = "Detailed docs (bridge, op registry, batch API)"
+
+    # The header help, as data like the BridgeSlotsBase panels' HELP_SPEC;
+    # not a bridge panel, so ``header_init`` hands it to the header itself.
+    # It says where this panel differs from the DCC Substance Bridge, which a
+    # user may know first.
+    HELP_SPEC = {
+        "title": "Substance Workflow",
+        "body": "Create or open a Substance 3D Painter project from files on "
+        "disk, bake AO lighting into Base Color, and save. Every launch starts "
+        "a <b>new</b> Painter running this panel's own bridge; an open Painter "
+        "is never touched.",
+        "steps": [
+            "Set a <b>Mesh File</b> (and an optional <b>Template</b> .spt) to "
+            "create a project, and/or a <b>Project Save Path</b> (.spp): an "
+            "existing .spp is opened instead, mesh ignored.",
+            "Pick the <b>Painter</b> install.",
+            "Choose the <b>Stages</b>; tune the AO and curvature bake under "
+            "<b>Advanced</b>.",
+            "Click <b>Run Workflow</b> (it launches Painter when needed). "
+            "While it runs the button reads <b>Cancel</b> (or hold Esc): the "
+            "stage under way finishes, and no later one starts.",
+        ],
+        "notes": [
+            "Once Painter runs, the launch button reads <b>Close Painter</b>: "
+            "it force-closes the Painter this panel launched, losing unsaved "
+            "changes. Closing the panel leaves Painter running.",
+            "<i>Export Textures</i> is not implemented yet: the stage is "
+            "skipped with a warning.",
+            "Unlike the Maya / Blender <b>Substance Bridge</b>: no scene "
+            "selection, no templates or reimport into a running Painter, and "
+            "nothing is installed into Painter's plugins folder.",
+        ],
+    }
 
     def __init__(self, switchboard, log_level: int = 20):
         self.sb = switchboard
@@ -213,8 +286,18 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
         self.logger.set_text_handler(TextEditLogHandler)
         self.logger.setup_logging_redirect(self.ui.txt003)
 
-        self.conn: Optional[PainterConnection] = None
-        self._busy: bool = False
+        # The session is the process-wide connection: a rebuilt panel picks up
+        # the Painter an earlier one launched instead of orphaning it with a
+        # second launch.
+        self.conn: PainterConnection = PainterConnection.get_instance()
+        # The Run Workflow in flight (its stages run off the GUI thread).
+        self._run: Optional[_WorkflowRun] = None
+        # Painter can quit from its own window: while a session is up, look
+        # every 2 s so the button (and Run) follow it.
+        self._shown_connected: bool = False
+        self._session_timer = QtCore.QTimer()
+        self._session_timer.setInterval(2000)
+        self._session_timer.timeout.connect(self._check_session)
         # Scan once at startup; reused by the Painter picker and status line.
         self._installs: Dict[str, str] = PainterFinder.find_installs()
 
@@ -222,6 +305,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
         self.logger.info(
             f'{self.DOCS_LABEL}: <a href="{self.DOCS_URL}">{self.DOCS_URL}</a>'
         )
+        self._sync_launch_button()
 
     # ------------------------------------------------------------------ status
 
@@ -236,7 +320,12 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
 
     @property
     def _connected(self) -> bool:
-        return bool(self.conn and self.conn.is_connected)
+        return self.conn.is_connected
+
+    @property
+    def _busy(self) -> bool:
+        """A run is in flight (read from it: no second flag to drift)."""
+        return self._run is not None
 
     # ------------------------------------------------------------------ header
 
@@ -251,26 +340,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
             setToolTip="Set the log level.",
         )
         widget.set_help_text(
-            self.sb.tooltip.fmt(
-                title="Substance Workflow",
-                body="Drive Adobe Substance 3D Painter from a single panel. "
-                "Each launch starts a NEW Painter instance over a JSON-RPC "
-                "bridge — your open session is never touched.",
-                steps=[
-                    "Set the <b>Mesh File</b> (to create a project) and/or a "
-                    "<b>Project Save Path</b> (.spp) to open or save to.",
-                    "Pick which <b>Painter</b> install to launch.",
-                    "Press <b>Launch Painter</b> (or let Run launch it).",
-                    "Choose which <b>Stages</b> to run and tweak "
-                    "<b>Advanced</b> bake parameters.",
-                    "Press <b>Run Workflow</b>.",
-                ],
-                notes=[
-                    "Painter launches fresh on an unused port every time "
-                    "(force_new_instance is hard-coded on). Closing the panel "
-                    "session terminates only the Painter this panel launched.",
-                ],
-            )
+            self.sb.tooltip.fmt(**self.HELP_SPEC), url=self.DOCS_URL
         )
 
     # ------------------------------------------------------------------ fields
@@ -390,8 +460,14 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
 
     def btn_launch(self, widget) -> None:
         """Toggle the Painter session."""
+        if self._shown_connected and not self._connected:
+            # Painter quit since the button last said Close: the click brings
+            # the button up to date (and ends a run on it) -- it does what it
+            # said, never a launch.
+            self._check_session()
+            return
         if self._busy:
-            self.logger.warning("Busy — wait for the current run to finish.")
+            self.logger.warning("Busy — Cancel the run, or wait for it to finish.")
             return
         if self._connected:
             self._close_painter()
@@ -399,9 +475,9 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
             self._launch_painter()
 
     def b000(self) -> None:
-        """Run Workflow"""
+        """Run Workflow -- while a run is in flight, the button is its Cancel."""
         if self._busy:
-            self.logger.warning("Workflow already running.")
+            self._cancel_run()
             return
         self.ui.txt003.clear()
         self._run_workflow()
@@ -410,8 +486,8 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
     def set_mesh_path(self, path: str) -> None:
         """Pre-fill the mesh field (e.g. a host exported the current selection to it).
 
-        Public hand-off point for hosts that drive this panel — the Blender Substance *bridge*
-        exports the selection to FBX and calls this before showing the panel."""
+        Public hand-off point for a host that drives this panel. (Blender no
+        longer does: it has a native Substance Bridge panel of its own.)"""
         self.ui.txt000.setText(path or "")
 
     def btn_browse_mesh(self) -> None:
@@ -452,7 +528,6 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
 
     def _launch_painter(self) -> bool:
         exe = self.ui.cmb000.currentData()
-        self.conn = PainterConnection.get_instance()
         try:
             with self.sb.progress(text="Launching Substance 3D Painter..."):
                 ok = self.conn.connect(gui=True, app_path=exe)
@@ -470,19 +545,33 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
             self._sync_launch_button()
 
     def _close_painter(self) -> None:
-        if self.conn is not None:
-            try:
-                self.conn.shutdown(force=True)
-                self.logger.info("Painter session closed.")
-            except Exception as e:
-                self.logger.error(f"Failed to close Painter: {e}")
+        try:
+            self.conn.shutdown(force=True)
+            self.logger.info("Painter session closed.")
+        except Exception as e:
+            self.logger.error(f"Failed to close Painter: {e}")
         self._sync_launch_button()
 
     def _sync_launch_button(self) -> None:
-        """Keep the launch button's label in step with the session state."""
-        self.ui.btn_launch.setText(
-            "Close Painter" if self._connected else "Launch Painter"
-        )
+        """Keep the launch button's label -- and the watch on the session --
+        in step with the session."""
+        connected = self._connected
+        self._shown_connected = connected
+        self.ui.btn_launch.setText("Close Painter" if connected else "Launch Painter")
+        if connected and not self._session_timer.isActive():
+            self._session_timer.start()
+        elif not connected:
+            self._session_timer.stop()
+
+    def _check_session(self) -> None:
+        """The watch: a Painter that quit by itself is said, the button
+        follows, and a run on it ends here -- its call out on the dead bridge
+        is not waited on."""
+        if self._shown_connected and not self._connected:
+            self.logger.warning("Painter was closed outside the panel.")
+            self._sync_launch_button()
+            if self._run is not None:
+                self._end_run(self._run)
 
     # ------------------------------------------------------------------ helpers
 
@@ -529,7 +618,73 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
 
     # ------------------------------------------------------------------ run
 
+    def _plan_stages(
+        self, stages: Dict[str, bool], mesh: str, template: Optional[str], save_path: str
+    ) -> List[_Stage]:
+        """The checked stages, in order, as calls a BackgroundTask can make.
+
+        What they need from the widgets is read here, on the GUI thread, at
+        Run: a stage touches no widget, and a field edited mid-run changes
+        nothing in the run.
+        """
+        labels = {name: label for name, label, _, _ in PIPELINE_STAGES}
+        conn = self.conn
+        plan: List[_Stage] = []
+
+        if stages["stage_open"]:
+
+            def open_project() -> str:
+                if save_path and os.path.isfile(save_path):
+                    return f"Opened : {conn.invoke('project.open', path=save_path)}"
+                created = conn.invoke(
+                    "project.create", mesh_path=mesh, template_path=template
+                )
+                return f"Created: {created}"
+
+            plan.append(_Stage(labels["stage_open"], open_project))
+
+        if stages["stage_bake"]:
+            params = self._collect_bake_params()
+
+            def bake() -> str:
+                # A real bake outlasts the client's 60 s default: wait as long
+                # as the bridge lets the op run.
+                result = conn.invoke(
+                    "bake.lighting_to_diffuse", timeout=PLUGIN.marshaller.timeout, **params
+                )
+                return f"Baked  : {result}"
+
+            plan.append(_Stage(labels["stage_bake"], bake))
+
+        if stages["stage_save"]:
+
+            def save() -> str:
+                # Asked when it runs: a project this run created has no file yet.
+                if save_path and not os.path.isfile(save_path):
+                    conn.invoke("project.save_as", path=save_path)
+                else:
+                    conn.invoke("project.save")
+                return "Saved  : project written"
+
+            plan.append(_Stage(labels["stage_save"], save))
+
+        if stages["stage_export"]:
+            out = os.path.join(os.path.dirname(save_path) or os.getcwd(), "export")
+
+            def export() -> str:
+                conn.invoke("export.textures", output_path=out, preset="")
+                return f"Exported: {out}"
+
+            plan.append(
+                _Stage(labels["stage_export"], export, "Export skipped (not implemented)")
+            )
+        return plan
+
     def _run_workflow(self) -> None:
+        """Start a run and return: its stages go off the GUI thread one at a
+        time (:meth:`_next_stage`) -- a bake waits minutes on Painter, which on
+        the GUI thread froze the panel and a DCC hosting it. Run reads Cancel
+        until :meth:`_end_run` gives the panel back."""
         stages = self._collect_stages()
         if not self._validate(stages):
             return
@@ -541,15 +696,15 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
         template = self.ui.txt001.text().strip() or None
         save_path = self.ui.txt002.text().strip()
 
-        self._busy = True
-        self.ui.b000.setEnabled(False)
-        # Per-stage detail accrues here and goes out as ONE grouped record:
-        # every log record renders as its own paragraph in the output panel,
-        # so a four-stage run read as six blank-line-separated sections.
-        stage_log: List[str] = []
-        report = self.logger.isEnabledFor(logging.INFO)
+        run = _WorkflowRun(self.logger.isEnabledFor(logging.INFO), self.ui.b000.text())
+        self._run = run
+        self.ui.b000.setText("Cancel")
+        # Every cancel of this run (the button, the footer's Esc-hold) comes in
+        # on the GUI thread, so the listener may touch the widgets.
+        run.cancel.add_listener(lambda _scope: self._show_cancel(run))
         try:
-            if report:
+            run.stages = self._plan_stages(stages, mesh, template, save_path)
+            if run.report:
                 self.logger.log_box(
                     "SUBSTANCE WORKFLOW",
                     [
@@ -558,77 +713,129 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
                         f"Stages  : {', '.join(k for k, v in stages.items() if v)}",
                     ],
                 )
-            with self.sb.progress(text="Working: Substance Workflow") as tick:
-                if stages["stage_open"]:
-                    if save_path and os.path.isfile(save_path):
-                        stage_log.append(
-                            f"Opened : {self.conn.invoke('project.open', path=save_path)}"
-                        )
-                        tick(text="Project opened")
-                    else:
-                        stage_log.append(
-                            "Created: "
-                            + str(
-                                self.conn.invoke(
-                                    "project.create",
-                                    mesh_path=mesh,
-                                    template_path=template,
-                                )
-                            )
-                        )
-                        tick(text="Project created")
+            # Started inside the run's scope, the bar's Esc-hold cancels the
+            # run itself -- not just the bar, with the stages going on.
+            with run.cancel.activate():
+                self.ui.footer.start_progress(
+                    total=len(run.stages) or None, text="Working: Substance Workflow"
+                )
+        except Exception as e:
+            self._end_run(run, e)
+            return
+        self._next_stage(run)
 
-                if stages["stage_bake"]:
-                    result = self.conn.invoke(
-                        "bake.lighting_to_diffuse", **self._collect_bake_params()
-                    )
-                    stage_log.append(f"Baked  : {result}")
-                    tick(text="Lighting baked")
+    def _next_stage(self, run: _WorkflowRun) -> None:
+        """Start *run*'s next stage on a BackgroundTask, or end the run: no
+        stage left, or a cancel came while the last one ran."""
+        stage = run.stage
+        if stage is None or run.cancel.poll():
+            self._end_run(run)
+            return
+        try:
+            task = BackgroundTask(stage.call, name="substance-workflow-stage")
+            task.when_done(self.ui, lambda: self._stage_done(run, task))
+            # Last: the tick pumps the loop, and a quick stage may end inside it.
+            self.ui.footer.update_progress(
+                run.index, f"{stage.label} ({run.index + 1}/{len(run.stages)})"
+            )
+        except Exception as e:
+            self._end_run(run, e)
 
-                if stages["stage_save"]:
-                    if save_path and not os.path.isfile(save_path):
-                        self.conn.invoke("project.save_as", path=save_path)
-                    else:
-                        self.conn.invoke("project.save")
-                    stage_log.append("Saved  : project written")
-                    tick(text="Project saved")
+    def _stage_done(self, run: _WorkflowRun, task: BackgroundTask) -> None:
+        """A stage's task ended: its line joins the report and the next stage
+        starts -- here, on the GUI thread, like every widget and log touch of
+        a run."""
+        if run is not self._run:
+            return  # that run already ended (Painter closed under it)
+        stage = run.stage
+        try:
+            line = task.result()
+        except Exception as e:
+            if not stage.skip_note:
+                self._end_run(run, e)
+                return
+            # Warnings stay their own record — they're the actionable line,
+            # and must not inherit the group's muted item colour.
+            self.logger.warning(f"{stage.skip_note}: {e}")
+        else:
+            run.lines.append(line)
+        run.index += 1
+        self._next_stage(run)
 
-                if stages["stage_export"]:
-                    try:
-                        out = os.path.join(
-                            os.path.dirname(save_path) or os.getcwd(), "export"
-                        )
-                        self.conn.invoke("export.textures", output_path=out, preset="")
-                        stage_log.append(f"Exported: {out}")
-                        tick(text="Textures exported")
-                    except Exception as e:
-                        # Warnings stay their own record — they're the
-                        # actionable line, and must not inherit the group's
-                        # muted item colour.
-                        self.logger.warning(f"Export skipped (not implemented): {e}")
+    def _cancel_run(self) -> None:
+        """Cancel (the Run button while a run is in flight)."""
+        if self._run is not None:
+            self._run.cancel.cancel("cancel button")
 
-            if report:
+    def _show_cancel(self, run: _WorkflowRun) -> None:
+        """A cancel came: said at once, though it lands between stages -- the
+        bridge cannot stop an op mid-call, so the one under way finishes."""
+        if run is not self._run or run.stage is None:
+            return
+        self.ui.b000.setText("Cancelling…")
+        self.ui.b000.setEnabled(False)
+        text = f"Cancelling: {run.stage.label} finishes first, then the run stops."
+        self.ui.footer.setStatusText(text)
+        self.logger.info(text)
+
+    def _end_run(self, run: _WorkflowRun, error: Optional[BaseException] = None) -> None:
+        """Say how *run* ended and give the panel back -- on every way out: all
+        stages run, a cancel, a stage that raised, Painter closed under it."""
+        if run is not self._run:
+            return
+        self._run = None
+        # Logging pumps the loop: no click starts the next run mid-report.
+        self.ui.b000.setEnabled(False)
+        status = "Workflow ended."
+        try:
+            status = self._report_run(run, error)
+        finally:
+            self.ui.b000.setText(run.run_label)
+            self.ui.b000.setEnabled(True)
+            self.ui.footer.finish_progress(status)
+
+    def _report_run(self, run: _WorkflowRun, error: Optional[BaseException]) -> str:
+        """Log how *run* ended; returns the footer's closing text."""
+        lines, stage = run.lines, run.stage
+        if error is None and stage is None:
+            if run.cancel.cancelled:
+                self.logger.warning(
+                    "The cancel came during the last stage, which finished: "
+                    "the workflow ran to the end."
+                )
+            if run.report:
                 # Guarded: nothing is checked in the stage menu is a legal (if
                 # pointless) run, and log_group degrades an empty list to a
                 # bare orphan title.
-                if stage_log:
-                    self.logger.log_group("Stages", stage_log)
+                if lines:
+                    self.logger.log_group("Stages", lines)
                 self.logger.log_box(
-                    "WORKFLOW COMPLETE",
-                    [f"Stages run : {len(stage_log)}"],
-                    level="SUCCESS",
+                    "WORKFLOW COMPLETE", [f"Stages run : {len(lines)}"], level="SUCCESS"
                 )
-        except Exception as e:
-            # Whatever completed before the failure still gets reported —
-            # otherwise a late error hides every stage that did succeed.
-            if report and stage_log:
-                self.logger.log_group("Stages completed before the failure", stage_log)
-            self.logger.error(f"Workflow failed: {e}")
+            return "Workflow complete."
+
+        label = stage.label if stage is not None else "the run"
+        level = logging.ERROR
+        if not self._connected:
+            title, status = "Stages completed before Painter closed", "Painter closed."
+            message = f"Workflow stopped: Painter closed during {label}."
+        elif error is not None:
+            title, status = "Stages completed before the failure", "Workflow failed."
+            message = f"Workflow failed: {error}"
+        else:  # a cancel: asked for, not a fault
+            title, status = "Stages completed before the cancel", "Workflow cancelled."
+            message, level = f"Workflow cancelled before {label}.", logging.WARNING
+        # Whatever completed still gets reported — otherwise a late stop hides
+        # every stage that did succeed.
+        if run.report and lines:
+            self.logger.log_group(title, lines)
+        self.logger.log(level, message)
+        if error is not None:
             # Stays at debug (as it always was): the panel's Log Level combo
             # defaults to INFO, and promoting the traceback would dump a full
             # stack on every failure for users who never asked for one. It is
             # a single multi-line string, so it is already one record.
-            self.logger.debug(traceback.format_exc())
-        finally:
-            self._busy = False
-            self.ui.b000.setEnabled(True)
+            self.logger.debug(
+                "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            )
+        return status

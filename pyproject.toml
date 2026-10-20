@@ -86,8 +86,10 @@ classifiers = [
 # WebXR Preview imports BackgroundTask at module load (ImportError on an older
 # uitk) and its log's [copy] links need the log pane's action://copy; the
 # vendored Marmoset engine asks AppLauncher.can_hide / run(hidden=)
-# (AttributeError / TypeError on an older pythontk).
-dependencies = ["pythontk>=0.16.0", "uitk>=1.7.5", "qtpy"]
+# (AttributeError / TypeError on an older pythontk). pythontk 0.16.1: a GLB
+# pushed with KTX2 left picked asks for no encoder (0.16.0's preflight
+# demanded toktx and failed the push without it).
+dependencies = ["pythontk>=0.16.1", "uitk>=1.7.5", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is

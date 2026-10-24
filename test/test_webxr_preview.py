@@ -1453,7 +1453,11 @@ class TestShareLink(_PanelTestCase):
         pane.clear()
         with mock.patch.object(ptk.ShareTunnel, "settle", return_value="fake"):
             self.slots._write_param("SHARE_VIA", "auto")
-            self._pump_until(lambda: "Link checked" in pane.toPlainText())
+            # THIS share's answer (its route): every case shares the same fake
+            # link, so an earlier case's check still in flight passes the
+            # still-shared guard and can log its "Link checked" first (CI,
+            # 2026-10-24: "(1 ms)", then the push, then no "public DNS").
+            self._pump_until(lambda: "public DNS" in pane.toPlainText())
             self.slots.b000()
         copies = {
             parse_qs(urlsplit(href).query)["text"][0]: href

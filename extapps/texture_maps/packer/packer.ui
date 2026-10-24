@@ -85,6 +85,35 @@
        </widget>
       </item>
       <item>
+       <widget class="ComboBox" name="cmbMode">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>19</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>19</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Pack: combine the per-channel source maps into one packed texture.
+Unpack: split a packed texture back into its per-channel maps (each channel's selected map type names the output file).</string>
+        </property>
+        <property name="frame">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="ComboBox" name="cmbPreset">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -363,7 +392,7 @@
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Format</string>
+         <string>Output</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="spacing">
@@ -443,6 +472,37 @@
            </property>
            <property name="placeholderText">
             <string>Affix:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="ComboBox" name="cmbMissing">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>19</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>19</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Pack only. What to do with a texture set when one or more of the requested source maps is missing (and can't be derived from the maps that are present).
+Skip Set (default): nothing is written, so an incomplete set can't silently produce a packed map with blank channels.
+Pack If 2+ Maps: pack only when at least two channels resolved - enough that the result is still a useful packed map rather than a single map wearing a packed name.
+Pack Anyway: always pack; a missing channel stores its map type's absent value (unoccluded, matte, dielectric, opaque).</string>
+           </property>
+           <property name="frame">
+            <bool>false</bool>
            </property>
           </widget>
          </item>

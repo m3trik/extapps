@@ -88,8 +88,11 @@ classifiers = [
 # vendored Marmoset engine asks AppLauncher.can_hide / run(hidden=)
 # (AttributeError / TypeError on an older pythontk). pythontk 0.16.1: a GLB
 # pushed with KTX2 left picked asks for no encoder (0.16.0's preflight
-# demanded toktx and failed the push without it).
-dependencies = ["pythontk>=0.16.1", "uitk>=1.7.5", "qtpy"]
+# demanded toktx and failed the push without it). pythontk 0.17.0: the Map
+# Packer's Missing Maps fill reads `MapRegistry.absent_fills`, and WebXR
+# Preview's status line `PreviewBridge.materials_summary` (AttributeError on
+# every Pack / every push on an older pythontk).
+dependencies = ["pythontk>=0.17.0", "uitk>=1.7.5", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, for users who
 # take exports into Unity and want to extend what ships here. The panel is
@@ -161,6 +164,7 @@ include = ["extapps*"]
 # the top-level "*" json glob (package-dir only) doesn't reach them. They live in
 # per-engine subdirs (presets/<engine>/*.json) — presets are engine-scoped.
 "extapps.photogrammetry" = ["presets/*/*.json"]
+"extapps.texture_maps.packer" = ["presets/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

@@ -1075,7 +1075,7 @@ Application shell for the Map Packer UI.
 
 Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
 
-- **[`class PackerSlots`](extapps/extapps/texture_maps/packer/slots.py#L12)** — Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.
+- **[`class PackerSlots`](extapps/extapps/texture_maps/packer/slots.py#L13)** — Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.
   - `PackerSlots.cmbPreset_init(self, widget)` — Preset selector -- its pick persists via the store's ``.active`` pointer
   - `PackerSlots.cmbR_init(self, widget)`
   - `PackerSlots.cmbG_init(self, widget)`
@@ -1083,7 +1083,8 @@ Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
   - `PackerSlots.cmbA_init(self, widget)`
   - `PackerSlots.txtSuffix_init(self, widget)` — Output-affix field — clearable back to the convention's default.
   - `PackerSlots.cmbFormat_init(self, widget)` — Populate the output-format combo and react to format changes.
-  - `PackerSlots.header_init(self, widget)` — Build the header menu's Pack/Unpack toggle and Missing Maps policy.
+  - `PackerSlots.cmbMode_init(self, widget)` — The Pack/Unpack direction -- first in the window, since it decides
+  - `PackerSlots.cmbMissing_init(self, widget)` — What an incomplete texture set does when packing (see :meth:`_pack_set`).
   - `PackerSlots.source_dir(self)` *(property)*
   - `PackerSlots.b000(self)` — Run the configured channel operation: Pack (default) or Unpack.
   - `PackerSlots.b001(self)` — Open the last output directory in the system file explorer.
@@ -1159,7 +1160,7 @@ Tunable parameters surfaced in the WebXR Preview panel.
 - [`TEXTURE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L63) — constant
 - [`KTX2_KEYS`](extapps/extapps/webxr_preview/parameters.py#L69) — constant
 - [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L179) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/webxr_preview/parameters.py#L371)** — The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/webxr_preview/parameters.py#L360)** — The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
 
 <a id="webxr_preview--slots"></a>
 ### `webxr_preview/slots.py`

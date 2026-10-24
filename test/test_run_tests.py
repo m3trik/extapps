@@ -199,5 +199,30 @@ class TargetResolutionTest(unittest.TestCase):
         self.assertEqual(rt.ExtappsTestRunner.discover_modules(), on_disk)
 
 
+class PatternFilterTest(unittest.TestCase):
+    """``-k`` becomes pytest's own expression, and a filtered run never stamps."""
+
+    def _run(self, **kwargs):
+        with mock.patch.object(rt.pytest, "main", return_value=0) as main, \
+                mock.patch.object(rt.ExtappsTestRunner, "stamp_badge") as stamp, \
+                mock.patch("builtins.print"):
+            rt.ExtappsTestRunner.run(**kwargs)
+        return main.call_args[0][0], stamp
+
+    def test_patterns_join_into_one_k_expression(self):
+        args, _ = self._run(patterns=["scope", "preset"])
+        self.assertEqual(args[-2:], ["-k", "scope or preset"])
+
+    def test_a_filtered_run_never_stamps(self):
+        for kwargs in ({"patterns": ["scope"]}, {"extra": ["-kscope"]}, {"extra": ["-k", "scope"]}):
+            with self.subTest(**kwargs):
+                _, stamp = self._run(**kwargs)
+                stamp.assert_not_called()
+
+    def test_an_unfiltered_run_still_offers_the_stamp_to_its_gate(self):
+        _, stamp = self._run()
+        stamp.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

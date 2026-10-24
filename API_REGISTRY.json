@@ -5163,7 +5163,7 @@
         {
           "name": "PackerSlots",
           "summary": "Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.",
-          "line": 12,
+          "line": 13,
           "bases": [],
           "members": [
             {
@@ -5181,7 +5181,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 207,
+              "line": 232,
               "deprecated": false
             },
             {
@@ -5190,7 +5190,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 210,
+              "line": 235,
               "deprecated": false
             },
             {
@@ -5199,7 +5199,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 213,
+              "line": 238,
               "deprecated": false
             },
             {
@@ -5208,7 +5208,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 216,
+              "line": 241,
               "deprecated": false
             },
             {
@@ -5217,7 +5217,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Output-affix field — clearable back to the convention's default.",
-              "line": 219,
+              "line": 244,
               "deprecated": false
             },
             {
@@ -5226,16 +5226,25 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the output-format combo and react to format changes.",
-              "line": 230,
+              "line": 255,
               "deprecated": false
             },
             {
-              "name": "header_init",
-              "qualname": "PackerSlots.header_init",
+              "name": "cmbMode_init",
+              "qualname": "PackerSlots.cmbMode_init",
               "kind": "method",
               "signature": "(self, widget)",
-              "summary": "Build the header menu's Pack/Unpack toggle and Missing Maps policy.",
-              "line": 257,
+              "summary": "The Pack/Unpack direction -- first in the window, since it decides",
+              "line": 283,
+              "deprecated": false
+            },
+            {
+              "name": "cmbMissing_init",
+              "qualname": "PackerSlots.cmbMissing_init",
+              "kind": "method",
+              "signature": "(self, widget)",
+              "summary": "What an incomplete texture set does when packing (see :meth:`_pack_set`).",
+              "line": 296,
               "deprecated": false
             },
             {
@@ -5244,7 +5253,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "",
-              "line": 379,
+              "line": 355,
               "deprecated": false
             },
             {
@@ -5253,7 +5262,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 469,
+              "line": 445,
               "deprecated": false
             },
             {
@@ -5262,7 +5271,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Open the last output directory in the system file explorer.",
-              "line": 716,
+              "line": 692,
               "deprecated": false
             }
           ]
@@ -5480,7 +5489,7 @@
         {
           "name": "Parameters",
           "summary": "The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 371,
+          "line": 360,
           "bases": [
             "ParamRegistry"
           ],

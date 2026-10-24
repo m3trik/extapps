@@ -7,7 +7,7 @@ Standalone [uitk](https://github.com/m3trik/uitk)-Switchboard panels for content
 ## Tools
 
 - **compositor** — multi-layer texture-map compositing
-- **converter** / **packer** — PBR map conversion (DX↔GL normals, spec→PBR, bump→normal, smoothness↔roughness) and channel pack/unpack (ORM / MRAO / MSAO templates)
+- **converter** / **packer** — PBR map conversion (DX↔GL normals, spec→PBR, bump→normal, smoothness↔roughness) and channel pack/unpack (built-in ORM / MRAO / MSAO / Metallic Smoothness / glTF-pair templates)
 - **photogrammetry** — end-to-end runs: frame extraction/curation → align → mesh → texture, with per-engine presets (Metashape, RealityScan, gaussian splat)
 - **substance_workflow** — Substance 3D Painter automation over a bundled JSON-RPC bridge
 - **marmoset_workflow** — open a model file in a new Marmoset Toolbag (import / lookdev templates)

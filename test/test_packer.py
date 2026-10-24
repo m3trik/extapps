@@ -22,8 +22,6 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import sys
 import types
-import tempfile
-import shutil
 import unittest
 import contextlib
 from unittest import mock
@@ -36,8 +34,8 @@ from pythontk import ImgUtils
 from uitk.testing import TestSandbox
 
 # A direct `python test/test_packer.py` loads no conftest, so the sandbox is
-# activated here too -- before the preset-combo test's panel seeds the built-in
-# presets and restores widget state. Idempotent.
+# activated here too -- before the preset-combo test's panel opens its preset
+# store and restores widget state. Idempotent.
 TestSandbox.activate()
 
 from extapps.texture_maps.packer.slots import PackerSlots
@@ -48,15 +46,15 @@ class TestMapPackerConversion(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="packer_test_")
+        cls._temp = ptk.TempArtifacts("extapps_packer_test", policy="scoped")
+        cls.test_dir = cls._temp.dir_path()
         # Only a Roughness map is present; Smoothness must be derived from it.
         cls.roughness = os.path.join(cls.test_dir, "mat_Roughness.png")
         ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), 64), cls.roughness)
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.test_dir):
-            shutil.rmtree(cls.test_dir)
+        cls._temp.cleanup()
 
     @staticmethod
     def _bare_slots():
@@ -108,7 +106,8 @@ class TestMapPackerCompleteness(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="packer_complete_")
+        cls._temp = ptk.TempArtifacts("extapps_packer_complete", policy="scoped")
+        cls.test_dir = cls._temp.dir_path()
         # Roughness only — Metallic is neither present nor derivable from it.
         # Smoothness IS derivable from Roughness (inversion), so a set asking
         # for Roughness+Smoothness+Metallic resolves 2 of 3 channels.
@@ -117,8 +116,7 @@ class TestMapPackerCompleteness(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.test_dir):
-            shutil.rmtree(cls.test_dir)
+        cls._temp.cleanup()
 
     @staticmethod
     def _bare_slots():
@@ -251,17 +249,15 @@ class TestMapPackerCompleteness(unittest.TestCase):
         )
         self.assertEqual(Image.open(self._path("_RGBA")).mode, "RGBA")
 
-    def test_rule_reads_header_combo(self):
-        """``_missing_map_rule`` mirrors the header combo; safe default if absent."""
+    def test_rule_reads_the_missing_maps_combo(self):
+        """``_missing_map_rule`` mirrors the window combo; safe default if absent."""
         inst = self._bare_slots()
-        # Header menu not built yet (bare instance) → safe default.
+        # Combo not registered yet (bare instance) → safe default.
         inst.ui = types.SimpleNamespace()
         self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_SKIP)
 
         combo = _FakeDataCombo(PackerSlots.MISSING_FORCE)
-        inst.ui = types.SimpleNamespace(
-            header=types.SimpleNamespace(menu=types.SimpleNamespace(cmb_missing=combo))
-        )
+        inst.ui = types.SimpleNamespace(cmbMissing=combo)
         self.assertEqual(inst._missing_map_rule(), PackerSlots.MISSING_FORCE)
         # No selection (currentData() -> None) must not disable the guard.
         combo.data = None
@@ -336,14 +332,14 @@ class TestMapPackerOutputAffix(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="packer_affix_")
+        cls._temp = ptk.TempArtifacts("extapps_packer_affix", policy="scoped")
+        cls.test_dir = cls._temp.dir_path()
         cls.roughness = os.path.join(cls.test_dir, "mat_Roughness.png")
         ImgUtils.save_image(ImgUtils.create_image("L", (8, 8), 64), cls.roughness)
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.test_dir):
-            shutil.rmtree(cls.test_dir)
+        cls._temp.cleanup()
 
     def _pack(self, **kwargs):
         return PackerSlots.__new__(PackerSlots)._pack_set(
@@ -432,7 +428,8 @@ class TestMapPackerUnpack(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_dir = tempfile.mkdtemp(prefix="packer_unpack_")
+        cls._temp = ptk.TempArtifacts("extapps_packer_unpack", policy="scoped")
+        cls.test_dir = cls._temp.dir_path()
         # An RGB packed map (no alpha), distinct per channel so outputs differ.
         cls.packed = os.path.join(cls.test_dir, "mat_ORM.png")
         ImgUtils.save_image(
@@ -441,8 +438,7 @@ class TestMapPackerUnpack(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.test_dir):
-            shutil.rmtree(cls.test_dir)
+        cls._temp.cleanup()
 
     @staticmethod
     def _bare_slots():
@@ -515,42 +511,118 @@ class TestMapPackerSelectRemembersDir(unittest.TestCase):
         self.assertEqual(inst.source_dir, "O:/seed/dir")
 
 
+def _builtin_presets():
+    """The shipped templates, ``{stem: payload}``, read straight off disk."""
+    import json
+
+    out = {}
+    for fname in sorted(os.listdir(PackerSlots.BUILTIN_PRESET_DIR)):
+        if fname.endswith(".json"):
+            path = os.path.join(PackerSlots.BUILTIN_PRESET_DIR, fname)
+            with open(path, encoding="utf-8") as f:
+                out[fname[:-5]] = json.load(f)
+    return out
+
+
 class TestMapPackerPresets(unittest.TestCase):
-    """Built-in presets cover the standard grayscale channel layouts."""
+    """The shipped templates: one per supported packing, each a valid layout."""
 
-    def test_grayscale_pack_presets_present(self):
-        names = list(PackerSlots.BUILTIN_PRESETS)
-        for expected in (
-            "ORM (Unreal, glTF)",
-            "MRAO (Metallic, Roughness, AO)",
-            "MSAO (HDRP Mask Map)",
-            "Metallic Smoothness (URP)",
-        ):
-            self.assertIn(expected, names)
+    # Template -> the registry packing whose channel layout it must match.
+    REGISTRY_PACKINGS = {
+        "ORM - Unreal glTF Godot": "ORM",
+        "MRAO - Metallic Roughness AO": "MRAO",
+        "MSAO - Unity HDRP Mask Map": "MSAO",
+        "Metallic Smoothness - Unity URP": "Metallic_Smoothness",
+    }
+    # The glTF extension pairs the lobe combos exist for.
+    GLTF_PAIRS = {
+        "Clearcoat - glTF": ("Clearcoat", "Clearcoat_Roughness"),
+        "Iridescence - glTF": ("Thin_Film", "Thin_Film_Thickness"),
+        "Transmission Volume - glTF": ("Transmission", "Thickness"),
+    }
 
-    def test_mrao_preset_layout(self):
-        mrao = PackerSlots.BUILTIN_PRESETS["MRAO (Metallic, Roughness, AO)"]
+    def test_every_supported_packing_has_a_template(self):
+        """Each packed type in ``MapRegistry`` whose channels hold grayscale maps
+        ships a template, plus the glTF pairs -- and nothing else ships.
+
+        ``Albedo_Transparency`` is the one packing left out: its RGB carries a
+        COLOR map, and each channel combo here holds one grayscale map.
+        """
+        registry = ptk.MapRegistry.instance()
+        grayscale = set(PackerSlots.grayscale_types)
+        packed = {  # optional ("?") channels are left empty, so they don't count
+            name
+            for name in registry.get_map_types()
+            if registry.get(name).is_packed
+            and {
+                t for t in registry.get(name).channels.values() if not t.endswith("?")
+            }
+            <= grayscale
+        }
+        self.assertEqual(packed, set(self.REGISTRY_PACKINGS.values()))
         self.assertEqual(
-            (mrao["R"], mrao["G"], mrao["B"], mrao["A"]),
-            ("Metallic", "Roughness", "Ambient_Occlusion", "None"),
+            set(_builtin_presets()), set(self.REGISTRY_PACKINGS) | set(self.GLTF_PAIRS)
         )
+
+    def test_templates_name_items_their_combos_hold(self):
+        """Stored by TEXT, so a typo or a renamed type would load as nothing."""
+        for name, data in _builtin_presets().items():
+            with self.subTest(preset=name):
+                for c in "RGBA":
+                    self.assertIn(data[f"cmb{c}"], PackerSlots.grayscale_types)
+                self.assertIn(data["cmbFormat"], PackerSlots.output_formats)
+                self.assertTrue(data["txtSuffix"].startswith("_"))
+                self.assertEqual(data["_meta"]["affix_mode"], "suffix")
+                self.assertTrue(data["_meta"]["description"])
+                # The stem the combo lists IS the file name.
+                self.assertEqual(ptk.PresetStore.sanitize_preset_name(name), name)
+
+    def test_template_layouts_match_the_registry(self):
+        """Locks each layout to ``pythontk.MapRegistry``'s ``MapType.channels``
+        (the ecosystem SSoT blendertk's material builder also reads). An RGB
+        triplet is carried by R; an optional channel (``?``) stays empty."""
+        registry = ptk.MapRegistry.instance()
+        presets = _builtin_presets()
+        for name, packing in self.REGISTRY_PACKINGS.items():
+            with self.subTest(preset=name):
+                expected = {c: "None" for c in "RGBA"}
+                for ch, map_type in registry.get(packing).channels.items():
+                    if not map_type.endswith("?"):
+                        expected[ch[0]] = map_type
+                self.assertEqual(
+                    {c: presets[name][f"cmb{c}"] for c in "RGBA"}, expected
+                )
+        for name, (r, g) in self.GLTF_PAIRS.items():
+            with self.subTest(preset=name):
+                self.assertEqual(
+                    [presets[name][f"cmb{c}"] for c in "RGBA"], [r, g, "None", "None"]
+                )
+
+    def test_output_names_never_classify_as_a_source_map(self):
+        """A packed output read back as one of its own inputs (a ``_Clearcoat``
+        output is a Clearcoat map) would be packed again by the next batch."""
+        from pythontk.core_utils.engines.textures.map_factory import MapFactory
+
+        for name, data in _builtin_presets().items():
+            with self.subTest(preset=name):
+                map_type = MapFactory.resolve_map_type(f"mat{data['txtSuffix']}.png")
+                self.assertNotIn(map_type, [data[f"cmb{c}"] for c in "RGBA"])
 
     def test_three_channel_presets_pack_to_the_declared_layout(self):
         """ORM / MRAO round-trip: 3-channel RGB, each map in its named channel.
 
-        Locks the layouts against ``pythontk.MapRegistry``'s ``MapType.channels``
-        (the ecosystem SSoT that blendertk's material builder also reads), and
-        that they stay RGB — no alpha is what lets these compress as BC1 rather
+        They stay RGB -- no alpha is what lets these compress as BC1 rather
         than BC3/BC7, and it is the whole point of the format.
         """
         expected = {  # preset -> (R, G, B) source values, per the SSoT layout
-            "ORM (Unreal, glTF)": (50, 100, 200),  # AO, Roughness, Metallic
-            "MRAO (Metallic, Roughness, AO)": (200, 100, 50),  # M, R, AO
+            "ORM - Unreal glTF Godot": (50, 100, 200),  # AO, Roughness, Metallic
+            "MRAO - Metallic Roughness AO": (200, 100, 50),  # M, R, AO
         }
         values = {"Metallic": 200, "Roughness": 100, "Ambient_Occlusion": 50}
 
-        test_dir = tempfile.mkdtemp(prefix="packer_preset_")
-        self.addCleanup(shutil.rmtree, test_dir, ignore_errors=True)
+        temp = ptk.TempArtifacts("extapps_packer_preset", policy="scoped")
+        self.addCleanup(temp.cleanup)
+        test_dir = temp.dir_path()
         files = []
         for map_type, value in values.items():
             path = os.path.join(test_dir, f"mat_{map_type}.png")
@@ -558,32 +630,80 @@ class TestMapPackerPresets(unittest.TestCase):
             files.append(path)
 
         inst = PackerSlots.__new__(PackerSlots)
+        presets = _builtin_presets()
         for name, rgb in expected.items():
             with self.subTest(preset=name):
-                preset = PackerSlots.BUILTIN_PRESETS[name]
+                preset = presets[name]
                 self.assertTrue(
                     inst._pack_set(
                         base_name="mat",
                         files=files,
-                        combos=[preset[c] for c in "RGBA"],
-                        suffix=preset["suffix"],
-                        ext=preset["format"].lower(),
-                        fmt=preset["format"],
+                        combos=[preset[f"cmb{c}"] for c in "RGBA"],
+                        suffix=preset["txtSuffix"],
+                        ext=preset["cmbFormat"].lower(),
+                        fmt=preset["cmbFormat"],
                     )
                 )
-                out = os.path.join(test_dir, f"mat{preset['suffix']}.png")
+                out = os.path.join(test_dir, f"mat{preset['txtSuffix']}.png")
                 with Image.open(out) as img:
                     self.assertEqual(img.mode, "RGB")
                     self.assertEqual(img.getpixel((0, 0)), rgb)
 
 
+class TestMapPackerRetireLegacySeeds(unittest.TestCase):
+    """The copies earlier releases seeded into the user store are retired once.
+
+    They predate the built-in tier and would list beside it as duplicates; an
+    edited copy is the user's own preset and stays.
+    """
+
+    def setUp(self):
+        import json
+        from uitk.managers.preset_manager import PresetManager
+
+        temp = ptk.TempArtifacts("extapps_packer_seeds", policy="scoped")
+        self.addCleanup(temp.cleanup)
+        self.user_dir = temp.dir_path()
+        self.seeded = {}
+        for stem, (_, values) in PackerSlots._LEGACY_SEEDS.items():
+            data = {"_meta": {"version": 1}, "cmbFormat": 0, **values}
+            self.seeded[stem] = os.path.join(self.user_dir, f"{stem}.json")
+            with open(self.seeded[stem], "w") as f:
+                json.dump(data, f)
+        self.presets = PresetManager.from_widgets(
+            self.user_dir, widgets=[], builtin_dir=PackerSlots.BUILTIN_PRESET_DIR
+        )
+
+    def _user_presets(self):
+        return sorted(n for n in self.presets.list() if self.presets.source(n) == "user")
+
+    def test_untouched_seeds_go_and_the_active_pick_follows(self):
+        self.presets.active_preset = "ORM _Unreal_ glTF_"
+        PackerSlots._retire_legacy_seeds(self.presets)
+        self.assertEqual(self._user_presets(), [])
+        self.assertEqual(self.presets.active_preset, "ORM - Unreal glTF Godot")
+        self.assertEqual(self.presets.source(self.presets.active_preset), "builtin")
+
+    def test_an_edited_seed_is_the_users_and_stays(self):
+        import json
+
+        edited = "MRAO _Metallic_ Roughness_ AO_"
+        with open(self.seeded[edited]) as f:
+            data = json.load(f)
+        data["txtSuffix"] = "_Mine"
+        with open(self.seeded[edited], "w") as f:
+            json.dump(data, f)
+        PackerSlots._retire_legacy_seeds(self.presets)
+        self.assertEqual(self._user_presets(), [edited])
+
+
 class TestMapPackerPresetCombo(unittest.TestCase):
-    """The preset selector lives in the main window, not the header menu."""
+    """The preset selector and every option live in the main window."""
 
     @classmethod
     def setUpClass(cls):
-        # Built-ins are seeded into the presets root on first show; conftest's
-        # TestSandbox keeps that (and QSettings) out of the real user stores.
+        # conftest's TestSandbox keeps the user preset store and QSettings out
+        # of the real user dirs, so the combo lists the built-ins alone.
         from qtpy.QtWidgets import QApplication
         from extapps.texture_maps.packer import PackerUI
 
@@ -598,36 +718,72 @@ class TestMapPackerPresetCombo(unittest.TestCase):
         cls.ui.deleteLater()
         cls.app.processEvents()
 
-    def test_preset_combo_is_in_the_window(self):
+    def test_preset_combo_lists_the_builtin_templates(self):
         combo = self.ui.cmbPreset
         listed = sorted(combo.itemText(i) for i in range(combo.count()))
         self.assertEqual(listed, sorted(self.ui.presets.list()))
-        self.assertEqual(len(listed), len(PackerSlots.BUILTIN_PRESETS))
+        self.assertEqual(listed, sorted(_builtin_presets()))
 
-    def test_header_menu_has_no_preset_combo(self):
+    def test_header_menu_is_empty(self):
+        """Mode and Missing Maps moved into the window; nothing is left behind."""
         from qtpy.QtWidgets import QComboBox
 
         # The menu wraps a wired combo in its option-box container, so look
         # through the whole menu rather than at its top-level items.
-        names = [c.objectName() for c in self.ui.header.menu.findChildren(QComboBox)]
-        self.assertNotIn("cmb_presets", names)
+        self.assertEqual(self.ui.header.menu.findChildren(QComboBox), [])
+
+    def test_options_sit_in_workflow_order(self):
+        """Mode first (it decides what every row means), then the preset, the
+        channels, and the output rows the action writes."""
+        from qtpy.QtCore import QPoint
+
+        names = [
+            "cmbMode",
+            "cmbPreset",
+            "cmbR",
+            "cmbFormat",
+            "txtSuffix",
+            "cmbMissing",
+            "b000",
+        ]
+        ys = [getattr(self.ui, n).mapTo(self.ui, QPoint(0, 0)).y() for n in names]
+        self.assertEqual(ys, sorted(ys), dict(zip(names, ys)))
+
+    def test_unpack_mode_disables_the_pack_only_rows(self):
+        combo = self.ui.cmbMode
+        self.addCleanup(combo.setCurrentIndex, combo.findData("pack"))
+        combo.setCurrentIndex(combo.findData("unpack"))
+        self.app.processEvents()
+        self.assertEqual(self.ui.b000.text(), "Unpack")
+        self.assertFalse(self.ui.cmbMissing.isEnabled())
+        self.assertFalse(self.ui.txtSuffix.isEnabled())
 
     def test_picking_a_preset_loads_the_channel_layout(self):
         combo = self.ui.cmbPreset
-        name = "MRAO (Metallic, Roughness, AO)"
-        # The store lists file stems, which sanitize the punctuation.
-        index = next(
-            i for i in range(combo.count()) if combo.itemText(i).startswith("MRAO")
-        )
+        name = "MRAO - Metallic Roughness AO"
+        index = combo.findText(name)
         combo.setCurrentIndex(index)
         combo.activated.emit(index)
         self.app.processEvents()
-        preset = PackerSlots.BUILTIN_PRESETS[name]
+        preset = _builtin_presets()[name]
         self.assertEqual(
             [getattr(self.ui, f"cmb{c}").currentText() for c in "RGBA"],
-            [preset[c] for c in "RGBA"],
+            [preset[f"cmb{c}"] for c in "RGBA"],
         )
-        self.assertEqual(self.ui.txtSuffix.text(), preset["suffix"])
+        self.assertEqual(self.ui.txtSuffix.text(), preset["txtSuffix"])
+
+    def test_a_saved_preset_stores_map_type_names(self):
+        """A user preset reads like a template: names, not row numbers."""
+        import json
+
+        self.ui.cmbR.setCurrentText("Clearcoat")
+        self.ui.presets.save("Test Names")
+        self.addCleanup(self.ui.presets.delete, "Test Names")
+        path = self.ui.presets.preset_dir / "Test Names.json"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        self.assertEqual(data["cmbR"], "Clearcoat")
+        self.assertIn(data["cmbFormat"], PackerSlots.output_formats)
 
 
 class _FakeCombo:
@@ -670,10 +826,7 @@ class _FakeUI:
 
     def __init__(self, cmbA, mode):
         self.cmbA = cmbA
-        header = types.SimpleNamespace()
-        header.menu = types.SimpleNamespace()
-        header.menu.cmb_mode = _FakeCombo(items=["Pack", "Unpack"], current=mode)
-        self.header = header
+        self.cmbMode = _FakeDataCombo("unpack" if mode == "Unpack" else "pack")
 
 
 class TestMapPackerFormatAlphaGuard(unittest.TestCase):

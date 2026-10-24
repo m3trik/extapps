@@ -341,7 +341,7 @@ _Auto-generated. Do not edit by hand. Compact symbol index — grep this for a n
 
 ### `texture_maps/packer/slots.py` — Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
 - `class PackerSlots`
-  - methods: cmbPreset_init, cmbR_init, cmbG_init, cmbB_init, cmbA_init, txtSuffix_init, cmbFormat_init, header_init, source_dir, b000, b001
+  - methods: cmbPreset_init, cmbR_init, cmbG_init, cmbB_init, cmbA_init, txtSuffix_init, cmbFormat_init, cmbMode_init, cmbMissing_init, source_dir, b000, b001
 
 ### `unity_workflow/__init__.py` — Copy a model file into a Unity project's Assets and optionally launch the Editor.
 - constants: DEFAULT_INCLUDE

@@ -21,6 +21,14 @@ import time (not via a pytest fixture), so it runs before the first
 (``python test/<module>.py``) loads no conftest: a module whose tearDown
 clears a panel's store activates the sandbox itself.
 """
+import os
+
 from uitk.testing import TestSandbox
+
+# Headless unless a GUI is the point (CODE_STANDARD section 9): the panel tests
+# build real Switchboard UIs, and only 3 of the 16 Qt modules asked for the
+# offscreen platform themselves -- set it before any test constructs Qt. An
+# explicit value is honored.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 TestSandbox.activate()

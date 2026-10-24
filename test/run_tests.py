@@ -180,6 +180,7 @@ class ExtappsTestRunner(_ExtappsTestRunnerInternal):
         update_badge: bool = True,
         log: bool = False,
         extra: Optional[Sequence[str]] = None,
+        patterns: Sequence[str] = (),
     ) -> int:
         """Run the suite; stamp the badge when the run covered every module.
 
@@ -190,12 +191,22 @@ class ExtappsTestRunner(_ExtappsTestRunnerInternal):
                 this runner's own tally and badge line) to
                 ``test/temp_tests/run_tests.log``.
             extra: Additional raw pytest arguments.
+            patterns: ``-k`` filters, joined with ``or`` into pytest's own
+                ``-k`` expression (substring match on the test id, as in every
+                sibling runner).
 
         Returns:
             Process exit code — 0 only when nothing failed.
         """
         collector = cls.Collector()
-        args = cls.targets(modules) + list(extra or [])
+        extra = list(extra or [])
+        args = cls.targets(modules) + extra
+        if patterns:
+            args += ["-k", " or ".join(patterns)]
+        # A filtered run can touch every module and still be partial -- the
+        # module gate alone would stamp it (TEST_BADGE_STANDARD).
+        if patterns or any(a.startswith("-k") for a in extra):
+            update_badge = False
 
         buffer = io.StringIO()
         real_out, real_err = sys.stdout, sys.stderr
@@ -245,6 +256,13 @@ def main() -> int:
         metavar="ARG",
         help="Extra raw pytest argument (repeatable), e.g. --pytest-arg=-q",
     )
+    parser.add_argument(
+        "-k",
+        dest="patterns",
+        action="append",
+        default=[],
+        help="Only tests whose id matches (substring); repeatable, joined with 'or'",
+    )
     args = parser.parse_args()
 
     if args.list:
@@ -257,6 +275,7 @@ def main() -> int:
         update_badge=not args.no_badge,
         log=args.log,
         extra=args.pytest_arg,
+        patterns=args.patterns,
     )
 
 

@@ -1759,14 +1759,13 @@ class WebXrPreviewSlots(BridgeSlotsBase):
                 progress=lambda message: tick(text=message),
                 EMBED_TEXTURES=bool(values.get("EMBED_TEXTURES", True)),
                 INCLUDE_ANIMATION=bool(values.get("INCLUDE_ANIMATION", False)),
-                SCENE_SIDECAR=bool(values.get("SCENE_SIDECAR", True)),
             )
-        # Reported, not left to the log: read nothing / matched nothing /
-        # switched off all render the SAME unlit preview, and a bake whose maps
-        # were not found renders exactly like no bake. Without these the
-        # feature cannot be debugged from the panel.
+        # Reported, not left to the log: a map the materials record names but
+        # the push could not find renders as a flat colour, and a bake whose
+        # maps were not found renders exactly like no bake. Without these the
+        # preview cannot be debugged from the panel.
         return result, [
-            bridge.sidecar_summary(result),
+            bridge.materials_summary(result),
             bridge.lightmap_summary(result),
             self._timing_line(bridge, result),
         ]

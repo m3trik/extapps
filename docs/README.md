@@ -1,4 +1,4 @@
-[![Tests](https://img.shields.io/badge/Tests-898%20passed-brightgreen.svg)](../test/)
+[![Tests](https://img.shields.io/badge/Tests-908%20passed-brightgreen.svg)](../test/)
 
 <!-- short_description_start -->
 Standalone Switchboard panels for content-pipeline workflows — map compositing, texture conversion and channel packing, photogrammetry, mesh conversion, and Substance / Marmoset / Unity automation.
@@ -21,7 +21,7 @@ group. Hosts (tentacle, mayatk, etc.) discover and launch them automatically
 | `marmoset_workflow` | Open a model file in a new Marmoset Toolbag (import / lookdev templates) | bundled `_marmoset_engine` (SDK-specific) | _TBD_ |
 | `unity_workflow` | Copy a model file into a Unity project's Assets; manage unitytk's import scripts | bundled | _TBD_ |
 | `converter` | Texture conversion (normal DX↔GL, smoothness↔roughness, spec→PBR, bump→normal, optimize, flip/swizzle channels), color+alpha pack/unpack, PBR prep | `pythontk.ImgUtils` / `MapFactory` | _TBD_ |
-| `packer` | Channel-pack **and unpack** textures via per-channel sources (ORM/MRAO/MSAO/MetallicSmoothness templates) | `pythontk.ImgUtils` / `MapFactory` | _TBD_ |
+| `packer` | Channel-pack **and unpack** textures via per-channel sources (built-in templates: ORM, MRAO, MSAO, Metallic Smoothness, glTF clearcoat / iridescence / transmission-volume) | `pythontk.ImgUtils` / `MapFactory` | _TBD_ |
 | `mesh_convert` | FBX → glTF / GLB conversion | `pythontk.file_utils.mesh_convert` | _TBD_ |
 | `look_match` | Light a baked scene to match a reference image: the mix of light layers, a live comparison, region scores, solve / fit proposals, WebXR renders, Update layers, rigs saved to the shared library | `pythontk.core_utils.engines.lighting` | [→](https://github.com/m3trik/pythontk/blob/main/docs/look_match.md) |
 

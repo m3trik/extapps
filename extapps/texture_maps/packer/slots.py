@@ -2,6 +2,7 @@
 # coding=utf-8
 """Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps."""
 
+import os
 from typing import List
 import pythontk as ptk
 from pythontk import ImgUtils
@@ -31,7 +32,8 @@ class PackerSlots:
         "Displacement",
         # The OpenPBR scalar lobes -- glTF packs them in pairs (clearcoat R +
         # its roughness G, iridescence R + its thickness G). Appended, never
-        # inserted: a saved preset stores each combo by INDEX.
+        # inserted: a preset saved before the combos stored their TEXT holds
+        # each one by INDEX.
         "Clearcoat",
         "Clearcoat_Roughness",
         "Sheen",
@@ -48,48 +50,45 @@ class PackerSlots:
     ]
     output_formats = ["PNG", "TGA", "JPG", "BMP", "TIFF", "EXR"]
 
-    # Policy for a texture set whose requested maps aren't all resolvable.
-    MISSING_SKIP = "skip"  # default: don't write an incomplete set
-    MISSING_MULTI = "multi"  # write it only if 2+ channels resolved
-    MISSING_FORCE = "force"  # always write; missing channels fill
+    # Policy for a texture set whose requested maps aren't all resolvable --
+    # the registry's rules, so the Map Packer and the material updaters share
+    # one vocabulary.
+    MISSING_SKIP = ptk.MapRegistry.MISSING_SKIP  # default: don't write it
+    MISSING_MULTI = ptk.MapRegistry.MISSING_MULTI  # only if 2+ channels resolved
+    MISSING_FORCE = ptk.MapRegistry.MISSING_FORCE  # always; missing channels fill
 
     PRESET_DIR = "extapps/texture_maps/packer"
+    # The shipped, read-only templates: one per supported packing (ORM, MRAO,
+    # MSAO, Metallic Smoothness, and the glTF lobe pairs). A user preset of the
+    # same name shadows one; the panel never copies them into the user store.
+    BUILTIN_PRESET_DIR = os.path.join(os.path.dirname(__file__), "presets")
 
-    # Built-in presets defined using human-readable names.
-    # Resolved to combo indices at seed time via grayscale_types/output_formats.
-    BUILTIN_PRESETS = {
-        "ORM (Unreal, glTF)": {
-            "R": "Ambient_Occlusion",
-            "G": "Roughness",
-            "B": "Metallic",
-            "A": "None",
-            "format": "PNG",
-            "suffix": "_ORM",
-        },
-        "MRAO (Metallic, Roughness, AO)": {
-            "R": "Metallic",
-            "G": "Roughness",
-            "B": "Ambient_Occlusion",
-            "A": "None",
-            "format": "PNG",
-            "suffix": "_MRAO",
-        },
-        "MSAO (HDRP Mask Map)": {
-            "R": "Metallic",
-            "G": "Ambient_Occlusion",
-            "B": "None",
-            "A": "Smoothness",
-            "format": "PNG",
-            "suffix": "_MSAO",
-        },
-        "Metallic Smoothness (URP)": {
-            "R": "Metallic",
-            "G": "None",
-            "B": "None",
-            "A": "Smoothness",
-            "format": "PNG",
-            "suffix": "_MetallicSmoothness",
-        },
+    # The copies earlier releases seeded into the USER store, by stem, with the
+    # values they were written with -> the built-in that replaces each. Retired
+    # once, and only while untouched: an edited copy is the user's own preset.
+    _LEGACY_SEEDS = {
+        "ORM _Unreal_ glTF_": (
+            "ORM - Unreal glTF Godot",
+            {"cmbR": 3, "cmbG": 2, "cmbB": 1, "cmbA": 0, "txtSuffix": "_ORM"},
+        ),
+        "MRAO _Metallic_ Roughness_ AO_": (
+            "MRAO - Metallic Roughness AO",
+            {"cmbR": 1, "cmbG": 2, "cmbB": 3, "cmbA": 0, "txtSuffix": "_MRAO"},
+        ),
+        "MSAO _HDRP Mask Map_": (
+            "MSAO - Unity HDRP Mask Map",
+            {"cmbR": 1, "cmbG": 3, "cmbB": 0, "cmbA": 4, "txtSuffix": "_MSAO"},
+        ),
+        "Metallic Smoothness _URP_": (
+            "Metallic Smoothness - Unity URP",
+            {
+                "cmbR": 1,
+                "cmbG": 0,
+                "cmbB": 0,
+                "cmbA": 4,
+                "txtSuffix": "_MetallicSmoothness",
+            },
+        ),
     }
 
     def __init__(self, switchboard, **kwargs):
@@ -126,16 +125,16 @@ class PackerSlots:
         """Cross-widget wiring, deferred until the whole UI is registered.
 
         Runs once after ``register_children`` (via ``on_first_show``), so every
-        channel combo, the preset combo, the header menu, and the action buttons
-        exist. Per-combo
-        population/restore already ran in the ``*_init`` methods, so this only
-        does the wiring that spans multiple widgets.
+        channel combo, the preset combo, the option combos, and the action
+        buttons exist. Per-combo population/restore already ran in the
+        ``*_init`` methods, so this only does the wiring that spans multiple
+        widgets.
         """
         self._set_channel_label_colors()
         self.ui.b001.setEnabled(False)  # the open-output-dir button starts disabled
         self._setup_presets()
         # Sync the action-button text / option enablement to the restored mode.
-        self._on_mode_changed(self.ui.header.menu.cmb_mode.currentText())
+        self._on_mode_changed()
 
     def _setup_presets(self):
         """Wire the in-window preset combo to the channel/format/affix widgets.
@@ -143,14 +142,13 @@ class PackerSlots:
         The window's ``PresetManager`` drives ``cmbPreset`` (the canonical
         Refresh / Save / menu toolbar comes from ``wire_combo``). It runs here,
         not in ``cmbPreset_init``: the preset combo registers before the channel
-        combos it captures. The store (``PRESET_DIR``) and its ``.active``
-        pointer are the ones the header-menu selector used, so saved presets and
-        the last pick carry over.
+        combos it captures. The templates are the read-only built-in tier
+        (``BUILTIN_PRESET_DIR``); the user store (``PRESET_DIR``) holds only
+        what the user saves.
         """
         presets = self.ui.presets
         presets.preset_dir = self.PRESET_DIR
-        # Seed built-in presets BEFORE wiring so the combo is populated on first launch.
-        self._seed_builtin_presets(presets)
+        presets.builtin_dir = self.BUILTIN_PRESET_DIR
         presets.setup(
             widgets=[
                 self.ui.cmbR,
@@ -170,6 +168,8 @@ class PackerSlots:
             },
             on_metadata_loaded=self._apply_preset_affix_mode,
         )
+        # Before wiring, so the combo lists (and restores) what remains.
+        self._retire_legacy_seeds(presets)
         presets.wire_combo(self.ui.cmbPreset, placeholder="Preset…")
 
     def cmbPreset_init(self, widget):
@@ -194,14 +194,39 @@ class PackerSlots:
         if option is not None:
             option.set_mode(meta.get("affix_mode", "suffix"))
 
+    @classmethod
+    def _retire_legacy_seeds(cls, presets) -> None:
+        """Delete the template copies earlier releases seeded into the user store.
+
+        They predate the built-in tier and would list beside it as duplicates.
+        A copy whose values no longer match its seed (every seed wrote PNG,
+        ``cmbFormat`` 0) was edited -- it is the user's, and stays. An active
+        pick on a retired copy moves to the built-in that replaces it.
+
+        Parameters:
+            presets: The panel's ``uitk.PresetManager``.
+        """
+        active = presets.active_preset
+        for stem, (replacement, seeded) in cls._LEGACY_SEEDS.items():
+            if presets.source(stem) != "user":
+                continue
+            if presets.read(stem) != {"cmbFormat": 0, **seeded}:
+                continue
+            presets.delete(stem)
+            if active == stem:
+                presets.active_preset = replacement
+
     def _init_channel_combo(self, widget):
         """Populate a channel combo with the grayscale map types.
 
         Runs inside the per-widget ``*_init`` (so during ``register_children``,
         before state restore) — the selection then persists across sessions.
+        Persisted, and captured into presets, by TEXT: a map-type name reads
+        the same in a preset file and survives the list growing.
         """
         widget.clear()
         widget.addItems(self.grayscale_types)
+        widget.restore_by = "text"
         widget.restore_state = True
 
     def cmbR_init(self, widget):
@@ -231,6 +256,7 @@ class PackerSlots:
         """Populate the output-format combo and react to format changes."""
         widget.clear()
         widget.addItems(self.output_formats)
+        widget.restore_by = "text"
         widget.restore_state = True
         widget.currentTextChanged.connect(self._on_format_changed)
 
@@ -254,48 +280,22 @@ class PackerSlots:
         if not supports_alpha:
             self.ui.cmbA.setCurrentIndex(self.ui.cmbA.findText("None"))
 
-    def header_init(self, widget):
-        """Build the header menu's Pack/Unpack toggle and Missing Maps policy.
+    def cmbMode_init(self, widget):
+        """The Pack/Unpack direction -- first in the window, since it decides
+        what every row below it means.
 
         The channel layout (R/G/B/A → map type) is direction-agnostic, so a
-        single set of presets serves both packing and unpacking; they live on
-        the in-window ``cmbPreset`` (wired in :meth:`_setup_presets`). The Mode
-        toggle decides the direction (see :meth:`_on_mode_changed`); the
-        Missing Maps combo decides what an incomplete set does when packing
-        (see :meth:`_pack_set`).
+        single set of presets serves both packing and unpacking (see
+        :meth:`_on_mode_changed`).
         """
-        widget.menu.setTitle("Map Packer Options")
-        cmb_mode = widget.menu.add(
-            "QComboBox",
-            setObjectName="cmb_mode",
-            addItems=["Pack", "Unpack"],
-            setToolTip=(
-                "Pack: combine the per-channel source maps into one packed "
-                "texture.\n"
-                "Unpack: split a packed texture back into its per-channel maps "
-                "(each channel's selected map type names the output file)."
-            ),
-        )
-        cmb_mode.restore_state = True
-        cmb_mode.currentTextChanged.connect(self._on_mode_changed)
+        widget.add([("Pack", "pack"), ("Unpack", "unpack")], prefix="Mode:")
+        widget.restore_by = "data"
+        widget.restore_state = True
+        widget.currentIndexChanged.connect(lambda *_: self._on_mode_changed())
 
-        cmb_missing = widget.menu.add(
-            "QComboBox",
-            setObjectName="cmb_missing",
-            setToolTip=(
-                "What to do with a texture set when one or more of the "
-                "requested source maps is missing (and can't be derived from "
-                "the maps that are present).\n"
-                "Skip Set (default): nothing is written, so an incomplete set "
-                "can't silently produce a packed map with blank channels.\n"
-                "Pack If 2+ Maps: pack only when at least two channels "
-                "resolved - enough that the result is still a useful packed "
-                "map rather than a single map wearing a packed name.\n"
-                "Pack Anyway: always pack; missing channels are filled with "
-                "their default value (0 for R/G/B, 255 for A)."
-            ),
-        )
-        cmb_missing.add(
+    def cmbMissing_init(self, widget):
+        """What an incomplete texture set does when packing (see :meth:`_pack_set`)."""
+        widget.add(
             [
                 ("Skip Set", self.MISSING_SKIP),
                 ("Pack If 2+ Maps", self.MISSING_MULTI),
@@ -303,47 +303,46 @@ class PackerSlots:
             ],
             prefix="Missing Maps:",
         )
-        cmb_missing.restore_state = True
+        widget.restore_by = "data"
+        widget.restore_state = True
 
     def _unpack_mode(self) -> bool:
-        """True when the header Mode toggle is set to Unpack.
+        """True when the Mode combo is set to Unpack.
 
-        Defaults to False (Pack) when the header menu hasn't been built yet, so
-        callers can read it safely at any point.
+        Defaults to False (Pack) when the combo isn't registered yet, so callers
+        can read it safely at any point.
         """
         try:
-            return self.ui.header.menu.cmb_mode.currentText() == "Unpack"
+            return self.ui.cmbMode.currentData() == "unpack"
         except (AttributeError, RuntimeError):
             return False
 
     def _missing_map_rule(self) -> str:
-        """The header's 'Missing Maps' policy for incomplete texture sets.
+        """The 'Missing Maps' policy for incomplete texture sets.
 
-        Falls back to :attr:`MISSING_SKIP` when the header menu hasn't been
-        built yet (or the combo has no selection), so callers can read it
-        safely at any point and always get the safe default.
+        Falls back to :attr:`MISSING_SKIP` when the combo isn't registered yet
+        (or has no selection), so callers can read it safely at any point and
+        always get the safe default.
         """
         try:
-            return self.ui.header.menu.cmb_missing.currentData() or self.MISSING_SKIP
+            return self.ui.cmbMissing.currentData() or self.MISSING_SKIP
         except (AttributeError, RuntimeError):
             return self.MISSING_SKIP
 
-    def _on_mode_changed(self, mode: str):
+    def _on_mode_changed(self):
         """Reflect the Pack/Unpack mode in the UI.
 
         Behavior is read live from :meth:`_unpack_mode` at action time, so this
         is purely cosmetic: relabel the action button and disable options that
         don't apply to the current direction.
         """
-        unpack = mode == "Unpack"
+        unpack = self._unpack_mode()
         self.ui.b000.setText("Unpack" if unpack else "Pack")
         # The Suffix names the single packed output; when unpacking, each output
         # is auto-named by its channel's map type, so the field is irrelevant.
         self.ui.txtSuffix.setEnabled(not unpack)
         # The Missing Maps policy only governs the pack direction.
-        cmb_missing = getattr(self.ui.header.menu, "cmb_missing", None)
-        if cmb_missing is not None:
-            cmb_missing.setEnabled(not unpack)
+        self.ui.cmbMissing.setEnabled(not unpack)
         # In pack mode the alpha channel's availability follows the output
         # format. In unpack mode the alpha combo selects what to extract from
         # the input image, so it must stay enabled regardless of format.
@@ -351,29 +350,6 @@ class PackerSlots:
             self.ui.cmbA.setEnabled(True)
         else:
             self._on_format_changed(self.ui.cmbFormat.currentText())
-
-    def _seed_builtin_presets(self, preset_mgr):
-        """Write built-in preset JSON files if they don't already exist.
-
-        Converts human-readable BUILTIN_PRESETS (map-type/format names)
-        into the index-based JSON format that PresetManager expects.
-        """
-        import json
-
-        for name, preset in self.BUILTIN_PRESETS.items():
-            filepath = preset_mgr._preset_path(name)
-            if not filepath.exists():
-                data = {
-                    "_meta": {"version": 2, "affix_mode": "suffix"},
-                    "cmbR": self.grayscale_types.index(preset["R"]),
-                    "cmbG": self.grayscale_types.index(preset["G"]),
-                    "cmbB": self.grayscale_types.index(preset["B"]),
-                    "cmbA": self.grayscale_types.index(preset["A"]),
-                    "cmbFormat": self.output_formats.index(preset["format"]),
-                    "txtSuffix": preset["suffix"],
-                }
-                with open(filepath, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=4)
 
     @property
     def source_dir(self):
@@ -556,12 +532,13 @@ class PackerSlots:
         channels are silently filled with a constant, which is indistinguishable
         from a legitimately flat channel downstream.
 
-        ``rule`` is the header's 'Missing Maps' policy, applied only when the
+        ``rule`` is the panel's 'Missing Maps' policy, applied only when the
         set is incomplete: :attr:`MISSING_SKIP` writes nothing,
         :attr:`MISSING_MULTI` writes it if at least two channels resolved, and
         :attr:`MISSING_FORCE` always writes it. In both packing cases as many
-        channels as possible are resolved and ``pack_channels`` fills the rest
-        with its per-channel defaults.
+        channels as possible are resolved and the rest store their map type's
+        absent value (``ptk.MapRegistry.absent_fills``): unoccluded, matte,
+        dielectric, opaque -- the rule every packing follows.
         """
         assigned = {c: None for c in self.channels}
         requested = dict(zip(self.channels, combos))
@@ -598,8 +575,8 @@ class PackerSlots:
 
         if missing:
             # How many channels a packing rule needs before it will write an
-            # incomplete set. MISSING_SKIP needs them all, i.e. never gets here.
-            minimum = {self.MISSING_MULTI: 2, self.MISSING_FORCE: 1}.get(rule, 0)
+            # incomplete set. MISSING_SKIP (0) needs them all, i.e. never packs.
+            minimum = ptk.MapRegistry.MISSING_MAP_MINIMUMS.get(rule, 0)
             if not minimum or len(resolved) < minimum:
                 print(
                     f"// Skipped '{base_name}': required map(s) "
@@ -608,7 +585,7 @@ class PackerSlots:
                 return False
             print(
                 f"// Warning: '{base_name}' is missing {', '.join(missing)}. "
-                "Packing with those channels filled by default values."
+                "Packing with those channels at their absent values."
             )
         elif not resolved:  # every channel set to 'None' — nothing was asked for
             return False
@@ -626,8 +603,6 @@ class PackerSlots:
         # Never write over one of our own source maps. Two ways in: an affix that
         # resolves to nothing on both sides, and one the user deliberately types
         # that collides -- including a re-pack over a previous output.
-        import os
-
         def _key(path):
             return os.path.normcase(os.path.abspath(path))
 
@@ -642,6 +617,7 @@ class PackerSlots:
             output_path=output_path,
             out_mode=out_mode,
             output_format=fmt,
+            fill_values=ptk.MapRegistry.absent_fills(requested),
         )
         print(f"// Result: Packed map saved: {output_path}")
         return True
@@ -715,8 +691,6 @@ class PackerSlots:
 
     def b001(self):
         """Open the last output directory in the system file explorer."""
-        import os
-
         output_dir = getattr(self, "_last_output_dir", None)
         if not output_dir or not os.path.isdir(output_dir):
             print("// No output directory available.")

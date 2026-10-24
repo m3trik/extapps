@@ -47,7 +47,7 @@ AUTHORED_EXTENSION = ".glb"
 #: Export params: meaningful only when a host is producing the export. Hidden
 #: for the file source, whose "export" already happened -- Include Textures
 #: too: a file's FBX already chose what it embeds.
-EXPORT_KEYS = frozenset({"INCLUDE_ANIMATION", "SCENE_SIDECAR", "EMBED_TEXTURES"})
+EXPORT_KEYS = frozenset({"INCLUDE_ANIMATION", "EMBED_TEXTURES"})
 
 #: Params the file source owns and no host scope has.
 FILE_KEYS = frozenset({"SOURCE_FILE"})
@@ -224,17 +224,6 @@ PARAMS: "dict[str, AttributeSpec]" = {
         "Off by default because baking samples every frame of the scene range, "
         "which costs push time and file size on a scene you are previewing for "
         "its look. A scene with shots declared ships its takes either way.",
-    ),
-    "SCENE_SIDECAR": AttributeSpec(
-        key="SCENE_SIDECAR",
-        label="Scene Sidecar",
-        kind="bool",
-        default=True,
-        section="Delivery",
-        tooltip="Carry extended scene setup the FBX cannot express, applied to "
-        "the preview after conversion.\n\n"
-        "Uncheck to preview exactly what the FBX itself carried -- the way to "
-        "tell something the exporter dropped from something it mistranslated.",
     ),
     "EMBED_TEXTURES": AttributeSpec(
         key="EMBED_TEXTURES",

@@ -1590,7 +1590,9 @@ class TestShareLink(_PanelTestCase):
         self._ping(ms=42.0)
         logged = self._record_log()
         self._share()
-        self._pump_until(lambda: any("Link checked" in line for line in logged))
+        # THIS share's answer: an earlier case's check on the same fake link
+        # can log its own "Link checked" first.
+        self._pump_until(lambda: any("(42 ms)" in line for line in logged))
         self.assertTrue(any("(42 ms)" in line for line in logged), logged)
 
     def test_test_link_says_whether_a_guest_can_reach_the_share(self):
@@ -1898,8 +1900,9 @@ class TestShareLink(_PanelTestCase):
         self._ping(ms=5.0, route="public", verified=False)
         logged = self._record_levels()
         self._share()
-        self._pump_until(lambda: any("Link checked" in t for t, _lv in logged))
-        line = next(t for t, _lv in logged if "Link checked" in t)
+        # THIS share's answer (an earlier case's check can log first).
+        self._pump_until(lambda: any("could not verify" in t for t, _lv in logged))
+        line = next(t for t, _lv in logged if "could not verify" in t)
         self.assertIn("could not verify the link's certificate", line)
         self.assertIn("public DNS", line)
 

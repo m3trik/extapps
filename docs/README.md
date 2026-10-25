@@ -1,3 +1,4 @@
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 [![Tests](https://img.shields.io/badge/Tests-908%20passed-brightgreen.svg)](../test/)
 
 <!-- short_description_start -->
@@ -99,3 +100,7 @@ sb.handlers.external_app.launch("compositor")
 - `unitytk` — Unity project bridge (used by `unity_workflow`)
 
 The `metashape_workflow` tool additionally requires the Agisoft Metashape Python module to be importable (installed alongside Metashape itself). The `substance_workflow` tool requires an Adobe Substance 3D Painter install (auto-detected) to launch sessions.
+
+## License
+
+LGPL-3.0-or-later — see [COPYING.LESSER](https://github.com/m3trik/extapps/blob/main/COPYING.LESSER) and [COPYING](https://github.com/m3trik/extapps/blob/main/COPYING).

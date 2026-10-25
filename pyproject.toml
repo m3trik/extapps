@@ -8,11 +8,11 @@ dynamic = ["version", "readme"]
 description = "Standalone Qt tools for content pipelines: texture map compositing and conversion, photogrammetry, Substance Painter automation and mesh conversion."
 keywords = ["m3trik", "photogrammetry", "pbr", "substance-painter", "gltf", "technical-art", "pyside6"]
 authors = [{name = "Ryan Simpson", email = "m3trik@outlook.com"}]
-license = {text = "MIT"}
+license = {text = "LGPL-3.0-or-later"}
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Intended Audience :: End Users/Desktop",

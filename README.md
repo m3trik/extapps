@@ -1,3 +1,4 @@
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 ![Platform](https://img.shields.io/badge/Platform-Windows%2C%20Linux-lightgrey.svg)
 
 # extapps
@@ -27,3 +28,7 @@ From a uitk host: `sb.handlers.external_app.launch("compositor")`; the host's UI
 Browser also offers *Create desktop shortcut* on each panel's row.
 
 Full usage and per-tool docs: [docs/README.md](docs/README.md) · scope and structure: [CLAUDE.md](CLAUDE.md) · history: [CHANGELOG.md](CHANGELOG.md)
+
+## License
+
+LGPL-3.0-or-later — see [COPYING.LESSER](https://github.com/m3trik/extapps/blob/main/COPYING.LESSER) and [COPYING](https://github.com/m3trik/extapps/blob/main/COPYING).

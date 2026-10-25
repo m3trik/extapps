@@ -170,4 +170,4 @@ API_REGISTRY](../../pythontk/API_REGISTRY.md).
 
 ## License
 
-MIT. See [LICENSE](../LICENSE).
+LGPL-3.0-or-later. See [COPYING.LESSER](../COPYING.LESSER) and [COPYING](../COPYING).

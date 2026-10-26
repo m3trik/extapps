@@ -1,5 +1,5 @@
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
-[![Tests](https://img.shields.io/badge/Tests-908%20passed-brightgreen.svg)](../test/)
+[![Tests](https://img.shields.io/badge/Tests-905%20passed-brightgreen.svg)](../test/)
 
 <!-- short_description_start -->
 Standalone Switchboard panels for content-pipeline workflows — map compositing, texture conversion and channel packing, photogrammetry, mesh conversion, and Substance / Marmoset / Unity automation.

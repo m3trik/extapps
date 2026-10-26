@@ -74,17 +74,6 @@ class TestUnityWorkflowParameters(unittest.TestCase):
             P.Parameters.referenced_keys("uses __ASSET_NAME__"), {"ASSET_NAME"}
         )
 
-    def test_the_module_level_wrappers_warn_for_one_release(self) -> None:
-        """The panel's registry became a ``ParamRegistry`` class; the module
-        functions it replaced still answer, with a deprecation notice."""
-        P = self._P()
-        for name in ("defaults", "referenced_keys", "render_context"):
-            with self.subTest(name), self.assertWarns(DeprecationWarning):
-                fn = getattr(P, name)
-            self.assertEqual(fn, getattr(P.Parameters, name))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(P.defaults(), P.Parameters.defaults())
-
 
 class TestUnityWorkflowPanelLoads(unittest.TestCase):
     @classmethod

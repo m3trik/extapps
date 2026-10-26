@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-import pythontk as ptk
 from uitk.bridge import AttributeSpec, ParamRegistry
 
 from .._shared_params import SharedParams
@@ -141,16 +140,3 @@ class Parameters(ParamRegistry):
         if source == "publish":
             keys |= _PUBLISH_KEYS
         return keys
-
-
-# The module-level functions this class replaced, for one release.
-ptk.Deprecation.attributes(
-    globals(),
-    {
-        "to_argv": "extapps.photogrammetry.gaussian_splat_workflow.parameters.Parameters.to_argv",
-        "referenced_keys": "extapps.photogrammetry.gaussian_splat_workflow.parameters.Parameters.referenced_keys",
-        "defaults": "extapps.photogrammetry.gaussian_splat_workflow.parameters.Parameters.defaults",
-    },
-    remove_in="0.4.0",
-    since="2026-09-26",
-)

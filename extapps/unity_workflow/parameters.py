@@ -17,7 +17,6 @@ key-for-key so a preset/value reads the same in both panels.
 from __future__ import annotations
 
 
-import pythontk as ptk
 from uitk.bridge import AttributeSpec, ParamRegistry
 
 
@@ -132,16 +131,3 @@ class Parameters(ParamRegistry):
     """
 
     PARAMS = PARAMS
-
-
-# The module-level functions this class replaced, for one release.
-ptk.Deprecation.attributes(
-    globals(),
-    {
-        "referenced_keys": "extapps.unity_workflow.parameters.Parameters.referenced_keys",
-        "defaults": "extapps.unity_workflow.parameters.Parameters.defaults",
-        "render_context": "extapps.unity_workflow.parameters.Parameters.render_context",
-    },
-    remove_in="0.4.0",
-    since="2026-09-26",
-)

@@ -8,7 +8,6 @@ Hosts (tentacle, mayatk, etc.) discover and launch them through uitk's
 ``ExternalAppHandler`` — no host-side knowledge required.
 """
 
-import pythontk as _ptk
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
@@ -59,16 +58,3 @@ DEFAULT_INCLUDE = {
 __all__ = ["__version__", "DOCS_BASE_URL"]
 
 bootstrap_package(globals(), include=DEFAULT_INCLUDE)
-
-# Substance's batch types are pythontk's since its RPC stack collapsed onto the
-# shared core; these names only alias them for one release (after bootstrap,
-# so the alias chains onto its loader).
-_ptk.Deprecation.attributes(
-    globals(),
-    {
-        "Call": "pythontk.Call",
-        "Result": "pythontk.Result",
-    },
-    remove_in="0.4.0",
-    since="2026-09-26",
-)

@@ -21,7 +21,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-import pythontk as ptk
 from uitk.bridge import AttributeSpec, ParamRegistry
 
 from ..profile import QUALITY_TIERS
@@ -194,16 +193,3 @@ class Parameters(ParamRegistry):
         if source == "prep_preview":
             return keys & PREPROCESSING_KEYS
         return keys
-
-
-# The module-level functions this class replaced, for one release.
-ptk.Deprecation.attributes(
-    globals(),
-    {
-        "to_argv": "extapps.photogrammetry.realityscan_workflow.parameters.Parameters.to_argv",
-        "referenced_keys": "extapps.photogrammetry.realityscan_workflow.parameters.Parameters.referenced_keys",
-        "defaults": "extapps.photogrammetry.realityscan_workflow.parameters.Parameters.defaults",
-    },
-    remove_in="0.4.0",
-    since="2026-09-26",
-)

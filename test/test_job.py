@@ -4,13 +4,12 @@
 
 The call/result types and the batch loop are pythontk's (``Call`` / ``Result``
 / ``RpcJob``, tested there); what is pinned here is the Painter lifecycle
-around them and the retired re-exports.
+around them.
 """
 
 import os
 import sys
 import unittest
-import warnings
 from unittest.mock import patch
 
 try:
@@ -121,25 +120,6 @@ class TestRunBatch(SubstanceWorkflowTestCase):
             client.invoke.return_value = None
             Job.run_batch([Call("x", timeout=7.0)])
         self.assertEqual(client.invoke.call_args.kwargs["timeout"], 7.0)
-
-
-class TestRetiredReexports(SubstanceWorkflowTestCase):
-    """``Call`` / ``Result`` are pythontk's; the extapps roots only alias them
-    for one release, with a notice."""
-
-    def test_package_aliases_resolve_to_pythontk_with_a_warning(self) -> None:
-        import extapps
-        import extapps.substance_workflow as sw
-
-        for module in (sw, extapps):
-            for name, target in (("Call", ptk.Call), ("Result", ptk.Result)):
-                with self.subTest(module=module.__name__, name=name):
-                    with warnings.catch_warnings(record=True) as caught:
-                        warnings.simplefilter("always")
-                        self.assertIs(getattr(module, name), target)
-                    self.assertTrue(
-                        any(issubclass(w.category, DeprecationWarning) for w in caught)
-                    )
 
 
 @unittest.skipUnless(

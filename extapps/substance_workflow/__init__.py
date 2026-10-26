@@ -21,7 +21,6 @@ by name. They lazy-import ``substance_painter`` so the modules stay
 import-safe outside Painter (tests, registry inspection).
 """
 
-import pythontk as ptk
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps.substance_workflow"
@@ -38,18 +37,6 @@ DEFAULT_INCLUDE = {
 
 
 bootstrap_package(globals(), include=DEFAULT_INCLUDE)
-
-# The batch types are pythontk's since the RPC stack collapsed onto the shared
-# core; the names here only alias them for one release.
-ptk.Deprecation.attributes(
-    globals(),
-    {
-        "Call": "pythontk.Call",
-        "Result": "pythontk.Result",
-    },
-    remove_in="0.4.0",
-    since="2026-09-26",
-)
 
 
 __all__ = [

@@ -14,7 +14,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 21,
+          "line": 20,
           "deprecated": false
         },
         {
@@ -23,7 +23,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 24,
+          "line": 23,
           "deprecated": false
         }
       ]
@@ -782,7 +782,7 @@
         {
           "name": "Parameters",
           "summary": "The Marmoset Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 53,
+          "line": 52,
           "bases": [
             "ParamRegistry"
           ],
@@ -796,7 +796,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 29,
+          "line": 28,
           "deprecated": false
         }
       ]
@@ -1861,7 +1861,7 @@
         {
           "name": "Parameters",
           "summary": "The Brush (gaussian-splat) panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 118,
+          "line": 117,
           "bases": [
             "ParamRegistry"
           ],
@@ -1872,7 +1872,7 @@
               "kind": "staticmethod",
               "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
               "summary": "Render collected param *values* into ``run_combined`` CLI flags via the",
-              "line": 129,
+              "line": 128,
               "deprecated": false
             },
             {
@@ -1881,7 +1881,7 @@
               "kind": "classmethod",
               "signature": "(cls, source: str = '') -> 'set[str]'",
               "summary": "Params relevant to the selected run mode — drives row visibility.",
-              "line": 136,
+              "line": 135,
               "deprecated": false
             }
           ]
@@ -1894,7 +1894,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 25,
+          "line": 24,
           "deprecated": false
         }
       ]
@@ -2525,7 +2525,7 @@
         {
           "name": "Parameters",
           "summary": "The Metashape panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 373,
+          "line": 372,
           "bases": [
             "ParamRegistry"
           ],
@@ -2536,7 +2536,7 @@
               "kind": "staticmethod",
               "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
               "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-              "line": 384,
+              "line": 383,
               "deprecated": false
             },
             {
@@ -2545,7 +2545,7 @@
               "kind": "classmethod",
               "signature": "(cls, source: str = '') -> 'set[str]'",
               "summary": "Params relevant to the panel's current input — drives row visibility.",
-              "line": 395,
+              "line": 394,
               "deprecated": false
             }
           ]
@@ -2558,7 +2558,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 40,
+          "line": 39,
           "deprecated": false
         }
       ]
@@ -3567,7 +3567,7 @@
         {
           "name": "Parameters",
           "summary": "The RealityScan panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 164,
+          "line": 163,
           "bases": [
             "ParamRegistry"
           ],
@@ -3578,7 +3578,7 @@
               "kind": "staticmethod",
               "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
               "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-              "line": 175,
+              "line": 174,
               "deprecated": false
             },
             {
@@ -3587,7 +3587,7 @@
               "kind": "classmethod",
               "signature": "(cls, source: str = '') -> 'set[str]'",
               "summary": "Params relevant to the panel's current input — drives row visibility.",
-              "line": 185,
+              "line": 184,
               "deprecated": false
             }
           ]
@@ -3600,7 +3600,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 39,
+          "line": 38,
           "deprecated": false
         }
       ]
@@ -3788,7 +3788,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 30,
+          "line": 29,
           "deprecated": false
         }
       ]
@@ -4905,7 +4905,7 @@
         {
           "name": "ConverterSlots",
           "summary": "Switchboard slots for ``converter.ui``.",
-          "line": 39,
+          "line": 38,
           "bases": [],
           "members": [
             {
@@ -4914,7 +4914,7 @@
               "kind": "property",
               "signature": "(self)",
               "summary": "Get the starting directory for file dialogs.",
-              "line": 74,
+              "line": 73,
               "deprecated": false
             },
             {
@@ -4923,7 +4923,7 @@
               "kind": "property",
               "signature": "(self) -> Tuple[str, ...]",
               "summary": "Scope labels currently offered, in combobox order.",
-              "line": 88,
+              "line": 87,
               "deprecated": false
             },
             {
@@ -4932,7 +4932,7 @@
               "kind": "method",
               "signature": "(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None",
               "summary": "Offer *label* in the Scope combobox, resolved by calling *provider*.",
-              "line": 98,
+              "line": 97,
               "deprecated": false
             },
             {
@@ -4941,7 +4941,7 @@
               "kind": "method",
               "signature": "(self, label: str) -> None",
               "summary": "Drop a previously registered scope (no-op if it isn't registered).",
-              "line": 133,
+              "line": 132,
               "deprecated": false
             },
             {
@@ -4950,7 +4950,7 @@
               "kind": "property",
               "signature": "(self) -> Optional[Callable[[], Iterable[str]]]",
               "summary": "Provider for the plain \"Selected\" scope.",
-              "line": 139,
+              "line": 138,
               "deprecated": false
             },
             {
@@ -4959,18 +4959,8 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Add the global Scope combobox to the header menu.",
-              "line": 156,
+              "line": 155,
               "deprecated": false
-            },
-            {
-              "name": "resolve_affix",
-              "qualname": "ConverterSlots.resolve_affix",
-              "kind": "staticmethod",
-              "signature": "(mode: str, modifier: str) -> Tuple[str, str]",
-              "summary": "Moved to :meth:`MapConverter.resolve_affix` (the batch engine).",
-              "line": 271,
-              "deprecated": true,
-              "remove_in": "0.4.0"
             },
             {
               "name": "optimize_formats",
@@ -4978,7 +4968,7 @@
               "kind": "property",
               "signature": "(self) -> Tuple[str, ...]",
               "summary": "The containers Optimize offers: every writable one, then the",
-              "line": 293,
+              "line": 282,
               "deprecated": false
             },
             {
@@ -4987,7 +4977,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Optimize toolbutton's option menu.",
-              "line": 326,
+              "line": 315,
               "deprecated": false
             },
             {
@@ -4996,7 +4986,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Optimize a texture map(s)",
-              "line": 596,
+              "line": 585,
               "deprecated": false
             },
             {
@@ -5005,7 +4995,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "",
-              "line": 824,
+              "line": 813,
               "deprecated": false
             },
             {
@@ -5014,7 +5004,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 834,
+              "line": 823,
               "deprecated": false
             },
             {
@@ -5023,7 +5013,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 890,
+              "line": 879,
               "deprecated": false
             },
             {
@@ -5032,7 +5022,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 916,
+              "line": 905,
               "deprecated": false
             },
             {
@@ -5041,7 +5031,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
-              "line": 972,
+              "line": 961,
               "deprecated": false
             },
             {
@@ -5050,7 +5040,7 @@
               "kind": "method",
               "signature": "(self, widget)",
               "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
-              "line": 1001,
+              "line": 990,
               "deprecated": false
             },
             {
@@ -5059,7 +5049,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert DirectX to OpenGL",
-              "line": 1055,
+              "line": 1044,
               "deprecated": false
             },
             {
@@ -5068,7 +5058,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert OpenGL to DirectX",
-              "line": 1072,
+              "line": 1061,
               "deprecated": false
             },
             {
@@ -5077,7 +5067,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 1089,
+              "line": 1078,
               "deprecated": false
             },
             {
@@ -5086,7 +5076,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 1132,
+              "line": 1121,
               "deprecated": false
             },
             {
@@ -5095,7 +5085,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 1159,
+              "line": 1148,
               "deprecated": false
             },
             {
@@ -5104,7 +5094,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 1185,
+              "line": 1174,
               "deprecated": false
             },
             {
@@ -5113,7 +5103,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
-              "line": 1211,
+              "line": 1200,
               "deprecated": false
             }
           ]
@@ -5364,7 +5354,7 @@
         {
           "name": "Parameters",
           "summary": "The Unity Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 126,
+          "line": 125,
           "bases": [
             "ParamRegistry"
           ],
@@ -5378,7 +5368,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 25,
+          "line": 24,
           "deprecated": false
         }
       ]

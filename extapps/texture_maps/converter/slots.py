@@ -24,7 +24,6 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple
 from qtpy import QtCore
 
 from pythontk import (
-    Deprecation,
     ExportProfile,
     FileUtils,
     ImgUtils,
@@ -261,16 +260,6 @@ class ConverterSlots:
         for missing in (p for p in paths if p not in valid):
             print(f"// Skipping (file not found): {missing}")
         return valid
-
-    @staticmethod
-    @Deprecation.symbol(
-        "extapps.texture_maps.converter.MapConverter.resolve_affix",
-        remove_in="0.4.0",
-        since="2026-09-26",
-    )
-    def resolve_affix(mode: str, modifier: str) -> Tuple[str, str]:
-        """Moved to :meth:`MapConverter.resolve_affix` (the batch engine)."""
-        return MapConverter.resolve_affix(mode, modifier)
 
     #: Longest-side clamp offered by the Optimize menu, and the entry selected
     #: on a first run. 4K is the practical ceiling for real-time textures — a

@@ -251,7 +251,7 @@ class TestMetashapeWorkflowLoads(unittest.TestCase):
 
 
 class TestParametersReferencedKeys(unittest.TestCase):
-    """``parameters.referenced_keys(mode)`` is the relevance SSoT the panel +
+    """``Parameters.referenced_keys(mode)`` is the relevance SSoT the panel +
     bridge base consume (the run-mode analogue of the DCC bridges' placeholder
     scan). Pinned at the data layer, not just via the integrated UI test."""
 

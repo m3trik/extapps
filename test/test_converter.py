@@ -1024,13 +1024,6 @@ class TestConverterOptimize(unittest.TestCase):
         self.assertEqual(MapConverter.resolve_affix("prefix", "_LD"), ("prefix", "LD"))
         self.assertEqual(MapConverter.resolve_affix("suffix", "LD_"), ("suffix", "LD"))
 
-    def test_resolve_affix_on_the_slots_is_a_deprecated_alias(self):
-        """It moved to the batch engine; the slots name forwards, with a notice."""
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                ConverterSlots.resolve_affix("prefix", "_LD"), ("prefix", "LD")
-            )
-
     def test_auto_prefix_names_the_output_file(self):
         path = self._texture()
         self.converter._get_texture_paths = Mock(return_value=[path])

@@ -365,14 +365,3 @@ class Parameters(ParamRegistry):
     """
 
     PARAMS = PARAMS
-
-
-# The module-level functions this class replaced, for one release.
-ptk.Deprecation.attributes(
-    globals(),
-    {
-        "defaults": "extapps.webxr_preview.parameters.Parameters.defaults",
-    },
-    remove_in="0.4.0",
-    since="2026-09-26",
-)

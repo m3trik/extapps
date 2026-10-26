@@ -102,8 +102,8 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 
 extapps — standalone Switchboard panels for content-pipeline workflows.
 
-- [`DOCS_BASE_URL`](extapps/extapps/__init__.py#L21) — constant
-- [`DEFAULT_INCLUDE`](extapps/extapps/__init__.py#L24) — constant
+- [`DOCS_BASE_URL`](extapps/extapps/__init__.py#L20) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/__init__.py#L23) — constant
 
 <a id="_panel_launcher"></a>
 ### `_panel_launcher.py`
@@ -233,8 +233,8 @@ Application shell for the Marmoset Workflow UI.
 
 Tunable parameters surfaced in the Marmoset Workflow panel.
 
-- [`PARAMS`](extapps/extapps/marmoset_workflow/parameters.py#L29) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/marmoset_workflow/parameters.py#L53)** — The Marmoset Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- [`PARAMS`](extapps/extapps/marmoset_workflow/parameters.py#L28) — constant
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/marmoset_workflow/parameters.py#L52)** — The Marmoset Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
 
 <a id="marmoset_workflow--slots"></a>
 ### `marmoset_workflow/slots.py`
@@ -452,8 +452,8 @@ Application shell for the Brush (gaussian-splat) Workflow UI.
 
 Tunable parameters surfaced in the Brush (gaussian-splat) Workflow panel.
 
-- [`PARAMS`](extapps/extapps/photogrammetry/gaussian_splat_workflow/parameters.py#L25) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/parameters.py#L118)** — The Brush (gaussian-splat) panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- [`PARAMS`](extapps/extapps/photogrammetry/gaussian_splat_workflow/parameters.py#L24) — constant
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/parameters.py#L117)** — The Brush (gaussian-splat) panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
   - `Parameters.to_argv(values: 'Dict[str, Any]') -> 'List[str]'` *(static)* — Render collected param *values* into ``run_combined`` CLI flags via the
   - `Parameters.referenced_keys(cls, source: str = '') -> 'set[str]'` *(class)* — Params relevant to the selected run mode — drives row visibility.
 
@@ -569,8 +569,8 @@ Application shell for the Metashape Workflow UI.
 
 Tunable parameters surfaced in the Metashape Workflow panel.
 
-- [`PARAMS`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L40) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L373)** — The Metashape panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- [`PARAMS`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L39) — constant
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L372)** — The Metashape panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
   - `Parameters.to_argv(values: 'Dict[str, Any]') -> 'List[str]'` *(static)* — Render collected param *values* into ``run_combined`` CLI flags (via the
   - `Parameters.referenced_keys(cls, source: str = '') -> 'set[str]'` *(class)* — Params relevant to the panel's current input — drives row visibility.
 
@@ -745,8 +745,8 @@ Application shell for the RealityCapture Workflow UI.
 
 Tunable parameters surfaced in the RealityCapture Workflow panel.
 
-- [`PARAMS`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L39) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L164)** — The RealityScan panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- [`PARAMS`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L38) — constant
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L163)** — The RealityScan panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
   - `Parameters.to_argv(values: 'Dict[str, Any]') -> 'List[str]'` *(static)* — Render collected param *values* into ``run_combined`` CLI flags (via the
   - `Parameters.referenced_keys(cls, source: str = '') -> 'set[str]'` *(class)* — Params relevant to the panel's current input — drives row visibility.
 
@@ -794,7 +794,7 @@ Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``
 
 Create a Substance Painter project from a mesh and bake lighting into base color.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/substance_workflow/__init__.py#L30) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/substance_workflow/__init__.py#L29) — constant
 
 <a id="substance_workflow--bake_utils"></a>
 ### `substance_workflow/bake_utils.py`
@@ -1031,14 +1031,13 @@ Application shell for the Map Converter UI.
 
 Map Converter UI — slot file for ``converter.ui``.
 
-- **[`class ConverterSlots`](extapps/extapps/texture_maps/converter/slots.py#L39)** — Switchboard slots for ``converter.ui``.
+- **[`class ConverterSlots`](extapps/extapps/texture_maps/converter/slots.py#L38)** — Switchboard slots for ``converter.ui``.
   - `ConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
   - `ConverterSlots.scopes(self) -> Tuple[str, ...]` *(property)* — Scope labels currently offered, in combobox order.
   - `ConverterSlots.register_scope(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None` — Offer *label* in the Scope combobox, resolved by calling *provider*.
   - `ConverterSlots.unregister_scope(self, label: str) -> None` — Drop a previously registered scope (no-op if it isn't registered).
   - `ConverterSlots.texture_provider(self) -> Optional[Callable[[], Iterable[str]]]` *(property)* — Provider for the plain "Selected" scope.
   - `ConverterSlots.header_init(self, widget)` — Add the global Scope combobox to the header menu.
-  - `ConverterSlots.resolve_affix(mode: str, modifier: str) -> Tuple[str, str]` *(static)* **DEPRECATED (remove in 0.4.0)** — Moved to :meth:`MapConverter.resolve_affix` (the batch engine).
   - `ConverterSlots.optimize_formats(self) -> Tuple[str, ...]` *(property)* — The containers Optimize offers: every writable one, then the
   - `ConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu.
   - `ConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
@@ -1118,8 +1117,8 @@ Application shell for the Unity Workflow launcher UI.
 
 User-tunable parameters for the standalone Unity Workflow panel.
 
-- [`PARAMS`](extapps/extapps/unity_workflow/parameters.py#L25) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/unity_workflow/parameters.py#L126)** — The Unity Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
+- [`PARAMS`](extapps/extapps/unity_workflow/parameters.py#L24) — constant
+- **[`class Parameters(ParamRegistry)`](extapps/extapps/unity_workflow/parameters.py#L125)** — The Unity Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
 
 <a id="unity_workflow--slots"></a>
 ### `unity_workflow/slots.py`

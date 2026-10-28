@@ -227,11 +227,10 @@ MARMOSET_ENGINE_TOP = (
     "parameters.py",
 )
 MARMOSET_ENGINE_DIRS = ("templates", "marmoset_rpc")
+# The panels are tentacle's shared tools; the libraries keep the engines.
 MARMOSET_DCC_HALF = (
     "__init__.py",
     "_marmoset_bridge.py",
-    "marmoset_bridge.ui",
-    "marmoset_bridge_slots.py",
     "manifest.py",  # mayatk-only tool manifest
 )
 
@@ -240,8 +239,6 @@ SUBSTANCE_ENGINE_DIRS = ("templates", "substance_rpc")
 SUBSTANCE_DCC_HALF = (
     "__init__.py",
     "_substance_bridge.py",
-    "substance_bridge.ui",
-    "substance_bridge_slots.py",
     "manifest.py",  # mayatk-only tool manifest
 )
 

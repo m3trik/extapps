@@ -2,14 +2,14 @@
 # coding=utf-8
 """Slots for the standalone Marmoset Workflow panel.
 
-A DCC-agnostic sibling of :class:`mayatk.mat_utils.marmoset_bridge.MarmosetBridgeSlots`:
-both subclass uitk's :class:`BridgeSlotsBase` (template combo, parameter
-widgets, presets, log routing), but this one drives the engine from a
-picked **model file** instead of a Maya selection -- so it runs from any
+A DCC-agnostic sibling of tentacle's ``MarmosetBridgeSlots`` (one class for
+Maya and Blender): both subclass uitk's :class:`BridgeSlotsBase` (template
+combo, parameter widgets, presets, log routing), but this one drives the engine
+from a picked **model file** instead of a scene selection -- so it runs from any
 host that loads uitk (tentacle, a bare ``python -c`` launch, etc.).
 
 Scoped to "open + set up a project": the ``import`` and ``lookdev``
-templates. The bake (high/low) workflow stays with the Maya panel.
+templates. The bake (high/low) workflow stays with the host panel.
 """
 
 from __future__ import annotations

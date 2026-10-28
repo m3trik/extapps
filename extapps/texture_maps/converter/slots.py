@@ -113,7 +113,7 @@ class ConverterSlots:
             select (bool): Make this the active scope once registered.
 
         Hosts call this right after launching the panel — see the Maya
-        integration in ``tentacle.slots.maya.materials.b016``.
+        integration in ``tentacle.slots.materials.b016`` (both hosts).
         """
         if not callable(provider):
             raise TypeError(

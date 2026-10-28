@@ -2,8 +2,8 @@
 # coding=utf-8
 """Slots for the standalone Unity Workflow panel.
 
-A DCC-agnostic sibling of mayatk's / blendertk's ``UnityBridgeSlots``: all three
-subclass uitk's :class:`BridgeSlotsBase` (parameter widgets, presets, log routing,
+A DCC-agnostic sibling of tentacle's ``UnityBridgeSlots`` (one class for Maya and
+Blender): both subclass uitk's :class:`BridgeSlotsBase` (parameter widgets, presets, log routing,
 the relabeled 'Unity Project' row, the project-actions menu), but this one is driven
 by a picked **model file** instead of a live DCC selection — so it runs from any host
 that loads uitk (tentacle, a bare ``python -c`` launch). A host can pre-fill the file
@@ -16,7 +16,7 @@ chosen Editor. The launcher actions (set / open / create a project) live on the
 'Unity Project' field's option menu, co-located with the field they act on.
 That shared Unity-panel behavior (the project row + actions, the mode combo, the
 Editor combo, script management) is :class:`UnityPanelMixin`, vendored beside this
-file (``_unity_panel.py``) and in mayatk's / blendertk's ``unity_bridge``; this file
+file (``_unity_panel.py``) and in tentacle's ``slots/tools/_unity_bridge/``; this file
 owns the Model File row, the engine and the ``b000`` send.
 
 Note: *Unity Studio* is a separate paid, browser-based product (assets enter it via

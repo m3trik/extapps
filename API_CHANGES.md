@@ -1,7 +1,5 @@
 # extapps — API Changes
 
-_Diff vs the last release (origin/main @ fcc45c4)._
+_Diff vs the last release (origin/main @ 79b0294)._
 
-## Removed (1)
-
-- `texture_maps/converter/slots.py::ConverterSlots.resolve_affix` — was `(mode: str, modifier: str) -> Tuple[str, str]`
+No public API changes since the last release (origin/main @ 79b0294).

@@ -1100,7 +1100,7 @@ Copy a model file into a Unity project's Assets and optionally launch the Editor
 
 What every Unity panel shares: the 'Unity Project' row, the Editor combo, script management.
 
-- **[`class UnityPanelMixin`](extapps/extapps/unity_workflow/_unity_panel.py#L34)** — Unity-panel behavior shared by the three Unity Slots classes.
+- **[`class UnityPanelMixin`](extapps/extapps/unity_workflow/_unity_panel.py#L33)** — Unity-panel behavior shared by the three Unity Slots classes.
   - `UnityPanelMixin.template_dir(self) -> Path` *(property)*
   - `UnityPanelMixin.list_template_modes(self)`
   - `UnityPanelMixin.default_output_dir(self) -> str`

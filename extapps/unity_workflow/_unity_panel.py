@@ -4,24 +4,23 @@
 
 :class:`UnityPanelMixin` is mixed into each Unity panel's Slots class, listed
 FIRST among its bases so its hooks override :class:`uitk.bridge.BridgeSlotsBase`'s
-defaults: mayatk's and blendertk's selection-driven ``UnityBridgeSlots`` and
-extapps' model-file-driven ``UnityWorkflowSlots``. The panels differ only in what
-they send (the engine from ``make_bridge``, the parameter registry, the ``b000``
-send action, the help text); the two combo modes, the project actions, the
-Editor-version combo and the Manage Unity Scripts flow are this one
+defaults: tentacle's selection-driven ``UnityBridgeSlots`` (one class for Maya and
+Blender) and extapps' model-file-driven ``UnityWorkflowSlots``. The panels differ
+only in what they send (the engine from ``make_bridge``, the parameter registry,
+the ``b000`` send action, the help text); the two combo modes, the project
+actions, the Editor-version combo and the Manage Unity Scripts flow are this one
 implementation.
 
 ``unitytk`` is optional in every host (installed on demand), so it is imported
-inside the methods that use it; so is ``qtpy``, because blendertk's surface must
-import in a headless Blender that ships no Qt binding.
+inside the methods that use it; so is ``qtpy``, which only the New Unity Project
+dialogs need.
 
 **Vendored copy -- keep byte-identical.** This file is duplicated at
-``mayatk/env_utils/unity_bridge/_unity_panel.py`` (the SSoT: edit it there),
-``blendertk/env_utils/unity_bridge/_unity_panel.py`` and
-``extapps/unity_workflow/_unity_panel.py``. No single importable home exists: the
-three packages cannot import each other, ``unitytk`` is optional and Qt-free, and
-``uitk`` carries no app vocabulary. Mirror every change into all three copies;
-drift fails ``extapps/test/test_vendor_sync.py``.
+``tentacle/slots/tools/_unity_bridge/_unity_panel.py`` (the SSoT: edit it there)
+and ``extapps/unity_workflow/_unity_panel.py``. No single importable home exists:
+extapps runs standalone and never imports tentacle, ``unitytk`` is optional and
+Qt-free, and ``uitk`` carries no app vocabulary. Mirror every change into both
+copies; drift fails ``extapps/test/test_vendor_sync.py``.
 """
 
 import os

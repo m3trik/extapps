@@ -5294,7 +5294,7 @@
         {
           "name": "UnityPanelMixin",
           "summary": "Unity-panel behavior shared by the three Unity Slots classes.",
-          "line": 34,
+          "line": 33,
           "bases": [],
           "members": [
             {
@@ -5303,7 +5303,7 @@
               "kind": "property",
               "signature": "(self) -> Path",
               "summary": "",
-              "line": 90,
+              "line": 89,
               "deprecated": false
             },
             {
@@ -5312,7 +5312,7 @@
               "kind": "method",
               "signature": "(self)",
               "summary": "",
-              "line": 95,
+              "line": 94,
               "deprecated": false
             },
             {
@@ -5321,7 +5321,7 @@
               "kind": "method",
               "signature": "(self) -> str",
               "summary": "",
-              "line": 102,
+              "line": 101,
               "deprecated": false
             }
           ]

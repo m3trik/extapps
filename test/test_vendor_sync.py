@@ -385,12 +385,11 @@ class TestCurtainEngineDccSync(_DccPairSyncMixin, unittest.TestCase):
 # in them is Maya- or Blender-specific, so a fix applied to one DCC's copy and not
 # the other means one host silently keeps the broken behaviour.
 RIZOM_SHARED_DIRS = ("scripts",)
+# The panel is tentacle's; the libraries keep the engine and its registry.
 RIZOM_DCC_HALF = (
     "__init__.py",
     "_rizom_bridge.py",
     "parameters.py",
-    "rizom_bridge.ui",
-    "rizom_bridge_slots.py",
     # NOT shared: mayatk drives the one-way send from `templates/send_wrapper.lua`
     # while blendertk builds the same script in `build_send_script()`. A real
     # structural divergence, ledgered here rather than silently normalized —

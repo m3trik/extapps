@@ -1,20 +1,19 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Smoke test — every tool subpackage importable, entry-points resolvable.
+"""Smoke test — every engine subpackage importable, the root surface resolvable.
 
-Most engine logic lives in pythontk and is imported indirectly via the slot
-classes; the SDK-specific engines (substance Painter, Marmoset Toolbag) are
-bundled with their panels. This test only guards the extapps surface.
+The panels are tentacle's since 0.7.0: their names are in ``MOVED_NAMES``, and a
+read of one raises ``MovedNameError`` naming its new home.
 """
 
 import importlib
-from pathlib import Path
+import re
 
 import pytest
 
+from pythontk.core_utils.module_resolver import MovedNameError
 
 TOOLS = [
-    "extapps.texture_maps.compositor",
     "extapps.photogrammetry.metashape_workflow",
     "extapps.photogrammetry.realityscan_workflow",
     "extapps.photogrammetry.gaussian_splat_workflow",
@@ -22,61 +21,7 @@ TOOLS = [
     "extapps.substance_workflow",
     "extapps.marmoset_workflow",
     "extapps.texture_maps.converter",
-    "extapps.texture_maps.packer",
-    "extapps.mesh_convert",
-    "extapps.unity_workflow",
 ]
-
-# Every Switchboard panel's (UI, Slots) pair — the root package re-exports
-# the full panel surface, mirroring each app's entry point.
-PANEL_CLASSES = [
-    ("CompositorUI", "CompositorSlots"),
-    ("MetashapeWorkflowUI", "MetashapeWorkflowSlots"),
-    ("RealityScanWorkflowUI", "RealityscanWorkflowSlots"),
-    ("GaussianSplatWorkflowUI", "GaussianSplatWorkflowSlots"),
-    ("SubstanceWorkflowUI", "SubstanceWorkflowSlots"),
-    ("ConverterUI", "ConverterSlots"),
-    ("PackerUI", "PackerSlots"),
-    ("MeshConvertUI", "MeshConvertSlots"),
-    ("MarmosetWorkflowUI", "MarmosetWorkflowSlots"),
-    ("UnityWorkflowUI", "UnityWorkflowSlots"),
-    ("WebXrPreviewUI", "WebXrPreviewSlots"),
-    ("LookMatchUI", "LookMatchSlots"),
-]
-
-
-def test_panel_classes_covers_the_whole_roster():
-    """This hand-list must not drift from pyproject's entry-point table.
-
-    It did: WebXrPreviewUI shipped as a rostered panel and was missing here, so
-    nothing checked that the root re-exported it. A hand-listed subset of a
-    family is exactly the shape CODE_STANDARD.md §6 forbids -- derive the guard
-    from the roster that already lists the family.
-    """
-    from test_window_chrome import _roster_ui_classes
-
-    rostered = _roster_ui_classes()
-    listed = {ui for ui, _ in PANEL_CLASSES}
-    assert listed == rostered, (
-        "PANEL_CLASSES has drifted from the entry-point roster.\n"
-        "  missing here: %s\n  not rostered: %s"
-        % (sorted(rostered - listed), sorted(listed - rostered))
-    )
-
-
-# Panels that log a docs link at open (a clickable anchor in the log pane —
-# the compositor's "detailed docs" line, generalised as
-# ``BridgeSlotsBase.DOCS_URL`` / ``SubstanceWorkflowSlots.DOCS_URL``). Each is
-# a GitHub blob URL into THIS repo, so a doc rename fails here rather than
-# 404-ing for users. RealityScan / Gaussian Splat inherit the photogrammetry
-# base's TUNING.md link; Metashape and Substance point at their own pages.
-DOCS_LINKED_SLOTS = [
-    "MetashapeWorkflowSlots",
-    "RealityscanWorkflowSlots",
-    "GaussianSplatWorkflowSlots",
-    "SubstanceWorkflowSlots",
-]
-_DOCS_URL_PREFIX = "https://github.com/m3trik/extapps/blob/main/"
 
 
 @pytest.mark.parametrize("modname", TOOLS)
@@ -84,30 +29,40 @@ def test_tool_imports(modname):
     importlib.import_module(modname)
 
 
-@pytest.mark.parametrize("slots_name", DOCS_LINKED_SLOTS)
-def test_docs_url_points_at_a_file_in_this_repo(slots_name):
+def test_root_resolves_its_whole_surface():
+    """Guard against a DEFAULT_INCLUDE entry pointing at a wrong module: getattr
+    resolves through the lazy bootstrap, not just ``__all__``."""
     import extapps
 
-    cls = getattr(extapps, slots_name)
-    url = cls.DOCS_URL
-    assert url.startswith(_DOCS_URL_PREFIX), url
-    assert cls.DOCS_LABEL.strip(), f"{slots_name}.DOCS_LABEL is empty"
-    repo_root = Path(extapps.__file__).resolve().parents[1]
-    target = repo_root / url[len(_DOCS_URL_PREFIX) :]
-    assert target.is_file(), f"{slots_name}.DOCS_URL -> missing {target}"
+    for name in extapps.__all__:
+        assert getattr(extapps, name) is not None, name
 
 
-@pytest.mark.parametrize("ui_name,slots_name", PANEL_CLASSES)
-def test_root_exposes_panel_surface(ui_name, slots_name):
-    """Guard against root DEFAULT_INCLUDE drifting from the app set."""
+@pytest.mark.parametrize("name", sorted(__import__("extapps").MOVED_NAMES))
+def test_a_moved_name_says_where_it_went(name):
     import extapps
 
-    assert ui_name in extapps.__all__
-    assert slots_name in extapps.__all__
-    # getattr resolves through the lazy bootstrap — catches a DEFAULT_INCLUDE
-    # entry pointing at a wrong module, not just a missing __all__ name.
-    assert getattr(extapps, ui_name) is not None
-    assert getattr(extapps, slots_name) is not None
+    home, version = extapps.MOVED_NAMES[name]
+    assert home.startswith("tentacle."), home
+    assert version == "0.7.0"
+    assert name not in extapps.__all__
+    if name in vars(extapps):
+        # The root's own bootstrap table: a removed subpackage's table of the
+        # same name is what the row accounts for, never resolved through it.
+        assert name == "DEFAULT_INCLUDE"
+        return
+    with pytest.raises(MovedNameError, match=re.escape(home)):
+        getattr(extapps, name)
+
+
+def test_the_moved_panels_all_left():
+    """No panel is left behind: extapps keeps no ``.ui`` file."""
+    from pathlib import Path
+
+    import extapps
+
+    root = Path(extapps.__file__).resolve().parent
+    assert sorted(p.name for p in root.rglob("*.ui")) == []
 
 
 def test_top_level_version():

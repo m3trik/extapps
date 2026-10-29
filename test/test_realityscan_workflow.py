@@ -565,5 +565,78 @@ class PresetRunOverlayTest(unittest.TestCase):
         self.assertEqual(code, 2)
 
 
+class TestRCRunCombinedFramesDir(unittest.TestCase):
+    """``run_combined --frames-dir`` uses a single prepared capture directly
+    (the panel's path), skipping --input-root subdir discovery."""
+
+    def setUp(self) -> None:
+        from pythontk import UserConfig
+        import extapps.photogrammetry.profile as pp
+
+        self.tmp = tempfile.mkdtemp(prefix="rc_framesdir_")
+        env = mock.patch.dict(os.environ)
+        env.start()
+        self.addCleanup(env.stop)
+        os.environ[UserConfig.CONFIG_ROOT_ENV_VAR] = os.path.join(self.tmp, "cfg")
+        os.environ.pop(pp.PROFILE_ENV, None)
+        self.ver = mock.patch(
+            "extapps.photogrammetry.realityscan_workflow._realityscan_workflow."
+            "RealityCaptureWorkflow.get_realitycapture_version",
+            return_value="test",
+        )
+        self.ver.start()
+        self.addCleanup(self.ver.stop)
+        self.frames = os.path.join(self.tmp, "cap")
+        os.makedirs(self.frames)
+        open(os.path.join(self.frames, "f.jpg"), "wb").close()
+        self.out = os.path.join(self.tmp, "out")
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_frames_dir_single_capture_runs(self) -> None:
+        from extapps.photogrammetry.realityscan_workflow import run_combined as rc_run
+
+        code = rc_run.main(
+            [
+                "--frames-dir",
+                self.frames,
+                "--output-root",
+                self.out,
+                "--name",
+                "fd",
+                "--mock",
+                "--rsnode",
+                "off",
+                "--skip-curate",
+                "--skip-equalize",
+                "--no-publish",
+            ]
+        )
+        self.assertEqual(code, 0)
+        self.assertTrue(
+            os.path.exists(os.path.join(self.out, "fd", "fd_qc.json")),
+            "QC sidecar not written for --frames-dir run",
+        )
+
+    def test_missing_frames_dir_errors(self) -> None:
+        from extapps.photogrammetry.realityscan_workflow import run_combined as rc_run
+
+        code = rc_run.main(
+            [
+                "--frames-dir",
+                os.path.join(self.tmp, "nope"),
+                "--output-root",
+                self.out,
+                "--name",
+                "fd",
+                "--mock",
+                "--rsnode",
+                "off",
+            ]
+        )
+        self.assertEqual(code, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

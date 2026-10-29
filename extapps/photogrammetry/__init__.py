@@ -18,16 +18,16 @@ they all use:
   run through ``pythontk.AppLauncher``, and ``finalize_run``. It carries
   :mod:`~extapps.photogrammetry._progress_notify`'s :class:`ProgressNotifyMixin`,
   the one ``_notify(stage, fraction)`` shim they report progress through.
-* ``_panel_slots`` / ``_process_runner`` / ``_shared_params`` — the shared
-  Switchboard-panel scaffolding (base slots + frames-source mixin, the async
-  ``AppLauncher.spawn`` runner, and the common pre-processing param specs) the
-  Metashape / RealityCapture / Brush panels are thin subclasses of.
+* ``_process_runner`` — the async ``AppLauncher.spawn`` runner each engine's
+  panel runner (``MetashapeRunner``, ...) builds on. The Metashape /
+  RealityCapture / Brush panels themselves are tentacle's
+  (``slots/tools/<engine>_workflow.py``, their shared base in
+  ``slots/tools/_photogrammetry/``).
 
 Domain-specific by design: this shared layer is used only by the photogrammetry
 tools, so it lives here rather than in a generic ``extapps`` core (the genuinely
 generic config-resolution mechanism is upstream in ``pythontk.UserConfig``).
 
-No side effects on import — the tool panels register via the root
-``extapps`` ``DEFAULT_INCLUDE`` and the ``uitk.external_apps.in_process``
-entry points (see ``pyproject.toml``).
+No side effects on import — the root ``extapps`` ``DEFAULT_INCLUDE`` publishes
+the engines, runners and :class:`Profile`.
 """

@@ -1,6 +1,6 @@
 # metashape_workflow
 
-Ships as part of the [extapps](../README.md) collection. Automate Agisoft Metashape photogrammetry pipelines from Python or a Qt GUI. Runs against Metashape's Python API when licensed; falls back to a print-only mock mode for development and CI.
+The engine half of [extapps](../README.md); its Qt GUI is tentacle's Metashape Workflow panel. Automate Agisoft Metashape photogrammetry pipelines from Python or that panel. Runs against Metashape's Python API when licensed; falls back to a print-only mock mode for development and CI.
 
 ## Install
 
@@ -23,13 +23,15 @@ A licensed Metashape Pro desktop install or a reachable license server is requir
 
 ### GUI
 
+The panel is [tentacle](https://github.com/m3trik/tentacle)'s: `tentacle metashape_workflow` opens it standalone, and Maya / Blender open it from the Materials menu. From code:
+
 ```python
-from extapps.photogrammetry.metashape_workflow import MetashapeWorkflowUI
+from tentacle.tcl_standalone import MetashapeWorkflowUI
 ui = MetashapeWorkflowUI()
 ui.show(pos="screen", app_exec=True)
 ```
 
-The package self-registers as a `uitk.external_apps.in_process` entry point, so any uitk host (e.g. tentacle) discovers it automatically — no host-side wiring needed.
+tentacle declares it as a `uitk.external_apps.in_process` entry point, so any uitk host discovers it automatically — no host-side wiring needed.
 
 ### Programmatic
 
@@ -135,22 +137,11 @@ it the stages record an honest QC skip.
 pytest test/test_metashape_workflow.py                  # from the extapps/ root
 ```
 
-Scope is intentionally narrow ([extapps/test/test_metashape_workflow.py](../test/test_metashape_workflow.py)): UI builds, declared widget names resolve, Run Workflow on empty inputs bails cleanly. Behavioral coverage of the photogrammetry pipeline is out of scope — that needs Metashape installed and real input.
+Scope ([extapps/test/test_metashape_workflow.py](../test/test_metashape_workflow.py)): the engine in mock mode, the runner's process chains and the headless `run_combined` flags. The panel's tests (it builds, its widgets resolve, its runs dispatch) are tentacle's `test_metashape_workflow_panel.py`. Behavioral coverage of the photogrammetry pipeline against a real Metashape is opt-in (`METASHAPE_RUN_INTEGRATION=1`).
 
 ## Adding a preset
 
-Presets live at module scope. Edit [`PRESETS`](../extapps/photogrammetry/metashape_workflow/slots.py) directly:
-
-```python
-PRESETS["Ultra"] = {
-    "align_downscale": 1,
-    "depth_downscale": 1,
-    "face_count": "High",       # one of FACE_COUNT_OPTIONS
-    "texture_size": 16384,
-}
-```
-
-`face_count` is a string key resolved against `Metashape.{Low,Medium,High}FaceCount` at run time by `MetashapeWorkflowSlots._resolve_face_count`.
+Presets are semantic run-templates the panel and `run_combined --preset` share: built-ins are JSON files in [`presets/metashape/`](../extapps/photogrammetry/presets/metashape/), and a preset saved from the panel lands in the user store. Their keys and the store's rules: [`TUNING.md`](../extapps/photogrammetry/TUNING.md).
 
 ## Layout
 
@@ -158,11 +149,12 @@ PRESETS["Ultra"] = {
 extapps/photogrammetry/metashape_workflow/
 ├── __init__.py                  # public API via pythontk bootstrap_package
 ├── _metashape_workflow.py       # MetashapeWorkflow + module-level helpers
-├── slots.py                     # GUI slots (MetashapeWorkflowSlots)
-├── launcher.py                  # MetashapeWorkflowUI (Switchboard wiring)
-├── metashape_workflow_ui.py     # generated from .ui (do not edit)
-└── metashape_workflow.ui        # Qt Designer source
+├── _metashape_connection.py     # finds and launches metashape.exe
+├── _metashape_runner.py         # MetashapeRunner: the panel's async run
+└── run_combined.py              # the headless pipeline (CLI)
 ```
+
+The panel (`.ui`, Slots class, parameter registry) is tentacle's: `slots/tools/metashape_workflow.py`, `slots/tools/_photogrammetry/`.
 
 `FrameExtractor` (generic video → frames helper) lives in
 `pythontk.vid_utils.frame_extractor` — see [pythontk's

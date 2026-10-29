@@ -45,6 +45,15 @@ class PainterConnection:
     BRIDGE = "substance_workflow_bridge"
 
     @staticmethod
+    def op_timeout() -> float:
+        """Seconds the bridge lets one op run (its main-thread marshaller's
+        limit): what a long op -- a bake -- waits for, past :meth:`invoke`'s
+        60 s default (``invoke(op, timeout=PainterConnection.op_timeout())``)."""
+        from ..registry import PLUGIN
+
+        return PLUGIN.marshaller.timeout
+
+    @staticmethod
     def plugins_dir() -> str:
         """Absolute path to the plugin root, ``substance_workflow/plugins``.
 

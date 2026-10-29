@@ -15,14 +15,15 @@ Engine wrappers for the splat track, plus a Switchboard panel (titled "Brush"):
   ``.html`` viewer.
 
 Drive both via :mod:`extapps.photogrammetry.gaussian_splat_workflow.run_combined`,
-or interactively via :class:`.launcher.GaussianSplatWorkflowUI`.
+or interactively from tentacle's Brush Splat Workflow panel
+(``slots/tools/gaussian_splat_workflow.py``, through :class:`GaussianSplatRunner`).
 
 For a UV-textured **mesh** deliverable instead of a splat, the **experimental**
 SuGaR track is a *separate* package (clear separation of concerns) —
 :mod:`extapps.photogrammetry.sugar_mesh_workflow`.
 
-The panel is exposed via :func:`pythontk.bootstrap_package` (lazy) so importing
-the headless runner never eagerly pulls in Qt through the UI launcher.
+Exposed via :func:`pythontk.bootstrap_package` (lazy) so importing the headless
+runner never eagerly pulls in Qt through the panel runners.
 """
 
 from pythontk.core_utils.module_resolver import bootstrap_package
@@ -35,8 +36,7 @@ DEFAULT_INCLUDE = {
     # re-exporting them flat would recreate the module-level surface the
     # encapsulation standard removes. Call GaussianSplatWorkflow.<name>.
     "_gaussian_splat_workflow": ["GaussianSplatWorkflow"],
-    "launcher": ["GaussianSplatWorkflowUI"],
-    "slots": ["GaussianSplatWorkflowSlots"],
+    "_gaussian_splat_runner": ["GaussianSplatRunner", "BrushInstallRunner"],
 }
 
 
@@ -44,7 +44,7 @@ bootstrap_package(globals(), include=DEFAULT_INCLUDE)
 
 
 __all__ = [
+    "BrushInstallRunner",
+    "GaussianSplatRunner",
     "GaussianSplatWorkflow",
-    "GaussianSplatWorkflowUI",
-    "GaussianSplatWorkflowSlots",
 ]

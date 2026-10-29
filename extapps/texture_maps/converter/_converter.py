@@ -2,7 +2,7 @@
 # coding=utf-8
 """The Map Converter's batch engine: plan, name and run one map at a time.
 
-Qt-free on purpose. :class:`~extapps.texture_maps.converter.slots.ConverterSlots`
+Qt-free on purpose. tentacle's ``ConverterSlots`` (``slots/tools/converter.py``)
 owns the panel (widgets, scope picker, progress) and HOLDS one of these; it
 used to *be* an :class:`pythontk.ImgUtils` and carry this logic inline, which
 tied a 1,700-line Qt module to the image engine's surface and left the batch

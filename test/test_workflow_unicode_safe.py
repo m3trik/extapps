@@ -9,9 +9,8 @@ run (observed crashing ``equalize_exposures`` on a real combined run).
 Docstrings and comments are exempt — only string *literals passed to
 ``print``* are checked, since those are the bytes that hit stdout.
 
-Covers the photogrammetry workflows and the texture_maps panels: both report
-progress line-by-line over a long batch, so a single bad glyph aborts work
-that already succeeded.
+Covers the photogrammetry workflows: they report progress line-by-line over a
+long batch, so a single bad glyph aborts work that already succeeded.
 """
 import ast
 import os
@@ -29,9 +28,7 @@ TARGETS = [
     os.path.join(PKG, "realityscan_workflow", "_realityscan_workflow.py"),
     os.path.join(PKG, "realityscan_workflow", "_realityscan_connection.py"),
     os.path.join(PKG, "realityscan_workflow", "run_combined.py"),
-    os.path.join(MAPS, "converter", "slots.py"),
-    os.path.join(MAPS, "compositor", "slots.py"),
-    os.path.join(MAPS, "packer", "slots.py"),
+    os.path.join(MAPS, "converter", "_converter.py"),
 ]
 
 

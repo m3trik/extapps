@@ -1,6 +1,6 @@
 # Substance Workflow
 
-Adobe Substance 3D Painter automation as a Switchboard panel + headless engine.
+Adobe Substance 3D Painter automation: a headless engine here, and its panel in tentacle.
 
 ## What it is
 
@@ -14,7 +14,7 @@ registry is a `pythontk.RpcPlugin` (op table + main-thread marshaller + server),
 client a `pythontk.RpcClient`, the batch loop `pythontk.RpcJob` over `pythontk.Call` /
 `pythontk.Result`, and `describe` returns the shared `{name, doc, params}` shape.
 
-- **`SubstanceWorkflowUI`** — the Switchboard panel. Set a mesh and/or project
+- **The Substance Workflow panel** — tentacle's (`SubstanceWorkflowUI`, `tentacle substance_workflow`). Set a mesh and/or project
   save path, pick which Painter to launch, choose stages (open/create → bake
   lighting→diffuse → save → export), tune advanced bake parameters, and Run.
   The stages run one at a time in the background, so the panel and its host stay
@@ -42,8 +42,8 @@ Check the registry before adding a helper.
 ## Run
 
 ```powershell
-# UI panel
-python -c "from extapps.substance_workflow import SubstanceWorkflowUI; SubstanceWorkflowUI().show(pos='screen', app_exec=True)"
+# UI panel (tentacle's)
+tentacle substance_workflow
 ```
 
 ```python
@@ -60,7 +60,8 @@ results = Job.run_batch([
 ## Tests
 
 ```powershell
-& python -m pytest test                                 # from the extapps/ root
+& python -m pytest test                                 # from the extapps/ root (the engine)
+& python tentacle/test/run_tests.py substance_workflow_panel   # the panel
 # live-Painter integration (opt-in — launches a real Painter):
 $env:SUBSTANCE_WORKFLOW_RUN_INTEGRATION = '1'
 & python -m pytest test

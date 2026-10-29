@@ -1,20 +1,15 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Texture-maps umbrella — the texture/material-map tools.
+"""Texture-maps umbrella: the texture/material-map tools' own rules.
 
-Groups the map-domain Switchboard panels that all sit on top of the
-``pythontk.core_utils.engines.textures`` engines (plus ``pythontk.ImgUtils``
-for the generic raster ops):
+The map panels (compositor / converter / packer) are tentacle's standalone
+panels; their engines are ``pythontk.core_utils.engines.textures``
+(``MapCompositor``, ``MapFactory``) plus :class:`pythontk.ImgUtils` for the
+generic raster ops. What stays here is the one engine no other package needs:
 
-* :mod:`~extapps.texture_maps.compositor` — multi-layer texture compositing
-  (engine: ``MapCompositor``).
-* :mod:`~extapps.texture_maps.converter` — texture conversion / PBR-workflow prep
-  (engine: ``MapFactory`` / :class:`pythontk.ImgUtils`).
-* :mod:`~extapps.texture_maps.packer` — channel-pack textures from per-channel
-  source maps (engine: ``MapFactory`` / :class:`pythontk.ImgUtils`).
+* :mod:`~extapps.texture_maps.converter` -- the Map Converter's batch rules
+  (:class:`MapConverter`).
 
-No side effects on import — the tool panels register via the root ``extapps``
-``DEFAULT_INCLUDE`` and the ``uitk.external_apps.in_process`` entry points
-(see ``pyproject.toml``). The ``uitk`` app-ids are ``compositor`` /
-``converter`` / ``packer``, matching the subpackage and slot-class names.
+No side effects on import; the root ``extapps`` ``DEFAULT_INCLUDE`` publishes
+:class:`MapConverter`.
 """

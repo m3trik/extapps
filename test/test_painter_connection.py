@@ -34,6 +34,22 @@ class TestForceNewInstanceHardBlock(SubstanceWorkflowTestCase):
             conn.connect(force_new_instance=False)
 
 
+class TestOpTimeout(SubstanceWorkflowTestCase):
+    """``op_timeout``: how long a long op (a bake) may wait -- the bridge's own
+    per-op limit, which the client's 60 s default would cut short."""
+
+    def test_it_is_the_bridge_marshallers_limit(self) -> None:
+        from extapps.substance_workflow.registry import PLUGIN
+
+        self.assertEqual(PainterConnection.op_timeout(), PLUGIN.marshaller.timeout)
+
+    def test_it_outlasts_a_plain_invoke(self) -> None:
+        import inspect
+
+        default = inspect.signature(PainterConnection.invoke).parameters["timeout"].default
+        self.assertGreater(PainterConnection.op_timeout(), default)
+
+
 class TestSingleton(SubstanceWorkflowTestCase):
 
     def setUp(self) -> None:

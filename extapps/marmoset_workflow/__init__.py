@@ -2,14 +2,13 @@
 # coding=utf-8
 """Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 
-A standalone Switchboard panel over the DCC-agnostic Toolbag engine
-bundled in this subpackage (:mod:`._marmoset_engine`). The engine is
-Toolbag SDK glue rather than a generic pythontk utility, so it lives with
-its consumer (mirroring ``substance_workflow``); the Maya bridge in
-``mayatk.mat_utils.marmoset_bridge`` keeps its own copy. Picks a model
-file (FBX / OBJ / USD / glTF) and runs the ``import`` or ``lookdev``
-template to drop the user into a ready-to-render Toolbag scene -- no DCC
-required.
+The DCC-agnostic Toolbag engine (:mod:`._marmoset_engine`), vendored
+byte-identical with ``mayatk.mat_utils.marmoset_bridge``'s copy: Toolbag SDK
+glue rather than a generic pythontk utility, so it lives with its consumers.
+:class:`MarmosetWorkflow` is its door for the standalone Marmoset Workflow
+panel, which is tentacle's (``slots/tools/marmoset_workflow.py``): pick a model
+file (FBX / OBJ / USD / glTF) and run the ``import`` or ``lookdev`` template
+into a ready-to-render Toolbag scene -- no DCC required.
 """
 
 from pythontk.core_utils.module_resolver import bootstrap_package
@@ -18,15 +17,11 @@ __package__ = "extapps.marmoset_workflow"
 
 
 DEFAULT_INCLUDE = {
-    "launcher": ["MarmosetWorkflowUI"],
-    "slots": ["MarmosetWorkflowSlots"],
+    "_marmoset_workflow": ["MarmosetWorkflow"],
 }
 
 
 bootstrap_package(globals(), include=DEFAULT_INCLUDE)
 
 
-__all__ = [
-    "MarmosetWorkflowUI",
-    "MarmosetWorkflowSlots",
-]
+__all__ = ["MarmosetWorkflow"]

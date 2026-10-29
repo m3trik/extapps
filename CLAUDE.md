@@ -1,31 +1,23 @@
 # extapps
 
-**Role**: Standalone Switchboard panels for content-pipeline workflows. Each app is a uitk external app discovered via the `uitk.external_apps.in_process` entry-point group.
+**Role**: The standalone-app toolkit: the engines of the standalone content-pipeline tools (photogrammetry, Substance Painter, Marmoset Toolbag, the Map Converter's rules). Their panels are tentacle's (`tcl_standalone.py`, `slots/tools/`); extapps holds logic only and declares no panel.
 
-**Nav**: [← root](../CLAUDE.md) · [docs](docs/README.md) · **Deps**: [pythontk](../pythontk/CLAUDE.md) · [uitk](../uitk/CLAUDE.md) · [unitytk](../unitytk/CLAUDE.md) (optional, `[unity]` extra) · **Used by**: [tentacle](../tentacle/CLAUDE.md) (ExternalAppHandler discovery)
+**Nav**: [← root](../CLAUDE.md) · [docs](docs/README.md) · **Deps**: [pythontk](../pythontk/CLAUDE.md) · [uitk](../uitk/CLAUDE.md) · **Used by**: [tentacle](../tentacle/CLAUDE.md) (its standalone panels import the root names)
 
 ## API surface
 
-[`API_INDEX.md`](API_INDEX.md) · [`API_REGISTRY.md`](API_REGISTRY.md) · [`API_CHANGES.md`](API_CHANGES.md) · shadows [`API_SHADOWS.md`](../m3trik/docs/API_SHADOWS.md) — registry rules in [root](../CLAUDE.md). Upstream: [pythontk](../pythontk/API_INDEX.md) · [uitk](../uitk/API_INDEX.md) · [unitytk](../unitytk/API_INDEX.md) (optional).
+[`API_INDEX.md`](API_INDEX.md) · [`API_REGISTRY.md`](API_REGISTRY.md) · [`API_CHANGES.md`](API_CHANGES.md) · shadows [`API_SHADOWS.md`](../m3trik/docs/API_SHADOWS.md) — registry rules in [root](../CLAUDE.md). Upstream: [pythontk](../pythontk/API_INDEX.md) · [uitk](../uitk/API_INDEX.md).
 
 Package-level public API; `substance_workflow`'s internal `registry.py` op registry (below) is separate.
 
 ## Scope
 
-Tools that belong here:
-- Standalone Switchboard panels.
-- Depend on `pythontk` for domain logic and `uitk` for UI.
-- DCC-agnostic (run from any host that loads uitk).
-
-Tools that do NOT belong here:
-- CLI-only utilities → `m3trik/scripts/`.
-- Full applications with their own release cadence and distribution model → own repo.
-- Library code that doesn't ship a UI panel → `pythontk` or another upstream package.
+Belongs here: an app- or SDK-specific engine a standalone tool drives (Metashape, RealityScan, Brush, Painter, Toolbag), DCC-agnostic, importable without Qt where it can be. Not here: a panel, a `.ui` or a Slots class (tentacle's `ui/tools/`, `slots/tools/`); CLI-only utilities (`m3trik/scripts/`); a generic primitive (`pythontk`).
 
 ## Hard rules
 
-- **All apps register via `uitk.external_apps.in_process` entry points.** No host (tentacle, mayatk, etc.) directly imports an app's slot class. Hosts launch apps through uitk's `ExternalAppHandler`.
-- **Generic mechanism lives in `pythontk`; app-specific engines live with their consumers.** Slot classes here only do UI wiring + dispatch. pythontk is **app-agnostic** — it ships the generic mechanism (`HandoffBridge`, `AppLauncher`, `RpcClient`, `process_stream`) and the pure *domain* cores (`core_utils/engines/`: shots, instancing, textures), never product SDK glue. So *app/SDK-specific* engines stay bundled with their consumer (`metashape_workflow._metashape_workflow` for the Metashape SDK; `substance_workflow`'s op registry + `PainterConnection` + bridge plugin for the Painter API — a native in-Painter plugin, distinct from the mayatk/blendertk `substance_bridge`; `marmoset_workflow._marmoset_engine` + `templates/` + `_toolbag_helpers` for Marmoset Toolbag). Generic carve-outs still go upstream to `pythontk`. An app engine that *also* has DCC consumers is vendored into each layer (none can import the others): `marmoset_workflow`'s engine is kept byte-identical to `mayatk.mat_utils.marmoset_bridge`'s copy, enforced by `test/test_vendor_sync.py` (also the mayatk↔blendertk Marmoset/Substance/curtain-drape copies and the `_unity_panel.py` mixin shared with tentacle's Unity Bridge).
+- **No panel, no tentacle import.** The panels (and their entry points, hub and tests) are tentacle's; a name that moved there is in the root `MOVED_NAMES`. tentacle's Slots reach the engines through the root (`extapps.Profile`, `extapps.PainterConnection`, ...), never a `_` module, so a name a panel needs is a root `DEFAULT_INCLUDE` entry.
+- **Generic mechanism lives in `pythontk`; app-specific engines live with their consumers.** pythontk is **app-agnostic** — it ships the generic mechanism (`HandoffBridge`, `AppLauncher`, `RpcClient`, `process_stream`) and the pure *domain* cores (`core_utils/engines/`: shots, instancing, textures), never product SDK glue. So *app/SDK-specific* engines stay bundled with their consumer (`metashape_workflow._metashape_workflow` for the Metashape SDK; `substance_workflow`'s op registry + `PainterConnection` + bridge plugin for the Painter API — a native in-Painter plugin, distinct from the mayatk/blendertk `substance_bridge`; `marmoset_workflow._marmoset_engine` + `templates/` + `_toolbag_helpers` for Marmoset Toolbag). Generic carve-outs still go upstream to `pythontk`. An app engine that *also* has DCC consumers is vendored into each layer (none can import the others): `marmoset_workflow`'s engine is kept byte-identical to `mayatk.mat_utils.marmoset_bridge`'s copy, enforced by `test/test_vendor_sync.py` (also the mayatk↔blendertk Marmoset/Substance copies).
 
 ### Painter session safety — HARD BLOCK (protect user work)
 
@@ -35,53 +27,40 @@ Tools that do NOT belong here:
 
 ## Structure
 
-Each tool is a self-contained subpackage:
+Each engine is a subpackage; engines that share a domain layer group under an umbrella
+(docstring-only `__init__.py`): `photogrammetry/` (metashape / realityscan /
+gaussian_splat + the CLI-only, experimental sugar_mesh — sharing `Profile` /
+`WorkflowEngine` / `PrepStagesMixin` / `_process_runner` and `presets/`) and
+`texture_maps/` (the converter's `MapConverter`). Discovery is one chain,
+`Profile.resolve_app`: terminal env override (set-but-invalid ⇒ mock), `apps.<key>`,
+the engine's `AppSpec`, fallbacks. Behaviour lives on classes (helpers on
+`_<Class>Internal`); config data stays flat. Exempt: `@register` ops and
+`run_combined` (read as *module* attrs).
 
-```
-extapps/<tool>/
-  __init__.py          # exposes <Tool>UI as the entry point
-  slots.py             # Switchboard slot class
-  <tool>.ui            # Qt Designer file
-  launcher.py          # <Tool>UI (a `PanelLauncher`: data only)
-```
-
-Tools that share a domain layer group under an umbrella subpackage
-(docstring-only `__init__.py`): `texture_maps/` (compositor / converter /
-packer) and `photogrammetry/` (metashape / realityscan / gaussian_splat +
-the CLI-only, experimental sugar_mesh — sharing `Profile` / `WorkflowEngine` /
-`PrepStagesMixin` / `_panel_slots` / `_process_runner` / `SharedParams` and `presets/`).
-Single tools stay flat. Discovery is one chain, `Profile.resolve_app`:
-terminal env override (set-but-invalid ⇒ mock), `apps.<key>`, the engine's
-`AppSpec`, fallbacks. Behaviour lives on classes (helpers on `_<Class>Internal`); config
-data stays flat (a panel's `parameters.py` declares `PARAMS` and a
-`uitk.ParamRegistry` subclass). Exempt: `@register` ops and `run_combined`
-(read as *module* attrs). The root `extapps/__init__.py` re-exports every
-panel's UI + Slots pair (guarded by `test_imports.py`). `<tool>_ui.py`
-files are uitk load-time compile caches — gitignored, never edited.
-
-`substance_workflow` additionally bundles its Painter engine: `registry.py`
+`substance_workflow` bundles its Painter engine: `registry.py`
 (`@register` — the SSoT for callable ops; check it before adding a helper),
 `*_utils.py` op modules (lazy-import `substance_painter` inside function bodies
 so they stay import-safe outside Painter), `env_utils/` (`PainterConnection`,
 `PainterFinder`), `job.py` (`run_batch`), and `plugins/startup/substance_workflow_bridge/`
 (a startup module of the root on `SUBSTANCE_PAINTER_PLUGINS_PATH`), all on pythontk's RPC pair.
+`marmoset_workflow` holds the vendored Toolbag engine and `MarmosetWorkflow`, its door.
 
 ## Run
 
-Standalone: `python -m extapps [panel]` (or the `extapps` gui-script);
-`--shortcut desktop|start_menu` writes a launcher. `__main__.py` only declares
-`HUB` (a `uitk.ExternalAppHub`). Usage: [docs](docs/README.md#launch-standalone).
-
-Via tentacle / mayatk: tools auto-discover through their entry-point group.
-After editing `pyproject.toml` entry points, reinstall (`pip install -e .`) so
-new entries surface in the package metadata `ExternalAppHandler` reads.
+The panels run from tentacle (`python -m tentacle [panel]`). `python -m extapps
+[panel]` (the `extapps` gui-script) is kept for launchers made before they moved:
+`__main__.py` declares a `uitk.ExternalAppHub` naming tentacle (`tentacletk`) as the
+panels' provider -- data, never an import -- so it reads tentacle's table from an install
+or a checkout and installs it where missing. Usage: [docs](docs/README.md#launch-the-panels).
 
 ## Run tests
 
 ```powershell
-& python test/run_tests.py webxr_preview -k scope   # pointed (from extapps/)
-& python test/run_tests.py                          # full: review / release
+& python test/run_tests.py photogrammetry_profile -k preset   # pointed (from extapps/)
+& python test/run_tests.py                                    # full: review / release
 ```
+
+The panels' tests are tentacle's (`tentacle/test/test_<tool>_panel.py`).
 
 Live-DCC tests (a real, new, never-attached Painter / Metashape) are opt-in:
 

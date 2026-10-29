@@ -1,23 +1,17 @@
 #!/usr/bin/env python
 # coding=utf-8
-"""Tests for the Brush panel's "Download Brush" action.
+"""Tests for the engine behind the Brush panel's "Download Brush" action.
 
-Covers the download template, the AppInstaller delegation, catalog-aware
-discovery, and the panel wiring (header action + dispatch) — all without
-touching the network or launching a real download.
+Covers the download template, the AppInstaller delegation and catalog-aware
+discovery -- all without touching the network or launching a real download.
+The panel's wiring (header action + dispatch) is tentacle's
+(``test_gaussian_splat_workflow_panel.py``).
 """
 from __future__ import annotations
 
 import os
-import sys
 import unittest
 from unittest import mock
-
-from qtpy.QtWidgets import QApplication
-
-
-def _ensure_app() -> QApplication:
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _gsw():
@@ -93,60 +87,6 @@ class TestFindBrushExeCatalog(unittest.TestCase):
             # catalog is NOT consulted (env is an explicit, deliberate signal).
             self.assertIsNone(gsw.GaussianSplatWorkflow.find_brush_exe())
             gp.assert_not_called()
-
-
-class TestBrushInstallAction(unittest.TestCase):
-    """Panel wiring: the header action exists and dispatches correctly."""
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.app = _ensure_app()
-
-    def setUp(self) -> None:
-        from extapps.photogrammetry import gaussian_splat_workflow as g
-        self.ui = g.GaussianSplatWorkflowUI()
-        self.slots = self.ui.sb.get_slots_instance(self.ui)
-        self.assertIsNotNone(self.slots)
-
-    def tearDown(self) -> None:
-        self.ui.deleteLater()
-        self.app.processEvents()
-
-    def test_header_has_download_brush_button(self) -> None:
-        btn = self.ui.header.menu.btn_install_brush
-        self.assertIsNotNone(btn)
-        self.assertEqual(btn.text(), "Download Brush")
-
-    def test_install_skipped_when_brush_available(self) -> None:
-        self.slots.bridge.is_available = lambda: True
-        with mock.patch.object(self.slots._install_runner, "start") as start:
-            self.slots.install_brush()
-        start.assert_not_called()
-
-    def test_install_starts_runner_when_missing(self) -> None:
-        self.slots.bridge.is_available = lambda: False
-        self.slots._install_runner.is_running = lambda: False
-        with mock.patch.object(self.slots._install_runner, "start") as start:
-            self.slots.install_brush()
-        start.assert_called_once()
-        kw = start.call_args.kwargs
-        # Bound methods compare equal (same instance + function) but aren't
-        # identical objects, so use assertEqual.
-        self.assertEqual(kw["on_line"], self.slots._append_output)
-        self.assertEqual(kw["on_done"], self.slots._on_install_done)
-
-    def test_cancel_run_cancels_inflight_install(self) -> None:
-        self.slots._install_runner.is_running = lambda: True
-        with mock.patch.object(self.slots._install_runner, "cancel") as cancel:
-            self.slots.cancel_run()
-        cancel.assert_called_once()
-
-    def test_cancel_run_delegates_to_base_when_no_install(self) -> None:
-        self.slots._install_runner.is_running = lambda: False
-        self.slots.bridge.is_running = lambda: False
-        with mock.patch.object(self.slots._install_runner, "cancel") as cancel:
-            self.slots.cancel_run()  # falls through to base (training bridge)
-        cancel.assert_not_called()
 
 
 if __name__ == "__main__":

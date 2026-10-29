@@ -48,12 +48,6 @@ jobs:
           # test_splat_track.py (frame curation / splat tracking); headless
           # build because the runner has no display.
           pip install opencv-python-headless numpy Pillow
-          # unitytk is an OPTIONAL runtime extra, but
-          # test_unity_workflow.py::test_script_checklist_populates_from_unitytk
-          # imports it unguarded to assert the panel's checklist matches the
-          # installed release -- so CI needs it present or that test errors. It
-          # is not in this package's floors, so it is installed by name.
-          pip install --no-cache-dir unitytk
           # pymeshlab backs the MeshStagesMixin photogrammetry stages (via
           # pythontk.MeshOps). Installed so the real-work stage tests run
           # rather than skip; the dep-missing branch stays covered via

@@ -2,13 +2,14 @@
 # coding=utf-8
 """Tests for ``python -m extapps`` / the ``extapps`` command (``extapps/__main__.py``).
 
-The program is uitk's ``ExternalAppHub``; extapps only declares it. These pin
-the declaration and that the hub serves every panel the entry-point table
-lists -- read from the table itself (metadata, else ``pyproject.toml``), never
-a hand-kept list.
+The program is uitk's ``ExternalAppHub``; extapps only declares it. Since 0.7.0
+the panels are tentacle's, and this hub stays so launchers written before the
+move (``<python> -m extapps <panel>``) keep opening their panel: it serves the
+panels the installed packages declare and declares none itself.
 """
 
 import importlib
+import importlib.util
 import os
 import re
 import unittest
@@ -27,7 +28,6 @@ TestSandbox.activate()
 from extapps.__main__ import HUB  # noqa: E402
 
 PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
-GROUP = "uitk.external_apps.in_process"
 
 
 def _table(name: str) -> dict:
@@ -39,16 +39,6 @@ def _table(name: str) -> dict:
     if not block:
         raise AssertionError(f"table [{name}] not found in pyproject.toml")
     return dict(re.findall(r'^\s*(\w+)\s*=\s*"([^"]+)"', block.group(1), re.M))
-
-
-def _panel_names() -> set:
-    """The in-process entry-point names: installed metadata, else pyproject."""
-    from importlib.metadata import entry_points
-
-    eps = entry_points()
-    found = eps.select(group=GROUP) if hasattr(eps, "select") else eps.get(GROUP, [])
-    names = {ep.name for ep in found}
-    return names or set(_table(f'project.entry-points."{GROUP}"'))
 
 
 class TestDeclaration(unittest.TestCase):
@@ -81,16 +71,30 @@ class TestHub(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
         cls.sb = HUB._switchboard()
 
-    def test_the_browser_lists_every_panel(self):
-        browser = HUB._browser(self.sb)  # built, never shown
-        self.addCleanup(browser.deleteLater)
-        self.assertEqual(set(browser._model._names), _panel_names())
+    def test_it_declares_no_panels_of_its_own(self):
+        text = PYPROJECT.read_text(encoding="utf-8")
+        self.assertNotIn("uitk.external_apps", text)
 
-    def test_every_panel_can_get_a_desktop_launcher_from_it(self):
+    def test_it_names_the_panels_new_provider(self):
+        """Its handler knows tentacle as the provider of the moved panels, as
+        data: it reads tentacle's table from a checkout, and installs tentacletk
+        when a panel is asked for and tentacle is missing."""
+        self.assertIn(("tentacletk", "tentacle"), HUB.providers)
+        provider = self.sb.handlers.external_app._providers.get("tentacletk")
+        self.assertIsNotNone(provider)
+        self.assertEqual(provider["probe_module"], "tentacle")
+
+    @unittest.skipUnless(
+        importlib.util.find_spec("tentacle"), "tentacle not installed beside extapps"
+    )
+    def test_an_old_launcher_still_opens_its_panel(self):
+        """A launcher made before the move runs ``python -m extapps compositor``:
+        this hub resolves the panel to tentacle's module, while a new launcher
+        made from it is tentacle's (its hub)."""
         handler = self.sb.handlers.external_app
-        for name in sorted(_panel_names()):
-            with self.subTest(panel=name):
-                self.assertIs(handler.hub_for(name), HUB)
+        self.assertTrue(handler.is_registered("compositor"))
+        self.assertEqual(handler._apps["compositor"]["module"], "tentacle.tcl_standalone")
+        self.assertEqual(handler.hub_for("compositor").package, "tentacle")
 
 
 if __name__ == "__main__":

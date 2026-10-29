@@ -1,8 +1,8 @@
 ### Map Compositor
 
-Ships as part of the [extapps](../README.md) collection. Engine logic
-lives in :class:`pythontk.MapCompositor`; this page documents the UI panel
-and end-user workflow.
+A standalone panel of [tentacle](https://github.com/m3trik/tentacle)'s
+(`tentacle compositor`). Engine logic lives in `pythontk.MapCompositor`;
+this page documents the panel and end-user workflow.
 
 Map Compositor allows you to seamlessly combine multiple texture maps of a particular type (such as Base Color, Normal Map, etc.) into single, unified images.
 

@@ -154,7 +154,7 @@ class SharedParams:
     A class rather than module functions per the encapsulation standard. The
     module still exposes the ``PARAMS``/key **data** flat, because that half is
     merged into each engine's ``<engine>_parameters.PARAMS`` dict, which uitk's
-    ``BridgeSlotsBase`` reads as a module attribute.
+    ``ParamPanelSlots`` reads as a module attribute.
     """
 
     @staticmethod

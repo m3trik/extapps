@@ -3,7 +3,7 @@
 """Tunable parameters surfaced in the Marmoset Workflow panel.
 
 Each entry maps a placeholder token (e.g. ``__SKY_PRESET__``) to an
-``AttributeSpec`` widget spec. ``BridgeSlotsBase`` scans the selected
+``AttributeSpec`` widget spec. ``ParamPanelSlots`` scans the selected
 template for these tokens, shows only the matching widgets, and the slot
 passes the collected values to :meth:`MarmosetEngine.send` as a plain
 dict (extapps' engine merges them over its ``template_params.DEFAULTS`` and

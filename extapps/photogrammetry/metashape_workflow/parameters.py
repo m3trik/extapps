@@ -400,7 +400,7 @@ class Parameters(ParamRegistry):
         value: ``""`` / ``"align"`` / ``"refine"``), not template script text scanned
         for ``__TOKEN__`` placeholders. A stop-after mode returns only the knobs for
         stages it actually runs; full pipeline (or any unknown mode) returns every
-        registered key. ``BridgeSlotsBase`` feeds this through
+        registered key. ``ParamPanelSlots`` feeds this through
         ``_relevant_param_keys`` and centrally manages the show/hide + height fit.
         """
         keys = set(cls.PARAMS)

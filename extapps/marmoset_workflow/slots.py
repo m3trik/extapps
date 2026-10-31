@@ -3,7 +3,7 @@
 """Slots for the standalone Marmoset Workflow panel.
 
 A DCC-agnostic sibling of ``MarmosetBridgeSlots`` (one class for Maya and
-Blender): both subclass uitk's :class:`BridgeSlotsBase` (template combo,
+Blender): both subclass uitk's :class:`ParamPanelSlots` (template combo,
 parameter widgets, presets, log routing), but this one drives the engine from a
 picked **model file** instead of a scene selection -- a standalone panel
 (``launcher.py``), so it runs outside any DCC too. The engine is
@@ -22,7 +22,7 @@ from typing import List, Optional, Tuple
 
 import pythontk as ptk
 from qtpy import QtCore, QtWidgets
-from uitk import BridgeSlotsBase
+from uitk import ParamPanelSlots
 
 from . import parameters as _params
 from ._marmoset_workflow import MarmosetWorkflow
@@ -45,7 +45,7 @@ _MODEL_FILE_TYPES = [
 ]
 
 
-class MarmosetWorkflowSlots(BridgeSlotsBase):
+class MarmosetWorkflowSlots(ParamPanelSlots):
     """Switchboard slots wired to ``marmoset_workflow.ui``.
 
     Picks a model file, then launches Toolbag with the chosen template

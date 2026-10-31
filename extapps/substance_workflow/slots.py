@@ -236,8 +236,8 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
     """Switchboard slots for the Substance Workflow UI."""
 
     # Logged once at panel open as a clickable anchor (the compositor's intro
-    # and the BridgeSlotsBase panels do the same). Not a bridge panel, so the
-    # line is emitted here rather than by ``BridgeSlotsBase._show_docs_link``.
+    # and the ParamPanelSlots panels do the same). Not a bridge panel, so the
+    # line is emitted here rather than by ``ParamPanelSlots._show_docs_link``.
     DOCS_URL = DOCS_BASE_URL + "docs/substance_workflow.md"
     DOCS_LABEL = "Detailed docs (bridge, op registry, batch API)"
 
@@ -257,7 +257,7 @@ class SubstanceWorkflowSlots(ptk.LoggingMixin):
         "chk_skip_bakes",
     )
 
-    # The header help, as data like the BridgeSlotsBase panels' HELP_SPEC;
+    # The header help, as data like the ParamPanelSlots panels' HELP_SPEC;
     # not a bridge panel, so ``header_init`` hands it to the header itself.
     # It says where this panel differs from the DCC Substance Bridge, which a
     # user may know first.

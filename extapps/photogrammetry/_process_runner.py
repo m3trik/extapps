@@ -11,7 +11,7 @@ hours-long bake), reads its merged output on a :class:`pythontk.ProcessReader`
 thread, and hands it to *on_line* on the Qt event loop from a timer -- the
 callbacks only ever run on the thread that owns the panel. Completion arrives
 via *on_done*. It exposes a
-:class:`pythontk.LoggingMixin` ``.logger`` so :class:`uitk.bridge.BridgeSlotsBase`
+:class:`pythontk.LoggingMixin` ``.logger`` so :class:`uitk.bridge.ParamPanelSlots`
 redirects it into the panel's log pane exactly as it does for the DCC engines.
 
 Subclasses supply only *what to launch* and *whether it can run*:

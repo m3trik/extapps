@@ -545,7 +545,7 @@ class TestUnityPanelMixinVendorSync(unittest.TestCase):
             )
 
     def test_each_panel_lists_the_mixin_first(self):
-        """First base, so its hooks override ``BridgeSlotsBase``'s defaults.
+        """First base, so its hooks override ``ParamPanelSlots``'s defaults.
 
         Listed after the base, the mixin's ``template_dir`` / ``TEMPLATE_MENU`` /
         ``default_output_dir`` would lose the MRO to the base's, silently. Read

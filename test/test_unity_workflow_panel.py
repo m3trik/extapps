@@ -2,7 +2,7 @@
 # coding=utf-8
 """Tests for the standalone Unity Workflow panel (``slots/tools/unity_workflow.py``).
 
-The panel is a file-driven :class:`uitk.bridge.BridgeSlotsBase` (the DCC-agnostic
+The panel is a file-driven :class:`uitk.bridge.ParamPanelSlots` (the DCC-agnostic
 sibling of the Unity Bridge panel): pick a model file -> copy it into a
 Unity project's ``Assets/`` via :class:`unitytk.FileToUnityBridge`. Build-time wiring
 (param widgets, Model File + Unity Project rows, the single delivery mode), the
@@ -199,7 +199,7 @@ class TestUnityWorkflowVersionPopulate(unittest.TestCase):
 
 class TestTheUnityPanelsShareOneMixin(unittest.TestCase):
     """The panel takes ``UnityPanelMixin`` (the vendored copy of tentacle's Unity
-    Bridge mixin) as its FIRST base: listed after ``BridgeSlotsBase``, the
+    Bridge mixin) as its FIRST base: listed after ``ParamPanelSlots``, the
     mixin's ``template_dir`` / ``TEMPLATE_MENU`` / ``default_output_dir`` would
     lose the MRO, silently. Both panels' order, and the copies' equality, are
     ``test_vendor_sync.py``'s."""

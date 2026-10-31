@@ -3,7 +3,7 @@
 """Shared scaffolding for the photogrammetry workflow panels.
 
 Metashape, RealityCapture, and Brush all present the *same* panel shape — a
-:class:`uitk.bridge.BridgeSlotsBase` with a Project-Name row, an engine-specific
+:class:`uitk.bridge.ParamPanelSlots` with a Project-Name row, an engine-specific
 input row, a run-mode combo, semantic presets shared with the headless CLI, an
 Output-Root row, a header menu (Cancel / Open Output Folder / Clear Log + help),
 and an async ``b000`` that streams a long bake into the log pane. That common
@@ -26,7 +26,7 @@ import traceback
 from typing import List, Optional
 
 from qtpy import QtCore, QtGui, QtWidgets
-from uitk import BridgeSlotsBase
+from uitk import ParamPanelSlots
 
 from extapps import DOCS_BASE_URL
 
@@ -42,7 +42,7 @@ _IMAGE_EXTS = [f"*{e}" for e in IMAGE_EXTS]
 _VIDEO_SUFFIXES = tuple(p.lstrip("*").lower() for p in _VIDEO_EXTS)
 
 
-class PhotogrammetryPanelSlots(BridgeSlotsBase):
+class PhotogrammetryPanelSlots(ParamPanelSlots):
     """Base for the photogrammetry workflow panels (engine-agnostic scaffolding)."""
 
     # --- engine identity / copy (subclasses override) -----------------------
@@ -55,7 +55,7 @@ class PhotogrammetryPanelSlots(BridgeSlotsBase):
     # mode value -> one-line description logged when the run-mode combo changes.
     MODE_DESC: dict = {}
 
-    # Docs link logged at panel open (see BridgeSlotsBase._show_docs_link).
+    # Docs link logged at panel open (see ParamPanelSlots._show_docs_link).
     # TUNING.md is the one page all three engines share -- the noise-control
     # levers, where each lives (CLI-reachable vs GUI-only), and the shipped
     # presets -- so it is the base's default; an engine with a page of its own

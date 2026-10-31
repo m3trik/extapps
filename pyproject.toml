@@ -94,14 +94,16 @@ classifiers = [
 # every Pack / every push on an older pythontk).
 # pythontk 0.18.2 / uitk 1.8.2: the panels came back from tentacle (0.8.0)
 # written against tentacle's floors; they reach uitk's names from its root
-# (AttributeSpec, ParamRegistry, BridgeSlotsBase) and the switchboard's
+# (AttributeSpec, ParamRegistry, ParamPanelSlots) and the switchboard's
 # namespace (`self.sb.TextEditLogHandler`). Ratchet both to the releases that
 # ship what the panels call on dev before publishing: Look Match's mixes read
 # `ptk.LookSession.mixes`, which pythontk 0.18.2 does not have.
+# uitk 1.9.0: every panel subclasses `uitk.ParamPanelSlots` (BridgeSlotsBase
+# before), which an older uitk does not export.
 # No host and no tentacle: extapps is a product nothing imports, and it imports
 # neither (test/test_imports.py). unitytk stays an on-demand install inside
 # the Unity Workflow panel (Manage Unity Scripts > Install), never a dependency.
-dependencies = ["pythontk>=0.18.2", "uitk>=1.8.2", "qtpy"]
+dependencies = ["pythontk>=0.18.2", "uitk>=1.9.0", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, which installs it
 # on demand (Manage Unity Scripts > Install), so a missing unitytk costs that

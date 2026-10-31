@@ -35,7 +35,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pythontk as ptk
 from qtpy import QtCore
-from uitk import BridgeSlotsBase
+from uitk import ParamPanelSlots
 
 from . import parameters as _params
 
@@ -113,7 +113,7 @@ class _Scene:
         return server.share_info() if server is not None else None
 
 
-class WebXrPreviewSlots(BridgeSlotsBase):
+class WebXrPreviewSlots(ParamPanelSlots):
     """Switchboard slots wired to ``webxr_preview.ui``."""
 
     UI_NAME = "webxr_preview"

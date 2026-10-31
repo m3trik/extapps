@@ -17,7 +17,7 @@ from pythontk.core_utils.module_resolver import bootstrap_package
 __package__ = "extapps"
 __version__ = "0.8.0"
 
-# Base of every panel's "detailed docs" link (``BridgeSlotsBase.DOCS_URL`` on
+# Base of every panel's "detailed docs" link (``ParamPanelSlots.DOCS_URL`` on
 # the bridge panels, the compositor's intro, Substance's startup line): the
 # public repo at ``main``, so each panel appends only its repo-relative doc
 # path -- one place to repoint at a fork, a docs site, or a release tag.

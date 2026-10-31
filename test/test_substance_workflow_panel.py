@@ -5,7 +5,7 @@
 
 Covers the panel's log pane: its startup docs anchor and the width its boxes
 are sized to. The panel is a plain ``ptk.LoggingMixin`` slots class, NOT a
-``BridgeSlotsBase`` subclass, so it does not inherit the bridge base's log
+``ParamPanelSlots`` subclass, so it does not inherit the bridge base's log
 wiring and sets uitk's ``TextEditLogHandler`` itself. Also the Painter
 session the panel follows, and Run Workflow's stages running off the GUI
 thread (with Cancel); a live run against a NEW Painter is gated behind
@@ -49,7 +49,7 @@ class TestSubstanceDocsLink(unittest.TestCase):
     ``DefaultTextLogHandler``. pythontk is deliberately Qt-free, so that
     handler cannot wire Qt link handling (the pane is left with
     ``openExternalLinks`` False and clicking the anchor does nothing) nor
-    measure the pane. ``BridgeSlotsBase`` sets ``TextEditLogHandler`` for its
+    measure the pane. ``ParamPanelSlots`` sets ``TextEditLogHandler`` for its
     own panels; this panel is not one, so it sets it itself.
     """
 

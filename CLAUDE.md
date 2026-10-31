@@ -33,7 +33,7 @@ Each app is a self-contained subpackage:
 extapps/<app>/
   __init__.py   # DEFAULT_INCLUDE: launcher -> <App>UI, slots -> <App>Slots (+ its engine)
   <app>.ui      # Qt Designer file; its stem is the entry-point name users' settings live under
-  slots.py      # the Slots class: a plain class, or uitk's BridgeSlotsBase (uitk names from `uitk`)
+  slots.py      # the Slots class: a plain class, or uitk's ParamPanelSlots (uitk names from `uitk`)
   launcher.py   # <App>UI, a `_panel_launcher.PanelLauncher` (data only)
 ```
 

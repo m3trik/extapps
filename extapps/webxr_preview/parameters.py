@@ -2,7 +2,7 @@
 # coding=utf-8
 """Tunable parameters surfaced in the WebXR Preview panel.
 
-An ``AttributeSpec`` registry read by :class:`uitk.bridge.BridgeSlotsBase`,
+An ``AttributeSpec`` registry read by :class:`uitk.bridge.ParamPanelSlots`,
 which builds one row per entry, groups them by ``section`` and shows only the
 keys the active source declares (:meth:`WebXrPreviewSlots._relevant_param_keys`).
 

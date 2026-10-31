@@ -2,7 +2,7 @@
 # coding=utf-8
 """Copy a model file into a Unity project's Assets and optionally launch the Editor.
 
-A standalone Switchboard :class:`uitk.bridge.BridgeSlotsBase` panel driven by a
+A standalone Switchboard :class:`uitk.bridge.ParamPanelSlots` panel driven by a
 picked **model file** (the file-input sibling of tentacle's selection-driven
 Unity Bridge panel). It copies the file into a Unity project's
 ``Assets/`` via :class:`unitytk.FileToUnityBridge` and optionally launches the

@@ -3,7 +3,7 @@
 """Slots for the standalone Unity Workflow panel.
 
 A DCC-agnostic sibling of ``UnityBridgeSlots`` (one class for Maya and Blender):
-both subclass uitk's :class:`BridgeSlotsBase` (parameter widgets, presets, log
+both subclass uitk's :class:`ParamPanelSlots` (parameter widgets, presets, log
 routing, the relabeled 'Unity Project' row, the project-actions menu), but this one
 is driven by a picked **model file** instead of a live DCC selection -- a standalone
 panel (``launcher.py``), so it runs outside any DCC too. A host can
@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Optional
 
 from qtpy import QtCore, QtWidgets
-from uitk import BridgeSlotsBase
+from uitk import ParamPanelSlots
 
 from . import parameters as _params
 from ._unity_panel import UnityPanelMixin
@@ -52,8 +52,8 @@ _MODEL_FILE_TYPES = [
 ]
 
 
-class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase):
-    """Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
+class UnityWorkflowSlots(UnityPanelMixin, ParamPanelSlots):
+    """Switchboard slots wired to ``unity_workflow.ui`` via :class:`ParamPanelSlots`.
 
     Picks a model file, then copies it into a Unity project's ``Assets/`` via
     :class:`unitytk.FileToUnityBridge` (optionally launching the chosen Editor).
@@ -136,7 +136,7 @@ class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase):
 
         The edit is parented into the row layout (with stretch) before the option
         box wraps it, so the wrapping container fills the row (see
-        ``BridgeSlotsBase._build_output_dir_row`` for the rationale).
+        ``ParamPanelSlots._build_output_dir_row`` for the rationale).
         """
         layout = self.ui.grp_process.layout()
 

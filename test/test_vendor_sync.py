@@ -372,6 +372,9 @@ RIZOM_SHARED_DIRS = ("scripts",)
 RIZOM_DCC_HALF = (
     "__init__.py",
     "_rizom_bridge.py",
+    # Not compared here, yet shared: the placeholder registry is one text in
+    # both hosts (mayatk's the SSoT), a whole-file twin m3trik's
+    # check_dcc_twins.py holds -- as it holds _rizom_bridge.py's shared methods.
     "parameters.py",
     # NOT shared: mayatk drives the one-way send from `templates/send_wrapper.lua`
     # while blendertk builds the same script in `build_send_script()`. A real

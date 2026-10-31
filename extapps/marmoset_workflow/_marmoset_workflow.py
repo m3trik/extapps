@@ -6,7 +6,7 @@
 byte-identical with mayatk's, so never edited here) with the class-level door a
 panel reads, as mayatk's ``MarmosetBridge`` carries it: the app it launches
 (:attr:`APP`) and its template folder (:attr:`TEMPLATE_DIR`). The panel is
-tentacle's (``slots/tools/marmoset_workflow.py``).
+this package's (``slots.py``).
 """
 
 from ._marmoset_engine import _TEMPLATE_DIR, APP, MarmosetEngine

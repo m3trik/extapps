@@ -1,16 +1,14 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Run the standalone panels as a program: ``python -m extapps [panel]``, or the ``extapps`` command.
+"""Run extapps as a program: ``python -m extapps [app]``, or the ``extapps`` command.
 
-Kept for compatibility. The panels are tentacle's since extapps 0.7.0 (its
-program is ``python -m tentacle``), and launchers written before they moved run
-this one: ``<python> -m extapps <panel>``. It is uitk's :class:`ExternalAppHub`
-under extapps' name, icon and taskbar identity, naming tentacle (``tentacletk``)
-as the panels' provider -- as data, never an import: it serves them from an
-installed tentacle or a source checkout, and installs tentacletk on the first
-panel asked for where it is missing. No argument opens a browser listing every panel; a panel's name
-(``compositor``, ``metashape_workflow``, ...) opens that panel alone;
-``--shortcut desktop`` / ``--shortcut start_menu`` writes a launcher.
+No argument opens a browser listing every app; an app's name (an entry-point
+name in ``pyproject.toml``: ``compositor``, ``metashape_workflow``, ...) opens
+that app alone; ``--shortcut desktop`` / ``--shortcut start_menu`` writes a
+launcher. The program is uitk's :class:`ExternalAppHub`: this module only
+declares extapps' name, icon and taskbar identity. As ``HUB`` it is also how a
+host's UI Browser (Maya, Blender) finds extapps to offer a desktop shortcut on
+each app's row.
 """
 
 import os
@@ -22,8 +20,6 @@ HUB = ExternalAppHub(
     title="extapps",
     icon=os.path.join(os.path.dirname(os.path.abspath(__file__)), "extapps.svg"),
     app_id="m3trik.extapps",
-    # The panels moved to tentacle: (distribution, import name) of their provider.
-    providers=[("tentacletk", "tentacle")],
 )
 
 if __name__ == "__main__":

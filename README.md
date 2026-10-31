@@ -3,26 +3,33 @@
 
 # extapps
 
-The engines behind [tentacle](https://github.com/m3trik/tentacle)'s standalone content-pipeline panels: photogrammetry workflows, Substance 3D Painter and Marmoset Toolbag automation, and texture-map conversion rules. The panels themselves (their `.ui` files and Slots classes) are tentacle's since extapps 0.7.0; extapps keeps the logic they drive, importable without them.
+Standalone [uitk](https://github.com/m3trik/uitk)-Switchboard apps for content-pipeline work — texture compositing and conversion, photogrammetry, mesh conversion, Substance / Marmoset automation, Unity and WebXR hand-off. Each app is a self-contained subpackage (its engine, panel and Slots class) on pythontk and uitk alone, registered via the `uitk.external_apps.in_process` entry-point group, so a host like [tentacle](https://github.com/m3trik/tentacle) (its Maya and Blender menus) opens one by name with no host-side imports.
 
-## Engines
+## Tools
 
-- **photogrammetry** — end-to-end runs: frame extraction/curation → align → mesh → texture, with per-engine presets (`MetashapeWorkflow`, RealityScan, Brush gaussian splats; `run_combined` CLIs and the panels' runners)
-- **substance_workflow** — Substance 3D Painter automation over a bundled JSON-RPC bridge (`PainterConnection`, `Job.run_batch`)
-- **marmoset_workflow** — open a model file in a new Marmoset Toolbag (`MarmosetWorkflow`: import / lookdev templates)
-- **texture_maps** — the Map Converter's batch rules (`MapConverter`)
+- **compositor** — multi-layer texture-map compositing
+- **converter** / **packer** — PBR map conversion (DX↔GL normals, spec→PBR, bump→normal, smoothness↔roughness) and channel pack/unpack (built-in ORM / MRAO / MSAO / Metallic Smoothness / glTF-pair templates)
+- **photogrammetry** — end-to-end runs: frame extraction/curation → align → mesh → texture, with per-engine presets (Metashape, RealityScan, gaussian splat)
+- **substance_workflow** — Substance 3D Painter automation over a bundled JSON-RPC bridge
+- **marmoset_workflow** — open a model file in a new Marmoset Toolbag (import / lookdev templates)
+- **mesh_convert** — FBX → glTF / GLB conversion
+- **unity_workflow** — copy a model file into a Unity project's Assets; manage unitytk's import scripts
+- **webxr_preview** — preview a scene or an FBX / GLB file live in a browser or XR headset
+- **look_match** — light a baked scene to match a reference image
 
 ## Install & run
 
 ```bash
-pip install tentacletk              # the panels; brings in extapps
-tentacle                            # a browser listing every panel
-tentacle compositor                 # one panel
+pip install extapps
+extapps                             # a browser listing every panel
+extapps compositor                  # one panel (python -m extapps compositor works too)
+extapps --shortcut desktop          # a desktop shortcut (start_menu: the Start menu)
 ```
 
-`extapps` / `python -m extapps [panel]` still opens the panels, so launchers made before the move keep working: it serves them from tentacle (installed, or a source checkout), and installs `tentacletk` into that Python on the first panel asked for where it is missing.
+From a uitk host: `sb.handlers.external_app.launch("compositor")`; the host's UI
+Browser also offers *Create desktop shortcut* on each app's row.
 
-Full usage and per-engine docs: [docs/README.md](docs/README.md) · scope and structure: [CLAUDE.md](CLAUDE.md) · history: [CHANGELOG.md](CHANGELOG.md)
+Full usage and per-tool docs: [docs/README.md](docs/README.md) · scope and structure: [CLAUDE.md](CLAUDE.md) · history: [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 

@@ -11,7 +11,7 @@ cannot import each other (mayatk ↔ blendertk ↔ extapps), each keeps a copy:
 
 * Marmoset engine — ``mayatk.mat_utils.marmoset_bridge`` /
   ``blendertk.mat_utils.marmoset_bridge`` / ``extapps.marmoset_workflow``
-  (extapps vendors the import/lookdev subset tentacle's Marmoset Workflow panel
+  (extapps vendors the import/lookdev subset its Marmoset Workflow panel
   drives: no ``marmoset_rpc``, no bake template).
 * Substance engine (``_substance_engine.py``: the DCC-free Painter half each
   ``SubstanceBridge`` subclasses; byte-identical, mayatk's copy is the SSoT) +
@@ -19,6 +19,12 @@ cannot import each other (mayatk ↔ blendertk ↔ extapps), each keeps a copy:
   ``mayatk.mat_utils.substance_bridge`` / ``blendertk.mat_utils.substance_bridge``
   (extapps' ``substance_workflow`` is a separate native in-Painter engine and
   is NOT a copy).
+* Unity panel mixin -- ``_unity_panel.py`` (``UnityPanelMixin``) in tentacle's
+  ``slots/tools/_unity_bridge`` (the SSoT) / ``extapps.unity_workflow``: the
+  project row, mode combo, Editor combo and script management both Unity panels
+  share. extapps imports no tentacle, unitytk is optional and Qt-free, and uitk
+  carries no app vocabulary, so no importable home exists while both panels need
+  it (temporary: the DCC Unity Bridge panel's own move retires tentacle's copy).
 
 That duplication is only safe if a fix to one copy is mirrored into the
 others; this test fails the moment the shared files diverge, so drift is
@@ -26,9 +32,9 @@ caught at test time instead of shipping.
 
 Two comparison contracts:
 
-* **extapps ↔ mayatk (Marmoset)** — strict content equality (line-ending
-  tolerant) over an explicit vendored-file manifest: each copy is kept
-  byte-identical to its SSoT.
+* **extapps ↔ mayatk (Marmoset) and extapps ↔ tentacle (the Unity panel
+  mixin)** — strict content equality (line-ending tolerant) over an explicit
+  vendored-file manifest: each copy is kept byte-identical to its SSoT.
 * **mayatk ↔ blendertk** — *semantic twin* equality. A twin is "the same
   file except for which DCC it names", so the compare normalizes exactly
   that before asserting: docstrings collapse to a placeholder (they
@@ -157,13 +163,19 @@ MARMOSET_PANEL_VENDORED = (
     os.path.join("templates", "lookdev.py"),
 )
 # Same-named but per-package by design, never compared:
-#   * __init__.py    — different package: the bridge vs. the standalone engine.
-INTENTIONALLY_DIVERGENT = {"__init__.py"}
-# extapps' own (non-vendored) files: the standalone panel's door into the engine
-# (mayatk's is ``_marmoset_bridge.py``); the panel itself is tentacle's. A file
-# added here must be classified here or above, else the guard fails instead of
-# ignoring it.
-EXTAPPS_ONLY = {"_marmoset_workflow.py"}
+#   * parameters.py  — the DCC Marmoset Bridge surfaces the full bake parameter
+#     set; the standalone panel surfaces only the import/lookdev look-dev knobs.
+#   * __init__.py    — different package: the bridge vs. the standalone app.
+INTENTIONALLY_DIVERGENT = {"parameters.py", "__init__.py"}
+# extapps' own (non-vendored) files: the standalone panel and its door into the
+# engine (mayatk's is ``_marmoset_bridge.py``). A file added here must be
+# classified here or above, else the guard fails instead of ignoring it.
+EXTAPPS_ONLY = {
+    "_marmoset_workflow.py",
+    "launcher.py",
+    "slots.py",
+    "marmoset_workflow.ui",
+}
 
 
 class TestMarmosetEngineVendorSync(unittest.TestCase):
@@ -383,9 +395,38 @@ RIZOM_DCC_HALF = (
     "templates",
 )
 
-# The Unity panel is tentacle's; the libraries keep the engine and its registry.
+# The Unity Bridge panel is tentacle's; the libraries keep the engine and its registry.
 UNITY_SHARED_TOP = ("parameters.py",)
 UNITY_DCC_HALF = ("__init__.py", "_unity_bridge.py")
+
+# The Unity panel mixin: ONE file, byte-identical in both Unity panels (SSoT:
+# tentacle's copy). Strict, not twin-normalized: it names no host, so any
+# difference is drift. Each entry: (package, the mixin's package-relative dir,
+# the panel module's package-relative path, panel class).
+UNITY_PANEL_MIXIN = "_unity_panel.py"
+UNITY_PANEL_HOSTS = (
+    (
+        "tentacle",
+        ("slots", "tools", "_unity_bridge"),
+        ("slots", "tools", "unity_bridge.py"),
+        "UnityBridgeSlots",
+    ),
+    (
+        "extapps",
+        ("unity_workflow",),
+        ("unity_workflow", "slots.py"),
+        "UnityWorkflowSlots",
+    ),
+)
+# extapps' panel dir, classified like the Marmoset panel's: a file added there must
+# be ledgered as the vendored mixin or as panel-own.
+UNITY_WORKFLOW_PANEL_ONLY = {
+    "__init__.py",
+    "launcher.py",
+    "parameters.py",
+    "slots.py",
+    "unity_workflow.ui",
+}
 
 
 class TestHostNormalizer(unittest.TestCase):
@@ -473,6 +514,76 @@ class TestUnityBridgeDccSync(
     subpath = ("env_utils", "unity_bridge")
     top_files = UNITY_SHARED_TOP
     dcc_half_files = UNITY_DCC_HALF
+
+
+class TestUnityPanelMixinVendorSync(unittest.TestCase):
+    """Both Unity panels share one ``UnityPanelMixin``, byte-identical."""
+
+    def setUp(self):
+        self.dirs, self.panels = {}, {}
+        for pkg, parts, module, _cls in UNITY_PANEL_HOSTS:
+            if pkg == "extapps":
+                root = Path(extapps.__file__).resolve().parent
+            else:
+                root = _sibling(pkg)
+            if root is None:
+                self.skipTest(f"{pkg} sibling not present (standalone extapps checkout)")
+            self.dirs[pkg] = root.joinpath(*parts)
+            self.panels[pkg] = root.joinpath(*module)
+
+    def test_mixin_copies_are_content_identical(self):
+        ssot = self.dirs["tentacle"] / UNITY_PANEL_MIXIN
+        self.assertTrue(ssot.is_file(), f"missing {ssot}")
+        for pkg, d in self.dirs.items():
+            copy = d / UNITY_PANEL_MIXIN
+            self.assertTrue(copy.is_file(), f"missing {copy}")
+            self.assertEqual(
+                _lines(ssot),
+                _lines(copy),
+                f"vendored '{UNITY_PANEL_MIXIN}' has drifted between tentacle (the "
+                f"SSoT) and {pkg}. Edit tentacle's copy and mirror it into extapps.",
+            )
+
+    def test_each_panel_lists_the_mixin_first(self):
+        """First base, so its hooks override ``BridgeSlotsBase``'s defaults.
+
+        Listed after the base, the mixin's ``template_dir`` / ``TEMPLATE_MENU`` /
+        ``default_output_dir`` would lose the MRO to the base's, silently. Read
+        from the source: extapps imports no tentacle.
+        """
+        for pkg, _parts, _module, cls_name in UNITY_PANEL_HOSTS:
+            path = self.panels[pkg]
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            cls = next(
+                (
+                    n
+                    for n in tree.body
+                    if isinstance(n, ast.ClassDef) and n.name == cls_name
+                ),
+                None,
+            )
+            self.assertIsNotNone(cls, f"{cls_name} not found in {path}")
+            first = cls.bases[0] if cls.bases else None
+            self.assertEqual(
+                getattr(first, "id", None),
+                "UnityPanelMixin",
+                f"{pkg}'s {cls_name} must list UnityPanelMixin as its first base",
+            )
+
+    def test_extapps_panel_files_all_classified(self):
+        classified = UNITY_WORKFLOW_PANEL_ONLY | {UNITY_PANEL_MIXIN}
+        present = {
+            rel
+            for rel in _rel_files(self.dirs["extapps"])
+            if not rel.endswith("_ui.py")  # generated by the uitk loader
+        }
+        self.assertLessEqual(
+            present,
+            classified,
+            "unclassified files in extapps.unity_workflow: "
+            f"{sorted(present - classified)} — ledger them as "
+            "UNITY_WORKFLOW_PANEL_ONLY or the vendored mixin",
+        )
 
 
 if __name__ == "__main__":

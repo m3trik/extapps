@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "extapps"
 dynamic = ["version", "readme"]
-description = "The engines of the standalone content-pipeline tools: photogrammetry workflows, Substance Painter and Marmoset Toolbag automation, and texture map conversion."
+description = "Standalone Qt tools for content pipelines: texture map compositing and conversion, photogrammetry, Substance Painter and Marmoset Toolbag automation, Unity and WebXR hand-off, and mesh conversion."
 keywords = ["m3trik", "photogrammetry", "pbr", "substance-painter", "gltf", "technical-art", "pyside6"]
 authors = [{name = "Ryan Simpson", email = "m3trik@outlook.com"}]
 license = {text = "LGPL-3.0-or-later"}
@@ -92,16 +92,32 @@ classifiers = [
 # Packer's Missing Maps fill reads `MapRegistry.absent_fills`, and WebXR
 # Preview's status line `PreviewBridge.materials_summary` (AttributeError on
 # every Pack / every push on an older pythontk).
-# Since 0.7.0 the panels the floors above name are tentacle's (tentacletk pins
-# its own, higher floors); extapps keeps the engines they drive, and uitk for
-# the compatibility hub (`python -m extapps`) and the runners' install offer.
-dependencies = ["pythontk>=0.17.0", "uitk>=1.7.5", "qtpy"]
+# pythontk 0.18.2 / uitk 1.8.2: the panels came back from tentacle (0.8.0)
+# written against tentacle's floors; they reach uitk's names from its root
+# (AttributeSpec, ParamRegistry, BridgeSlotsBase) and the switchboard's
+# namespace (`self.sb.TextEditLogHandler`). Ratchet both to the releases that
+# ship what the panels call on dev before publishing: Look Match's mixes read
+# `ptk.LookSession.mixes`, which pythontk 0.18.2 does not have.
+# No host and no tentacle: extapps is a product nothing imports, and it imports
+# neither (test/test_imports.py). unitytk stays an on-demand install inside
+# the Unity Workflow panel (Manage Unity Scripts > Install), never a dependency.
+dependencies = ["pythontk>=0.18.2", "uitk>=1.8.2", "qtpy"]
 
+# unitytk is OPTIONAL: it backs only the Unity Workflow panel, which installs it
+# on demand (Manage Unity Scripts > Install), so a missing unitytk costs that
+# one panel nothing until it is used. The extra installs it up front:
+#   pip install extapps[unity]
+# unitytk 0.1.0: its templates moved into one folder per component; an older
+# deployer knows only the flat names, so its Install / Update writes flat
+# copies beside the moved ones -- every class twice, and the Unity assembly
+# fails to compile (CS0101).
+#
 # mesh pulls pythontk's PyMeshLab extra: it backs only the photogrammetry
 # mesh stages (measure / refine / bake via pythontk.MeshOps). Without it the
 # stages record an honest skip in the QC sidecar and everything else runs.
 # Install with the extra when you want it:  pip install extapps[mesh]
 [project.optional-dependencies]
+unity = ["unitytk>=0.1.0"]
 mesh = ["pythontk[mesh]"]
 
 [project.urls]
@@ -110,14 +126,39 @@ Repository = "https://github.com/m3trik/extapps"
 Changelog = "https://github.com/m3trik/extapps/blob/main/CHANGELOG.md"
 Issues = "https://github.com/m3trik/extapps/issues"
 
-# Compatibility: `extapps` opens the panel browser, `extapps <panel>` one panel,
-# as they did before the panels moved to tentacle (whose own command is
-# `tentacle`). A gui-script runs under pythonw on Windows, so no console window
-# opens. The hub is uitk's ExternalAppHub, declared in extapps/__main__.py
-# (`python -m extapps` runs the same program); it names tentacle (tentacletk) as
-# the panels' provider -- data, not a dependency -- and installs it where missing.
+# `extapps` opens the app browser, `extapps <app>` one app (the names in the
+# entry-point table below). A gui-script runs under pythonw on Windows, so no
+# console window opens. The hub is uitk's ExternalAppHub, declared in
+# extapps/__main__.py (`python -m extapps` runs the same program).
 [project.gui-scripts]
 extapps = "extapps.__main__:HUB.run"
+
+# Each app self-describes as a uitk external app. uitk's ExternalAppHandler
+# discovers and registers them with hosts -- tentacle's menus in Maya and
+# Blender open each BY NAME (`external_app.launch("converter")`) -- with no
+# host-side knowledge. Group ``.in_process`` declares the preferred launch mode
+# (parented under the host's Qt loop). Each name is the app's .ui stem, which
+# users' settings are saved under.
+#
+# Bracketed extras are entry-point tags read by ExternalAppHandler:
+#   * plain tokens  -> semantic browser-filter tags.
+#   * ``hide_<host>`` -> a host-visibility gate. A host whose switchboard
+#     ``context_tags`` contains <host> won't *list* the app (it stays
+#     launchable by name). Substance/Marmoset are gated out of Maya, which
+#     serves its own bridges (tentacle's marmoset_bridge, substance_bridge).
+[project.entry-points."uitk.external_apps.in_process"]
+compositor = "extapps.texture_maps.compositor:CompositorUI"
+converter = "extapps.texture_maps.converter:ConverterUI"
+packer = "extapps.texture_maps.packer:PackerUI"
+mesh_convert = "extapps.mesh_convert:MeshConvertUI"
+metashape_workflow = "extapps.photogrammetry.metashape_workflow:MetashapeWorkflowUI"
+realityscan_workflow = "extapps.photogrammetry.realityscan_workflow:RealityScanWorkflowUI"
+gaussian_splat_workflow = "extapps.photogrammetry.gaussian_splat_workflow:GaussianSplatWorkflowUI"
+substance_workflow = "extapps.substance_workflow:SubstanceWorkflowUI [hide_maya]"
+marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI [hide_maya]"
+unity_workflow = "extapps.unity_workflow:UnityWorkflowUI"
+webxr_preview = "extapps.webxr_preview:WebXrPreviewUI"
+look_match = "extapps.look_match:LookMatchUI"
 
 [tool.setuptools.dynamic]
 version = {attr = "extapps.__version__"}
@@ -133,6 +174,7 @@ include = ["extapps*"]
 # the top-level "*" json glob (package-dir only) doesn't reach them. They live in
 # per-engine subdirs (presets/<engine>/*.json) — presets are engine-scoped.
 "extapps.photogrammetry" = ["presets/*/*.json"]
+"extapps.texture_maps.packer" = ["presets/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

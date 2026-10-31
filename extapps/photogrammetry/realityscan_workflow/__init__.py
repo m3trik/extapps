@@ -5,12 +5,12 @@
 Engine wrapper for RealityCapture / RealityScan, mirroring
 :class:`extapps.photogrammetry.metashape_workflow._metashape_workflow.MetashapeWorkflow`
 so the same panel scaffolding targets either engine. RC has no Python API, so the
-wrapper drives the CLI / RSNode REST via :mod:`subprocess`. tentacle's RealityCapture
-Workflow panel (``slots/tools/realityscan_workflow.py``) drives it through
+wrapper drives the CLI / RSNode REST via :mod:`subprocess`. The RealityCapture
+Workflow panel (``slots.py``, ``launcher.py``) drives it through
 :class:`RealityScanRunner`.
 
 Exposed via :func:`pythontk.bootstrap_package` (lazy) so importing the headless
-runner (``run_combined``) never eagerly pulls in Qt through the panel runner.
+runner (``run_combined``) never eagerly pulls in Qt through the UI launcher.
 """
 
 from pythontk.core_utils.module_resolver import bootstrap_package
@@ -25,6 +25,8 @@ DEFAULT_INCLUDE = {
         "RealityScanInteractiveError",
     ],
     "_realityscan_runner": ["RealityScanRunner"],
+    "launcher": ["RealityScanWorkflowUI"],
+    "slots": ["RealityscanWorkflowSlots"],
 }
 
 
@@ -36,4 +38,6 @@ __all__ = [
     "RealityScanConnection",
     "RealityScanInteractiveError",
     "RealityScanRunner",
+    "RealityScanWorkflowUI",
+    "RealityscanWorkflowSlots",
 ]

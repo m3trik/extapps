@@ -2,8 +2,8 @@
 # coding=utf-8
 """Create a Substance Painter project from a mesh and bake lighting into base color.
 
-The Painter engine tentacle's Substance Workflow panel drives
-(``slots/tools/substance_workflow.py``): an op **registry**, a client **``PainterConnection``**
+A Switchboard panel (``SubstanceWorkflowUI``) drives the Painter engine that
+lives in this package: an op **registry**, a client **``PainterConnection``**
 (launches a fresh Painter and talks JSON-RPC), the **``Job.run_batch``** wrapper,
 and the in-Painter **bridge plugin** (``plugins/startup/substance_workflow_bridge``).
 The RPC itself is pythontk's shared pair -- the registry is a
@@ -27,6 +27,8 @@ __package__ = "extapps.substance_workflow"
 
 
 DEFAULT_INCLUDE = {
+    "launcher": ["SubstanceWorkflowUI"],
+    "slots": ["SubstanceWorkflowSlots"],
     "env_utils.painter_connection": ["PainterConnection"],
     "env_utils.painter_finder": ["PainterFinder"],
     "job": ["Job"],
@@ -38,6 +40,8 @@ bootstrap_package(globals(), include=DEFAULT_INCLUDE)
 
 
 __all__ = [
+    "SubstanceWorkflowUI",
+    "SubstanceWorkflowSlots",
     "PainterConnection",
     "PainterFinder",
     "Job",

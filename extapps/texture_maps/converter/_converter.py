@@ -2,10 +2,10 @@
 # coding=utf-8
 """The Map Converter's batch engine: plan, name and run one map at a time.
 
-Qt-free on purpose. tentacle's ``ConverterSlots`` (``slots/tools/converter.py``)
-owns the panel (widgets, scope picker, progress) and HOLDS one of these; it
-used to *be* an :class:`pythontk.ImgUtils` and carry this logic inline, which
-tied a 1,700-line Qt module to the image engine's surface and left the batch
+Qt-free on purpose. :class:`ConverterSlots` (``slots.py``) owns the panel
+(widgets, scope picker, progress) and HOLDS one of these; it used to *be* an
+:class:`pythontk.ImgUtils` and carry this logic inline, which tied a
+1,700-line Qt module to the image engine's surface and left the batch
 rules testable only through a built panel. The per-map image work itself stays
 upstream (:class:`pythontk.MapOptimizer` / :class:`pythontk.ImgUtils`); what
 lives here is the converter's own policy around it -- how the destination and

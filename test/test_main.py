@@ -2,14 +2,13 @@
 # coding=utf-8
 """Tests for ``python -m extapps`` / the ``extapps`` command (``extapps/__main__.py``).
 
-The program is uitk's ``ExternalAppHub``; extapps only declares it. Since 0.7.0
-the panels are tentacle's, and this hub stays so launchers written before the
-move (``<python> -m extapps <panel>``) keep opening their panel: it serves the
-panels the installed packages declare and declares none itself.
+The program is uitk's ``ExternalAppHub``; extapps only declares it. These pin
+the declaration and that the hub serves every app the entry-point table lists --
+read from the table itself (``test_panel_launcher.entry_points``), never a
+hand-kept list -- as their provider, naming no other.
 """
 
 import importlib
-import importlib.util
 import os
 import re
 import unittest
@@ -26,6 +25,7 @@ from uitk.testing import TestSandbox
 TestSandbox.activate()
 
 from extapps.__main__ import HUB  # noqa: E402
+from test_panel_launcher import entry_points  # noqa: E402
 
 PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
 
@@ -71,30 +71,35 @@ class TestHub(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
         cls.sb = HUB._switchboard()
 
-    def test_it_declares_no_panels_of_its_own(self):
-        text = PYPROJECT.read_text(encoding="utf-8")
-        self.assertNotIn("uitk.external_apps", text)
+    def test_it_is_its_own_apps_provider_and_names_no_other(self):
+        """A checkout on PYTHONPATH has no installed entry points: the hub names
+        extapps itself as their provider, so its pyproject table is read; it
+        names no other package (tentacle is no provider of apps). Rows other
+        installed packages declare are theirs, not the hub's."""
+        self.assertEqual(HUB.providers, ())
+        providers = self.sb.handlers.external_app._providers
+        self.assertEqual(providers["extapps"]["probe_module"], "extapps")
 
-    def test_it_names_the_panels_new_provider(self):
-        """Its handler knows tentacle as the provider of the moved panels, as
-        data: it reads tentacle's table from a checkout, and installs tentacletk
-        when a panel is asked for and tentacle is missing."""
-        self.assertIn(("tentacletk", "tentacle"), HUB.providers)
-        provider = self.sb.handlers.external_app._providers.get("tentacletk")
-        self.assertIsNotNone(provider)
-        self.assertEqual(provider["probe_module"], "tentacle")
+    def test_the_browser_lists_every_app(self):
+        browser = HUB._browser(self.sb)  # built, never shown
+        self.addCleanup(browser.deleteLater)
+        self.assertLessEqual(set(entry_points()), set(browser._model._names))
 
-    @unittest.skipUnless(
-        importlib.util.find_spec("tentacle"), "tentacle not installed beside extapps"
-    )
-    def test_an_old_launcher_still_opens_its_panel(self):
-        """A launcher made before the move runs ``python -m extapps compositor``:
-        this hub resolves the panel to tentacle's module, while a new launcher
-        made from it is tentacle's (its hub)."""
+    def test_every_app_resolves_to_its_own_module(self):
+        """Launched by name (a host's menu, ``python -m extapps <app>``), each app
+        resolves to the module its entry point names."""
         handler = self.sb.handlers.external_app
-        self.assertTrue(handler.is_registered("compositor"))
-        self.assertEqual(handler._apps["compositor"]["module"], "tentacle.tcl_standalone")
-        self.assertEqual(handler.hub_for("compositor").package, "tentacle")
+        for name, (module, entry, _extras) in sorted(entry_points().items()):
+            with self.subTest(app=name):
+                self.assertTrue(handler.is_registered(name))
+                self.assertEqual(handler._apps[name]["module"], module)
+                self.assertEqual(handler._apps[name]["entry"], entry)
+
+    def test_every_app_can_get_a_desktop_launcher_from_it(self):
+        handler = self.sb.handlers.external_app
+        for name in sorted(entry_points()):
+            with self.subTest(app=name):
+                self.assertIs(handler.hub_for(name), HUB)
 
 
 if __name__ == "__main__":

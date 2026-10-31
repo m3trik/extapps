@@ -1,27 +1,53 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Smoke test — every engine subpackage importable, the root surface resolvable.
+"""Smoke test — every app subpackage importable, the root surface resolvable,
+and nothing above extapps' two dependencies imported.
 
-The panels are tentacle's since 0.7.0: their names are in ``MOVED_NAMES``, and a
-read of one raises ``MovedNameError`` naming its new home.
+extapps is a product: each host-free app keeps its engine, panel and Slots class
+here, on pythontk and uitk alone. Nothing imports extapps (``check_layers.py``:
+the product role), and extapps imports no host -- no Maya, no Blender -- and no
+tentacle, whose DCC menus open the apps by name through uitk's external-app
+handler instead.
 """
 
+import ast
 import importlib
-import re
+from pathlib import Path
 
 import pytest
 
-from pythontk.core_utils.module_resolver import MovedNameError
+from test_panel_launcher import entry_points
 
 TOOLS = [
+    "extapps.texture_maps.compositor",
+    "extapps.texture_maps.converter",
+    "extapps.texture_maps.packer",
+    "extapps.mesh_convert",
     "extapps.photogrammetry.metashape_workflow",
     "extapps.photogrammetry.realityscan_workflow",
     "extapps.photogrammetry.gaussian_splat_workflow",
     "extapps.photogrammetry.sugar_mesh_workflow",
     "extapps.substance_workflow",
     "extapps.marmoset_workflow",
-    "extapps.texture_maps.converter",
+    "extapps.unity_workflow",
+    "extapps.webxr_preview",
+    "extapps.look_match",
 ]
+
+#: Dotted roots no extapps module may import: the hosts (and their libraries) and
+#: the product above them.
+FORBIDDEN = (
+    "tentacle",
+    "mayatk",
+    "blendertk",
+    "maya",
+    "bpy",
+    "bmesh",
+    "mathutils",
+    "pymel",
+)
+
+PACKAGE = Path(__file__).resolve().parents[1] / "extapps"
 
 
 @pytest.mark.parametrize("modname", TOOLS)
@@ -38,31 +64,53 @@ def test_root_resolves_its_whole_surface():
         assert getattr(extapps, name) is not None, name
 
 
-@pytest.mark.parametrize("name", sorted(__import__("extapps").MOVED_NAMES))
-def test_a_moved_name_says_where_it_went(name):
+@pytest.mark.parametrize("app", sorted(entry_points()))
+def test_root_exposes_each_apps_ui_and_slots(app):
+    """Each entry point's ``<Tool>UI`` and the Slots class it builds are root
+    names, read from the roster (pyproject's entry points), never a hand list."""
     import extapps
 
-    home, version = extapps.MOVED_NAMES[name]
-    assert home.startswith("tentacle."), home
-    assert version == "0.7.0"
-    assert name not in extapps.__all__
-    if name in vars(extapps):
-        # The root's own bootstrap table: a removed subpackage's table of the
-        # same name is what the row accounts for, never resolved through it.
-        assert name == "DEFAULT_INCLUDE"
-        return
-    with pytest.raises(MovedNameError, match=re.escape(home)):
-        getattr(extapps, name)
+    _module, ui_name, _extras = entry_points()[app]
+    ui = getattr(extapps, ui_name)
+    package, _name, _folder = ui._tool()
+    slots = ui._slots_class(package)
+    assert ui_name in extapps.__all__
+    assert getattr(extapps, slots.__name__) is slots
 
 
-def test_the_moved_panels_all_left():
-    """No panel is left behind: extapps keeps no ``.ui`` file."""
-    from pathlib import Path
+def _imports(path: Path):
+    """``(line, dotted target)`` of every import in *path*, deferred ones too."""
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                yield node.lineno, alias.name
+        elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
+            yield node.lineno, node.module
 
-    import extapps
 
-    root = Path(extapps.__file__).resolve().parent
-    assert sorted(p.name for p in root.rglob("*.ui")) == []
+def test_no_module_imports_a_host_or_tentacle():
+    """Every module, exec-templates and the in-Painter plugin included: a host
+    import here would make a host-free app need the host, and a tentacle import
+    would put the product above its only consumer."""
+    found = []
+    for path in sorted(PACKAGE.rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        for line, target in _imports(path):
+            if target.split(".")[0] in FORBIDDEN:
+                found.append(f"{path.relative_to(PACKAGE)}:{line} imports {target}")
+    assert found == []
+
+
+def test_the_dependencies_name_no_host_and_no_tentacle():
+    """pyproject declares pythontk, uitk and qtpy: no host library, no tentacle."""
+    import re
+
+    text = (PACKAGE.parent / "pyproject.toml").read_text(encoding="utf-8")
+    block = re.search(r"^dependencies = \[(.*?)\]", text, re.M | re.S).group(1)
+    names = {re.match(r"[\w-]+", d).group(0) for d in re.findall(r'"([^"]+)"', block)}
+    assert names == {"pythontk", "uitk", "qtpy"}
 
 
 def test_top_level_version():

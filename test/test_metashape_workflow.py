@@ -4,8 +4,8 @@
 
 Engine tests run the pipeline in mock mode and assert structure of the QC
 sidecar + behavior of acceptance gates. Anything requiring a live Metashape
-license is out of scope here. The panel is tentacle's
-(``test_metashape_workflow_panel.py``).
+license is out of scope here. The panel is
+``test_metashape_workflow_panel.py``'s.
 
 Run::
 

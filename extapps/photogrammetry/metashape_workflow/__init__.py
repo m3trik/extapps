@@ -4,8 +4,8 @@
 
 The Agisoft Metashape SDK wrapper lives here (SDK-specific, not generic). The
 generic ``FrameExtractor`` carve-out lives in
-:mod:`pythontk.vid_utils.frame_extractor`. tentacle's Metashape Workflow
-panel (``slots/tools/metashape_workflow.py``) drives it through :class:`MetashapeRunner`.
+:mod:`pythontk.vid_utils.frame_extractor`. The Metashape Workflow panel
+(``slots.py``, ``launcher.py``) drives it through :class:`MetashapeRunner`.
 """
 
 from pythontk.core_utils.module_resolver import bootstrap_package
@@ -23,6 +23,8 @@ DEFAULT_INCLUDE = {
     ],
     "_metashape_connection": ["MetashapeConnection"],
     "_metashape_runner": ["MetashapeRunner"],
+    "launcher": ["MetashapeWorkflowUI"],
+    "slots": ["MetashapeWorkflowSlots"],
 }
 
 
@@ -35,6 +37,8 @@ __all__ = [
     "MetashapeConnection",
     "MetashapeRunner",
     "MetashapeWorkflow",
+    "MetashapeWorkflowUI",
+    "MetashapeWorkflowSlots",
     "QcGate",
     "QcLog",
 ]

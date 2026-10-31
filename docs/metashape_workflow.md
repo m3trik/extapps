@@ -1,6 +1,6 @@
 # metashape_workflow
 
-The engine half of [extapps](../README.md); its Qt GUI is tentacle's Metashape Workflow panel. Automate Agisoft Metashape photogrammetry pipelines from Python or that panel. Runs against Metashape's Python API when licensed; falls back to a print-only mock mode for development and CI.
+Ships as part of the [extapps](../README.md) collection. Automate Agisoft Metashape photogrammetry pipelines from Python or a Qt GUI. Runs against Metashape's Python API when licensed; falls back to a print-only mock mode for development and CI.
 
 ## Install
 
@@ -23,15 +23,15 @@ A licensed Metashape Pro desktop install or a reachable license server is requir
 
 ### GUI
 
-The panel is [tentacle](https://github.com/m3trik/tentacle)'s: `tentacle metashape_workflow` opens it standalone, and Maya / Blender open it from the Materials menu. From code:
+`extapps metashape_workflow` opens the panel standalone, and Maya / Blender open it from tentacle's Materials menu. From code:
 
 ```python
-from tentacle.tcl_standalone import MetashapeWorkflowUI
+from extapps.photogrammetry.metashape_workflow import MetashapeWorkflowUI
 ui = MetashapeWorkflowUI()
 ui.show(pos="screen", app_exec=True)
 ```
 
-tentacle declares it as a `uitk.external_apps.in_process` entry point, so any uitk host discovers it automatically — no host-side wiring needed.
+The package self-registers as a `uitk.external_apps.in_process` entry point, so any uitk host (e.g. tentacle) discovers it automatically — no host-side wiring needed.
 
 ### Programmatic
 
@@ -137,7 +137,7 @@ it the stages record an honest QC skip.
 pytest test/test_metashape_workflow.py                  # from the extapps/ root
 ```
 
-Scope ([extapps/test/test_metashape_workflow.py](../test/test_metashape_workflow.py)): the engine in mock mode, the runner's process chains and the headless `run_combined` flags. The panel's tests (it builds, its widgets resolve, its runs dispatch) are tentacle's `test_metashape_workflow_panel.py`. Behavioral coverage of the photogrammetry pipeline against a real Metashape is opt-in (`METASHAPE_RUN_INTEGRATION=1`).
+Scope ([extapps/test/test_metashape_workflow.py](../test/test_metashape_workflow.py)): the engine in mock mode, the runner's process chains and the headless `run_combined` flags. The panel's tests (it builds, its widgets resolve, its runs dispatch) are [`test_metashape_workflow_panel.py`](../test/test_metashape_workflow_panel.py). Behavioral coverage of the photogrammetry pipeline against a real Metashape is opt-in (`METASHAPE_RUN_INTEGRATION=1`).
 
 ## Adding a preset
 
@@ -151,10 +151,14 @@ extapps/photogrammetry/metashape_workflow/
 ├── _metashape_workflow.py       # MetashapeWorkflow + module-level helpers
 ├── _metashape_connection.py     # finds and launches metashape.exe
 ├── _metashape_runner.py         # MetashapeRunner: the panel's async run
-└── run_combined.py              # the headless pipeline (CLI)
+├── run_combined.py              # the headless pipeline (CLI)
+├── parameters.py                # the panel's parameter registry
+├── slots.py                     # GUI slots (MetashapeWorkflowSlots)
+├── launcher.py                  # MetashapeWorkflowUI (a PanelLauncher)
+└── metashape_workflow.ui        # Qt Designer source
 ```
 
-The panel (`.ui`, Slots class, parameter registry) is tentacle's: `slots/tools/metashape_workflow.py`, `slots/tools/_photogrammetry/`.
+The panel's shared base and input pre-processing specs are the photogrammetry umbrella's (`_panel_slots.py`, `_shared_params.py`).
 
 `FrameExtractor` (generic video → frames helper) lives in
 `pythontk.vid_utils.frame_extractor` — see [pythontk's

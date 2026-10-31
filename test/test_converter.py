@@ -4,7 +4,7 @@
 
 How the destination and archive fields resolve, what a rename-mode output is
 called, which inputs would collide on one output. The panel that drives them is
-tentacle's (``tentacle/test/test_converter_panel.py``).
+``test_converter_panel.py``'s.
 """
 import contextlib
 import io

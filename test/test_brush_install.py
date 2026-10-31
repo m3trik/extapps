@@ -4,8 +4,8 @@
 
 Covers the download template, the AppInstaller delegation and catalog-aware
 discovery -- all without touching the network or launching a real download.
-The panel's wiring (header action + dispatch) is tentacle's
-(``test_gaussian_splat_workflow_panel.py``).
+The panel's wiring (header action + dispatch) is
+``test_gaussian_splat_workflow_panel.py``'s.
 """
 from __future__ import annotations
 

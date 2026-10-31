@@ -13,7 +13,7 @@ Standalone [uitk](https://github.com/m3trik/uitk)-Switchboard apps for content-p
 - **substance_workflow** — Substance 3D Painter automation over a bundled JSON-RPC bridge
 - **marmoset_workflow** — open a model file in a new Marmoset Toolbag (import / lookdev templates)
 - **mesh_convert** — FBX → glTF / GLB conversion
-- **unity_workflow** — copy a model file into a Unity project's Assets; manage unitytk's import scripts
+- **unity_workflow** — copy a model file (or, opened from Maya / Blender, the current scene) into a Unity project's Assets; manage unitytk's import scripts
 - **webxr_preview** — preview a scene or an FBX / GLB file live in a browser or XR headset
 - **look_match** — light a baked scene to match a reference image
 

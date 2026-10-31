@@ -21,7 +21,7 @@ host.
 | `photogrammetry` | End-to-end photogrammetry runs — frame extraction/curation → align → mesh → texture, with per-engine presets | bundled runners (Metashape SDK, RealityScan RSNode, gaussian splat) | [Metashape engine →](metashape_workflow.md) · [Tuning →](../extapps/photogrammetry/TUNING.md) |
 | `substance_workflow` | Adobe Substance 3D Painter automation (JSON-RPC bridge) | bundled (SDK-specific) | [→](substance_workflow.md) |
 | `marmoset_workflow` | Open a model file in a new Marmoset Toolbag (import / lookdev templates) | bundled `_marmoset_engine` (SDK-specific) | _TBD_ |
-| `unity_workflow` | Copy a model file into a Unity project's Assets; manage unitytk's import scripts | bundled | _TBD_ |
+| `unity_workflow` | Copy a model file -- or, opened from Maya / Blender, the scene (the host exports it) -- into a Unity project's Assets; manage unitytk's import scripts | `unitytk` (delivery); the host's `UnityBridge` (the scene's export) | _TBD_ |
 | `converter` | Texture conversion (normal DX↔GL, smoothness↔roughness, spec→PBR, bump→normal, optimize, flip/swizzle channels), color+alpha pack/unpack, PBR prep | `pythontk.ImgUtils` / `MapFactory` | _TBD_ |
 | `packer` | Channel-pack **and unpack** textures via per-channel sources (built-in templates: ORM, MRAO, MSAO, Metallic Smoothness, glTF clearcoat / iridescence / transmission-volume) | `pythontk.ImgUtils` / `MapFactory` | _TBD_ |
 | `mesh_convert` | FBX → glTF / GLB conversion | `pythontk.file_utils.mesh_convert` | _TBD_ |

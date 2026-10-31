@@ -66,9 +66,18 @@ DEFAULT_INCLUDE = {
 }
 
 
+#: Public names merged away (CODE_STANDARD section 5): a read raises
+#: ``MovedNameError`` naming the new home. ``{name: (new home, version)}``.
+MOVED_NAMES = {
+    # One Unity panel now: the behavior the two Unity panels shared through a
+    # vendored mixin is the Unity Workflow's own.
+    "UnityPanelMixin": ("extapps.UnityWorkflowSlots", "0.9.0"),
+}
+
+
 # ``bootstrap_package`` derives ``__all__`` from the resolved surface
 # (DEFAULT_INCLUDE) and unions in anything declared here first — so only the
 # non-derivable ``__version__`` needs listing by hand.
 __all__ = ["__version__", "DOCS_BASE_URL"]
 
-bootstrap_package(globals(), include=DEFAULT_INCLUDE)
+bootstrap_package(globals(), include=DEFAULT_INCLUDE, moved=MOVED_NAMES)

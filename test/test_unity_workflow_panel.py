@@ -1,18 +1,22 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Tests for the standalone Unity Workflow panel (``slots/tools/unity_workflow.py``).
+"""Tests for the Unity Workflow panel (``extapps/unity_workflow/slots.py``).
 
-The panel is a file-driven :class:`uitk.bridge.ParamPanelSlots` (the DCC-agnostic
-sibling of the Unity Bridge panel): pick a model file -> copy it into a
-Unity project's ``Assets/`` via :class:`unitytk.FileToUnityBridge`. Build-time wiring
-(param widgets, Model File + Unity Project rows, the single delivery mode), the
-``set_model_path`` host hand-off, and b000 dispatch are exercised against the real
-panel under the offscreen QPA without launching Unity.
+The one Unity panel, a :class:`uitk.bridge.ParamPanelSlots`: standalone it copies a
+picked model file into a Unity project's ``Assets/`` via
+:class:`unitytk.FileToUnityBridge`; a host that injects its engine
+(``slots.engine = mtk.UnityBridge``) adds a Current Scene source, with the host's
+export rows, sent through that engine with this panel's delivery attached.
+Build-time wiring (param widgets, Model File + Unity Project rows, the modes), the
+``set_model_path`` hand-off, the injected engine (a stand-in for a host's) and b000
+dispatch are exercised against the real panel under the offscreen QPA without
+launching Unity or a DCC.
 """
 
 from __future__ import annotations
 
 import importlib.util
+import logging
 import os
 import shutil
 import sys
@@ -40,6 +44,67 @@ def _ensure_app() -> QApplication:
     return QApplication.instance() or QApplication(sys.argv)
 
 
+def _host_engine(objects=("|pCube1",)):
+    """A host's Unity engine as the panel reaches it (``mtk`` / ``btk``
+    ``UnityBridge``): its export rows, its Scope, a send through the delivery
+    the panel attaches, and the host's install route. Records what it is asked."""
+    from uitk import AttributeSpec, Parameters, ParamRegistry
+
+    class _HostRows(ParamRegistry):
+        PARAMS = {
+            "SCOPE": Parameters.scope_spec(),
+            "INCLUDE_MATERIALS": AttributeSpec(
+                key="INCLUDE_MATERIALS",
+                label="Include Materials",
+                kind="bool",
+                default=True,
+                section="Export",
+            ),
+            "TRIANGULATE": AttributeSpec(
+                key="TRIANGULATE",
+                label="Triangulate",
+                kind="bool",
+                default=False,
+                section="Export",
+            ),
+        }
+
+    class _Engine:
+        built, sent, scoped, installed = [], [], [], []
+
+        def __init__(self, deliverer=None):
+            self.deliverer = deliverer
+            self.project_path = None
+            self.logger = logging.getLogger("test_unity_host_engine")
+            type(self).built.append(self)
+
+        @classmethod
+        def params_registry(cls):
+            return _HostRows
+
+        def scope_objects(self, scope="selected"):
+            type(self).scoped.append(scope)
+            return list(objects)
+
+        def send(self, objects=None, *, template, mode, params=None):
+            type(self).sent.append(
+                {
+                    "objects": objects,
+                    "template": template,
+                    "params": dict(params or {}),
+                    "project": self.project_path,
+                    "deliverer": self.deliverer,
+                }
+            )
+            return {"asset": "ok"}
+
+        @staticmethod
+        def install_package(spec):
+            _Engine.installed.append(spec)
+
+    return _Engine
+
+
 class TestUnityWorkflowParameters(unittest.TestCase):
     def _P(self):
         from extapps.unity_workflow import parameters as P
@@ -51,6 +116,8 @@ class TestUnityWorkflowParameters(unittest.TestCase):
         self.assertEqual(
             set(P.Parameters.defaults()),
             {
+                # What Send to Unity copies: a mode, kept out of presets.
+                "SOURCE",
                 "ASSETS_SUBDIR",
                 "ASSET_NAME",
                 "LAUNCH_MODE",
@@ -62,7 +129,7 @@ class TestUnityWorkflowParameters(unittest.TestCase):
                 "SCRIPTS_ACTION",
             },
         )
-        # No DCC export knobs (this panel takes an already-exported file).
+        # No DCC export knobs: a host's engine brings its own.
         for export_key in (
             "SCOPE",
             "TRIANGULATE",
@@ -70,6 +137,8 @@ class TestUnityWorkflowParameters(unittest.TestCase):
             "INCLUDE_MATERIALS",
         ):
             self.assertNotIn(export_key, P.PARAMS)
+        self.assertIs(P.PARAMS["SOURCE"].preset, False)
+        self.assertEqual(P.PARAMS["SOURCE"].default, P.FILE_SOURCE)
 
     def test_referenced_keys_is_token_based(self) -> None:
         # referenced_keys is the generic __KEY__ token scan; with no tokens in
@@ -118,13 +187,15 @@ class TestUnityWorkflowPanelLoads(unittest.TestCase):
 
     def test_copy_mode_shows_every_delivery_param(self) -> None:
         # Copy-to-assets shows every delivery param and hides the script
-        # checklist + action combo that only Manage Unity Scripts uses.
+        # checklist + action combo that only Manage Unity Scripts uses -- and,
+        # standalone, the Source row: one entry is no choice.
         from extapps.unity_workflow import parameters as P
 
         self.assertEqual(
             self.slots._relevant_param_keys(),
-            set(P.PARAMS) - {"SCRIPTS", "SCRIPTS_ACTION"},
+            set(P.PARAMS) - {"SCRIPTS", "SCRIPTS_ACTION", "SOURCE"},
         )
+        self.assertFalse(self.slots._model_row.isHidden())
 
     def test_manage_mode_shows_only_the_script_params(self) -> None:
         # The other half of the same gate: delivery params hide in manage mode.
@@ -197,18 +268,167 @@ class TestUnityWorkflowVersionPopulate(unittest.TestCase):
             self.app.processEvents()
 
 
-class TestTheUnityPanelsShareOneMixin(unittest.TestCase):
-    """The panel takes ``UnityPanelMixin`` (the vendored copy of tentacle's Unity
-    Bridge mixin) as its FIRST base: listed after ``ParamPanelSlots``, the
-    mixin's ``template_dir`` / ``TEMPLATE_MENU`` / ``default_output_dir`` would
-    lose the MRO, silently. Both panels' order, and the copies' equality, are
-    ``test_vendor_sync.py``'s."""
+class TestUnityWorkflowHostsTheScene(unittest.TestCase):
+    """A host injects its engine (``launch(show=False)``, then ``engine =``):
+    Current Scene joins the Source row above File on Disk, the engine's export
+    rows appear for it, and a send goes through the engine with this panel's
+    delivery. The stand-in engine is :func:`_host_engine`. Added: 2026-10-31
+    (one Unity app: tentacle's Unity Bridge panel folded in)."""
 
-    def test_the_panel_lists_the_mixin_first(self) -> None:
-        from extapps.unity_workflow._unity_panel import UnityPanelMixin
-        from extapps.unity_workflow.slots import UnityWorkflowSlots
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = _ensure_app()
 
-        self.assertIs(UnityWorkflowSlots.__bases__[0], UnityPanelMixin)
+    def setUp(self) -> None:
+        from extapps.unity_workflow.launcher import UnityWorkflowUI
+
+        self.tmp = tempfile.mkdtemp(prefix="unity_workflow_host_")
+        self.project = os.path.join(self.tmp, "Proj")
+        os.makedirs(os.path.join(self.project, "Assets"))
+        self.ui = UnityWorkflowUI()
+        self.slots = self.ui.sb.get_slots_instance(self.ui)
+        self.engine = _host_engine()
+
+    def tearDown(self) -> None:
+        store = self.ui.settings
+        self.ui.deleteLater()
+        self.app.processEvents()
+        store.clear()
+        store.sync()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _sources(self):
+        combo = self.slots._param_widgets["SOURCE"]
+        return [combo.itemText(i) for i in range(combo.count())]
+
+    def _group_index(self, key):
+        layout = self.slots._param_group.layout()
+        return layout.indexOf(self.slots._param_rows[key])
+
+    def test_standalone_offers_no_source_choice(self) -> None:
+        self.assertIsNone(self.slots.engine)
+        self.assertEqual(self._sources(), ["File on Disk"])
+        self.assertNotIn("SOURCE", self.slots._relevant_param_keys())
+        self.assertNotIn("SCOPE", self.slots._param_widgets)
+
+    def test_an_injected_engine_offers_the_current_scene_first(self) -> None:
+        self.slots.engine = self.engine
+        self.assertEqual(self._sources(), ["Current Scene", "File on Disk"])
+        self.assertEqual(self.slots._read_param("SOURCE"), "scene")
+        keys = self.slots._relevant_param_keys()
+        self.assertTrue({"SOURCE", "SCOPE", "INCLUDE_MATERIALS"} <= keys, keys)
+        self.assertTrue(self.slots._model_row.isHidden(), "nothing is picked")
+
+    def test_the_hosts_rows_sit_between_the_source_and_the_unity_rows(self) -> None:
+        self.slots.engine = self.engine
+        self.assertLess(self._group_index("SOURCE"), self._group_index("SCOPE"))
+        self.assertLess(
+            self._group_index("TRIANGULATE"), self._group_index("ASSETS_SUBDIR")
+        )
+        self.assertIn("Export", self.slots._section_separators)
+
+    def test_file_on_disk_hides_the_hosts_rows(self) -> None:
+        self.slots.engine = self.engine
+        self.slots._write_param("SOURCE", "file")
+        keys = self.slots._relevant_param_keys()
+        self.assertFalse({"SCOPE", "INCLUDE_MATERIALS", "TRIANGULATE"} & keys, keys)
+        self.assertIn("SOURCE", keys)
+        self.assertFalse(self.slots._model_row.isHidden())
+
+    def test_the_same_engine_again_changes_nothing(self) -> None:
+        self.slots.engine = self.engine
+        rows = dict(self.slots._param_rows)
+        self.slots.engine = self.engine
+        self.slots.engine = _host_engine()  # another host: its rows, no copies
+        self.assertEqual(set(self.slots._param_rows), set(rows))
+        self.assertEqual(self._sources(), ["Current Scene", "File on Disk"])
+
+    def _next_session(self, inject_before_show):
+        """A new panel over the same store, the engine injected before or
+        after its first show; the window is closed with the case."""
+        from extapps.unity_workflow.launcher import UnityWorkflowUI
+
+        ui = UnityWorkflowUI()
+        self.addCleanup(ui.deleteLater)
+        slots = ui.sb.get_slots_instance(ui)
+        if inject_before_show:
+            slots.engine = self.engine
+        ui.show()
+        self.app.processEvents()
+        if not inject_before_show:
+            slots.engine = self.engine
+        return slots
+
+    def test_a_host_rows_saved_value_restores_whenever_the_engine_arrives(
+        self,
+    ) -> None:
+        """The host's rows are built after the panel: before its first show
+        they restore with the rest, after it at once (``add_param_rows``) --
+        so a carried or last-session value reaches them either way."""
+        self.slots.engine = self.engine
+        self.ui.show()
+        self.app.processEvents()
+        self.slots._write_param("INCLUDE_MATERIALS", False)
+        self.slots._write_param("SCOPE", "visible")
+        self.app.processEvents()
+        for before in (True, False):
+            with self.subTest(inject_before_show=before):
+                slots = self._next_session(before)
+                self.assertIs(slots._read_param("INCLUDE_MATERIALS"), False)
+                self.assertEqual(slots._read_param("SCOPE"), "visible")
+
+    def test_the_model_file_label_keeps_the_label_column(self) -> None:
+        self.slots.engine = self.engine
+        self.assertEqual(
+            self.slots._model_label.minimumWidth(), self.slots.LABEL_MIN_WIDTH
+        )
+
+    def test_an_optional_package_installs_through_the_host(self) -> None:
+        self.slots.engine = self.engine
+        self.slots._install_optional_package("unitytk>=0.1.0")
+        self.assertEqual(self.engine.installed, ["unitytk>=0.1.0"])
+
+    @unittest.skipUnless(UNITYTK, NO_UNITYTK)
+    def test_a_scene_send_goes_through_the_engine_with_the_panels_delivery(
+        self,
+    ) -> None:
+        self.slots.engine = self.engine
+        self.slots._output_dir_edit.setText(self.project)
+        self.slots._write_param("SCOPE", "visible")
+        self.slots._write_param("ASSETS_SUBDIR", "Models")
+        self.ui.b000.click()
+        (sent,) = self.engine.sent
+        self.assertEqual(self.engine.scoped, ["visible"])
+        self.assertEqual(sent["objects"], ["|pCube1"])
+        self.assertEqual(sent["template"], "copy_to_assets")
+        self.assertEqual(sent["project"], self.project)
+        self.assertIs(sent["deliverer"], self.slots.bridge.deliverer)
+        self.assertEqual(sent["params"]["ASSETS_SUBDIR"], "Models")
+        self.assertEqual(sent["params"]["SCOPE"], "visible")
+        self.assertEqual(len(self.engine.built), 1)
+
+    @unittest.skipUnless(UNITYTK, NO_UNITYTK)
+    def test_an_empty_scope_sends_nothing_and_says_why(self) -> None:
+        engine = _host_engine(objects=())
+        self.slots.engine = engine
+        self.slots._output_dir_edit.setText(self.project)
+        self.ui.b000.click()
+        self.assertEqual(engine.sent, [])
+        self.assertIn("Nothing selected", self.ui.txt000.toPlainText())
+
+    def test_without_unitytk_a_scene_send_says_what_it_needs(self) -> None:
+        self.slots.engine = self.engine
+        self.slots._output_dir_edit.setText(self.project)
+        with mock.patch.object(type(self.slots), "peek_bridge", return_value=None):
+            self.ui.b000.click()
+        self.assertEqual(self.engine.sent, [])
+        self.assertIn("Install / Update", self.ui.txt000.toPlainText())
+
+    def test_a_scene_send_without_a_project_asks_for_one(self) -> None:
+        self.slots.engine = self.engine
+        self.slots._output_dir_edit.setText("")
+        self.ui.b000.click()
+        self.assertEqual(self.engine.sent, [])
 
 
 @unittest.skipUnless(UNITYTK, NO_UNITYTK)

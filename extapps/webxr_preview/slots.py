@@ -333,7 +333,11 @@ class WebXrPreviewSlots(ParamPanelSlots):
             return None
         if self._host_bridge is None:
             self._host_bridge = self._engine()
-            self._bind_logger(self._host_bridge)
+            # A different logger from the file bridge's, which the base binds:
+            # without this, what a scope push reports (the sidecar outcome, the
+            # lightmap misses, the conversion's errors) goes to the DCC's script
+            # editor and the panel looks like it did nothing.
+            self._redirect_log_to_panel(self._host_bridge)
         return self._host_bridge
 
     def _adopt_host_deliverer(self) -> None:
@@ -408,24 +412,6 @@ class WebXrPreviewSlots(ParamPanelSlots):
         """That deliverer's server, or ``None`` before anything started one."""
         deliverer = self._deliverer()
         return getattr(deliverer, "server", None) if deliverer else None
-
-    def _bind_logger(self, bridge) -> None:
-        """Route *bridge*'s logger into the panel's log pane.
-
-        The base binds only ``self.bridge``'s logger, once, in its constructor.
-        The host bridge is built later and is a different logger, so without
-        this everything a scope push reports -- the sidecar outcome, the
-        lightmap misses, the conversion's own errors -- would go to the DCC's
-        script editor and the panel would look like it did nothing.
-        """
-        try:
-            handler_cls = self.sb.registered_widgets.TextEditLogHandler
-            logger = bridge.logger
-            logger.hide_logger_name(True)
-            logger.set_text_handler(handler_cls)
-            logger.setup_logging_redirect(self.ui.txt000)
-        except (AttributeError, RuntimeError):  # no redirect available
-            pass
 
     def _sources(self) -> List[Tuple[str, str]]:
         """``(key, label)`` for every source this panel can offer right now.

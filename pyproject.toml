@@ -99,7 +99,9 @@ classifiers = [
 # ship what the panels call on dev before publishing: Look Match's mixes read
 # `ptk.LookSession.mixes`, which pythontk 0.18.2 does not have.
 # uitk 1.9.0: every panel subclasses `uitk.ParamPanelSlots` (BridgeSlotsBase
-# before), which an older uitk does not export.
+# before), which an older uitk does not export; and the Unity Workflow builds
+# a host engine's export rows through `ParamPanelSlots.add_param_rows`, which
+# first ships there (AttributeError when a host injects its engine).
 # No host and no tentacle: extapps is a product nothing imports, and it imports
 # neither (test/test_imports.py). unitytk stays an on-demand install inside
 # the Unity Workflow panel (Manage Unity Scripts > Install), never a dependency.

@@ -4,7 +4,7 @@
   "modules": [
     {
       "relpath": "__init__.py",
-      "summary": "extapps — standalone Switchboard panels for content-pipeline workflows.",
+      "summary": "extapps — the engines of the standalone content-pipeline tools.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -14,7 +14,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 20,
+          "line": 25,
           "deprecated": false
         },
         {
@@ -23,455 +23,16 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 23,
+          "line": 28,
           "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "_panel_launcher.py",
-      "summary": "The one launcher every extapps panel is.",
-      "functions": [],
-      "classes": [
+        },
         {
-          "name": "PanelLauncher",
-          "summary": "Base of every extapps ``<Tool>UI``: calling it returns the built panel.",
-          "line": 76,
-          "bases": [
-            "_PanelLauncherInternal"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "look_match/__init__.py",
-      "summary": "Light a baked scene to match a reference image, by eye and region by region.",
-      "functions": [],
-      "classes": [],
-      "constants": [
-        {
-          "name": "DEFAULT_INCLUDE",
-          "qualname": "DEFAULT_INCLUDE",
+          "name": "MOVED_NAMES",
+          "qualname": "MOVED_NAMES",
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 17,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "look_match/launcher.py",
-      "summary": "Application shell for the Look Match UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "LookMatchUI",
-          "summary": "",
-          "line": 14,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "look_match/slots.py",
-      "summary": "Slots for the Look Match panel (see :mod:`extapps.look_match`).",
-      "functions": [],
-      "classes": [
-        {
-          "name": "LookMatchSlots",
-          "summary": "The Look Match panel (see the module docstring).",
-          "line": 92,
-          "bases": [
-            "_LookMatchSlotsInternal"
-          ],
-          "members": [
-            {
-              "name": "header_init",
-              "qualname": "LookMatchSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 236,
-              "deprecated": false
-            },
-            {
-              "name": "cmb_session_init",
-              "qualname": "LookMatchSlots.cmb_session_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 267,
-              "deprecated": false
-            },
-            {
-              "name": "cmb_mix_init",
-              "qualname": "LookMatchSlots.cmb_mix_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 293,
-              "deprecated": false
-            },
-            {
-              "name": "b_undo_init",
-              "qualname": "LookMatchSlots.b_undo_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 309,
-              "deprecated": false
-            },
-            {
-              "name": "b_redo_init",
-              "qualname": "LookMatchSlots.b_redo_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 312,
-              "deprecated": false
-            },
-            {
-              "name": "b_undo",
-              "qualname": "LookMatchSlots.b_undo",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 315,
-              "deprecated": false
-            },
-            {
-              "name": "b_redo",
-              "qualname": "LookMatchSlots.b_redo",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 318,
-              "deprecated": false
-            },
-            {
-              "name": "b_fit_init",
-              "qualname": "LookMatchSlots.b_fit_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 321,
-              "deprecated": false
-            },
-            {
-              "name": "tbl_mix_init",
-              "qualname": "LookMatchSlots.tbl_mix_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 360,
-              "deprecated": false
-            },
-            {
-              "name": "chk_all_init",
-              "qualname": "LookMatchSlots.chk_all_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 421,
-              "deprecated": false
-            },
-            {
-              "name": "tbl_regions_init",
-              "qualname": "LookMatchSlots.tbl_regions_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 425,
-              "deprecated": false
-            },
-            {
-              "name": "cmb_mode_init",
-              "qualname": "LookMatchSlots.cmb_mode_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 439,
-              "deprecated": false
-            },
-            {
-              "name": "cmb_a_init",
-              "qualname": "LookMatchSlots.cmb_a_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 444,
-              "deprecated": false
-            },
-            {
-              "name": "cmb_b_init",
-              "qualname": "LookMatchSlots.cmb_b_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 447,
-              "deprecated": false
-            },
-            {
-              "name": "cmb_solve_init",
-              "qualname": "LookMatchSlots.cmb_solve_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 450,
-              "deprecated": false
-            },
-            {
-              "name": "cmp_view_init",
-              "qualname": "LookMatchSlots.cmp_view_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 454,
-              "deprecated": false
-            },
-            {
-              "name": "browse_session",
-              "qualname": "LookMatchSlots.browse_session",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 488,
-              "deprecated": false
-            },
-            {
-              "name": "open_session",
-              "qualname": "LookMatchSlots.open_session",
-              "kind": "method",
-              "signature": "(self, path: str) -> bool",
-              "summary": "Start opening the session file at *path*;",
-              "line": 507,
-              "deprecated": false
-            },
-            {
-              "name": "save_mix",
-              "qualname": "LookMatchSlots.save_mix",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 618,
-              "deprecated": false
-            },
-            {
-              "name": "save_mix_as",
-              "qualname": "LookMatchSlots.save_mix_as",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 631,
-              "deprecated": false
-            },
-            {
-              "name": "delete_mix",
-              "qualname": "LookMatchSlots.delete_mix",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 654,
-              "deprecated": false
-            },
-            {
-              "name": "b_solve",
-              "qualname": "LookMatchSlots.b_solve",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1268,
-              "deprecated": false
-            },
-            {
-              "name": "b_fit",
-              "qualname": "LookMatchSlots.b_fit",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1305,
-              "deprecated": false
-            },
-            {
-              "name": "b_accept",
-              "qualname": "LookMatchSlots.b_accept",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1395,
-              "deprecated": false
-            },
-            {
-              "name": "b_discard",
-              "qualname": "LookMatchSlots.b_discard",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1403,
-              "deprecated": false
-            },
-            {
-              "name": "b_render",
-              "qualname": "LookMatchSlots.b_render",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1434,
-              "deprecated": false
-            },
-            {
-              "name": "stop_service",
-              "qualname": "LookMatchSlots.stop_service",
-              "kind": "method",
-              "signature": "(self, wait: bool = True) -> None",
-              "summary": "End the WebXR viewer this panel started (never one it did not): its",
-              "line": 1489,
-              "deprecated": false
-            },
-            {
-              "name": "b_edit_regions",
-              "qualname": "LookMatchSlots.b_edit_regions",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1517,
-              "deprecated": false
-            },
-            {
-              "name": "b_draw_rect",
-              "qualname": "LookMatchSlots.b_draw_rect",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1542,
-              "deprecated": false
-            },
-            {
-              "name": "b_draw_ellipse",
-              "qualname": "LookMatchSlots.b_draw_ellipse",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1545,
-              "deprecated": false
-            },
-            {
-              "name": "b_draw_poly",
-              "qualname": "LookMatchSlots.b_draw_poly",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1548,
-              "deprecated": false
-            },
-            {
-              "name": "b_draw_line",
-              "qualname": "LookMatchSlots.b_draw_line",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1551,
-              "deprecated": false
-            },
-            {
-              "name": "b_region_delete",
-              "qualname": "LookMatchSlots.b_region_delete",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1609,
-              "deprecated": false
-            },
-            {
-              "name": "b_paint",
-              "qualname": "LookMatchSlots.b_paint",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1621,
-              "deprecated": false
-            },
-            {
-              "name": "b_reload",
-              "qualname": "LookMatchSlots.b_reload",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1639,
-              "deprecated": false
-            },
-            {
-              "name": "b_update",
-              "qualname": "LookMatchSlots.b_update",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1682,
-              "deprecated": false
-            },
-            {
-              "name": "stop_worker",
-              "qualname": "LookMatchSlots.stop_worker",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "End the bake workers this panel launched (never one it did not),",
-              "line": 1755,
-              "deprecated": false
-            },
-            {
-              "name": "b_save_rig",
-              "qualname": "LookMatchSlots.b_save_rig",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 1763,
-              "deprecated": false
-            },
-            {
-              "name": "mix_key",
-              "qualname": "LookMatchSlots.mix_key",
-              "kind": "staticmethod",
-              "signature": "(mix) -> str",
-              "summary": "A mix's identity: what a render records, so it can say it is stale.",
-              "line": 69,
-              "deprecated": false
-            },
-            {
-              "name": "status_glyph",
-              "qualname": "LookMatchSlots.status_glyph",
-              "kind": "staticmethod",
-              "signature": "(row: Dict[str, Any]) -> str",
-              "summary": "A region's state in a shape, not only a colour: within, brighter,",
-              "line": 75,
-              "deprecated": false
-            },
-            {
-              "name": "brightness_text",
-              "qualname": "LookMatchSlots.brightness_text",
-              "kind": "staticmethod",
-              "signature": "(value: Optional[float]) -> str",
-              "summary": "",
-              "line": 88,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": [
-        {
-          "name": "DOCS_URL",
-          "qualname": "DOCS_URL",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 29,
+          "line": 51,
           "deprecated": false
         }
       ]
@@ -488,7 +49,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 20,
+          "line": 19,
           "deprecated": false
         }
       ]
@@ -620,6 +181,23 @@
           "deprecated": false
         }
       ]
+    },
+    {
+      "relpath": "marmoset_workflow/_marmoset_workflow.py",
+      "summary": "The Toolbag engine as the standalone Marmoset Workflow panel drives it.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MarmosetWorkflow",
+          "summary": "The Toolbag engine with its app and template folder on the class.",
+          "line": 15,
+          "bases": [
+            "MarmosetEngine"
+          ],
+          "members": []
+        }
+      ],
+      "constants": []
     },
     {
       "relpath": "marmoset_workflow/_toolbag_helpers.py",
@@ -756,140 +334,6 @@
           "deprecated": false
         }
       ]
-    },
-    {
-      "relpath": "marmoset_workflow/launcher.py",
-      "summary": "Application shell for the Marmoset Workflow UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MarmosetWorkflowUI",
-          "summary": "",
-          "line": 16,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "marmoset_workflow/parameters.py",
-      "summary": "Tunable parameters surfaced in the Marmoset Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "Parameters",
-          "summary": "The Marmoset Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 52,
-          "bases": [
-            "ParamRegistry"
-          ],
-          "members": []
-        }
-      ],
-      "constants": [
-        {
-          "name": "PARAMS",
-          "qualname": "PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 28,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "marmoset_workflow/slots.py",
-      "summary": "Slots for the standalone Marmoset Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MarmosetWorkflowSlots",
-          "summary": "Switchboard slots wired to ``marmoset_workflow.ui``.",
-          "line": 55,
-          "bases": [
-            "BridgeSlotsBase"
-          ],
-          "members": [
-            {
-              "name": "params_module",
-              "qualname": "MarmosetWorkflowSlots.params_module",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 105,
-              "deprecated": false
-            },
-            {
-              "name": "template_dir",
-              "qualname": "MarmosetWorkflowSlots.template_dir",
-              "kind": "property",
-              "signature": "(self) -> Path",
-              "summary": "",
-              "line": 109,
-              "deprecated": false
-            },
-            {
-              "name": "make_bridge",
-              "qualname": "MarmosetWorkflowSlots.make_bridge",
-              "kind": "method",
-              "signature": "(self) -> MarmosetEngine",
-              "summary": "",
-              "line": 112,
-              "deprecated": false
-            },
-            {
-              "name": "list_template_modes",
-              "qualname": "MarmosetWorkflowSlots.list_template_modes",
-              "kind": "method",
-              "signature": "(self) -> List[Tuple[str, str]]",
-              "summary": "Engine templates filtered to the 'set up a project' subset.",
-              "line": 115,
-              "deprecated": false
-            },
-            {
-              "name": "select_initial_template_index",
-              "qualname": "MarmosetWorkflowSlots.select_initial_template_index",
-              "kind": "method",
-              "signature": "(self, pairs: List[Tuple[str, str]]) -> int",
-              "summary": "Prefer 'lookdev (send_to)', else first entry.",
-              "line": 123,
-              "deprecated": false
-            },
-            {
-              "name": "resolved_model_path",
-              "qualname": "MarmosetWorkflowSlots.resolved_model_path",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 193,
-              "deprecated": false
-            },
-            {
-              "name": "set_model_path",
-              "qualname": "MarmosetWorkflowSlots.set_model_path",
-              "kind": "method",
-              "signature": "(self, path: str) -> None",
-              "summary": "Pre-fill the Model File field (e.g.",
-              "line": 198,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "MarmosetWorkflowSlots.b000",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Set up the picked model in Toolbag using the chosen template + mode.",
-              "line": 215,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
     },
     {
       "relpath": "marmoset_workflow/template_params.py",
@@ -1159,190 +603,6 @@
       "constants": []
     },
     {
-      "relpath": "mesh_convert/__init__.py",
-      "summary": "Batch-convert FBX files to binary glTF (GLB) with FBX2glTF.",
-      "functions": [],
-      "classes": [],
-      "constants": [
-        {
-          "name": "DEFAULT_INCLUDE",
-          "qualname": "DEFAULT_INCLUDE",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 14,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "mesh_convert/launcher.py",
-      "summary": "Application shell for the Mesh Convert UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MeshConvertUI",
-          "summary": "",
-          "line": 14,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "mesh_convert/slots.py",
-      "summary": "",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MeshConvertSlots",
-          "summary": "Switchboard slots for the Mesh Converter UI.",
-          "line": 9,
-          "bases": [],
-          "members": [
-            {
-              "name": "source_dir",
-              "qualname": "MeshConvertSlots.source_dir",
-              "kind": "property",
-              "signature": "(self) -> str",
-              "summary": "Starting directory for the FBX file dialog.",
-              "line": 30,
-              "deprecated": false
-            },
-            {
-              "name": "fbx_provider",
-              "qualname": "MeshConvertSlots.fbx_provider",
-              "kind": "property",
-              "signature": "(self) -> Optional[Callable[[], Iterable[str]]]",
-              "summary": "Callable returning FBX paths from the host DCC selection.",
-              "line": 39,
-              "deprecated": false
-            },
-            {
-              "name": "header_init",
-              "qualname": "MeshConvertSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Add the From-FBX-references toggle to the header menu.",
-              "line": 52,
-              "deprecated": false
-            },
-            {
-              "name": "tb000_init",
-              "qualname": "MeshConvertSlots.tb000_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Set up the FBX -> GLB tool button option box.",
-              "line": 141,
-              "deprecated": false
-            },
-            {
-              "name": "tb000",
-              "qualname": "MeshConvertSlots.tb000",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Convert the selected FBX file(s) to GLB beside their source.",
-              "line": 173,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "photogrammetry/_panel_slots.py",
-      "summary": "Shared scaffolding for the photogrammetry workflow panels.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "PhotogrammetryPanelSlots",
-          "summary": "Base for the photogrammetry workflow panels (engine-agnostic scaffolding).",
-          "line": 45,
-          "bases": [
-            "BridgeSlotsBase"
-          ],
-          "members": [
-            {
-              "name": "header_menu_items",
-              "qualname": "PhotogrammetryPanelSlots.header_menu_items",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Process-runner header menu: Cancel Run / Open Output Folder / Clear",
-              "line": 108,
-              "deprecated": false
-            },
-            {
-              "name": "make_preset_store",
-              "qualname": "PhotogrammetryPanelSlots.make_preset_store",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Semantic-preset mode: the engine-scoped store the headless runner uses",
-              "line": 125,
-              "deprecated": false
-            },
-            {
-              "name": "resolved_project_name",
-              "qualname": "PhotogrammetryPanelSlots.resolved_project_name",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 267,
-              "deprecated": false
-            },
-            {
-              "name": "cancel_run",
-              "qualname": "PhotogrammetryPanelSlots.cancel_run",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 288,
-              "deprecated": false
-            },
-            {
-              "name": "open_output_folder",
-              "qualname": "PhotogrammetryPanelSlots.open_output_folder",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Reveal the output folder.",
-              "line": 302,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "PhotogrammetryPanelSlots.b000",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Run Workflow.",
-              "line": 310,
-              "deprecated": false
-            }
-          ]
-        },
-        {
-          "name": "FramesSourceMixin",
-          "summary": "A single 'Source' row + browser for image-in panels (Metashape, RC).",
-          "line": 386,
-          "bases": [],
-          "members": [
-            {
-              "name": "resolved_frames_dir",
-              "qualname": "FramesSourceMixin.resolved_frames_dir",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 418,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
-    },
-    {
       "relpath": "photogrammetry/_process_runner.py",
       "summary": "Async, log-streaming process runner shared by the photogrammetry panels.",
       "functions": [],
@@ -1430,95 +690,6 @@
       "constants": []
     },
     {
-      "relpath": "photogrammetry/_shared_params.py",
-      "summary": "Input pre-processing parameter specs shared by the image-in engines.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "SharedParams",
-          "summary": "Argv renderers shared by the image-in engines' ``parameters`` modules.",
-          "line": 151,
-          "bases": [],
-          "members": [
-            {
-              "name": "render_flag_argv",
-              "qualname": "SharedParams.render_flag_argv",
-              "kind": "staticmethod",
-              "signature": "(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'",
-              "summary": "Render *values* into CLI flags — the shared loop behind every engine's",
-              "line": 161,
-              "deprecated": false
-            },
-            {
-              "name": "preprocessing_argv",
-              "qualname": "SharedParams.preprocessing_argv",
-              "kind": "staticmethod",
-              "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
-              "summary": "Render the input pre-processing CLI flags from collected *values*.",
-              "line": 198,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": [
-        {
-          "name": "PREPROCESS_MASTER_KEY",
-          "qualname": "PREPROCESS_MASTER_KEY",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 28,
-          "deprecated": false
-        },
-        {
-          "name": "PREPROCESSING_PARAMS",
-          "qualname": "PREPROCESSING_PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 32,
-          "deprecated": false
-        },
-        {
-          "name": "PREPROCESSING_VALUE_FLAGS",
-          "qualname": "PREPROCESSING_VALUE_FLAGS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 123,
-          "deprecated": false
-        },
-        {
-          "name": "PREPROCESSING_STORE_TRUE_FLAGS",
-          "qualname": "PREPROCESSING_STORE_TRUE_FLAGS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 133,
-          "deprecated": false
-        },
-        {
-          "name": "PREPROCESSING_KEYS",
-          "qualname": "PREPROCESSING_KEYS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 139,
-          "deprecated": false
-        },
-        {
-          "name": "PREPROCESSING_KNOB_KEYS",
-          "qualname": "PREPROCESSING_KNOB_KEYS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 146,
-          "deprecated": false
-        }
-      ]
-    },
-    {
       "relpath": "photogrammetry/_workflow_engine.py",
       "summary": "The lifecycle every photogrammetry engine shares: one base, five engines.",
       "functions": [],
@@ -1557,7 +728,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 33,
+          "line": 34,
           "deprecated": false
         }
       ]
@@ -1837,69 +1008,6 @@
       ]
     },
     {
-      "relpath": "photogrammetry/gaussian_splat_workflow/launcher.py",
-      "summary": "Application shell for the Brush (gaussian-splat) Workflow UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "GaussianSplatWorkflowUI",
-          "summary": "",
-          "line": 13,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "photogrammetry/gaussian_splat_workflow/parameters.py",
-      "summary": "Tunable parameters surfaced in the Brush (gaussian-splat) Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "Parameters",
-          "summary": "The Brush (gaussian-splat) panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 117,
-          "bases": [
-            "ParamRegistry"
-          ],
-          "members": [
-            {
-              "name": "to_argv",
-              "qualname": "Parameters.to_argv",
-              "kind": "staticmethod",
-              "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
-              "summary": "Render collected param *values* into ``run_combined`` CLI flags via the",
-              "line": 128,
-              "deprecated": false
-            },
-            {
-              "name": "referenced_keys",
-              "qualname": "Parameters.referenced_keys",
-              "kind": "classmethod",
-              "signature": "(cls, source: str = '') -> 'set[str]'",
-              "summary": "Params relevant to the selected run mode — drives row visibility.",
-              "line": 135,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": [
-        {
-          "name": "PARAMS",
-          "qualname": "PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 24,
-          "deprecated": false
-        }
-      ]
-    },
-    {
       "relpath": "photogrammetry/gaussian_splat_workflow/run_combined.py",
       "summary": "Driver for the gaussian-splat track: Brush splat training + engine publish.",
       "functions": [
@@ -1914,132 +1022,6 @@
         }
       ],
       "classes": [],
-      "constants": []
-    },
-    {
-      "relpath": "photogrammetry/gaussian_splat_workflow/slots.py",
-      "summary": "Slots for the Brush (gaussian-splat) Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "GaussianSplatWorkflowSlots",
-          "summary": "Switchboard slots wired to ``gaussian_splat_workflow.ui``.",
-          "line": 37,
-          "bases": [
-            "PhotogrammetryPanelSlots"
-          ],
-          "members": [
-            {
-              "name": "resolved_colmap_dir",
-              "qualname": "GaussianSplatWorkflowSlots.resolved_colmap_dir",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 91,
-              "deprecated": false
-            },
-            {
-              "name": "params_module",
-              "qualname": "GaussianSplatWorkflowSlots.params_module",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 118,
-              "deprecated": false
-            },
-            {
-              "name": "template_dir",
-              "qualname": "GaussianSplatWorkflowSlots.template_dir",
-              "kind": "property",
-              "signature": "(self) -> Path",
-              "summary": "",
-              "line": 122,
-              "deprecated": false
-            },
-            {
-              "name": "make_bridge",
-              "qualname": "GaussianSplatWorkflowSlots.make_bridge",
-              "kind": "method",
-              "signature": "(self) -> GaussianSplatRunner",
-              "summary": "",
-              "line": 125,
-              "deprecated": false
-            },
-            {
-              "name": "header_init",
-              "qualname": "GaussianSplatWorkflowSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 129,
-              "deprecated": false
-            },
-            {
-              "name": "open_brush_viewer",
-              "qualname": "GaussianSplatWorkflowSlots.open_brush_viewer",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Open Brush's GUI viewer with nothing loaded (``brush`` defaults to the",
-              "line": 173,
-              "deprecated": false
-            },
-            {
-              "name": "open_result_in_brush",
-              "qualname": "GaussianSplatWorkflowSlots.open_result_in_brush",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Open the latest trained splat in Brush's viewer.",
-              "line": 178,
-              "deprecated": false
-            },
-            {
-              "name": "install_brush",
-              "qualname": "GaussianSplatWorkflowSlots.install_brush",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Download + install Brush if it isn't already discoverable.",
-              "line": 207,
-              "deprecated": false
-            },
-            {
-              "name": "cancel_run",
-              "qualname": "GaussianSplatWorkflowSlots.cancel_run",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Cancel an in-flight Brush download too — the base 'Cancel Run' action",
-              "line": 240,
-              "deprecated": false
-            },
-            {
-              "name": "list_template_modes",
-              "qualname": "GaussianSplatWorkflowSlots.list_template_modes",
-              "kind": "method",
-              "signature": "(self) -> List[Tuple[str, str]]",
-              "summary": "",
-              "line": 250,
-              "deprecated": false
-            },
-            {
-              "name": "default_output_dir",
-              "qualname": "GaussianSplatWorkflowSlots.default_output_dir",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 253,
-              "deprecated": false
-            },
-            {
-              "name": "help_spec",
-              "qualname": "GaussianSplatWorkflowSlots.help_spec",
-              "kind": "method",
-              "signature": "(self) -> dict",
-              "summary": "",
-              "line": 265,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
       "constants": []
     },
     {
@@ -2115,7 +1097,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 15,
+          "line": 16,
           "deprecated": false
         }
       ]
@@ -2501,69 +1483,6 @@
       ]
     },
     {
-      "relpath": "photogrammetry/metashape_workflow/launcher.py",
-      "summary": "Application shell for the Metashape Workflow UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MetashapeWorkflowUI",
-          "summary": "",
-          "line": 15,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "photogrammetry/metashape_workflow/parameters.py",
-      "summary": "Tunable parameters surfaced in the Metashape Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "Parameters",
-          "summary": "The Metashape panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 372,
-          "bases": [
-            "ParamRegistry"
-          ],
-          "members": [
-            {
-              "name": "to_argv",
-              "qualname": "Parameters.to_argv",
-              "kind": "staticmethod",
-              "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
-              "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-              "line": 383,
-              "deprecated": false
-            },
-            {
-              "name": "referenced_keys",
-              "qualname": "Parameters.referenced_keys",
-              "kind": "classmethod",
-              "signature": "(cls, source: str = '') -> 'set[str]'",
-              "summary": "Params relevant to the panel's current input — drives row visibility.",
-              "line": 394,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": [
-        {
-          "name": "PARAMS",
-          "qualname": "PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 39,
-          "deprecated": false
-        }
-      ]
-    },
-    {
       "relpath": "photogrammetry/metashape_workflow/run_combined.py",
       "summary": "Driver script for multi-session combined runs.",
       "functions": [
@@ -2589,79 +1508,6 @@
           "deprecated": false
         }
       ]
-    },
-    {
-      "relpath": "photogrammetry/metashape_workflow/slots.py",
-      "summary": "Slots for the Metashape Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "MetashapeWorkflowSlots",
-          "summary": "Switchboard slots wired to ``metashape_workflow.ui``.",
-          "line": 41,
-          "bases": [
-            "FramesSourceMixin",
-            "PhotogrammetryPanelSlots"
-          ],
-          "members": [
-            {
-              "name": "params_module",
-              "qualname": "MetashapeWorkflowSlots.params_module",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 92,
-              "deprecated": false
-            },
-            {
-              "name": "template_dir",
-              "qualname": "MetashapeWorkflowSlots.template_dir",
-              "kind": "property",
-              "signature": "(self) -> Path",
-              "summary": "",
-              "line": 96,
-              "deprecated": false
-            },
-            {
-              "name": "make_bridge",
-              "qualname": "MetashapeWorkflowSlots.make_bridge",
-              "kind": "method",
-              "signature": "(self) -> MetashapeRunner",
-              "summary": "",
-              "line": 100,
-              "deprecated": false
-            },
-            {
-              "name": "list_template_modes",
-              "qualname": "MetashapeWorkflowSlots.list_template_modes",
-              "kind": "method",
-              "signature": "(self) -> List[Tuple[str, str]]",
-              "summary": "",
-              "line": 103,
-              "deprecated": false
-            },
-            {
-              "name": "default_output_dir",
-              "qualname": "MetashapeWorkflowSlots.default_output_dir",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 106,
-              "deprecated": false
-            },
-            {
-              "name": "help_spec",
-              "qualname": "MetashapeWorkflowSlots.help_spec",
-              "kind": "method",
-              "signature": "(self) -> dict",
-              "summary": "",
-              "line": 118,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
     },
     {
       "relpath": "photogrammetry/prep_stages.py",
@@ -2908,7 +1754,7 @@
           "kind": "constant",
           "signature": "",
           "summary": "",
-          "line": 19,
+          "line": 21,
           "deprecated": false
         }
       ]
@@ -3543,69 +2389,6 @@
       ]
     },
     {
-      "relpath": "photogrammetry/realityscan_workflow/launcher.py",
-      "summary": "Application shell for the RealityCapture Workflow UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "RealityScanWorkflowUI",
-          "summary": "",
-          "line": 13,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "photogrammetry/realityscan_workflow/parameters.py",
-      "summary": "Tunable parameters surfaced in the RealityCapture Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "Parameters",
-          "summary": "The RealityScan panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 163,
-          "bases": [
-            "ParamRegistry"
-          ],
-          "members": [
-            {
-              "name": "to_argv",
-              "qualname": "Parameters.to_argv",
-              "kind": "staticmethod",
-              "signature": "(values: 'Dict[str, Any]') -> 'List[str]'",
-              "summary": "Render collected param *values* into ``run_combined`` CLI flags (via the",
-              "line": 174,
-              "deprecated": false
-            },
-            {
-              "name": "referenced_keys",
-              "qualname": "Parameters.referenced_keys",
-              "kind": "classmethod",
-              "signature": "(cls, source: str = '') -> 'set[str]'",
-              "summary": "Params relevant to the panel's current input — drives row visibility.",
-              "line": 184,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": [
-        {
-          "name": "PARAMS",
-          "qualname": "PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 38,
-          "deprecated": false
-        }
-      ]
-    },
-    {
       "relpath": "photogrammetry/realityscan_workflow/run_combined.py",
       "summary": "Driver script for multi-session combined RealityCapture runs.",
       "functions": [
@@ -3629,79 +2412,6 @@
         }
       ],
       "classes": [],
-      "constants": []
-    },
-    {
-      "relpath": "photogrammetry/realityscan_workflow/slots.py",
-      "summary": "Slots for the RealityCapture Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "RealityscanWorkflowSlots",
-          "summary": "Switchboard slots wired to ``realityscan_workflow.ui``.",
-          "line": 36,
-          "bases": [
-            "FramesSourceMixin",
-            "PhotogrammetryPanelSlots"
-          ],
-          "members": [
-            {
-              "name": "params_module",
-              "qualname": "RealityscanWorkflowSlots.params_module",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 83,
-              "deprecated": false
-            },
-            {
-              "name": "template_dir",
-              "qualname": "RealityscanWorkflowSlots.template_dir",
-              "kind": "property",
-              "signature": "(self) -> Path",
-              "summary": "",
-              "line": 87,
-              "deprecated": false
-            },
-            {
-              "name": "make_bridge",
-              "qualname": "RealityscanWorkflowSlots.make_bridge",
-              "kind": "method",
-              "signature": "(self) -> RealityScanRunner",
-              "summary": "",
-              "line": 90,
-              "deprecated": false
-            },
-            {
-              "name": "list_template_modes",
-              "qualname": "RealityscanWorkflowSlots.list_template_modes",
-              "kind": "method",
-              "signature": "(self) -> List[Tuple[str, str]]",
-              "summary": "",
-              "line": 115,
-              "deprecated": false
-            },
-            {
-              "name": "default_output_dir",
-              "qualname": "RealityscanWorkflowSlots.default_output_dir",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 118,
-              "deprecated": false
-            },
-            {
-              "name": "help_spec",
-              "qualname": "RealityscanWorkflowSlots.help_spec",
-              "kind": "method",
-              "signature": "(self) -> dict",
-              "summary": "",
-              "line": 124,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
       "constants": []
     },
     {
@@ -3893,12 +2603,21 @@
           "bases": [],
           "members": [
             {
+              "name": "op_timeout",
+              "qualname": "PainterConnection.op_timeout",
+              "kind": "staticmethod",
+              "signature": "() -> float",
+              "summary": "Seconds the bridge lets one op run (its main-thread marshaller's",
+              "line": 48,
+              "deprecated": false
+            },
+            {
               "name": "plugins_dir",
               "qualname": "PainterConnection.plugins_dir",
               "kind": "staticmethod",
               "signature": "() -> str",
               "summary": "Absolute path to the plugin root, ``substance_workflow/plugins``.",
-              "line": 48,
+              "line": 57,
               "deprecated": false
             },
             {
@@ -3907,7 +2626,7 @@
               "kind": "staticmethod",
               "signature": "(port: int = 0) -> dict",
               "summary": "Compose the environment block passed to a Painter launch.",
-              "line": 61,
+              "line": 70,
               "deprecated": false
             },
             {
@@ -3916,7 +2635,7 @@
               "kind": "staticmethod",
               "signature": "(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen",
               "summary": "Spawn a detached Painter process via ``pythontk.AppLauncher``.",
-              "line": 90,
+              "line": 99,
               "deprecated": false
             },
             {
@@ -3925,7 +2644,7 @@
               "kind": "classmethod",
               "signature": "(cls) -> 'PainterConnection'",
               "summary": "",
-              "line": 122,
+              "line": 131,
               "deprecated": false
             },
             {
@@ -3934,7 +2653,7 @@
               "kind": "property",
               "signature": "(self) -> bool",
               "summary": "Connected to the bridge of a Painter that is still running.",
-              "line": 136,
+              "line": 145,
               "deprecated": false
             },
             {
@@ -3943,7 +2662,7 @@
               "kind": "staticmethod",
               "signature": "(start_port: int = 5050, max_check: int = 100) -> int",
               "summary": "Return the lowest TCP port a NEW bridge server could bind on localhost.",
-              "line": 154,
+              "line": 163,
               "deprecated": false
             },
             {
@@ -3952,7 +2671,7 @@
               "kind": "method",
               "signature": "(self, force_new_instance: bool = True, gui: bool = False, port: int = 5050, app_path: Optional[str] = None, launch_args: Optional[List[str]] = None, timeout: float = 180.0) -> bool",
               "summary": "Launch a fresh Painter and connect over the bridge HTTP server.",
-              "line": 170,
+              "line": 179,
               "deprecated": false
             },
             {
@@ -3961,7 +2680,7 @@
               "kind": "property",
               "signature": "(self) -> RpcClient",
               "summary": "The shared JSON-RPC client, bound to this connection's bridge.",
-              "line": 242,
+              "line": 251,
               "deprecated": false
             },
             {
@@ -3970,7 +2689,7 @@
               "kind": "method",
               "signature": "(self, op: str, timeout: float = 60.0, **kwargs: Any) -> Any",
               "summary": "Call a registered op over the bridge and return its value.",
-              "line": 252,
+              "line": 261,
               "deprecated": false
             },
             {
@@ -3979,7 +2698,7 @@
               "kind": "method",
               "signature": "(self, op: str = '') -> Any",
               "summary": "The registry's ``{name, doc, params}`` for *op*, or a list for all.",
-              "line": 263,
+              "line": 272,
               "deprecated": false
             },
             {
@@ -3988,7 +2707,7 @@
               "kind": "method",
               "signature": "(self, force: bool = False) -> None",
               "summary": "Close the bridge and terminate the Painter process we launched.",
-              "line": 269,
+              "line": 278,
               "deprecated": false
             }
           ]
@@ -4113,23 +2832,6 @@
               "deprecated": false
             }
           ]
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "substance_workflow/launcher.py",
-      "summary": "Application shell for the Substance Workflow UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "SubstanceWorkflowUI",
-          "summary": "",
-          "line": 15,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
         }
       ],
       "constants": []
@@ -4400,196 +3102,6 @@
       "constants": []
     },
     {
-      "relpath": "substance_workflow/slots.py",
-      "summary": "Switchboard slots for the Substance Workflow UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "SubstanceWorkflowSlots",
-          "summary": "Switchboard slots for the Substance Workflow UI.",
-          "line": 234,
-          "bases": [
-            "pythontk.LoggingMixin"
-          ],
-          "members": [
-            {
-              "name": "header_init",
-              "qualname": "SubstanceWorkflowSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "",
-              "line": 332,
-              "deprecated": false
-            },
-            {
-              "name": "txt000_init",
-              "qualname": "SubstanceWorkflowSlots.txt000_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Mesh File",
-              "line": 348,
-              "deprecated": false
-            },
-            {
-              "name": "txt001_init",
-              "qualname": "SubstanceWorkflowSlots.txt001_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Template (optional)",
-              "line": 362,
-              "deprecated": false
-            },
-            {
-              "name": "txt002_init",
-              "qualname": "SubstanceWorkflowSlots.txt002_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Project Save Path",
-              "line": 377,
-              "deprecated": false
-            },
-            {
-              "name": "cmb000_init",
-              "qualname": "SubstanceWorkflowSlots.cmb000_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Painter install picker",
-              "line": 391,
-              "deprecated": false
-            },
-            {
-              "name": "btn_stages_init",
-              "qualname": "SubstanceWorkflowSlots.btn_stages_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Stages popup — QMenu of checkboxes attached to the button.",
-              "line": 398,
-              "deprecated": false
-            },
-            {
-              "name": "btn_advanced_init",
-              "qualname": "SubstanceWorkflowSlots.btn_advanced_init",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Advanced-params popup — labeled form inside a QMenu via QWidgetAction.",
-              "line": 415,
-              "deprecated": false
-            },
-            {
-              "name": "cmb003",
-              "qualname": "SubstanceWorkflowSlots.cmb003",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Log level changed",
-              "line": 457,
-              "deprecated": false
-            },
-            {
-              "name": "btn_launch",
-              "qualname": "SubstanceWorkflowSlots.btn_launch",
-              "kind": "method",
-              "signature": "(self, widget) -> None",
-              "summary": "Toggle the Painter session.",
-              "line": 461,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "SubstanceWorkflowSlots.b000",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Run Workflow -- while a run is in flight, the button is its Cancel.",
-              "line": 477,
-              "deprecated": false
-            },
-            {
-              "name": "set_mesh_path",
-              "qualname": "SubstanceWorkflowSlots.set_mesh_path",
-              "kind": "method",
-              "signature": "(self, path: str) -> None",
-              "summary": "Pre-fill the mesh field (e.g.",
-              "line": 486,
-              "deprecated": false
-            },
-            {
-              "name": "btn_browse_mesh",
-              "qualname": "SubstanceWorkflowSlots.btn_browse_mesh",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 493,
-              "deprecated": false
-            },
-            {
-              "name": "btn_browse_template",
-              "qualname": "SubstanceWorkflowSlots.btn_browse_template",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 504,
-              "deprecated": false
-            },
-            {
-              "name": "btn_browse_project",
-              "qualname": "SubstanceWorkflowSlots.btn_browse_project",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "",
-              "line": 515,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": [
-        {
-          "name": "MESH_EXTS",
-          "qualname": "MESH_EXTS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 31,
-          "deprecated": false
-        },
-        {
-          "name": "PIPELINE_STAGES",
-          "qualname": "PIPELINE_STAGES",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 47,
-          "deprecated": false
-        },
-        {
-          "name": "BLEND_MODES",
-          "qualname": "BLEND_MODES",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 74,
-          "deprecated": false
-        },
-        {
-          "name": "BAKE_RESOLUTIONS",
-          "qualname": "BAKE_RESOLUTIONS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 75,
-          "deprecated": false
-        },
-        {
-          "name": "ADVANCED_PARAMS",
-          "qualname": "ADVANCED_PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 83,
-          "deprecated": false
-        }
-      ]
-    },
-    {
       "relpath": "substance_workflow/texture_set_utils.py",
       "summary": "Texture set operations — list, resolution, channel inventory.",
       "functions": [
@@ -4643,132 +3155,8 @@
       "constants": []
     },
     {
-      "relpath": "texture_maps/compositor/__init__.py",
-      "summary": "Merge several texture maps of each type into one image, converting normal formats.",
-      "functions": [],
-      "classes": [],
-      "constants": [
-        {
-          "name": "DEFAULT_INCLUDE",
-          "qualname": "DEFAULT_INCLUDE",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 14,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "texture_maps/compositor/launcher.py",
-      "summary": "Application shell for the Map Compositor UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "CompositorUI",
-          "summary": "",
-          "line": 15,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "texture_maps/compositor/slots.py",
-      "summary": "UI slot bindings for the compositor window.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "CompositorSlots",
-          "summary": "UI slot handler.",
-          "line": 108,
-          "bases": [
-            "_CompositorSlotsInternal"
-          ],
-          "members": [
-            {
-              "name": "output_dir",
-              "qualname": "CompositorSlots.output_dir",
-              "kind": "property",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 185,
-              "deprecated": false
-            },
-            {
-              "name": "map_name",
-              "qualname": "CompositorSlots.map_name",
-              "kind": "property",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 189,
-              "deprecated": false
-            },
-            {
-              "name": "header_init",
-              "qualname": "CompositorSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the header menu with global options.",
-              "line": 508,
-              "deprecated": false
-            },
-            {
-              "name": "txt000_init",
-              "qualname": "CompositorSlots.txt000_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Init Source — a directory of maps, or specific image files.",
-              "line": 591,
-              "deprecated": false
-            },
-            {
-              "name": "txt001_init",
-              "qualname": "CompositorSlots.txt001_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Init Destination Directory",
-              "line": 620,
-              "deprecated": false
-            },
-            {
-              "name": "txt002_init",
-              "qualname": "CompositorSlots.txt002_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Init Map Name",
-              "line": 647,
-              "deprecated": false
-            },
-            {
-              "name": "b002",
-              "qualname": "CompositorSlots.b002",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Combine Maps",
-              "line": 673,
-              "deprecated": false
-            },
-            {
-              "name": "process",
-              "qualname": "CompositorSlots.process",
-              "kind": "method",
-              "signature": "(self, images, source_dir, output_dir, map_name=None)",
-              "summary": "Validate dirs, prepare sorted-image groups, and drive the engine.",
-              "line": 683,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
-    },
-    {
       "relpath": "texture_maps/converter/__init__.py",
-      "summary": "Convert normal, roughness, spec-gloss and bump maps, and pack or optimize textures.",
+      "summary": "The Map Converter's batch rules: plan, name and run one map at a time.",
       "functions": [],
       "classes": [],
       "constants": [
@@ -4879,868 +3267,6 @@
         }
       ],
       "constants": []
-    },
-    {
-      "relpath": "texture_maps/converter/launcher.py",
-      "summary": "Application shell for the Map Converter UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "ConverterUI",
-          "summary": "",
-          "line": 15,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "texture_maps/converter/slots.py",
-      "summary": "Map Converter UI — slot file for ``converter.ui``.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "ConverterSlots",
-          "summary": "Switchboard slots for ``converter.ui``.",
-          "line": 38,
-          "bases": [],
-          "members": [
-            {
-              "name": "source_dir",
-              "qualname": "ConverterSlots.source_dir",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "Get the starting directory for file dialogs.",
-              "line": 73,
-              "deprecated": false
-            },
-            {
-              "name": "scopes",
-              "qualname": "ConverterSlots.scopes",
-              "kind": "property",
-              "signature": "(self) -> Tuple[str, ...]",
-              "summary": "Scope labels currently offered, in combobox order.",
-              "line": 87,
-              "deprecated": false
-            },
-            {
-              "name": "register_scope",
-              "qualname": "ConverterSlots.register_scope",
-              "kind": "method",
-              "signature": "(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None",
-              "summary": "Offer *label* in the Scope combobox, resolved by calling *provider*.",
-              "line": 97,
-              "deprecated": false
-            },
-            {
-              "name": "unregister_scope",
-              "qualname": "ConverterSlots.unregister_scope",
-              "kind": "method",
-              "signature": "(self, label: str) -> None",
-              "summary": "Drop a previously registered scope (no-op if it isn't registered).",
-              "line": 132,
-              "deprecated": false
-            },
-            {
-              "name": "texture_provider",
-              "qualname": "ConverterSlots.texture_provider",
-              "kind": "property",
-              "signature": "(self) -> Optional[Callable[[], Iterable[str]]]",
-              "summary": "Provider for the plain \"Selected\" scope.",
-              "line": 138,
-              "deprecated": false
-            },
-            {
-              "name": "header_init",
-              "qualname": "ConverterSlots.header_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Add the global Scope combobox to the header menu.",
-              "line": 155,
-              "deprecated": false
-            },
-            {
-              "name": "optimize_formats",
-              "qualname": "ConverterSlots.optimize_formats",
-              "kind": "property",
-              "signature": "(self) -> Tuple[str, ...]",
-              "summary": "The containers Optimize offers: every writable one, then the",
-              "line": 282,
-              "deprecated": false
-            },
-            {
-              "name": "tb000_init",
-              "qualname": "ConverterSlots.tb000_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the Optimize toolbutton's option menu.",
-              "line": 315,
-              "deprecated": false
-            },
-            {
-              "name": "tb000",
-              "qualname": "ConverterSlots.tb000",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Optimize a texture map(s)",
-              "line": 585,
-              "deprecated": false
-            },
-            {
-              "name": "tb001_init",
-              "qualname": "ConverterSlots.tb001_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "",
-              "line": 813,
-              "deprecated": false
-            },
-            {
-              "name": "tb001",
-              "qualname": "ConverterSlots.tb001",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.",
-              "line": 823,
-              "deprecated": false
-            },
-            {
-              "name": "tb003_init",
-              "qualname": "ConverterSlots.tb003_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Initialize a 'Bump to Normal' toolbutton with options.",
-              "line": 879,
-              "deprecated": false
-            },
-            {
-              "name": "tb003",
-              "qualname": "ConverterSlots.tb003",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Bump/Height to Normal converter (single entry point with options).",
-              "line": 905,
-              "deprecated": false
-            },
-            {
-              "name": "tb002_init",
-              "qualname": "ConverterSlots.tb002_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the Flip Channels option menu (per-channel source + suffix).",
-              "line": 961,
-              "deprecated": false
-            },
-            {
-              "name": "tb002",
-              "qualname": "ConverterSlots.tb002",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Flip/swizzle texture channels (per-channel invert, swap, or constant fill).",
-              "line": 990,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "ConverterSlots.b000",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert DirectX to OpenGL",
-              "line": 1044,
-              "deprecated": false
-            },
-            {
-              "name": "b001",
-              "qualname": "ConverterSlots.b001",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert OpenGL to DirectX",
-              "line": 1061,
-              "deprecated": false
-            },
-            {
-              "name": "b004",
-              "qualname": "ConverterSlots.b004",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Batch pack Transparency into Albedo across texture sets.",
-              "line": 1078,
-              "deprecated": false
-            },
-            {
-              "name": "b007",
-              "qualname": "ConverterSlots.b007",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Unpack Specular and Gloss maps from SpecularGloss textures.",
-              "line": 1121,
-              "deprecated": false
-            },
-            {
-              "name": "b010",
-              "qualname": "ConverterSlots.b010",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert Smoothness maps to Roughness maps.",
-              "line": 1148,
-              "deprecated": false
-            },
-            {
-              "name": "b011",
-              "qualname": "ConverterSlots.b011",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Convert Roughness maps to Smoothness maps.",
-              "line": 1174,
-              "deprecated": false
-            },
-            {
-              "name": "b012",
-              "qualname": "ConverterSlots.b012",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Batch-prepare textures for a target PBR workflow using MapFactory.",
-              "line": 1200,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "texture_maps/packer/__init__.py",
-      "summary": "Pack per-channel source maps into one RGBA texture, or unpack a packed one.",
-      "functions": [],
-      "classes": [],
-      "constants": [
-        {
-          "name": "DEFAULT_INCLUDE",
-          "qualname": "DEFAULT_INCLUDE",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 15,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "texture_maps/packer/launcher.py",
-      "summary": "Application shell for the Map Packer UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "PackerUI",
-          "summary": "",
-          "line": 13,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "texture_maps/packer/slots.py",
-      "summary": "Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "PackerSlots",
-          "summary": "Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.",
-          "line": 13,
-          "bases": [],
-          "members": [
-            {
-              "name": "cmbPreset_init",
-              "qualname": "PackerSlots.cmbPreset_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Preset selector -- its pick persists via the store's ``.active`` pointer",
-              "line": 175,
-              "deprecated": false
-            },
-            {
-              "name": "cmbR_init",
-              "qualname": "PackerSlots.cmbR_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "",
-              "line": 232,
-              "deprecated": false
-            },
-            {
-              "name": "cmbG_init",
-              "qualname": "PackerSlots.cmbG_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "",
-              "line": 235,
-              "deprecated": false
-            },
-            {
-              "name": "cmbB_init",
-              "qualname": "PackerSlots.cmbB_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "",
-              "line": 238,
-              "deprecated": false
-            },
-            {
-              "name": "cmbA_init",
-              "qualname": "PackerSlots.cmbA_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "",
-              "line": 241,
-              "deprecated": false
-            },
-            {
-              "name": "txtSuffix_init",
-              "qualname": "PackerSlots.txtSuffix_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Output-affix field — clearable back to the convention's default.",
-              "line": 244,
-              "deprecated": false
-            },
-            {
-              "name": "cmbFormat_init",
-              "qualname": "PackerSlots.cmbFormat_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "Populate the output-format combo and react to format changes.",
-              "line": 255,
-              "deprecated": false
-            },
-            {
-              "name": "cmbMode_init",
-              "qualname": "PackerSlots.cmbMode_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "The Pack/Unpack direction -- first in the window, since it decides",
-              "line": 283,
-              "deprecated": false
-            },
-            {
-              "name": "cmbMissing_init",
-              "qualname": "PackerSlots.cmbMissing_init",
-              "kind": "method",
-              "signature": "(self, widget)",
-              "summary": "What an incomplete texture set does when packing (see :meth:`_pack_set`).",
-              "line": 296,
-              "deprecated": false
-            },
-            {
-              "name": "source_dir",
-              "qualname": "PackerSlots.source_dir",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 355,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "PackerSlots.b000",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Run the configured channel operation: Pack (default) or Unpack.",
-              "line": 445,
-              "deprecated": false
-            },
-            {
-              "name": "b001",
-              "qualname": "PackerSlots.b001",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Open the last output directory in the system file explorer.",
-              "line": 692,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "unity_workflow/__init__.py",
-      "summary": "Copy a model file into a Unity project's Assets and optionally launch the Editor.",
-      "functions": [],
-      "classes": [],
-      "constants": [
-        {
-          "name": "DEFAULT_INCLUDE",
-          "qualname": "DEFAULT_INCLUDE",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 19,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "unity_workflow/_unity_panel.py",
-      "summary": "What every Unity panel shares: the 'Unity Project' row, the Editor combo, script management.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "UnityPanelMixin",
-          "summary": "Unity-panel behavior shared by the three Unity Slots classes.",
-          "line": 33,
-          "bases": [],
-          "members": [
-            {
-              "name": "template_dir",
-              "qualname": "UnityPanelMixin.template_dir",
-              "kind": "property",
-              "signature": "(self) -> Path",
-              "summary": "",
-              "line": 89,
-              "deprecated": false
-            },
-            {
-              "name": "list_template_modes",
-              "qualname": "UnityPanelMixin.list_template_modes",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "",
-              "line": 94,
-              "deprecated": false
-            },
-            {
-              "name": "default_output_dir",
-              "qualname": "UnityPanelMixin.default_output_dir",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 101,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "unity_workflow/launcher.py",
-      "summary": "Application shell for the Unity Workflow launcher UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "UnityWorkflowUI",
-          "summary": "",
-          "line": 15,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "unity_workflow/parameters.py",
-      "summary": "User-tunable parameters for the standalone Unity Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "Parameters",
-          "summary": "The Unity Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 125,
-          "bases": [
-            "ParamRegistry"
-          ],
-          "members": []
-        }
-      ],
-      "constants": [
-        {
-          "name": "PARAMS",
-          "qualname": "PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 24,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "unity_workflow/slots.py",
-      "summary": "Slots for the standalone Unity Workflow panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "UnityWorkflowSlots",
-          "summary": "Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.",
-          "line": 57,
-          "bases": [
-            "UnityPanelMixin",
-            "BridgeSlotsBase"
-          ],
-          "members": [
-            {
-              "name": "params_module",
-              "qualname": "UnityWorkflowSlots.params_module",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 126,
-              "deprecated": false
-            },
-            {
-              "name": "make_bridge",
-              "qualname": "UnityWorkflowSlots.make_bridge",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "Build the unitytk engine, or ``None`` when it is absent.",
-              "line": 129,
-              "deprecated": false
-            },
-            {
-              "name": "resolved_model_path",
-              "qualname": "UnityWorkflowSlots.resolved_model_path",
-              "kind": "method",
-              "signature": "(self) -> str",
-              "summary": "",
-              "line": 217,
-              "deprecated": false
-            },
-            {
-              "name": "set_model_path",
-              "qualname": "UnityWorkflowSlots.set_model_path",
-              "kind": "method",
-              "signature": "(self, path: str) -> None",
-              "summary": "Pre-fill the Model File field (public hand-off point for hosts).",
-              "line": 222,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "UnityWorkflowSlots.b000",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Run the selected template: copy the model, or script management.",
-              "line": 232,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "webxr_preview/__init__.py",
-      "summary": "Preview a scene or FBX/GLB file live in a browser or XR headset.",
-      "functions": [],
-      "classes": [],
-      "constants": [
-        {
-          "name": "DEFAULT_INCLUDE",
-          "qualname": "DEFAULT_INCLUDE",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 20,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "webxr_preview/launcher.py",
-      "summary": "Application shell for the WebXR Preview UI.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "WebXrPreviewUI",
-          "summary": "",
-          "line": 15,
-          "bases": [
-            "PanelLauncher"
-          ],
-          "members": []
-        }
-      ],
-      "constants": []
-    },
-    {
-      "relpath": "webxr_preview/parameters.py",
-      "summary": "Tunable parameters surfaced in the WebXR Preview panel.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "Parameters",
-          "summary": "The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).",
-          "line": 360,
-          "bases": [
-            "ParamRegistry"
-          ],
-          "members": []
-        }
-      ],
-      "constants": [
-        {
-          "name": "SOURCE_FILE_TYPES",
-          "qualname": "SOURCE_FILE_TYPES",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 40,
-          "deprecated": false
-        },
-        {
-          "name": "AUTHORED_EXTENSION",
-          "qualname": "AUTHORED_EXTENSION",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 44,
-          "deprecated": false
-        },
-        {
-          "name": "EXPORT_KEYS",
-          "qualname": "EXPORT_KEYS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 50,
-          "deprecated": false
-        },
-        {
-          "name": "FILE_KEYS",
-          "qualname": "FILE_KEYS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 53,
-          "deprecated": false
-        },
-        {
-          "name": "GLB_KEYS",
-          "qualname": "GLB_KEYS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 58,
-          "deprecated": false
-        },
-        {
-          "name": "TEXTURE_KEYS",
-          "qualname": "TEXTURE_KEYS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 63,
-          "deprecated": false
-        },
-        {
-          "name": "KTX2_KEYS",
-          "qualname": "KTX2_KEYS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 69,
-          "deprecated": false
-        },
-        {
-          "name": "PARAMS",
-          "qualname": "PARAMS",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 179,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "relpath": "webxr_preview/slots.py",
-      "summary": "Slots for the WebXR Preview panel — the single UI for the live preview.",
-      "functions": [],
-      "classes": [
-        {
-          "name": "WebXrPreviewSlots",
-          "summary": "Switchboard slots wired to ``webxr_preview.ui``.",
-          "line": 117,
-          "bases": [
-            "BridgeSlotsBase"
-          ],
-          "members": [
-            {
-              "name": "params_module",
-              "qualname": "WebXrPreviewSlots.params_module",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "",
-              "line": 279,
-              "deprecated": false
-            },
-            {
-              "name": "template_dir",
-              "qualname": "WebXrPreviewSlots.template_dir",
-              "kind": "property",
-              "signature": "(self) -> Path",
-              "summary": "",
-              "line": 283,
-              "deprecated": false
-            },
-            {
-              "name": "make_bridge",
-              "qualname": "WebXrPreviewSlots.make_bridge",
-              "kind": "method",
-              "signature": "(self)",
-              "summary": "The panel's own, host-free engine.",
-              "line": 289,
-              "deprecated": false
-            },
-            {
-              "name": "engine",
-              "qualname": "WebXrPreviewSlots.engine",
-              "kind": "property",
-              "signature": "(self)",
-              "summary": "The host bridge class this panel pushes scopes through, or ``None``.",
-              "line": 304,
-              "deprecated": false
-            },
-            {
-              "name": "list_template_modes",
-              "qualname": "WebXrPreviewSlots.list_template_modes",
-              "kind": "method",
-              "signature": "(self) -> List[Tuple[str, str]]",
-              "summary": "Sources, in the ``(template, mode)`` shape the base's combo reads.",
-              "line": 447,
-              "deprecated": false
-            },
-            {
-              "name": "open_preview_page",
-              "qualname": "WebXrPreviewSlots.open_preview_page",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Open the live page in a browser, without paying for a push.",
-              "line": 622,
-              "deprecated": false
-            },
-            {
-              "name": "stop_server",
-              "qualname": "WebXrPreviewSlots.stop_server",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Stop serving and release the port -- every scene's -- ending any share.",
-              "line": 640,
-              "deprecated": false
-            },
-            {
-              "name": "add_scene",
-              "qualname": "WebXrPreviewSlots.add_scene",
-              "kind": "method",
-              "signature": "(self, paths: Optional[List[str]] = None) -> _Scene",
-              "summary": "Another scene: a Source Files row of its own under the last one,",
-              "line": 680,
-              "deprecated": false
-            },
-            {
-              "name": "remove_scene",
-              "qualname": "WebXrPreviewSlots.remove_scene",
-              "kind": "method",
-              "signature": "(self, scene: _Scene) -> None",
-              "summary": "Take an added scene away: its server stops, and its link with it.",
-              "line": 746,
-              "deprecated": false
-            },
-            {
-              "name": "share_link",
-              "qualname": "WebXrPreviewSlots.share_link",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Share Now: bring the link up without a push, or retry a failed one.",
-              "line": 1003,
-              "deprecated": false
-            },
-            {
-              "name": "copy_share_link",
-              "qualname": "WebXrPreviewSlots.copy_share_link",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Copy Link: the live links to the clipboard -- one per line, scene",
-              "line": 1016,
-              "deprecated": false
-            },
-            {
-              "name": "copy_scene_link",
-              "qualname": "WebXrPreviewSlots.copy_scene_link",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Copy Scene Link: where the published scene is described as data.",
-              "line": 1052,
-              "deprecated": false
-            },
-            {
-              "name": "check_share_link",
-              "qualname": "WebXrPreviewSlots.check_share_link",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Test Link: whether a guest can reach each share now.",
-              "line": 1277,
-              "deprecated": false
-            },
-            {
-              "name": "stop_sharing",
-              "qualname": "WebXrPreviewSlots.stop_sharing",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Stop Sharing: the row to Off, which takes every link down.",
-              "line": 1480,
-              "deprecated": false
-            },
-            {
-              "name": "set_source_file",
-              "qualname": "WebXrPreviewSlots.set_source_file",
-              "kind": "method",
-              "signature": "(self, path: str) -> None",
-              "summary": "Pre-fill Source Files with *path* and select the file source.",
-              "line": 1516,
-              "deprecated": false
-            },
-            {
-              "name": "set_source_files",
-              "qualname": "WebXrPreviewSlots.set_source_files",
-              "kind": "method",
-              "signature": "(self, paths: List[str]) -> None",
-              "summary": "Pre-fill Source Files with *paths* -- the parts of one scene, shown",
-              "line": 1526,
-              "deprecated": false
-            },
-            {
-              "name": "b000",
-              "qualname": "WebXrPreviewSlots.b000",
-              "kind": "method",
-              "signature": "(self) -> None",
-              "summary": "Build the deliverable for the active source and publish it -- for",
-              "line": 1641,
-              "deprecated": false
-            }
-          ]
-        }
-      ],
-      "constants": [
-        {
-          "name": "FILE_SOURCE",
-          "qualname": "FILE_SOURCE",
-          "kind": "constant",
-          "signature": "",
-          "summary": "",
-          "line": 47,
-          "deprecated": false
-        }
-      ]
     }
   ]
 }

@@ -4,47 +4,30 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 
 ## Index
 
-- [`__init__.py`](#__init__) — extapps — standalone Switchboard panels for content-pipeline workflows.
-- [`_panel_launcher.py`](#_panel_launcher) — The one launcher every extapps panel is.
-- [`look_match/__init__.py`](#look_match--__init__) — Light a baked scene to match a reference image, by eye and region by region.
-- [`look_match/launcher.py`](#look_match--launcher) — Application shell for the Look Match UI.
-- [`look_match/slots.py`](#look_match--slots) — Slots for the Look Match panel (see :mod:`extapps.look_match`).
+- [`__init__.py`](#__init__) — extapps — the engines of the standalone content-pipeline tools.
 - [`marmoset_workflow/__init__.py`](#marmoset_workflow--__init__) — Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 - [`marmoset_workflow/_marmoset_engine.py`](#marmoset_workflow--_marmoset_engine) — Drive Marmoset Toolbag from the outside -- launch + templated automation.
+- [`marmoset_workflow/_marmoset_workflow.py`](#marmoset_workflow--_marmoset_workflow) — The Toolbag engine as the standalone Marmoset Workflow panel drives it.
 - [`marmoset_workflow/_toolbag_helpers.py`](#marmoset_workflow--_toolbag_helpers) — Shared helpers for Marmoset Toolbag template scripts.
-- [`marmoset_workflow/launcher.py`](#marmoset_workflow--launcher) — Application shell for the Marmoset Workflow UI.
-- [`marmoset_workflow/parameters.py`](#marmoset_workflow--parameters) — Tunable parameters surfaced in the Marmoset Workflow panel.
-- [`marmoset_workflow/slots.py`](#marmoset_workflow--slots) — Slots for the standalone Marmoset Workflow panel.
 - [`marmoset_workflow/template_params.py`](#marmoset_workflow--template_params) — Plain default values + literal formatting for Marmoset template tokens.
 - [`marmoset_workflow/templates/import.py`](#marmoset_workflow--templates--import) — Open the model in Toolbag and wire materials from the manifest.
 - [`marmoset_workflow/templates/lookdev.py`](#marmoset_workflow--templates--lookdev) — Open the model in Toolbag, apply a Sky preset, and frame the model.
 - [`marmoset_workflow/toolbag_log.py`](#marmoset_workflow--toolbag_log) — Marmoset Toolbag log-file resolution, classification, and live tailing.
-- [`mesh_convert/__init__.py`](#mesh_convert--__init__) — Batch-convert FBX files to binary glTF (GLB) with FBX2glTF.
-- [`mesh_convert/launcher.py`](#mesh_convert--launcher) — Application shell for the Mesh Convert UI.
-- [`mesh_convert/slots.py`](#mesh_convert--slots)
-- [`photogrammetry/_panel_slots.py`](#photogrammetry--_panel_slots) — Shared scaffolding for the photogrammetry workflow panels.
 - [`photogrammetry/_process_runner.py`](#photogrammetry--_process_runner) — Async, log-streaming process runner shared by the photogrammetry panels.
 - [`photogrammetry/_progress_notify.py`](#photogrammetry--_progress_notify) — The one progress-notify shim the photogrammetry engines share.
-- [`photogrammetry/_shared_params.py`](#photogrammetry--_shared_params) — Input pre-processing parameter specs shared by the image-in engines.
 - [`photogrammetry/_workflow_engine.py`](#photogrammetry--_workflow_engine) — The lifecycle every photogrammetry engine shares: one base, five engines.
 - [`photogrammetry/gaussian_splat_workflow/__init__.py`](#photogrammetry--gaussian_splat_workflow--__init__) — Train a Gaussian splat with Brush from COLMAP data and export it for Unity or web.
 - [`photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py`](#photogrammetry--gaussian_splat_workflow--_gaussian_splat_runner) — Local, async runner the Brush (gaussian-splat) panel dispatches to.
 - [`photogrammetry/gaussian_splat_workflow/_gaussian_splat_workflow.py`](#photogrammetry--gaussian_splat_workflow--_gaussian_splat_workflow) — Brush gaussian-splat workflow engine.
 - [`photogrammetry/gaussian_splat_workflow/_install_brush.py`](#photogrammetry--gaussian_splat_workflow--_install_brush) — Headless entry point: download + install Brush via pythontk.AppInstaller.
 - [`photogrammetry/gaussian_splat_workflow/_splat_publish.py`](#photogrammetry--gaussian_splat_workflow--_splat_publish) — Engine-delivery stage for the splat track — clean + convert to engine formats.
-- [`photogrammetry/gaussian_splat_workflow/launcher.py`](#photogrammetry--gaussian_splat_workflow--launcher) — Application shell for the Brush (gaussian-splat) Workflow UI.
-- [`photogrammetry/gaussian_splat_workflow/parameters.py`](#photogrammetry--gaussian_splat_workflow--parameters) — Tunable parameters surfaced in the Brush (gaussian-splat) Workflow panel.
 - [`photogrammetry/gaussian_splat_workflow/run_combined.py`](#photogrammetry--gaussian_splat_workflow--run_combined) — Driver for the gaussian-splat track: Brush splat training + engine publish.
-- [`photogrammetry/gaussian_splat_workflow/slots.py`](#photogrammetry--gaussian_splat_workflow--slots) — Slots for the Brush (gaussian-splat) Workflow panel.
 - [`photogrammetry/mesh_stages.py`](#photogrammetry--mesh_stages) — Shared, SDK-agnostic mesh post-processing stages (PyMeshLab-backed).
 - [`photogrammetry/metashape_workflow/__init__.py`](#photogrammetry--metashape_workflow--__init__) — Turn photos or video frames into a textured mesh with headless Metashape.
 - [`photogrammetry/metashape_workflow/_metashape_connection.py`](#photogrammetry--metashape_workflow--_metashape_connection) — Headless launch connection for Agisoft Metashape.
 - [`photogrammetry/metashape_workflow/_metashape_runner.py`](#photogrammetry--metashape_workflow--_metashape_runner) — Local, async runner the Metashape panel dispatches to.
 - [`photogrammetry/metashape_workflow/_metashape_workflow.py`](#photogrammetry--metashape_workflow--_metashape_workflow)
-- [`photogrammetry/metashape_workflow/launcher.py`](#photogrammetry--metashape_workflow--launcher) — Application shell for the Metashape Workflow UI.
-- [`photogrammetry/metashape_workflow/parameters.py`](#photogrammetry--metashape_workflow--parameters) — Tunable parameters surfaced in the Metashape Workflow panel.
 - [`photogrammetry/metashape_workflow/run_combined.py`](#photogrammetry--metashape_workflow--run_combined) — Driver script for multi-session combined runs.
-- [`photogrammetry/metashape_workflow/slots.py`](#photogrammetry--metashape_workflow--slots) — Slots for the Metashape Workflow panel.
 - [`photogrammetry/prep_stages.py`](#photogrammetry--prep_stages) — Shared, SDK-agnostic pipeline stages for the photogrammetry engines.
 - [`photogrammetry/profile.py`](#photogrammetry--profile) — Photogrammetry I/O + tuning **profile** — site/personal config kept out of source.
 - [`photogrammetry/realityscan_workflow/__init__.py`](#photogrammetry--realityscan_workflow--__init__) — Turn photos or video frames into a textured mesh with headless RealityCapture.
@@ -53,10 +36,7 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`photogrammetry/realityscan_workflow/_realityscan_workflow.py`](#photogrammetry--realityscan_workflow--_realityscan_workflow) — RealityCapture / RealityScan workflow engine.
 - [`photogrammetry/realityscan_workflow/_rsnode_client.py`](#photogrammetry--realityscan_workflow--_rsnode_client) — RSNode REST client — drive a running RealityScan 2.1 over its REST API (headless).
 - [`photogrammetry/realityscan_workflow/_rsnode_connection.py`](#photogrammetry--realityscan_workflow--_rsnode_connection) — RSNode-backed connection — drive a running RealityScan 2.1 over REST.
-- [`photogrammetry/realityscan_workflow/launcher.py`](#photogrammetry--realityscan_workflow--launcher) — Application shell for the RealityCapture Workflow UI.
-- [`photogrammetry/realityscan_workflow/parameters.py`](#photogrammetry--realityscan_workflow--parameters) — Tunable parameters surfaced in the RealityCapture Workflow panel.
 - [`photogrammetry/realityscan_workflow/run_combined.py`](#photogrammetry--realityscan_workflow--run_combined) — Driver script for multi-session combined RealityCapture runs.
-- [`photogrammetry/realityscan_workflow/slots.py`](#photogrammetry--realityscan_workflow--slots) — Slots for the RealityCapture Workflow panel.
 - [`photogrammetry/sugar_mesh_workflow/_sugar_mesh.py`](#photogrammetry--sugar_mesh_workflow--_sugar_mesh) — SuGaR mesh-extraction workflow engine.
 - [`photogrammetry/sugar_mesh_workflow/run_combined.py`](#photogrammetry--sugar_mesh_workflow--run_combined) — Driver for the **EXPERIMENTAL** SuGaR mesh track: COLMAP dataset → textured ``.obj``.
 - [`substance_workflow/__init__.py`](#substance_workflow--__init__) — Create a Substance Painter project from a mesh and bake lighting into base color.
@@ -66,121 +46,33 @@ _Auto-generated. Do not edit by hand. Refresh via `m3trik/scripts/generate_api_r
 - [`substance_workflow/env_utils/painter_finder.py`](#substance_workflow--env_utils--painter_finder) — Locate installed Substance 3D Painter.
 - [`substance_workflow/export_utils.py`](#substance_workflow--export_utils) — Texture export operations — drive ``substance_painter.export``.
 - [`substance_workflow/job.py`](#substance_workflow--job) — Batch convenience: launch Painter, run a call list over the bridge, shut down.
-- [`substance_workflow/launcher.py`](#substance_workflow--launcher) — Application shell for the Substance Workflow UI.
 - [`substance_workflow/layer_utils.py`](#substance_workflow--layer_utils) — Layer stack operations — list, add, remove, reorder, set properties.
 - [`substance_workflow/material_utils.py`](#substance_workflow--material_utils) — Smart-material / preset operations — apply shelf materials onto layers.
 - [`substance_workflow/plugins/startup/substance_workflow_bridge/__init__.py`](#substance_workflow--plugins--startup--substance_workflow_bridge--__init__) — substance_workflow_bridge — Painter-side Python plugin.
 - [`substance_workflow/project_utils.py`](#substance_workflow--project_utils) — Project-level operations — open, save, close, info, mesh swap.
 - [`substance_workflow/registry.py`](#substance_workflow--registry) — Op registry — the callable Painter surface, on the shared RPC core.
 - [`substance_workflow/resource_utils.py`](#substance_workflow--resource_utils) — Shelf / resource operations — query and import shelf assets.
-- [`substance_workflow/slots.py`](#substance_workflow--slots) — Switchboard slots for the Substance Workflow UI.
 - [`substance_workflow/texture_set_utils.py`](#substance_workflow--texture_set_utils) — Texture set operations — list, resolution, channel inventory.
-- [`texture_maps/compositor/__init__.py`](#texture_maps--compositor--__init__) — Merge several texture maps of each type into one image, converting normal formats.
-- [`texture_maps/compositor/launcher.py`](#texture_maps--compositor--launcher) — Application shell for the Map Compositor UI.
-- [`texture_maps/compositor/slots.py`](#texture_maps--compositor--slots) — UI slot bindings for the compositor window.
-- [`texture_maps/converter/__init__.py`](#texture_maps--converter--__init__) — Convert normal, roughness, spec-gloss and bump maps, and pack or optimize textures.
+- [`texture_maps/converter/__init__.py`](#texture_maps--converter--__init__) — The Map Converter's batch rules: plan, name and run one map at a time.
 - [`texture_maps/converter/_converter.py`](#texture_maps--converter--_converter) — The Map Converter's batch engine: plan, name and run one map at a time.
-- [`texture_maps/converter/launcher.py`](#texture_maps--converter--launcher) — Application shell for the Map Converter UI.
-- [`texture_maps/converter/slots.py`](#texture_maps--converter--slots) — Map Converter UI — slot file for ``converter.ui``.
-- [`texture_maps/packer/__init__.py`](#texture_maps--packer--__init__) — Pack per-channel source maps into one RGBA texture, or unpack a packed one.
-- [`texture_maps/packer/launcher.py`](#texture_maps--packer--launcher) — Application shell for the Map Packer UI.
-- [`texture_maps/packer/slots.py`](#texture_maps--packer--slots) — Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
-- [`unity_workflow/__init__.py`](#unity_workflow--__init__) — Copy a model file into a Unity project's Assets and optionally launch the Editor.
-- [`unity_workflow/_unity_panel.py`](#unity_workflow--_unity_panel) — What every Unity panel shares: the 'Unity Project' row, the Editor combo, script management.
-- [`unity_workflow/launcher.py`](#unity_workflow--launcher) — Application shell for the Unity Workflow launcher UI.
-- [`unity_workflow/parameters.py`](#unity_workflow--parameters) — User-tunable parameters for the standalone Unity Workflow panel.
-- [`unity_workflow/slots.py`](#unity_workflow--slots) — Slots for the standalone Unity Workflow panel.
-- [`webxr_preview/__init__.py`](#webxr_preview--__init__) — Preview a scene or FBX/GLB file live in a browser or XR headset.
-- [`webxr_preview/launcher.py`](#webxr_preview--launcher) — Application shell for the WebXR Preview UI.
-- [`webxr_preview/parameters.py`](#webxr_preview--parameters) — Tunable parameters surfaced in the WebXR Preview panel.
-- [`webxr_preview/slots.py`](#webxr_preview--slots) — Slots for the WebXR Preview panel — the single UI for the live preview.
 
 ---
 
 <a id="__init__"></a>
 ### `__init__.py`
 
-extapps — standalone Switchboard panels for content-pipeline workflows.
+extapps — the engines of the standalone content-pipeline tools.
 
-- [`DOCS_BASE_URL`](extapps/extapps/__init__.py#L20) — constant
-- [`DEFAULT_INCLUDE`](extapps/extapps/__init__.py#L23) — constant
-
-<a id="_panel_launcher"></a>
-### `_panel_launcher.py`
-
-The one launcher every extapps panel is.
-
-- **[`class PanelLauncher(_PanelLauncherInternal)`](extapps/extapps/_panel_launcher.py#L76)** — Base of every extapps ``<Tool>UI``: calling it returns the built panel.
-
-<a id="look_match--__init__"></a>
-### `look_match/__init__.py`
-
-Light a baked scene to match a reference image, by eye and region by region.
-
-- [`DEFAULT_INCLUDE`](extapps/extapps/look_match/__init__.py#L17) — constant
-
-<a id="look_match--launcher"></a>
-### `look_match/launcher.py`
-
-Application shell for the Look Match UI.
-
-- **[`class LookMatchUI(PanelLauncher)`](extapps/extapps/look_match/launcher.py#L14)**
-
-<a id="look_match--slots"></a>
-### `look_match/slots.py`
-
-Slots for the Look Match panel (see :mod:`extapps.look_match`).
-
-- [`DOCS_URL`](extapps/extapps/look_match/slots.py#L29) — constant
-- **[`class LookMatchSlots(_LookMatchSlotsInternal)`](extapps/extapps/look_match/slots.py#L92)** — The Look Match panel (see the module docstring).
-  - `LookMatchSlots.header_init(self, widget) -> None`
-  - `LookMatchSlots.cmb_session_init(self, widget) -> None`
-  - `LookMatchSlots.cmb_mix_init(self, widget) -> None`
-  - `LookMatchSlots.b_undo_init(self, widget) -> None`
-  - `LookMatchSlots.b_redo_init(self, widget) -> None`
-  - `LookMatchSlots.b_undo(self) -> None`
-  - `LookMatchSlots.b_redo(self) -> None`
-  - `LookMatchSlots.b_fit_init(self, widget) -> None`
-  - `LookMatchSlots.tbl_mix_init(self, widget) -> None`
-  - `LookMatchSlots.chk_all_init(self, widget) -> None`
-  - `LookMatchSlots.tbl_regions_init(self, widget) -> None`
-  - `LookMatchSlots.cmb_mode_init(self, widget) -> None`
-  - `LookMatchSlots.cmb_a_init(self, widget) -> None`
-  - `LookMatchSlots.cmb_b_init(self, widget) -> None`
-  - `LookMatchSlots.cmb_solve_init(self, widget) -> None`
-  - `LookMatchSlots.cmp_view_init(self, widget) -> None`
-  - `LookMatchSlots.browse_session(self) -> None`
-  - `LookMatchSlots.open_session(self, path: str) -> bool` — Start opening the session file at *path*;
-  - `LookMatchSlots.save_mix(self) -> None`
-  - `LookMatchSlots.save_mix_as(self) -> None`
-  - `LookMatchSlots.delete_mix(self) -> None`
-  - `LookMatchSlots.b_solve(self) -> None`
-  - `LookMatchSlots.b_fit(self) -> None`
-  - `LookMatchSlots.b_accept(self) -> None`
-  - `LookMatchSlots.b_discard(self) -> None`
-  - `LookMatchSlots.b_render(self) -> None`
-  - `LookMatchSlots.stop_service(self, wait: bool = True) -> None` — End the WebXR viewer this panel started (never one it did not): its
-  - `LookMatchSlots.b_edit_regions(self) -> None`
-  - `LookMatchSlots.b_draw_rect(self) -> None`
-  - `LookMatchSlots.b_draw_ellipse(self) -> None`
-  - `LookMatchSlots.b_draw_poly(self) -> None`
-  - `LookMatchSlots.b_draw_line(self) -> None`
-  - `LookMatchSlots.b_region_delete(self) -> None`
-  - `LookMatchSlots.b_paint(self) -> None`
-  - `LookMatchSlots.b_reload(self) -> None`
-  - `LookMatchSlots.b_update(self) -> None`
-  - `LookMatchSlots.stop_worker(self) -> None` — End the bake workers this panel launched (never one it did not),
-  - `LookMatchSlots.b_save_rig(self) -> None`
-  - `LookMatchSlots.mix_key(mix) -> str` *(static)* — A mix's identity: what a render records, so it can say it is stale.
-  - `LookMatchSlots.status_glyph(row: Dict[str, Any]) -> str` *(static)* — A region's state in a shape, not only a colour: within, brighter,
-  - `LookMatchSlots.brightness_text(value: Optional[float]) -> str` *(static)*
+- [`DOCS_BASE_URL`](extapps/extapps/__init__.py#L25) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/__init__.py#L28) — constant
+- [`MOVED_NAMES`](extapps/extapps/__init__.py#L51) — constant
 
 <a id="marmoset_workflow--__init__"></a>
 ### `marmoset_workflow/__init__.py`
 
 Launch Marmoset Toolbag and set up an import or lookdev scene from a model file.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/marmoset_workflow/__init__.py#L20) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/marmoset_workflow/__init__.py#L19) — constant
 
 <a id="marmoset_workflow--_marmoset_engine"></a>
 ### `marmoset_workflow/_marmoset_engine.py`
@@ -201,6 +93,13 @@ Drive Marmoset Toolbag from the outside -- launch + templated automation.
   - `MarmosetEngine.template_modes(template_path: Path) -> Tuple[str, ...]` *(static)* — Return the modes declared by *template_path*'s ``BRIDGE_MODES`` constant.
   - `MarmosetEngine.list_template_modes() -> List[Tuple[str, str]]` *(static)* — Return ``[(stem, mode), ...]`` for every (template, mode) pairing.
 
+<a id="marmoset_workflow--_marmoset_workflow"></a>
+### `marmoset_workflow/_marmoset_workflow.py`
+
+The Toolbag engine as the standalone Marmoset Workflow panel drives it.
+
+- **[`class MarmosetWorkflow(MarmosetEngine)`](extapps/extapps/marmoset_workflow/_marmoset_workflow.py#L15)** — The Toolbag engine with its app and template folder on the class.
+
 <a id="marmoset_workflow--_toolbag_helpers"></a>
 ### `marmoset_workflow/_toolbag_helpers.py`
 
@@ -220,36 +119,6 @@ Shared helpers for Marmoset Toolbag template scripts.
   - `ToolbagHelpers.collect_mesh_objects(root)` *(static)* — Recursively gather ``mset.MeshObject`` descendants of *root*.
   - `ToolbagHelpers.apply_sky_preset(preset_path)` *(static)* — Load a ``.tbsky`` preset onto the scene's existing SkyObject.
   - `ToolbagHelpers.frame_in_viewport()` *(static)* — Frame the imported scene in the viewport (best-effort).
-
-<a id="marmoset_workflow--launcher"></a>
-### `marmoset_workflow/launcher.py`
-
-Application shell for the Marmoset Workflow UI.
-
-- **[`class MarmosetWorkflowUI(PanelLauncher)`](extapps/extapps/marmoset_workflow/launcher.py#L16)**
-
-<a id="marmoset_workflow--parameters"></a>
-### `marmoset_workflow/parameters.py`
-
-Tunable parameters surfaced in the Marmoset Workflow panel.
-
-- [`PARAMS`](extapps/extapps/marmoset_workflow/parameters.py#L28) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/marmoset_workflow/parameters.py#L52)** — The Marmoset Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
-
-<a id="marmoset_workflow--slots"></a>
-### `marmoset_workflow/slots.py`
-
-Slots for the standalone Marmoset Workflow panel.
-
-- **[`class MarmosetWorkflowSlots(BridgeSlotsBase)`](extapps/extapps/marmoset_workflow/slots.py#L55)** — Switchboard slots wired to ``marmoset_workflow.ui``.
-  - `MarmosetWorkflowSlots.params_module(self)` *(property)*
-  - `MarmosetWorkflowSlots.template_dir(self) -> Path` *(property)*
-  - `MarmosetWorkflowSlots.make_bridge(self) -> MarmosetEngine`
-  - `MarmosetWorkflowSlots.list_template_modes(self) -> List[Tuple[str, str]]` — Engine templates filtered to the 'set up a project' subset.
-  - `MarmosetWorkflowSlots.select_initial_template_index(self, pairs: List[Tuple[str, str]]) -> int` — Prefer 'lookdev (send_to)', else first entry.
-  - `MarmosetWorkflowSlots.resolved_model_path(self) -> str`
-  - `MarmosetWorkflowSlots.set_model_path(self, path: str) -> None` — Pre-fill the Model File field (e.g.
-  - `MarmosetWorkflowSlots.b000(self) -> None` — Set up the picked model in Toolbag using the chosen template + mode.
 
 <a id="marmoset_workflow--template_params"></a>
 ### `marmoset_workflow/template_params.py`
@@ -301,45 +170,6 @@ Marmoset Toolbag log-file resolution, classification, and live tailing.
   - `ToolbagLog.dispatch_log_lines(lines, logger) -> None` *(static)* — Forward each classified line to *logger* at its routed level.
   - `ToolbagLog.start_toolbag_log_tail(log_path: str, start_offset: int, process, logger, poll_interval: float = 0.4, file_wait_timeout: float = 60.0)` *(static)* — Tail *log_path* from *start_offset* in a daemon thread.
 
-<a id="mesh_convert--__init__"></a>
-### `mesh_convert/__init__.py`
-
-Batch-convert FBX files to binary glTF (GLB) with FBX2glTF.
-
-- [`DEFAULT_INCLUDE`](extapps/extapps/mesh_convert/__init__.py#L14) — constant
-
-<a id="mesh_convert--launcher"></a>
-### `mesh_convert/launcher.py`
-
-Application shell for the Mesh Convert UI.
-
-- **[`class MeshConvertUI(PanelLauncher)`](extapps/extapps/mesh_convert/launcher.py#L14)**
-
-<a id="mesh_convert--slots"></a>
-### `mesh_convert/slots.py`
-
-- **[`class MeshConvertSlots`](extapps/extapps/mesh_convert/slots.py#L9)** — Switchboard slots for the Mesh Converter UI.
-  - `MeshConvertSlots.source_dir(self) -> str` *(property)* — Starting directory for the FBX file dialog.
-  - `MeshConvertSlots.fbx_provider(self) -> Optional[Callable[[], Iterable[str]]]` *(property)* — Callable returning FBX paths from the host DCC selection.
-  - `MeshConvertSlots.header_init(self, widget) -> None` — Add the From-FBX-references toggle to the header menu.
-  - `MeshConvertSlots.tb000_init(self, widget) -> None` — Set up the FBX -> GLB tool button option box.
-  - `MeshConvertSlots.tb000(self, widget) -> None` — Convert the selected FBX file(s) to GLB beside their source.
-
-<a id="photogrammetry--_panel_slots"></a>
-### `photogrammetry/_panel_slots.py`
-
-Shared scaffolding for the photogrammetry workflow panels.
-
-- **[`class PhotogrammetryPanelSlots(BridgeSlotsBase)`](extapps/extapps/photogrammetry/_panel_slots.py#L45)** — Base for the photogrammetry workflow panels (engine-agnostic scaffolding).
-  - `PhotogrammetryPanelSlots.header_menu_items(self)` — Process-runner header menu: Cancel Run / Open Output Folder / Clear
-  - `PhotogrammetryPanelSlots.make_preset_store(self)` — Semantic-preset mode: the engine-scoped store the headless runner uses
-  - `PhotogrammetryPanelSlots.resolved_project_name(self) -> str`
-  - `PhotogrammetryPanelSlots.cancel_run(self) -> None`
-  - `PhotogrammetryPanelSlots.open_output_folder(self) -> None` — Reveal the output folder.
-  - `PhotogrammetryPanelSlots.b000(self) -> None` — Run Workflow.
-- **[`class FramesSourceMixin`](extapps/extapps/photogrammetry/_panel_slots.py#L386)** — A single 'Source' row + browser for image-in panels (Metashape, RC).
-  - `FramesSourceMixin.resolved_frames_dir(self) -> str`
-
 <a id="photogrammetry--_process_runner"></a>
 ### `photogrammetry/_process_runner.py`
 
@@ -360,21 +190,6 @@ The one progress-notify shim the photogrammetry engines share.
 
 - **[`class ProgressNotifyMixin`](extapps/extapps/photogrammetry/_progress_notify.py#L40)** — Supplies ``_notify`` to an engine that carries a ``progress`` callback.
 
-<a id="photogrammetry--_shared_params"></a>
-### `photogrammetry/_shared_params.py`
-
-Input pre-processing parameter specs shared by the image-in engines.
-
-- [`PREPROCESS_MASTER_KEY`](extapps/extapps/photogrammetry/_shared_params.py#L28) — constant
-- [`PREPROCESSING_PARAMS`](extapps/extapps/photogrammetry/_shared_params.py#L32) — constant
-- [`PREPROCESSING_VALUE_FLAGS`](extapps/extapps/photogrammetry/_shared_params.py#L123) — constant
-- [`PREPROCESSING_STORE_TRUE_FLAGS`](extapps/extapps/photogrammetry/_shared_params.py#L133) — constant
-- [`PREPROCESSING_KEYS`](extapps/extapps/photogrammetry/_shared_params.py#L139) — constant
-- [`PREPROCESSING_KNOB_KEYS`](extapps/extapps/photogrammetry/_shared_params.py#L146) — constant
-- **[`class SharedParams`](extapps/extapps/photogrammetry/_shared_params.py#L151)** — Argv renderers shared by the image-in engines' ``parameters`` modules.
-  - `SharedParams.render_flag_argv(values: 'Dict[str, Any]', value_flags: 'Dict[str, str]', store_true_flags: 'Optional[Dict[str, str]]' = None, bool_flags: 'Optional[Dict[str, str]]' = None) -> 'List[str]'` *(static)* — Render *values* into CLI flags — the shared loop behind every engine's
-  - `SharedParams.preprocessing_argv(values: 'Dict[str, Any]') -> 'List[str]'` *(static)* — Render the input pre-processing CLI flags from collected *values*.
-
 <a id="photogrammetry--_workflow_engine"></a>
 ### `photogrammetry/_workflow_engine.py`
 
@@ -388,7 +203,7 @@ The lifecycle every photogrammetry engine shares: one base, five engines.
 
 Train a Gaussian splat with Brush from COLMAP data and export it for Unity or web.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/gaussian_splat_workflow/__init__.py#L33) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/gaussian_splat_workflow/__init__.py#L34) — constant
 
 <a id="photogrammetry--gaussian_splat_workflow--_gaussian_splat_runner"></a>
 ### `photogrammetry/gaussian_splat_workflow/_gaussian_splat_runner.py`
@@ -440,48 +255,12 @@ Engine-delivery stage for the splat track — clean + convert to engine formats.
   - `SplatPublishWorkflow.to_web(self, clean_ply: str, out_dir: Optional[str] = None, web_format: str = 'sog', with_viewer: bool = True) -> Dict[str, Optional[str]]` — Convert a (cleaned) ``.ply`` for the browser;
   - `SplatPublishWorkflow.publish(self, in_ply: str, targets: Sequence[str] = ('unity', 'web'), out_dir: Optional[str] = None, spz_version: int = 4, web_format: str = 'sog', with_viewer: bool = True, **clean_kwargs) -> Dict[str, object]` — Clean *in_ply* once, then emit each requested target from the result.
 
-<a id="photogrammetry--gaussian_splat_workflow--launcher"></a>
-### `photogrammetry/gaussian_splat_workflow/launcher.py`
-
-Application shell for the Brush (gaussian-splat) Workflow UI.
-
-- **[`class GaussianSplatWorkflowUI(PanelLauncher)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/launcher.py#L13)**
-
-<a id="photogrammetry--gaussian_splat_workflow--parameters"></a>
-### `photogrammetry/gaussian_splat_workflow/parameters.py`
-
-Tunable parameters surfaced in the Brush (gaussian-splat) Workflow panel.
-
-- [`PARAMS`](extapps/extapps/photogrammetry/gaussian_splat_workflow/parameters.py#L24) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/parameters.py#L117)** — The Brush (gaussian-splat) panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
-  - `Parameters.to_argv(values: 'Dict[str, Any]') -> 'List[str]'` *(static)* — Render collected param *values* into ``run_combined`` CLI flags via the
-  - `Parameters.referenced_keys(cls, source: str = '') -> 'set[str]'` *(class)* — Params relevant to the selected run mode — drives row visibility.
-
 <a id="photogrammetry--gaussian_splat_workflow--run_combined"></a>
 ### `photogrammetry/gaussian_splat_workflow/run_combined.py`
 
 Driver for the gaussian-splat track: Brush splat training + engine publish.
 
 - [`main(argv=None) -> int`](extapps/extapps/photogrammetry/gaussian_splat_workflow/run_combined.py#L46)
-
-<a id="photogrammetry--gaussian_splat_workflow--slots"></a>
-### `photogrammetry/gaussian_splat_workflow/slots.py`
-
-Slots for the Brush (gaussian-splat) Workflow panel.
-
-- **[`class GaussianSplatWorkflowSlots(PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/gaussian_splat_workflow/slots.py#L37)** — Switchboard slots wired to ``gaussian_splat_workflow.ui``.
-  - `GaussianSplatWorkflowSlots.resolved_colmap_dir(self) -> str`
-  - `GaussianSplatWorkflowSlots.params_module(self)` *(property)*
-  - `GaussianSplatWorkflowSlots.template_dir(self) -> Path` *(property)*
-  - `GaussianSplatWorkflowSlots.make_bridge(self) -> GaussianSplatRunner`
-  - `GaussianSplatWorkflowSlots.header_init(self, widget) -> None`
-  - `GaussianSplatWorkflowSlots.open_brush_viewer(self) -> None` — Open Brush's GUI viewer with nothing loaded (``brush`` defaults to the
-  - `GaussianSplatWorkflowSlots.open_result_in_brush(self) -> None` — Open the latest trained splat in Brush's viewer.
-  - `GaussianSplatWorkflowSlots.install_brush(self) -> None` — Download + install Brush if it isn't already discoverable.
-  - `GaussianSplatWorkflowSlots.cancel_run(self) -> None` — Cancel an in-flight Brush download too — the base 'Cancel Run' action
-  - `GaussianSplatWorkflowSlots.list_template_modes(self) -> List[Tuple[str, str]]`
-  - `GaussianSplatWorkflowSlots.default_output_dir(self) -> str`
-  - `GaussianSplatWorkflowSlots.help_spec(self) -> dict`
 
 <a id="photogrammetry--mesh_stages"></a>
 ### `photogrammetry/mesh_stages.py`
@@ -500,7 +279,7 @@ Shared, SDK-agnostic mesh post-processing stages (PyMeshLab-backed).
 
 Turn photos or video frames into a textured mesh with headless Metashape.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/metashape_workflow/__init__.py#L15) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/metashape_workflow/__init__.py#L16) — constant
 
 <a id="photogrammetry--metashape_workflow--_metashape_connection"></a>
 ### `photogrammetry/metashape_workflow/_metashape_connection.py`
@@ -557,23 +336,6 @@ Local, async runner the Metashape panel dispatches to.
   - `MetashapeWorkflow.export_colmap(self, output_dir: str, convert_to_pinhole: bool = True, binary: bool = True, max_cameras: int = 0) -> Optional[str]` — Export the aligned chunk as a COLMAP dataset to feed the splat track.
   - `MetashapeWorkflow.export_qc(self)` — Write Metashape's processing report PDF + finalize the JSON sidecar.
 
-<a id="photogrammetry--metashape_workflow--launcher"></a>
-### `photogrammetry/metashape_workflow/launcher.py`
-
-Application shell for the Metashape Workflow UI.
-
-- **[`class MetashapeWorkflowUI(PanelLauncher)`](extapps/extapps/photogrammetry/metashape_workflow/launcher.py#L15)**
-
-<a id="photogrammetry--metashape_workflow--parameters"></a>
-### `photogrammetry/metashape_workflow/parameters.py`
-
-Tunable parameters surfaced in the Metashape Workflow panel.
-
-- [`PARAMS`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L39) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/metashape_workflow/parameters.py#L372)** — The Metashape panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
-  - `Parameters.to_argv(values: 'Dict[str, Any]') -> 'List[str]'` *(static)* — Render collected param *values* into ``run_combined`` CLI flags (via the
-  - `Parameters.referenced_keys(cls, source: str = '') -> 'set[str]'` *(class)* — Params relevant to the panel's current input — drives row visibility.
-
 <a id="photogrammetry--metashape_workflow--run_combined"></a>
 ### `photogrammetry/metashape_workflow/run_combined.py`
 
@@ -581,19 +343,6 @@ Driver script for multi-session combined runs.
 
 - [`main(argv=None) -> int`](extapps/extapps/photogrammetry/metashape_workflow/run_combined.py#L271)
 - [`PREP_RESULT_PREFIX`](extapps/extapps/photogrammetry/metashape_workflow/run_combined.py#L43) — constant
-
-<a id="photogrammetry--metashape_workflow--slots"></a>
-### `photogrammetry/metashape_workflow/slots.py`
-
-Slots for the Metashape Workflow panel.
-
-- **[`class MetashapeWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/metashape_workflow/slots.py#L41)** — Switchboard slots wired to ``metashape_workflow.ui``.
-  - `MetashapeWorkflowSlots.params_module(self)` *(property)*
-  - `MetashapeWorkflowSlots.template_dir(self) -> Path` *(property)*
-  - `MetashapeWorkflowSlots.make_bridge(self) -> MetashapeRunner`
-  - `MetashapeWorkflowSlots.list_template_modes(self) -> List[Tuple[str, str]]`
-  - `MetashapeWorkflowSlots.default_output_dir(self) -> str`
-  - `MetashapeWorkflowSlots.help_spec(self) -> dict`
 
 <a id="photogrammetry--prep_stages"></a>
 ### `photogrammetry/prep_stages.py`
@@ -636,7 +385,7 @@ Photogrammetry I/O + tuning **profile** — site/personal config kept out of sou
 
 Turn photos or video frames into a textured mesh with headless RealityCapture.
 
-- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/realityscan_workflow/__init__.py#L19) — constant
+- [`DEFAULT_INCLUDE`](extapps/extapps/photogrammetry/realityscan_workflow/__init__.py#L21) — constant
 
 <a id="photogrammetry--realityscan_workflow--_realityscan_connection"></a>
 ### `photogrammetry/realityscan_workflow/_realityscan_connection.py`
@@ -733,23 +482,6 @@ RSNode-backed connection — drive a running RealityScan 2.1 over REST.
   - `RsNodeConnection.close(self) -> None` — Best-effort teardown of this connection's own RSNode session.
   - `RsNodeConnection.run(self, commands: Sequence[str], log_path: str, timeout: Optional[float] = None, **_ignored: Any) -> subprocess.CompletedProcess` — Execute a CLI command tail over REST;
 
-<a id="photogrammetry--realityscan_workflow--launcher"></a>
-### `photogrammetry/realityscan_workflow/launcher.py`
-
-Application shell for the RealityCapture Workflow UI.
-
-- **[`class RealityScanWorkflowUI(PanelLauncher)`](extapps/extapps/photogrammetry/realityscan_workflow/launcher.py#L13)**
-
-<a id="photogrammetry--realityscan_workflow--parameters"></a>
-### `photogrammetry/realityscan_workflow/parameters.py`
-
-Tunable parameters surfaced in the RealityCapture Workflow panel.
-
-- [`PARAMS`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L38) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/photogrammetry/realityscan_workflow/parameters.py#L163)** — The RealityScan panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
-  - `Parameters.to_argv(values: 'Dict[str, Any]') -> 'List[str]'` *(static)* — Render collected param *values* into ``run_combined`` CLI flags (via the
-  - `Parameters.referenced_keys(cls, source: str = '') -> 'set[str]'` *(class)* — Params relevant to the panel's current input — drives row visibility.
-
 <a id="photogrammetry--realityscan_workflow--run_combined"></a>
 ### `photogrammetry/realityscan_workflow/run_combined.py`
 
@@ -757,19 +489,6 @@ Driver script for multi-session combined RealityCapture runs.
 
 - [`publish_outputs(project_dir: str, publish_dir: str)`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L68) — Copy finished deliverables from local scratch to the synced output root.
 - [`main(argv=None) -> int`](extapps/extapps/photogrammetry/realityscan_workflow/run_combined.py#L116)
-
-<a id="photogrammetry--realityscan_workflow--slots"></a>
-### `photogrammetry/realityscan_workflow/slots.py`
-
-Slots for the RealityCapture Workflow panel.
-
-- **[`class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots)`](extapps/extapps/photogrammetry/realityscan_workflow/slots.py#L36)** — Switchboard slots wired to ``realityscan_workflow.ui``.
-  - `RealityscanWorkflowSlots.params_module(self)` *(property)*
-  - `RealityscanWorkflowSlots.template_dir(self) -> Path` *(property)*
-  - `RealityscanWorkflowSlots.make_bridge(self) -> RealityScanRunner`
-  - `RealityscanWorkflowSlots.list_template_modes(self) -> List[Tuple[str, str]]`
-  - `RealityscanWorkflowSlots.default_output_dir(self) -> str`
-  - `RealityscanWorkflowSlots.help_spec(self) -> dict`
 
 <a id="photogrammetry--sugar_mesh_workflow--_sugar_mesh"></a>
 ### `photogrammetry/sugar_mesh_workflow/_sugar_mesh.py`
@@ -822,6 +541,7 @@ Channel operations — query and modify per-channel state on a texture set.
 Painter Connection Module.
 
 - **[`class PainterConnection`](extapps/extapps/substance_workflow/env_utils/painter_connection.py#L36)** — Live JSON-RPC connection to a Substance 3D Painter session.
+  - `PainterConnection.op_timeout() -> float` *(static)* — Seconds the bridge lets one op run (its main-thread marshaller's
   - `PainterConnection.plugins_dir() -> str` *(static)* — Absolute path to the plugin root, ``substance_workflow/plugins``.
   - `PainterConnection.build_painter_env(port: int = 0) -> dict` *(static)* — Compose the environment block passed to a Painter launch.
   - `PainterConnection.launch_painter(exe: str, env: dict, gui: bool = False, extra_args: Optional[List[str]] = None) -> subprocess.Popen` *(static)* — Spawn a detached Painter process via ``pythontk.AppLauncher``.
@@ -862,13 +582,6 @@ Batch convenience: launch Painter, run a call list over the bridge, shut down.
   - `Job.add(self, op: str, **kwargs: Any) -> 'Job'`
   - `Job.run(self, **launch_kwargs: Any) -> List[Result]`
   - `Job.run_batch(calls: List[Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: Optional[float] = None) -> List[Result]` *(static)* — Launch Painter, execute ``calls`` in order over the bridge, shut down.
-
-<a id="substance_workflow--launcher"></a>
-### `substance_workflow/launcher.py`
-
-Application shell for the Substance Workflow UI.
-
-- **[`class SubstanceWorkflowUI(PanelLauncher)`](extapps/extapps/substance_workflow/launcher.py#L15)**
 
 <a id="substance_workflow--layer_utils"></a>
 ### `substance_workflow/layer_utils.py`
@@ -930,32 +643,6 @@ Shelf / resource operations — query and import shelf assets.
 - [`list_assets(shelf: str, kind: str = 'smartmaterial') -> List[dict]`](extapps/extapps/substance_workflow/resource_utils.py#L15) — List assets of ``kind`` on ``shelf``.
 - [`import_(path: str, shelf: str = 'your_assets', kind: str = 'smartmaterial') -> str`](extapps/extapps/substance_workflow/resource_utils.py#L21) — Import an asset file into the named shelf.
 
-<a id="substance_workflow--slots"></a>
-### `substance_workflow/slots.py`
-
-Switchboard slots for the Substance Workflow UI.
-
-- [`MESH_EXTS`](extapps/extapps/substance_workflow/slots.py#L31) — constant
-- [`PIPELINE_STAGES`](extapps/extapps/substance_workflow/slots.py#L47) — constant
-- [`BLEND_MODES`](extapps/extapps/substance_workflow/slots.py#L74) — constant
-- [`BAKE_RESOLUTIONS`](extapps/extapps/substance_workflow/slots.py#L75) — constant
-- [`ADVANCED_PARAMS`](extapps/extapps/substance_workflow/slots.py#L83) — constant
-- **[`class SubstanceWorkflowSlots(pythontk.LoggingMixin)`](extapps/extapps/substance_workflow/slots.py#L234)** — Switchboard slots for the Substance Workflow UI.
-  - `SubstanceWorkflowSlots.header_init(self, widget) -> None`
-  - `SubstanceWorkflowSlots.txt000_init(self, widget) -> None` — Mesh File
-  - `SubstanceWorkflowSlots.txt001_init(self, widget) -> None` — Template (optional)
-  - `SubstanceWorkflowSlots.txt002_init(self, widget) -> None` — Project Save Path
-  - `SubstanceWorkflowSlots.cmb000_init(self, widget) -> None` — Painter install picker
-  - `SubstanceWorkflowSlots.btn_stages_init(self, widget) -> None` — Stages popup — QMenu of checkboxes attached to the button.
-  - `SubstanceWorkflowSlots.btn_advanced_init(self, widget) -> None` — Advanced-params popup — labeled form inside a QMenu via QWidgetAction.
-  - `SubstanceWorkflowSlots.cmb003(self, widget) -> None` — Log level changed
-  - `SubstanceWorkflowSlots.btn_launch(self, widget) -> None` — Toggle the Painter session.
-  - `SubstanceWorkflowSlots.b000(self) -> None` — Run Workflow -- while a run is in flight, the button is its Cancel.
-  - `SubstanceWorkflowSlots.set_mesh_path(self, path: str) -> None` — Pre-fill the mesh field (e.g.
-  - `SubstanceWorkflowSlots.btn_browse_mesh(self) -> None`
-  - `SubstanceWorkflowSlots.btn_browse_template(self) -> None`
-  - `SubstanceWorkflowSlots.btn_browse_project(self) -> None`
-
 <a id="substance_workflow--texture_set_utils"></a>
 ### `substance_workflow/texture_set_utils.py`
 
@@ -967,39 +654,10 @@ Texture set operations — list, resolution, channel inventory.
 - [`channels(name: str) -> List[str]`](extapps/extapps/substance_workflow/texture_set_utils.py#L27) — Return the channel identifiers active on the named texture set.
 - [`add_channel(name: str, channel: str, fmt: str = 'sRGB8') -> None`](extapps/extapps/substance_workflow/texture_set_utils.py#L33) — Add a channel to the texture set (``BaseColor``, ``Roughness``, ...).
 
-<a id="texture_maps--compositor--__init__"></a>
-### `texture_maps/compositor/__init__.py`
-
-Merge several texture maps of each type into one image, converting normal formats.
-
-- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/compositor/__init__.py#L14) — constant
-
-<a id="texture_maps--compositor--launcher"></a>
-### `texture_maps/compositor/launcher.py`
-
-Application shell for the Map Compositor UI.
-
-- **[`class CompositorUI(PanelLauncher)`](extapps/extapps/texture_maps/compositor/launcher.py#L15)**
-
-<a id="texture_maps--compositor--slots"></a>
-### `texture_maps/compositor/slots.py`
-
-UI slot bindings for the compositor window.
-
-- **[`class CompositorSlots(_CompositorSlotsInternal)`](extapps/extapps/texture_maps/compositor/slots.py#L108)** — UI slot handler.
-  - `CompositorSlots.output_dir(self) -> str` *(property)*
-  - `CompositorSlots.map_name(self) -> str` *(property)*
-  - `CompositorSlots.header_init(self, widget)` — Populate the header menu with global options.
-  - `CompositorSlots.txt000_init(self, widget)` — Init Source — a directory of maps, or specific image files.
-  - `CompositorSlots.txt001_init(self, widget)` — Init Destination Directory
-  - `CompositorSlots.txt002_init(self, widget)` — Init Map Name
-  - `CompositorSlots.b002(self)` — Combine Maps
-  - `CompositorSlots.process(self, images, source_dir, output_dir, map_name=None)` — Validate dirs, prepare sorted-image groups, and drive the engine.
-
 <a id="texture_maps--converter--__init__"></a>
 ### `texture_maps/converter/__init__.py`
 
-Convert normal, roughness, spec-gloss and bump maps, and pack or optimize textures.
+The Map Converter's batch rules: plan, name and run one map at a time.
 
 - [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/converter/__init__.py#L16) — constant
 
@@ -1018,170 +676,3 @@ The Map Converter's batch engine: plan, name and run one map at a time.
   - `MapConverter.optimize_one(cls, texture_path, *, file_type, max_size, secondary_scale, mode, modifier, new_folder, old_folder, registry, dry_run=False, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None, map_type=None, base_name=None)` *(class)* — ``ConverterSlots.tb000``'s per-map step — optimize (or, when *dry_run*, assess) one path.
   - `MapConverter.report_optimize_plan(cls, texture_path, *, file_type, max_size, mode, modifier, output_dir, old_folder, output_profile=None, enforce_budget=False, lossy_quality=None, uastc_rdo=None, uastc_rdo_dictionary=None, map_type=None, base_name=None)` *(class)* — Print what optimizing *texture_path* would do, touching nothing.
   - `MapConverter.flip_one(cls, path, *, swizzle_map, invert_dests, suffix)` *(class)* — ``ConverterSlots.tb002``'s per-map step — flip/swizzle one texture path.
-
-<a id="texture_maps--converter--launcher"></a>
-### `texture_maps/converter/launcher.py`
-
-Application shell for the Map Converter UI.
-
-- **[`class ConverterUI(PanelLauncher)`](extapps/extapps/texture_maps/converter/launcher.py#L15)**
-
-<a id="texture_maps--converter--slots"></a>
-### `texture_maps/converter/slots.py`
-
-Map Converter UI — slot file for ``converter.ui``.
-
-- **[`class ConverterSlots`](extapps/extapps/texture_maps/converter/slots.py#L38)** — Switchboard slots for ``converter.ui``.
-  - `ConverterSlots.source_dir(self)` *(property)* — Get the starting directory for file dialogs.
-  - `ConverterSlots.scopes(self) -> Tuple[str, ...]` *(property)* — Scope labels currently offered, in combobox order.
-  - `ConverterSlots.register_scope(self, label: str, provider: Callable[[], Iterable[str]], *, select: bool = False) -> None` — Offer *label* in the Scope combobox, resolved by calling *provider*.
-  - `ConverterSlots.unregister_scope(self, label: str) -> None` — Drop a previously registered scope (no-op if it isn't registered).
-  - `ConverterSlots.texture_provider(self) -> Optional[Callable[[], Iterable[str]]]` *(property)* — Provider for the plain "Selected" scope.
-  - `ConverterSlots.header_init(self, widget)` — Add the global Scope combobox to the header menu.
-  - `ConverterSlots.optimize_formats(self) -> Tuple[str, ...]` *(property)* — The containers Optimize offers: every writable one, then the
-  - `ConverterSlots.tb000_init(self, widget)` — Populate the Optimize toolbutton's option menu.
-  - `ConverterSlots.tb000(self, widget)` — Optimize a texture map(s)
-  - `ConverterSlots.tb001_init(self, widget)`
-  - `ConverterSlots.tb001(self, widget)` — Batch converts Spec/Gloss maps to PBR Metal/Rough using MapFactory.
-  - `ConverterSlots.tb003_init(self, widget)` — Initialize a 'Bump to Normal' toolbutton with options.
-  - `ConverterSlots.tb003(self, widget)` — Bump/Height to Normal converter (single entry point with options).
-  - `ConverterSlots.tb002_init(self, widget)` — Populate the Flip Channels option menu (per-channel source + suffix).
-  - `ConverterSlots.tb002(self, widget)` — Flip/swizzle texture channels (per-channel invert, swap, or constant fill).
-  - `ConverterSlots.b000(self)` — Convert DirectX to OpenGL
-  - `ConverterSlots.b001(self)` — Convert OpenGL to DirectX
-  - `ConverterSlots.b004(self)` — Batch pack Transparency into Albedo across texture sets.
-  - `ConverterSlots.b007(self)` — Unpack Specular and Gloss maps from SpecularGloss textures.
-  - `ConverterSlots.b010(self)` — Convert Smoothness maps to Roughness maps.
-  - `ConverterSlots.b011(self)` — Convert Roughness maps to Smoothness maps.
-  - `ConverterSlots.b012(self)` — Batch-prepare textures for a target PBR workflow using MapFactory.
-
-<a id="texture_maps--packer--__init__"></a>
-### `texture_maps/packer/__init__.py`
-
-Pack per-channel source maps into one RGBA texture, or unpack a packed one.
-
-- [`DEFAULT_INCLUDE`](extapps/extapps/texture_maps/packer/__init__.py#L15) — constant
-
-<a id="texture_maps--packer--launcher"></a>
-### `texture_maps/packer/launcher.py`
-
-Application shell for the Map Packer UI.
-
-- **[`class PackerUI(PanelLauncher)`](extapps/extapps/texture_maps/packer/launcher.py#L13)**
-
-<a id="texture_maps--packer--slots"></a>
-### `texture_maps/packer/slots.py`
-
-Map Packer UI — slot file for ``packer.ui``: channel-pack/unpack texture maps.
-
-- **[`class PackerSlots`](extapps/extapps/texture_maps/packer/slots.py#L13)** — Switchboard slots for ``packer.ui`` — RGBA channel packing and unpacking.
-  - `PackerSlots.cmbPreset_init(self, widget)` — Preset selector -- its pick persists via the store's ``.active`` pointer
-  - `PackerSlots.cmbR_init(self, widget)`
-  - `PackerSlots.cmbG_init(self, widget)`
-  - `PackerSlots.cmbB_init(self, widget)`
-  - `PackerSlots.cmbA_init(self, widget)`
-  - `PackerSlots.txtSuffix_init(self, widget)` — Output-affix field — clearable back to the convention's default.
-  - `PackerSlots.cmbFormat_init(self, widget)` — Populate the output-format combo and react to format changes.
-  - `PackerSlots.cmbMode_init(self, widget)` — The Pack/Unpack direction -- first in the window, since it decides
-  - `PackerSlots.cmbMissing_init(self, widget)` — What an incomplete texture set does when packing (see :meth:`_pack_set`).
-  - `PackerSlots.source_dir(self)` *(property)*
-  - `PackerSlots.b000(self)` — Run the configured channel operation: Pack (default) or Unpack.
-  - `PackerSlots.b001(self)` — Open the last output directory in the system file explorer.
-
-<a id="unity_workflow--__init__"></a>
-### `unity_workflow/__init__.py`
-
-Copy a model file into a Unity project's Assets and optionally launch the Editor.
-
-- [`DEFAULT_INCLUDE`](extapps/extapps/unity_workflow/__init__.py#L19) — constant
-
-<a id="unity_workflow--_unity_panel"></a>
-### `unity_workflow/_unity_panel.py`
-
-What every Unity panel shares: the 'Unity Project' row, the Editor combo, script management.
-
-- **[`class UnityPanelMixin`](extapps/extapps/unity_workflow/_unity_panel.py#L33)** — Unity-panel behavior shared by the three Unity Slots classes.
-  - `UnityPanelMixin.template_dir(self) -> Path` *(property)*
-  - `UnityPanelMixin.list_template_modes(self)`
-  - `UnityPanelMixin.default_output_dir(self) -> str`
-
-<a id="unity_workflow--launcher"></a>
-### `unity_workflow/launcher.py`
-
-Application shell for the Unity Workflow launcher UI.
-
-- **[`class UnityWorkflowUI(PanelLauncher)`](extapps/extapps/unity_workflow/launcher.py#L15)**
-
-<a id="unity_workflow--parameters"></a>
-### `unity_workflow/parameters.py`
-
-User-tunable parameters for the standalone Unity Workflow panel.
-
-- [`PARAMS`](extapps/extapps/unity_workflow/parameters.py#L24) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/unity_workflow/parameters.py#L125)** — The Unity Workflow panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
-
-<a id="unity_workflow--slots"></a>
-### `unity_workflow/slots.py`
-
-Slots for the standalone Unity Workflow panel.
-
-- **[`class UnityWorkflowSlots(UnityPanelMixin, BridgeSlotsBase)`](extapps/extapps/unity_workflow/slots.py#L57)** — Switchboard slots wired to ``unity_workflow.ui`` via :class:`BridgeSlotsBase`.
-  - `UnityWorkflowSlots.params_module(self)` *(property)*
-  - `UnityWorkflowSlots.make_bridge(self)` — Build the unitytk engine, or ``None`` when it is absent.
-  - `UnityWorkflowSlots.resolved_model_path(self) -> str`
-  - `UnityWorkflowSlots.set_model_path(self, path: str) -> None` — Pre-fill the Model File field (public hand-off point for hosts).
-  - `UnityWorkflowSlots.b000(self) -> None` — Run the selected template: copy the model, or script management.
-
-<a id="webxr_preview--__init__"></a>
-### `webxr_preview/__init__.py`
-
-Preview a scene or FBX/GLB file live in a browser or XR headset.
-
-- [`DEFAULT_INCLUDE`](extapps/extapps/webxr_preview/__init__.py#L20) — constant
-
-<a id="webxr_preview--launcher"></a>
-### `webxr_preview/launcher.py`
-
-Application shell for the WebXR Preview UI.
-
-- **[`class WebXrPreviewUI(PanelLauncher)`](extapps/extapps/webxr_preview/launcher.py#L15)**
-
-<a id="webxr_preview--parameters"></a>
-### `webxr_preview/parameters.py`
-
-Tunable parameters surfaced in the WebXR Preview panel.
-
-- [`SOURCE_FILE_TYPES`](extapps/extapps/webxr_preview/parameters.py#L40) — constant
-- [`AUTHORED_EXTENSION`](extapps/extapps/webxr_preview/parameters.py#L44) — constant
-- [`EXPORT_KEYS`](extapps/extapps/webxr_preview/parameters.py#L50) — constant
-- [`FILE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L53) — constant
-- [`GLB_KEYS`](extapps/extapps/webxr_preview/parameters.py#L58) — constant
-- [`TEXTURE_KEYS`](extapps/extapps/webxr_preview/parameters.py#L63) — constant
-- [`KTX2_KEYS`](extapps/extapps/webxr_preview/parameters.py#L69) — constant
-- [`PARAMS`](extapps/extapps/webxr_preview/parameters.py#L179) — constant
-- **[`class Parameters(ParamRegistry)`](extapps/extapps/webxr_preview/parameters.py#L360)** — The WebXR Preview panel's registry, declared as data (:class:`uitk.bridge.ParamRegistry`).
-
-<a id="webxr_preview--slots"></a>
-### `webxr_preview/slots.py`
-
-Slots for the WebXR Preview panel — the single UI for the live preview.
-
-- [`FILE_SOURCE`](extapps/extapps/webxr_preview/slots.py#L47) — constant
-- **[`class WebXrPreviewSlots(BridgeSlotsBase)`](extapps/extapps/webxr_preview/slots.py#L117)** — Switchboard slots wired to ``webxr_preview.ui``.
-  - `WebXrPreviewSlots.params_module(self)` *(property)*
-  - `WebXrPreviewSlots.template_dir(self) -> Path` *(property)*
-  - `WebXrPreviewSlots.make_bridge(self)` — The panel's own, host-free engine.
-  - `WebXrPreviewSlots.engine(self)` *(property)* — The host bridge class this panel pushes scopes through, or ``None``.
-  - `WebXrPreviewSlots.list_template_modes(self) -> List[Tuple[str, str]]` — Sources, in the ``(template, mode)`` shape the base's combo reads.
-  - `WebXrPreviewSlots.open_preview_page(self) -> None` — Open the live page in a browser, without paying for a push.
-  - `WebXrPreviewSlots.stop_server(self) -> None` — Stop serving and release the port -- every scene's -- ending any share.
-  - `WebXrPreviewSlots.add_scene(self, paths: Optional[List[str]] = None) -> _Scene` — Another scene: a Source Files row of its own under the last one,
-  - `WebXrPreviewSlots.remove_scene(self, scene: _Scene) -> None` — Take an added scene away: its server stops, and its link with it.
-  - `WebXrPreviewSlots.share_link(self) -> None` — Share Now: bring the link up without a push, or retry a failed one.
-  - `WebXrPreviewSlots.copy_share_link(self) -> None` — Copy Link: the live links to the clipboard -- one per line, scene
-  - `WebXrPreviewSlots.copy_scene_link(self) -> None` — Copy Scene Link: where the published scene is described as data.
-  - `WebXrPreviewSlots.check_share_link(self) -> None` — Test Link: whether a guest can reach each share now.
-  - `WebXrPreviewSlots.stop_sharing(self) -> None` — Stop Sharing: the row to Off, which takes every link down.
-  - `WebXrPreviewSlots.set_source_file(self, path: str) -> None` — Pre-fill Source Files with *path* and select the file source.
-  - `WebXrPreviewSlots.set_source_files(self, paths: List[str]) -> None` — Pre-fill Source Files with *paths* -- the parts of one scene, shown
-  - `WebXrPreviewSlots.b000(self) -> None` — Build the deliverable for the active source and publish it -- for

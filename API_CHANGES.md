@@ -22,8 +22,14 @@ _Diff vs the last release (origin/main @ 79b0294)._
 - `unity_workflow/slots.py::UnityWorkflowSlots.list_template_modes(self)`
 - `unity_workflow/slots.py::UnityWorkflowSlots.template_dir(self) -> Path`
 
-## Signature changed (1)
+## Signature changed (3)
 
 - `marmoset_workflow/slots.py::MarmosetWorkflowSlots.make_bridge`
   - was: `(self) -> MarmosetEngine`
   - now: `(self) -> MarmosetWorkflow`
+- `substance_workflow/job.py::Job.run`
+  - was: `(self, **launch_kwargs: Any) -> List[Result]`
+  - now: `(self, **launch_kwargs: Any) -> List[RpcJob.Result]`
+- `substance_workflow/job.py::Job.run_batch`
+  - was: `(calls: List[Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: Optional[float] = None) -> List[Result]`
+  - now: `(calls: List[RpcJob.Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: Optional[float] = None) -> List[RpcJob.Result]`

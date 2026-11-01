@@ -871,8 +871,8 @@ Batch convenience: launch Painter, run a call list over the bridge, shut down.
 
 - **[`class Job`](extapps/extapps/substance_workflow/job.py#L24)** — Convenience builder — ``Job().add("project.info").run()``.
   - `Job.add(self, op: str, **kwargs: Any) -> 'Job'`
-  - `Job.run(self, **launch_kwargs: Any) -> List[Result]`
-  - `Job.run_batch(calls: List[Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: Optional[float] = None) -> List[Result]` *(static)* — Launch Painter, execute ``calls`` in order over the bridge, shut down.
+  - `Job.run(self, **launch_kwargs: Any) -> List[RpcJob.Result]`
+  - `Job.run_batch(calls: List[RpcJob.Call], gui: bool = False, app_path: Optional[str] = None, timeout: float = 180.0, launch_args: Optional[List[str]] = None, invoke_timeout: Optional[float] = None) -> List[RpcJob.Result]` *(static)* — Launch Painter, execute ``calls`` in order over the bridge, shut down.
 
 <a id="substance_workflow--launcher"></a>
 ### `substance_workflow/launcher.py`

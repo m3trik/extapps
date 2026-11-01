@@ -147,6 +147,10 @@ def _assert_code_identical(
 # silently unguard a file deleted from (or never mirrored into) one copy.
 # extapps vendors the import/lookdev panel slice: no marmoset_rpc, no bake
 # template.
+#: The extapps folder holding the vendored subset. m3trik's
+#: ``check_dcc_twins.py --written-once`` reads it and the tuple below, so the
+#: copies this test holds byte-equal are not reported as written twice.
+MARMOSET_PANEL_DIR = "marmoset_workflow"
 MARMOSET_PANEL_VENDORED = (
     "_marmoset_engine.py",
     "_toolbag_helpers.py",
@@ -176,7 +180,7 @@ class TestMarmosetEngineVendorSync(unittest.TestCase):
     """extapps' Marmoset engine subset stays byte-identical to mayatk's."""
 
     def setUp(self):
-        self.ext_dir = Path(extapps.__file__).resolve().parent / "marmoset_workflow"
+        self.ext_dir = Path(extapps.__file__).resolve().parent / MARMOSET_PANEL_DIR
         self.may_dir = _sibling("mayatk", "mat_utils", "marmoset_bridge")
         if self.may_dir is None:
             self.skipTest("mayatk sibling not present (standalone extapps checkout)")

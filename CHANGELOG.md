@@ -1,6 +1,8 @@
 # Changelog
 
 ## 2026
+- **2026-11-01 -- `test_vendor_sync.py` names its vendored folder (`MARMOSET_PANEL_DIR`), so m3trik's written-once gate reads which files it holds byte-equal and stops reporting them as written twice.** No behaviour change.
+  - Test(s): `test_vendor_sync.py` (22 passed).
 - **2026-11-01 -- A photogrammetry run finds its child interpreter through pythontk (`photogrammetry/_process_runner.py`).** `PyModuleRunner._python` asks `ptk.AppLauncher.companion_python()` (the answer uitk's installer gives too) instead of importing uitk's `managers.optional_package_manager` module, so it needs no uitk module path and no Qt binding.
 - **2026-11-01 -- Review fixes: the layer order is declared and gated, the Unity `MOVED_NAMES` row names 0.8.0 (`pyproject.toml` `[tool.m3trik.layers]`, `extapps/__init__.py`, `.github/workflows/tests.yml`, `publish.yml`).** `UnityPanelMixin` is removed in 0.8.0 (the release this carries; tentacle's range is `extapps>=0.8.0,<0.9`), not 0.9.0. The package declares its parts (every app a peer over photogrammetry's shared parts over `_panel_launcher`); CI gains a `guardrails` job running `check_layers.py` and `check_saved_names.py`, installs the `unity` extra so the Unity panel tests stop skipping, and `publish.yml` also fires on the wheel's readme (`docs/README.md`).
   - Test(s): `check_layers.py --check extapps` (0 new), `check_saved_names.py --check extapps` (0 lost); a reversed order is reported as a violation.

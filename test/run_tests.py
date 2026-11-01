@@ -46,7 +46,9 @@ import pythontk as ptk
 from pythontk.core_utils.status_badge import StatusBadge
 
 TEST_DIR = Path(__file__).resolve().parent
-README = TEST_DIR.parent / "docs" / "README.md"
+#: Both front doors -- the landing page and the packaged one (pyproject's
+#: ``readme``) -- show one count (TEST_BADGE_STANDARD).
+READMES = (TEST_DIR.parent / "README.md", TEST_DIR.parent / "docs" / "README.md")
 
 
 class _ExtappsTestRunnerInternal:
@@ -97,15 +99,15 @@ class _ExtappsTestRunnerInternal:
                 self.failed += 1
 
     @classmethod
-    def stamp_badge(cls, collector, readme: Path = README) -> bool:
-        """Stamp the README badge for *collector*, unless the run fell short.
+    def stamp_badge(cls, collector, readmes: Sequence[Path] = READMES) -> bool:
+        """Stamp the README badges for *collector*, unless the run fell short.
 
         Parameters:
             collector: The finished :class:`Collector`.
-            readme: Markdown file to stamp.
+            readmes: Markdown files to stamp.
 
         Returns:
-            True when the badge was written; otherwise the reason it was not is
+            True when every badge was written; otherwise the reason one was not is
             printed and False returned. Never raises: stamping is a cosmetic
             side effect of a test run and must not turn a green run red.
             ``StatusBadge.update`` already swallows I/O errors, but
@@ -123,19 +125,22 @@ class _ExtappsTestRunnerInternal:
         if not allowed:
             print(f"[INFO] Badge not updated ({reason}).")
             return False
-        try:
-            written = StatusBadge.update_test_badge(
-                readme, collector.passed, collector.failed, test_dir=TEST_DIR
-            )
-        except (OSError, ValueError) as e:
-            print(f"[WARNING] Badge not updated ({e}): {readme}")
-            return False
-        if not written:
-            print(f"[WARNING] Badge not updated (missing or unwritable): {readme}")
-            return False
         message, _ = StatusBadge.test_status(collector.passed, collector.failed)
-        print(f"README badge updated: {message}  ({readme})")
-        return True
+        every = True
+        for readme in readmes:
+            try:
+                written = StatusBadge.update_test_badge(
+                    readme, collector.passed, collector.failed, test_dir=TEST_DIR
+                )
+                reason = "missing or unwritable"
+            except (OSError, ValueError) as e:
+                written, reason = False, e
+            if written:
+                print(f"README badge updated: {message}  ({readme})")
+            else:
+                print(f"[WARNING] Badge not updated ({reason}): {readme}")
+                every = False
+        return every
 
 
 class ExtappsTestRunner(_ExtappsTestRunnerInternal):

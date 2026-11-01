@@ -1,6 +1,8 @@
 # Changelog
 
 ## 2026
+- **2026-11-01 -- The test runner stamps both front doors (`test/run_tests.py` `READMES`, `stamp_badge(readmes=)`).** It stamped only the packaged `docs/README.md`, so the landing `README.md` showed no test count at all -- TEST_BADGE_STANDARD has a repo keeping two front doors stamp both. The gate still runs once; each README is then written and reported on its own, and `stamp_badge` is True only when every one was.
+  - Test(s): `test_run_tests.py::BadgeGateTest::test_both_front_doors_are_stamped` (red first: no `READMES`); `test_run_tests.py` (18 passed).
 - **2026-11-01 -- extapps floors pythontk 0.19.0, and the Substance Workflow's batch takes `ptk.RpcJob.Call` / `RpcJob.Result` (`pyproject.toml`; `substance_workflow/job.py`, `test/test_job.py`, `docs/substance_workflow.md`).** Look Match's mixes read `ptk.LookSession.mixes`, which pythontk 0.18.2 lacks, so a user already on 0.18.2 hit an AttributeError on the first saved-mix read (pip leaves a satisfied floor alone); the batch used the root `Call` / `Result` aliases that pythontk 0.20.0 removes. Both need the release the cascade publishes first.
   - Test(s): the full extapps suite (924 passed, 10 skipped); `job.py` imports with DeprecationWarning as an error.
 - **2026-11-01 -- `test_vendor_sync.py` names its vendored folder (`MARMOSET_PANEL_DIR`), so m3trik's written-once gate reads which files it holds byte-equal and stops reporting them as written twice.** No behaviour change.

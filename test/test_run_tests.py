@@ -124,7 +124,7 @@ class BadgeGateTest(unittest.TestCase):
         every = StatusBadge.discover_module_names(TEST_DIR)
         self.assertTrue(every, "no test modules discovered")
         ok = rt.ExtappsTestRunner.stamp_badge(
-            self._collector(every, passed=636), readme=self.readme
+            self._collector(every, passed=636), readmes=(self.readme,)
         )
         self.assertTrue(ok)
         text = self.readme.read_text(encoding="utf-8")
@@ -134,7 +134,7 @@ class BadgeGateTest(unittest.TestCase):
     def test_scoped_run_is_refused(self):
         with mock.patch.object(StatusBadge, "update_test_badge") as write:
             allowed = rt.ExtappsTestRunner.stamp_badge(
-                self._collector({"test_progress_notify"}), readme=self.readme
+                self._collector({"test_progress_notify"}), readmes=(self.readme,)
             )
         self.assertFalse(allowed)
         write.assert_not_called()
@@ -144,7 +144,7 @@ class BadgeGateTest(unittest.TestCase):
         every = StatusBadge.discover_module_names(TEST_DIR)
         with mock.patch.object(StatusBadge, "update_test_badge") as write:
             allowed = rt.ExtappsTestRunner.stamp_badge(
-                self._collector(every, passed=0, failed=0), readme=self.readme
+                self._collector(every, passed=0, failed=0), readmes=(self.readme,)
             )
         self.assertFalse(allowed)
         write.assert_not_called()
@@ -162,15 +162,35 @@ class BadgeGateTest(unittest.TestCase):
                 ):
                     self.assertFalse(
                         rt.ExtappsTestRunner.stamp_badge(
-                            self._collector(every), readme=self.readme
+                            self._collector(every), readmes=(self.readme,)
                         )
                     )
+
+    def test_both_front_doors_are_stamped(self):
+        """The landing README and the packaged docs/README.md show one count
+        (TEST_BADGE_STANDARD: a repo keeping two front doors stamps both)."""
+        self.assertEqual(
+            set(rt.READMES),
+            {TEST_DIR.parent / "README.md", TEST_DIR.parent / "docs" / "README.md"},
+        )
+        landing = Path(self._store.path(extension=".md"))
+        landing.write_text("# extapps\n", encoding="utf-8")
+        every = StatusBadge.discover_module_names(TEST_DIR)
+        self.assertTrue(
+            rt.ExtappsTestRunner.stamp_badge(
+                self._collector(every, passed=636), readmes=(landing, self.readme)
+            )
+        )
+        for readme in (landing, self.readme):
+            self.assertIn(
+                "Tests-636%20passed-brightgreen", readme.read_text(encoding="utf-8")
+            )
 
     def test_failures_are_published_not_hidden(self):
         every = StatusBadge.discover_module_names(TEST_DIR)
         self.assertTrue(
             rt.ExtappsTestRunner.stamp_badge(
-                self._collector(every, passed=600, failed=2), readme=self.readme
+                self._collector(every, passed=600, failed=2), readmes=(self.readme,)
             )
         )
         text = self.readme.read_text(encoding="utf-8")

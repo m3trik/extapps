@@ -1,5 +1,5 @@
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
-[![Tests](https://img.shields.io/badge/Tests-905%20passed-brightgreen.svg)](../test/)
+[![Tests](https://img.shields.io/badge/Tests-925%20passed-brightgreen.svg)](../test/)
 
 <!-- short_description_start -->
 Standalone Switchboard apps for content-pipeline workflows — map compositing, texture conversion and channel packing, photogrammetry, mesh conversion, Substance / Marmoset / Unity automation, WebXR preview and look matching.
@@ -18,7 +18,7 @@ host.
 | Tool | Purpose | Engine | Docs |
 |---|---|---|---|
 | `compositor` | Multi-layer texture compositing | `pythontk.core_utils.engines.textures.map_compositor` | [→](map_compositor.md) |
-| `photogrammetry` | End-to-end photogrammetry runs — frame extraction/curation → align → mesh → texture, with per-engine presets | bundled runners (Metashape SDK, RealityScan RSNode, gaussian splat) | [Metashape engine →](metashape_workflow.md) · [Tuning →](../extapps/photogrammetry/TUNING.md) |
+| `metashape_workflow` · `realityscan_workflow` · `gaussian_splat_workflow` | End-to-end photogrammetry runs, one app per engine — frame extraction/curation → align → mesh → texture, with per-engine presets | bundled runners (Metashape SDK, RealityScan RSNode, gaussian splat) | [Metashape engine →](metashape_workflow.md) · [Tuning →](../extapps/photogrammetry/TUNING.md) |
 | `substance_workflow` | Adobe Substance 3D Painter automation (JSON-RPC bridge) | bundled (SDK-specific) | [→](substance_workflow.md) |
 | `marmoset_workflow` | Open a model file in a new Marmoset Toolbag (import / lookdev templates) | bundled `_marmoset_engine` (SDK-specific) | _TBD_ |
 | `unity_workflow` | Copy a model file -- or, opened from Maya / Blender, the scene (the host exports it) -- into a Unity project's Assets; manage unitytk's import scripts | `unitytk` (delivery); the host's `UnityBridge` (the scene's export) | _TBD_ |

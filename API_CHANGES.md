@@ -4,10 +4,10 @@ _Diff vs the last release (origin/main @ 79b0294)._
 
 ## Moved out (4)
 
-- `unity_workflow/_unity_panel.py::UnityPanelMixin` → `extapps.UnityWorkflowSlots` (from 0.9.0)
-- `unity_workflow/_unity_panel.py::UnityPanelMixin.default_output_dir` → `extapps.UnityWorkflowSlots` (from 0.9.0)
-- `unity_workflow/_unity_panel.py::UnityPanelMixin.list_template_modes` → `extapps.UnityWorkflowSlots` (from 0.9.0)
-- `unity_workflow/_unity_panel.py::UnityPanelMixin.template_dir` → `extapps.UnityWorkflowSlots` (from 0.9.0)
+- `unity_workflow/_unity_panel.py::UnityPanelMixin` → `extapps.UnityWorkflowSlots` (from 0.8.0)
+- `unity_workflow/_unity_panel.py::UnityPanelMixin.default_output_dir` → `extapps.UnityWorkflowSlots` (from 0.8.0)
+- `unity_workflow/_unity_panel.py::UnityPanelMixin.list_template_modes` → `extapps.UnityWorkflowSlots` (from 0.8.0)
+- `unity_workflow/_unity_panel.py::UnityPanelMixin.template_dir` → `extapps.UnityWorkflowSlots` (from 0.8.0)
 
 ## Added (10)
 

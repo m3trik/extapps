@@ -1,6 +1,6 @@
 name: Publish to PyPI
 
-# extapps is a main-only standalone (no dev/main flow). Publishes on
+# extapps develops on dev and publishes from main. Publishes on
 # every push to main that touches package source or pyproject.toml,
 # but only uploads to PyPI when the local __version__ outpaces what's
 # already on PyPI -- and a push that changes what ships WITHOUT that
@@ -13,6 +13,7 @@ on:
     paths:
       - 'extapps/**'
       - 'pyproject.toml'
+      - 'docs/README.md'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -26,7 +27,7 @@ concurrency:
 
 jobs:
   # Gate: the suite must be green before anything reaches PyPI. extapps
-  # publishes straight off a push to main (no dev/main flow), so this is the
+  # publishes straight off a push to main (no release PR gate), so this is the
   # only thing standing between a red commit and a release.
   test:
     uses: ./.github/workflows/tests.yml

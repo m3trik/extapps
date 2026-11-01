@@ -1,9 +1,9 @@
 name: Tests
 
-# extapps is a main-only standalone: publish.yml fires on every push to main
-# that touches package source. So a PR-only gate would let a red commit reach
-# PyPI. This runs on BOTH the PR and the push, and publish.yml calls it via
-# workflow_call so the upload waits on a green suite.
+# extapps develops on dev and publishes from main: publish.yml fires on every
+# push to main that touches package source. So a PR-only gate would let a red
+# commit reach PyPI. This runs on BOTH the PR and the push, and publish.yml
+# calls it via workflow_call so the upload waits on a green suite.
 on:
   pull_request:
     branches: [main]
@@ -62,8 +62,10 @@ jobs:
           # pythontk 0.9.28 82 s after 0.9.30 was uploaded, and the only failure
           # was two tests importing symbols that exist only in 0.9.30.
           # --no-cache-dir: pip's HTTP cache can hold the stale index page too.
+          # The `unity` extra installs unitytk so the Unity Workflow panel
+          # tests run rather than skip.
           for attempt in 1 2 3 4 5 6; do
-            if pip install --no-cache-dir -e "."; then break; fi
+            if pip install --no-cache-dir -e ".[unity]"; then break; fi
             if [ "$attempt" -lt 6 ]; then
               echo "::warning::editable install attempt $attempt failed (index propagation lag?); retrying in 30s"
               sleep 30
@@ -194,3 +196,33 @@ jobs:
 
       - name: Registry matches source
         run: python m3trik/scripts/generate_api_registry.py extapps --check
+
+  guardrails:
+    # The layer order extapps declares ([tool.m3trik.layers] in pyproject.toml)
+    # and the saved names its panels read (check_saved_names.py): both checkers
+    # live in the m3trik repo and expect the monorepo layout, so the repos are
+    # checked out as siblings, as in the api-registry job. AST-only: no install.
+    name: Layer rules and saved names
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: extapps
+
+      - uses: actions/checkout@v4
+        with:
+          repository: m3trik/m3trik
+          ref: main
+          path: m3trik
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Layer order and dependencies
+        run: python m3trik/scripts/check_layers.py --check extapps
+
+      - name: Saved names
+        run: python m3trik/scripts/check_saved_names.py --check extapps

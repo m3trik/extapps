@@ -71,7 +71,7 @@ DEFAULT_INCLUDE = {
 MOVED_NAMES = {
     # One Unity panel now: the behavior the two Unity panels shared through a
     # vendored mixin is the Unity Workflow's own.
-    "UnityPanelMixin": ("extapps.UnityWorkflowSlots", "0.9.0"),
+    "UnityPanelMixin": ("extapps.UnityWorkflowSlots", "0.8.0"),
 }
 
 

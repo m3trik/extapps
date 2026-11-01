@@ -164,6 +164,19 @@ unity_workflow = "extapps.unity_workflow:UnityWorkflowUI"
 webxr_preview = "extapps.webxr_preview:WebXrPreviewUI"
 look_match = "extapps.look_match:LookMatchUI"
 
+[tool.m3trik.layers]
+# CODE_STANDARD section 0 (Parts): this package's parts, top first. A module may
+# import its own part or any part below it; "a | b" makes peers of one rank.
+# Checked by m3trik/scripts/check_layers.py. Every app is a peer that depends
+# only on the one panel launcher and, for the photogrammetry apps, the shared
+# photogrammetry parts (profile, stages, runners, panel slots); apps never
+# import each other.
+order = [
+    "photogrammetry/gaussian_splat_workflow | photogrammetry/metashape_workflow | photogrammetry/realityscan_workflow | photogrammetry/sugar_mesh_workflow | look_match | marmoset_workflow | mesh_convert | substance_workflow | texture_maps | unity_workflow | webxr_preview",
+    "photogrammetry",
+    "_panel_launcher",
+]
+
 [tool.setuptools.dynamic]
 version = {attr = "extapps.__version__"}
 readme = {file = "docs/README.md", content-type = "text/markdown"}

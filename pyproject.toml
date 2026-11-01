@@ -102,10 +102,13 @@ classifiers = [
 # before), which an older uitk does not export; and the Unity Workflow builds
 # a host engine's export rows through `ParamPanelSlots.add_param_rows`, which
 # first ships there (AttributeError when a host injects its engine).
+# pythontk 0.19.0: Look Match's mixes read `ptk.LookSession.mixes`, and the
+# Substance Workflow's batch takes `ptk.RpcJob.Call` / `RpcJob.Result` (the
+# root `Call` / `Result` aliases go in 0.20.0); neither is in 0.18.2.
 # No host and no tentacle: extapps is a product nothing imports, and it imports
 # neither (test/test_imports.py). unitytk stays an on-demand install inside
 # the Unity Workflow panel (Manage Unity Scripts > Install), never a dependency.
-dependencies = ["pythontk>=0.18.2", "uitk>=1.9.0", "qtpy"]
+dependencies = ["pythontk>=0.19.0", "uitk>=1.9.0", "qtpy"]
 
 # unitytk is OPTIONAL: it backs only the Unity Workflow panel, which installs it
 # on demand (Manage Unity Scripts > Install), so a missing unitytk costs that

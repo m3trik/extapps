@@ -23,7 +23,9 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 import pythontk as ptk
-from pythontk import Call, Result
+from pythontk import RpcJob
+
+Call, Result = RpcJob.Call, RpcJob.Result
 
 from extapps.substance_workflow import Job
 

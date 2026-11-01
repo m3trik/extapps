@@ -1,6 +1,8 @@
 # Changelog
 
 ## 2026
+- **2026-11-01 -- extapps floors pythontk 0.19.0, and the Substance Workflow's batch takes `ptk.RpcJob.Call` / `RpcJob.Result` (`pyproject.toml`; `substance_workflow/job.py`, `test/test_job.py`, `docs/substance_workflow.md`).** Look Match's mixes read `ptk.LookSession.mixes`, which pythontk 0.18.2 lacks, so a user already on 0.18.2 hit an AttributeError on the first saved-mix read (pip leaves a satisfied floor alone); the batch used the root `Call` / `Result` aliases that pythontk 0.20.0 removes. Both need the release the cascade publishes first.
+  - Test(s): the full extapps suite (924 passed, 10 skipped); `job.py` imports with DeprecationWarning as an error.
 - **2026-11-01 -- `test_vendor_sync.py` names its vendored folder (`MARMOSET_PANEL_DIR`), so m3trik's written-once gate reads which files it holds byte-equal and stops reporting them as written twice.** No behaviour change.
   - Test(s): `test_vendor_sync.py` (22 passed).
 - **2026-11-01 -- A photogrammetry run finds its child interpreter through pythontk (`photogrammetry/_process_runner.py`).** `PyModuleRunner._python` asks `ptk.AppLauncher.companion_python()` (the answer uitk's installer gives too) instead of importing uitk's `managers.optional_package_manager` module, so it needs no uitk module path and no Qt binding.

@@ -11,8 +11,8 @@ loads the op **registry** and serves it over
 HTTP; the client side (`PainterConnection`, `Job.run_batch`) launches a fresh Painter
 and invokes ops by name. The RPC is pythontk's shared pair, not a private stack: the
 registry is a `pythontk.RpcPlugin` (op table + main-thread marshaller + server), the
-client a `pythontk.RpcClient`, the batch loop `pythontk.RpcJob` over `pythontk.Call` /
-`pythontk.Result`, and `describe` returns the shared `{name, doc, params}` shape.
+client a `pythontk.RpcClient`, the batch loop `pythontk.RpcJob` over `RpcJob.Call` /
+`RpcJob.Result`, and `describe` returns the shared `{name, doc, params}` shape.
 
 - **`SubstanceWorkflowUI`** — the Switchboard panel (`extapps substance_workflow`). Set a mesh and/or project
   save path, pick which Painter to launch, choose stages (open/create → bake
@@ -23,7 +23,7 @@ client a `pythontk.RpcClient`, the batch loop `pythontk.RpcJob` over `pythontk.C
   running (a bake) finishes first.
 - **`PainterConnection`** — agent/session client: `connect()` then
   `invoke("project.info", ...)`.
-- **`Job.run_batch([ptk.Call(...), ...])`** — one-shot pipelines (launch → run → shut down).
+- **`Job.run_batch([ptk.RpcJob.Call(...), ...])`** — one-shot pipelines (launch → run → shut down).
 
 ## Session safety (hard rule)
 
@@ -48,12 +48,12 @@ extapps substance_workflow
 
 ```python
 # Batch
-from pythontk import Call
+from pythontk import RpcJob
 from extapps.substance_workflow import Job
 results = Job.run_batch([
-    Call("project.create", kwargs={"mesh_path": "/path/mesh.fbx"}),
-    Call("bake.lighting_to_diffuse", kwargs={"bake_resolution": 2048}),
-    Call("project.save_as", kwargs={"path": "/path/out.spp"}),
+    RpcJob.Call("project.create", kwargs={"mesh_path": "/path/mesh.fbx"}),
+    RpcJob.Call("bake.lighting_to_diffuse", kwargs={"bake_resolution": 2048}),
+    RpcJob.Call("project.save_as", kwargs={"path": "/path/out.spp"}),
 ])
 ```
 

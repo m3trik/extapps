@@ -3,8 +3,8 @@
 There is only one execution mode (live bridge). ``Job.run_batch`` exists for
 ergonomics; for long-running agent sessions use :class:`PainterConnection`
 directly. The batch loop itself is the shared one -- :meth:`pythontk.RpcJob.run_batch`
-over the connection's :class:`pythontk.RpcClient`, taking :class:`pythontk.Call`
-and returning :class:`pythontk.Result` -- so this module adds only the Painter
+over the connection's :class:`pythontk.RpcClient`, taking :class:`pythontk.RpcJob.Call`
+and returning :class:`pythontk.RpcJob.Result` -- so this module adds only the Painter
 lifecycle around it.
 """
 
@@ -13,7 +13,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
-from pythontk import Call, Result, RpcJob
+from pythontk import RpcJob
 
 from .env_utils.painter_connection import PainterConnection
 
@@ -24,38 +24,38 @@ logger = logging.getLogger(__name__)
 class Job:
     """Convenience builder — ``Job().add("project.info").run()``."""
 
-    calls: List[Call] = field(default_factory=list)
+    calls: List[RpcJob.Call] = field(default_factory=list)
 
     def add(self, op: str, **kwargs: Any) -> "Job":
-        self.calls.append(Call(op=op, kwargs=kwargs))
+        self.calls.append(RpcJob.Call(op=op, kwargs=kwargs))
         return self
 
-    def run(self, **launch_kwargs: Any) -> List[Result]:
+    def run(self, **launch_kwargs: Any) -> List[RpcJob.Result]:
         return Job.run_batch(self.calls, **launch_kwargs)
 
     @staticmethod
     def run_batch(
-        calls: List[Call],
+        calls: List[RpcJob.Call],
         gui: bool = False,
         app_path: Optional[str] = None,
         timeout: float = 180.0,
         launch_args: Optional[List[str]] = None,
         invoke_timeout: Optional[float] = None,
-    ) -> List[Result]:
+    ) -> List[RpcJob.Result]:
         """Launch Painter, execute ``calls`` in order over the bridge, shut down.
 
         Parameters:
-            calls: Sequence of :class:`pythontk.Call` to execute.
+            calls: Sequence of :class:`pythontk.RpcJob.Call` to execute.
             gui: Show Painter's window. Default ``False``: windowless, on Qt's
                 offscreen platform (Painter has no headless option).
             app_path: Override Painter executable.
             timeout: Seconds to wait for the bridge to come up.
             launch_args: Extra CLI args forwarded to Painter.
             invoke_timeout: Per-call HTTP timeout for every call; ``None`` keeps
-                each :class:`pythontk.Call`'s own ``timeout``.
+                each :class:`pythontk.RpcJob.Call`'s own ``timeout``.
 
         Returns:
-            One :class:`pythontk.Result` per call, in order; a failed call is a
+            One :class:`pythontk.RpcJob.Result` per call, in order; a failed call is a
             result with ``ok=False``, never a raise.
 
         Raises:

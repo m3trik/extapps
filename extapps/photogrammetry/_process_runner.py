@@ -238,13 +238,10 @@ class PyModuleRunner(ProcessRunner):
         """A real interpreter for the child: this one when it is a python, else
         the host's own (``maya.exe`` / Linux ``maya.bin`` -> ``mayapy``, Blender's
         bundled python). Inside a DCC ``sys.executable`` is the host binary, and
-        ``-m`` through it started another copy of the host instead of the run."""
-        try:
-            from uitk.managers.optional_package_manager import OptionalPackageManager
-
-            return OptionalPackageManager.pip_python() or sys.executable
-        except Exception:  # uitk / a Qt binding unavailable: a plain python host
-            return sys.executable
+        ``-m`` through it started another copy of the host instead of the run.
+        pythontk's answer (``AppLauncher.companion_python``), which uitk's
+        installer asks too, so it needs no Qt binding."""
+        return ptk.AppLauncher.companion_python() or sys.executable
 
     def _env(self) -> Dict[str, str]:
         env = dict(super()._env())

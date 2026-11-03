@@ -12,7 +12,7 @@ Usage:
 Why this exists at all, given CI already runs ``pytest test``: CI proves the
 suite green but publishes nothing, and ``pythontk.StatusBadge`` — the documented
 single writer for the ecosystem badge (m3trik/docs/TEST_BADGE_STANDARD.md) —
-needs a caller. extapps was the only registry-set package with no badge, so a
+needs a caller. extapps was the only ecosystem-set package with no badge, so a
 reader comparing it against its siblings read "no tests" over 600 of them.
 
 Why it is a *pytest* driver and not a unittest one, unlike some siblings:
@@ -22,9 +22,10 @@ Why it is a *pytest* driver and not a unittest one, unlike some siblings:
   ones. ``unittest`` discovery never loads a conftest, so a unittest runner here
   would quietly write panel state into ``HKCU\\Software\\uitk`` and save presets
   into the real config root. Driving pytest keeps that protection.
-* CLAUDE.md documents ``python -m pytest test`` as *the* way to run this suite.
-  A second, differently-discovering entry point is a drift risk; this one runs
-  the same pytest over the same directory, so the two cannot disagree.
+* CI runs ``pytest test/``, and AGENTS.md names this runner as the way to run
+  the suite. A second, differently-discovering entry point is a drift
+  risk; this one runs the same pytest over the same directory, so the two
+  cannot disagree.
 
 Everything load-bearing is upstream: :meth:`StatusBadge.gate` decides whether a
 run may stamp (a scoped run must never publish its smaller green over a full
@@ -231,7 +232,7 @@ class ExtappsTestRunner(_ExtappsTestRunnerInternal):
             sys.stdout, sys.stderr = real_out, real_err
         if log:
             # test/temp_tests/ is the repo's sanctioned (and gitignored) home
-            # for test artifacts -- CLAUDE.md, "Testing".
+            # for test artifacts -- the workspace AGENTS.md, "Testing".
             log_dir = TEST_DIR / "temp_tests"
             log_dir.mkdir(exist_ok=True)
             log_path = log_dir / "run_tests.log"

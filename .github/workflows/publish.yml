@@ -39,7 +39,7 @@ jobs:
   # changes stayed off PyPI until 0.1.19). check_version_bump.py fails exactly
   # that case, passes a push that ships nothing, and passes a hold this push's
   # CHANGELOG.md declares. It is shared with unitytk, so it lives in m3trik and
-  # runs from the same sibling layout as tests.yml's registry job.
+  # runs from the same sibling layout as tests.yml's api-retirements job.
   version:
     runs-on: ubuntu-latest
     timeout-minutes: 10

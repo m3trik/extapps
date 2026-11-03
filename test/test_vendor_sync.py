@@ -138,7 +138,7 @@ def _assert_code_identical(
 
     test.fail(
         f"vendored file '{rel}' has drifted between {hint}. "
-        f"Mirror the change into both copies (extapps CLAUDE.md hard rule)."
+        f"Mirror the change into both copies (extapps AGENTS.md hard rule)."
     )
 
 
@@ -195,7 +195,7 @@ class TestMarmosetEngineVendorSync(unittest.TestCase):
                 _lines(ext_f),
                 f"vendored Marmoset file '{rel}' has drifted between "
                 f"mayatk.mat_utils.marmoset_bridge and extapps.marmoset_workflow. "
-                f"Mirror the change into both copies (extapps CLAUDE.md hard rule), "
+                f"Mirror the change into both copies (extapps AGENTS.md hard rule), "
                 f"or reclassify it if the difference is by design.",
             )
 

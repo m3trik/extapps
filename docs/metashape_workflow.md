@@ -161,8 +161,7 @@ extapps/photogrammetry/metashape_workflow/
 The panel's shared base and input pre-processing specs are the photogrammetry umbrella's (`_panel_slots.py`, `_shared_params.py`).
 
 `FrameExtractor` (generic video → frames helper) lives in
-`pythontk.vid_utils.frame_extractor` — see [pythontk's
-API_REGISTRY](../../pythontk/API_REGISTRY.md).
+`pythontk.vid_utils.frame_extractor` (`ptk.FrameExtractor`).
 
 ## License
 

@@ -39,7 +39,7 @@ jobs:
   # changes stayed off PyPI until 0.1.19). check_version_bump.py fails exactly
   # that case, passes a push that ships nothing, and passes a hold this push's
   # CHANGELOG.md declares. It is shared with unitytk, so it lives in m3trik and
-  # runs from the same sibling layout as tests.yml's registry job.
+  # runs from the same sibling layout as tests.yml's api-retirements job.
   version:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -111,6 +111,20 @@ jobs:
         # to "none" on any failure), a skip would turn the upload into a silent
         # no-op -- the very green the `version` job exists to refuse.
         run: python -m twine upload dist/*
+
+      # The release's tag, as push.ps1 tags the cascade's: check_api_surface.py
+      # measures the next release (--changes, --semver) from the newest
+      # v<version> tag, and with none it has no baseline. After the upload, so a
+      # tag always names a version PyPI has.
+      - name: Tag the release
+        if: inputs.dry_run != true
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              tag -a "v$VERSION" -m "extapps v$VERSION"
+          git push origin "v$VERSION"
 
       - name: Summary
         run: |

@@ -149,27 +149,15 @@ jobs:
       - name: ruff check
         run: ruff check .
 
-  api-registry:
-    # Content-hash staleness gate for the committed API_INDEX.md /
-    # API_REGISTRY.md (root CLAUDE.md documents --check as the CI gate). Its
-    # own job because the generator lives in the m3trik repo and expects the
-    # monorepo layout - <pkg>/ and m3trik/ as siblings - so the repos are
-    # checked out into sibling paths. pythontk is checked out for one file: it
-    # owns the SymbolRecord DTO the generator loads from source at import
-    # (generate_api_registry.py::_load_symbol_record), so it is a hard
-    # requirement of running the generator at all, for any package.
-    #
-    # extapps was in ECOSYSTEM_PACKAGES and shipped a committed registry, but no
-    # workflow regenerated or checked it -- the refresh job writes only
-    # m3trik's cross-package shadow report, and push.ps1's Prepare phase
-    # covers the cascade repos, which this one is not. Its registry could
-    # therefore drift from source indefinitely with nothing to say so.
-    #
-    # AST-only: no package install, no runtime, no git history. Deterministic
-    # in a fresh checkout because --check hashes CONTENT, not mtimes, and
-    # normalizes away the generation date and #L line numbers (see
-    # StalenessGate) - only a real public-surface delta fails this.
-    name: API registry up to date
+  api-retirements:
+    # A retirement past its window fails: a ptk.Deprecation alias or retired
+    # keyword whose remove_in this package's __version__ has reached and whose
+    # calendar window has closed (m3trik/scripts/check_api_surface.py). Its own
+    # job because the script lives in the m3trik repo and reads with pythontk's
+    # ApiSurface, so the repos are checked out as siblings. Source only: no
+    # install, no DCC, no git history. Nothing generated is committed: the
+    # API is searched live (api.search).
+    name: API retirements on time
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -194,14 +182,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Registry matches source
-        run: python m3trik/scripts/generate_api_registry.py extapps --check
+      - name: Retirements on time
+        run: python m3trik/scripts/check_api_surface.py extapps --check
 
   guardrails:
     # The layer order extapps declares ([tool.m3trik.layers] in pyproject.toml)
     # and the saved names its panels read (check_saved_names.py): both checkers
     # live in the m3trik repo and expect the monorepo layout, so the repos are
-    # checked out as siblings, as in the api-registry job. AST-only: no install.
+    # checked out as siblings, as in the api-retirements job. AST-only: no install.
     name: Layer rules and saved names
     runs-on: ubuntu-latest
     timeout-minutes: 10

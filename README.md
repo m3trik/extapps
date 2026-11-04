@@ -30,7 +30,7 @@ extapps --shortcut desktop          # a desktop shortcut (start_menu: the Start 
 From a uitk host: `sb.handlers.external_app.launch("compositor")`; the host's UI
 Browser also offers *Create desktop shortcut* on each app's row.
 
-Full usage and per-tool docs: [docs/README.md](docs/README.md) · scope and structure: [CLAUDE.md](CLAUDE.md) · history: [CHANGELOG.md](CHANGELOG.md)
+Full usage and per-tool docs: [docs/README.md](docs/README.md) · scope and structure: [AGENTS.md](AGENTS.md) · history: [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 

@@ -1,0 +1,16 @@
+{
+    "name": "M3trik.UnityScripts.Editor",
+    "rootNamespace": "M3trik.UnityScripts",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

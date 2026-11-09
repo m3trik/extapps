@@ -2,7 +2,7 @@
 # coding=utf-8
 """Live Metashape integration test — launches a REAL (new) metashape.exe.
 
-Gated like substance_workflow's live tests: set ``METASHAPE_RUN_INTEGRATION=1``
+Gated like the other live tests: set ``METASHAPE_RUN_INTEGRATION=1``
 to run. Requires a licensed local Metashape (2.x). Total runtime ~2-4 minutes.
 
 Covers what mock mode cannot:

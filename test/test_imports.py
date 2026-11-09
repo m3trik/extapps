@@ -27,9 +27,9 @@ TOOLS = [
     "extapps.photogrammetry.realityscan_workflow",
     "extapps.photogrammetry.gaussian_splat_workflow",
     "extapps.photogrammetry.sugar_mesh_workflow",
-    "extapps.substance_workflow",
-    "extapps.marmoset_workflow",
-    "extapps.unity_workflow",
+    "extapps.substance_scripts",
+    "extapps.marmoset_scripts",
+    "extapps.unity_scripts",
     "extapps.webxr_preview",
     "extapps.look_match",
 ]
@@ -62,6 +62,25 @@ def test_root_resolves_its_whole_surface():
 
     for name in extapps.__all__:
         assert getattr(extapps, name) is not None, name
+
+
+@pytest.mark.parametrize(
+    "old, new",
+    [
+        ("unity_workflow", "extapps.unity_scripts"),
+        ("marmoset_workflow", "extapps.marmoset_scripts"),
+        ("substance_workflow", "extapps.substance_scripts"),
+    ],
+)
+def test_a_renamed_subpackage_names_its_new_home(old, new):
+    """0.9.0 renamed the three ``*_workflow`` script managers: a read of the
+    old subpackage raises pythontk's ``MovedNameError`` (an ``AttributeError``)
+    naming the new one, and the new one imports."""
+    import extapps
+
+    with pytest.raises(AttributeError, match=f"moved to {new}"):
+        getattr(extapps, old)
+    importlib.import_module(new)
 
 
 @pytest.mark.parametrize("app", sorted(entry_points()))

@@ -33,11 +33,81 @@ from __future__ import annotations
 import importlib
 import os
 import sys
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
+
+#: Each app's former names, in the panel-rename table's shape
+#: (``check_saved_names.py`` reads it as a literal): ``{app: {former app:
+#: {former widget name: its name now}}}``, a widget kept by name needing no
+#: entry. On launch the former store and presets carry into the app's once
+#: (:meth:`PanelLauncher._carry_former`); the former name keeps launching it,
+#: declared in ``pyproject.toml``'s ``uitk.external_apps.renamed`` group
+#: (``test_panel_launcher`` holds the two equal).
+RENAMED_FROM: Dict[str, Dict[str, Dict[str, str]]] = {
+    # The Unity Workflow became Unity Scripts (a script manager); its widgets
+    # keep their names (``LOG_TAG`` stays ``unity_workflow``), but for the script
+    # combo: its saved row indexed copy_to_assets / manage_scripts, so it is not
+    # carried (the combo persists by name now).
+    "unity_scripts": {"unity_workflow": {"cmb000": None}},
+    # The Marmoset Workflow became Marmoset Scripts (its scripts and yours); its
+    # widgets keep their names (``LOG_TAG`` stays ``marmoset_workflow``).
+    "marmoset_scripts": {"marmoset_workflow": {}},
+    # The Substance Workflow (fixed stages) became Substance Scripts. Its AO
+    # rays, distances, spread, intensity, curvature and skip settings carry
+    # into Bake Lighting to Diffuse's rows; the rest has no successor: the mesh is a panel-built row, the Painter install and the
+    # stages are gone, and its old cmb000 (the Painter install) must not reach
+    # the new one (the script combo).
+    "substance_scripts": {
+        "substance_workflow": {
+            "File": None,
+            "btn_advanced": None,
+            "btn_launch": None,
+            "btn_stages": None,
+            "cmb000": None,
+            "output": None,
+            "painter_group": None,
+            "txt000": None,
+            "txt001": None,
+            "txt002": None,
+            "txt003": None,
+            "cmb_bake_res": None,  # saved as a row of another list (256..4096)
+            "spn_ao_rays": "param_ao_rays",
+            "spn_ao_max": "param_ao_max_distance",
+            "spn_ao_min": "param_ao_min_distance",
+            "spn_ao_spread": "param_ao_spread",
+            "spn_ao_subsample": None,  # a 1..8 count, now a 1|2|4|8 choice
+            "spn_ao_intensity": "param_ao_intensity",
+            "chk_curvature": "param_include_curvature",
+            "chk_skip_bakes": "param_skip_existing",
+            "cmb_blend": None,
+            "spn_curv_intensity": None,
+        }
+    },
+}
 
 
 class _PanelLauncherInternal:
     """Derivation helpers for :class:`PanelLauncher`."""
+
+    @classmethod
+    def _carry_former(cls, sb, name: str, package: str) -> None:
+        """Carry *name*'s former apps' saved values and presets into its own,
+        once: before the window loads, so the carried states are the ones it
+        restores. Presets follow only on the launch that carried the store, so
+        one the user deletes afterwards stays deleted."""
+        formers = RENAMED_FROM.get(name)
+        if not formers:
+            return
+        carried = sb.PanelRenames.carry(sb, {name: formers})
+        if not carried:
+            return
+        slots = cls._slots_class(package)
+        target = getattr(slots, "PRESETS_ROOT", None)
+        if target is None:
+            return
+        # Its scripts renamed too: each former template's presets go to its successor.
+        templates = getattr(slots, "FORMER_TEMPLATES", None)
+        for former in carried:
+            sb.PresetManager.carry_presets(f"extapps/{former}", target, templates)
 
     @classmethod
     def _tool(cls) -> Tuple[str, str, str]:
@@ -104,6 +174,7 @@ class PanelLauncher(_PanelLauncherInternal):
             slot_source=cls._slots_class(package),
             **kwargs,
         )
+        cls._carry_former(sb, name, package)
         ui = getattr(sb.loaded_ui, name)
         Bootstrap.set_translucent(ui)  # opaque where nothing composites (X11)
         # Frameless chromed window: the uitk Header supplies the window

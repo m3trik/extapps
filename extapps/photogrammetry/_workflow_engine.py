@@ -2,7 +2,7 @@
 # coding=utf-8
 """The lifecycle every photogrammetry engine shares: one base, five engines.
 
-``MetashapeWorkflow``, ``RealityCaptureWorkflow``, ``GaussianSplatWorkflow``,
+``MetashapeWorkflow``, ``RealityScanWorkflow``, ``GaussianSplatWorkflow``,
 ``SplatPublishWorkflow`` and ``SugarMeshWorkflow`` each opened a run the same
 way -- bind ``project_path`` / ``name`` / ``progress``, make the project and
 ``logs/`` folders, open a :class:`pythontk.QcLog` sidecar seeded with the run's

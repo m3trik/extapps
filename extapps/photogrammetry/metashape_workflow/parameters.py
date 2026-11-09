@@ -217,7 +217,7 @@ PARAMS.update(
             "(removeComponents) - the main lever against floater 'snow'. 0 "
             "disables. NOTE: on specular / low-texture metal do NOT crank "
             "this (it strips real detail without fixing depth-level noise). "
-            "Maps to --clean-min-component (parity with the RC runner).",
+            "Maps to --clean-min-component (parity with the RealityScan runner).",
         ),
         "smooth_strength": AttributeSpec(
             key="smooth_strength",

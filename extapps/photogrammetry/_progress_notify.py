@@ -6,7 +6,7 @@ Every engine in this package reports stage progress the same way: a caller
 hands the constructor a ``progress(stage, fraction)`` callback, and each stage
 opens with ``self._notify("<stage>", 0.0)``. The shim between the two was
 reimplemented verbatim in five engines (``MetashapeWorkflow``,
-``RealityCaptureWorkflow``, ``GaussianSplatWorkflow``, ``SplatPublishWorkflow``,
+``RealityScanWorkflow``, ``GaussianSplatWorkflow``, ``SplatPublishWorkflow``,
 ``SugarMeshWorkflow``) — identical bodies differing only in the class name
 printed on a callback failure. One mixin, five bases.
 

@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Tests for RsNodeConnection — the RSNode REST transport for the RC workflow.
+"""Tests for RsNodeConnection — the RSNode REST transport for the RealityScan workflow.
 
 Uses a fake RsNodeClient (no HTTP) to verify the CLI-tail translation: ``-load``
 and ``-quit`` are dropped (the REST session is persistent and must never quit the
@@ -89,7 +89,7 @@ class RsNodeConnectionTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    # tail mirrors RealityCaptureWorkflow._run_rc output; "imgs" is a bare node
+    # tail mirrors RealityScanWorkflow._run_commands output; "imgs" is a bare node
     # name (already uploaded) -- a client path the client lacks never ships
     TAIL = ["-load", "C:/p.rsproj", "-addFolder", "imgs",
             "-save", "C:/p.rsproj", "-quit"]
@@ -319,7 +319,7 @@ class RsNodeConnectionTest(unittest.TestCase):
     def test_posix_client_paths_never_reach_the_node(self):
         tpl = os.path.join(self.tmp, "qc_report_template.html")
         open(tpl, "w").close()
-        root = "/home/artist/rc_out/job"
+        root = "/home/artist/realityscan_out/job"
         cp = self.conn.run(
             ["-load", f"{root}/job.rsproj",
              "-exportSelectedModel", f"{root}/job.obj",
@@ -338,22 +338,22 @@ class RsNodeConnectionTest(unittest.TestCase):
         self._assert_no_client_path()
 
     def test_relative_export_path_is_relativized_and_pulled_back(self):
-        # A relative project dir (the workflow default is ./rc_project) is a
+        # A relative project dir (the workflow default is ./realityscan_project) is a
         # client path too: it is not sent, and the export lands beside it.
         self.fc.output_files_post = ["t.obj"]
         cwd = os.getcwd()
         os.chdir(self.tmp)
         try:
             cp = self.conn.run(
-                ["-exportSelectedModel", os.path.join("rc_project", "t.obj"),
-                 "-save", os.path.join("rc_project", "t.rsproj"), "-quit"],
+                ["-exportSelectedModel", os.path.join("realityscan_project", "t.obj"),
+                 "-save", os.path.join("realityscan_project", "t.rsproj"), "-quit"],
                 log_path=self.log,
             )
         finally:
             os.chdir(cwd)
         self.assertEqual(cp.returncode, 0)
         self.assertEqual(self.fc.groups[-1], [("exportSelectedModel", ["t.obj"])])
-        self.assertTrue(os.path.isfile(os.path.join(self.tmp, "rc_project", "t.obj")))
+        self.assertTrue(os.path.isfile(os.path.join(self.tmp, "realityscan_project", "t.obj")))
         self._assert_no_client_path()
 
     def test_import_model_uploads_the_mesh_and_relativizes(self):

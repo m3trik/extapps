@@ -4,14 +4,14 @@
 
 Drop-in alternative to :class:`RealityScanConnection`: same duck-typed surface
 (:meth:`is_available` + :meth:`run` returning a ``subprocess.CompletedProcess``)
-so :class:`RealityCaptureWorkflow` can use either transport without branching.
+so :class:`RealityScanWorkflow` can use either transport without branching.
 
 Why this exists: RealityScan's CLI (``RealityScan.exe -<cmd> ...``) is window-
 station + Epic-sign-in gated and will not process in *session 0* (SSH / service).
 RSNode exposes the same CLI commands over HTTP against a **persistent, signed-in**
 RealityScan, so commands run from any session — that is the headless win.
 
-Transport mapping (the workflow's :meth:`RealityCaptureWorkflow._run_rc` builds a
+Transport mapping (the workflow's :meth:`RealityScanWorkflow._run_commands` builds a
 CLI tail ``[-load <proj>] <stage cmds> -save <proj> -quit``):
 
 * ``-load`` / ``-quit``  -> **dropped** — the REST *session* keeps the project
@@ -52,7 +52,7 @@ share a filesystem with the RSNode/RealityScan (a Linux client driving a
 Windows node). Every client path becomes a bare name via :meth:`_node_name`.
 The token handshake (``/node/connection``) answers only on the node's own
 localhost, so a client on another host reaches the node through a tunnel
-(``ssh -L 8000:127.0.0.1:8000 <node-host>``) with ``RC_RSNODE_URL`` at its
+(``ssh -L 8000:127.0.0.1:8000 <node-host>``) with ``REALITYSCAN_RSNODE_URL`` at its
 local end.
 """
 from __future__ import annotations
@@ -143,13 +143,16 @@ class RsNodeConnection:
         Parameters:
             client: Inject a pre-built :class:`RsNodeClient` (tests / reuse). When
                 None, one is constructed against *base_url*.
-            base_url: RSNode base URL. Defaults to ``RC_RSNODE_URL`` env or
+            base_url: RSNode base URL. Defaults to ``REALITYSCAN_RSNODE_URL`` env or
                 ``http://127.0.0.1:8000``.
             app_token: Caller-app identifier sent on every request.
             connect_timeout: Timeout for the availability probe + token handshake.
             exe: Informational only (recorded in the returned CompletedProcess.args).
         """
-        self.base_url = base_url or os.environ.get("RC_RSNODE_URL") or DEFAULT_RSNODE_URL
+        from ._realityscan_workflow import RealityScanWorkflow  # the engine imports this module
+
+        env = RealityScanWorkflow.env_name("REALITYSCAN_RSNODE_URL")
+        self.base_url = base_url or os.environ.get(env) or DEFAULT_RSNODE_URL
         self.client = client or RsNodeClient(
             base_url=self.base_url, app_token=app_token, timeout=connect_timeout
         )
@@ -214,7 +217,7 @@ class RsNodeConnection:
         command group whose task is
         awaited. ``returncode`` is 0 on a ``finished`` task, non-zero on a
         ``failed`` task or transport error — matching how the CLI connection
-        signals failure so :meth:`RealityCaptureWorkflow._run_rc` can read the log
+        signals failure so :meth:`RealityScanWorkflow._run_commands` can read the log
         tail and raise. Extra kwargs (``session`` / ``poll_interval``) accepted
         for signature parity with :class:`RealityScanConnection`.
         """
@@ -493,7 +496,7 @@ class RsNodeConnection:
 
     @staticmethod
     def _write_log(log_path: str, stage: Sequence[Dict[str, Any]], rc: int, detail: str) -> None:
-        """Mirror RC's per-stage log so ``_run_rc``'s failure-tail read is useful."""
+        """Mirror RealityScan's per-stage log so ``_run_commands``'s failure-tail read is useful."""
         try:
             os.makedirs(os.path.dirname(log_path) or ".", exist_ok=True)
             with open(log_path, "w", encoding="utf-8", errors="replace") as fh:

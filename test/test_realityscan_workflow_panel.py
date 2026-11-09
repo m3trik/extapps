@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-"""Tests for the standalone RealityCapture Workflow panel (``slots/tools/realityscan_workflow.py``).
+"""Tests for the standalone RealityScan Workflow panel (``slots/tools/realityscan_workflow.py``).
 
 UI smoke tests cover the build-time wiring and the run dispatch (no engine
 needed); the engines, runners and headless runs are extapps' own tests.
@@ -62,7 +62,7 @@ class TestRealityScanPanelLoads(unittest.TestCase):
 
     def test_prep_preview_mode_maps_to_curate_preview(self) -> None:
         """Parity with the Metashape panel: the shared Prep-preview run mode
-        emits --curate-preview (RC's runner executes in the panel's Python, so
+        emits --curate-preview (RealityScan's runner executes in the panel's Python, so
         the dry-run just works) and shows only the pre-processing knobs."""
         from extapps.photogrammetry.realityscan_workflow import parameters as P
         from extapps.photogrammetry._shared_params import PREPROCESSING_KEYS
@@ -81,7 +81,7 @@ class TestRealityScanPanelLoads(unittest.TestCase):
         listed = set(self.slots._preset_mgr.list())
         self.assertTrue(
             {"preview", "high", "specular_metal"} <= listed,
-            f"RC presets missing; got {sorted(listed)}",
+            f"RealityScan presets missing; got {sorted(listed)}",
         )
 
     def test_builtin_preset_loads_into_param_widgets(self) -> None:
@@ -109,7 +109,7 @@ class TestRealityScanPanelDispatch(unittest.TestCase):
     def setUp(self) -> None:
         from extapps.photogrammetry.realityscan_workflow import launcher as r
 
-        self.tmp = tempfile.mkdtemp(prefix="rc_dispatch_")
+        self.tmp = tempfile.mkdtemp(prefix="rs_dispatch_")
         self.frames = os.path.join(self.tmp, "frames")
         os.makedirs(self.frames)
         self.ui = r.RealityScanWorkflowUI()

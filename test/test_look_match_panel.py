@@ -173,6 +173,23 @@ class _PanelCase(unittest.TestCase):
         self.fail(f"no region {name}")
 
 
+class TestStatusColorsReadThePalette(unittest.TestCase):
+    """Within / outside / unmeasured are the shared status tiers."""
+
+    def test_status_colors_are_palette_tiers(self):
+        from extapps.look_match.slots import LookMatchSlots
+
+        status = ptk.Palette.status()
+        self.assertEqual(
+            LookMatchSlots.STATUS_COLORS,
+            {
+                True: str(status["success"][0]),
+                False: str(status["warn"][0]),
+                None: str(status["locked"][0]),
+            },
+        )
+
+
 class TestOpening(_PanelCase):
     def test_a_session_shows_its_mix_regions_and_comparison(self):
         rows = self.slots._rows

@@ -62,10 +62,8 @@ jobs:
           # pythontk 0.9.28 82 s after 0.9.30 was uploaded, and the only failure
           # was two tests importing symbols that exist only in 0.9.30.
           # --no-cache-dir: pip's HTTP cache can hold the stale index page too.
-          # The `unity` extra installs unitytk so the Unity Workflow panel
-          # tests run rather than skip.
           for attempt in 1 2 3 4 5 6; do
-            if pip install --no-cache-dir -e ".[unity]"; then break; fi
+            if pip install --no-cache-dir -e .; then break; fi
             if [ "$attempt" -lt 6 ]; then
               echo "::warning::editable install attempt $attempt failed (index propagation lag?); retrying in 30s"
               sleep 30
@@ -77,7 +75,7 @@ jobs:
 
       - name: Run tests
         # Live-DCC integration tests stay opt-in and are NOT enabled here:
-        # SUBSTANCE_WORKFLOW_RUN_INTEGRATION / METASHAPE_RUN_INTEGRATION are
+        # EXTAPPS_PAINTER_LIVE / METASHAPE_RUN_INTEGRATION are
         # left unset, so those cases skip (they need a real Painter/Metashape).
         env:
           QT_QPA_PLATFORM: offscreen
@@ -155,8 +153,10 @@ jobs:
     # calendar window has closed (m3trik/scripts/check_api_surface.py). Its own
     # job because the script lives in the m3trik repo and reads with pythontk's
     # ApiSurface, so the repos are checked out as siblings. Source only: no
-    # install, no DCC, no git history. Nothing generated is committed: the
-    # API is searched live (api.search).
+    # install, no DCC. Nothing generated is committed: the API is searched
+    # live (api.search). Its floors step reads pythontk's and uitk's release
+    # tags: the pythontk>= / uitk>= floors are set by hand (no cascade ratchets
+    # them), so each must name a release carrying every name extapps calls.
     name: API retirements on time
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -176,6 +176,14 @@ jobs:
           repository: m3trik/pythontk
           ref: dev
           path: pythontk
+          fetch-depth: 0  # the release tags the floors step reads
+
+      - uses: actions/checkout@v4
+        with:
+          repository: m3trik/uitk
+          ref: dev
+          path: uitk
+          fetch-depth: 0  # the release tags the floors step reads
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -184,6 +192,9 @@ jobs:
 
       - name: Retirements on time
         run: python m3trik/scripts/check_api_surface.py extapps --check
+
+      - name: The pythontk and uitk floors carry what extapps calls
+        run: python m3trik/scripts/check_api_surface.py extapps --floors
 
   guardrails:
     # The layer order extapps declares ([tool.m3trik.layers] in pyproject.toml)

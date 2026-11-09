@@ -73,7 +73,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         prof = pp.Profile.get_profile(path)
         self.assertEqual(prof["input_root"], "Z:/g/input")
         self.assertEqual(prof["metashape_output_root"], "Z:/g/metashape")
-        self.assertEqual(prof["realityscan_scratch_root"], "Y:/s/rc_out")
+        self.assertEqual(prof["realityscan_scratch_root"], "Y:/s/realityscan_out")
         self.assertEqual(prof["gsplat_scratch_root"], "Y:/s/gsplat_out")
 
     def test_partial_profile_deep_merges_over_default(self):
@@ -178,7 +178,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
 
     def test_presets_are_engine_scoped(self):
         # A preset saved for one engine must NOT appear in another engine's store
-        # (the whole point of per-engine scoping: a Metashape save isn't an RC one).
+        # (the whole point of per-engine scoping: a Metashape save isn't a RealityScan one).
         pp.Profile.preset_store("metashape").save("my_rig", {"tiepoint_limit": 20000})
         self.assertIn("my_rig", pp.Profile.preset_store("metashape").list())
         self.assertNotIn("my_rig", pp.Profile.preset_store("realityscan").list())
@@ -248,7 +248,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         """
         from extapps.photogrammetry.gaussian_splat_workflow._gaussian_splat_workflow             import GaussianSplatWorkflow
         from extapps.photogrammetry.gaussian_splat_workflow._splat_publish             import SplatPublishWorkflow
-        from extapps.photogrammetry.realityscan_workflow._realityscan_workflow             import RealityCaptureWorkflow
+        from extapps.photogrammetry.realityscan_workflow._realityscan_workflow             import RealityScanWorkflow
         from extapps.photogrammetry.sugar_mesh_workflow._sugar_mesh             import SugarMeshWorkflow
         from extapps.photogrammetry.metashape_workflow._metashape_connection             import MetashapeConnection
 
@@ -274,7 +274,7 @@ class PhotogrammetryProfileTest(unittest.TestCase):
         finders = {
             "BRUSH_EXE": GaussianSplatWorkflow.find_brush_exe,
             "SPLAT_TRANSFORM_EXE": SplatPublishWorkflow.find_splat_transform,
-            "RC_EXE": RealityCaptureWorkflow.find_realitycapture_exe,
+            "REALITYSCAN_EXE": RealityScanWorkflow.find_realityscan_exe,
             "SUGAR_DIR": SugarMeshWorkflow.find_sugar_dir,
             "METASHAPE_EXE": MetashapeConnection.find_exe,
         }

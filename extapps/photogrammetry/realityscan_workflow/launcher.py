@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Application shell for the RealityCapture Workflow UI.
+"""Application shell for the RealityScan Workflow UI.
 
 Declares the panel (:class:`extapps._panel_launcher.PanelLauncher` builds
 it) and provides the script entry point; slot bindings live in
@@ -11,7 +11,7 @@ from extapps._panel_launcher import PanelLauncher
 
 
 class RealityScanWorkflowUI(PanelLauncher):
-    TITLE = "RealityCapture Workflow"
+    TITLE = "RealityScan Workflow"
 
 
 # -----------------------------------------------------------------------------

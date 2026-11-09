@@ -451,7 +451,7 @@ def main(argv=None) -> int:
                         "set, even when every frame is sharp (video frames are "
                         "already sharpest-per-window at extraction); the "
                         "median-fraction guard below handles genuinely defocused "
-                        "frames. Kept identical to the RC runner so both engines "
+                        "frames. Kept identical to the RealityScan runner so both engines "
                         "receive the same prepped input.")
     p.add_argument("--curate-min-sharpness-frac", type=float,
                    default=preset.get("curate_min_sharpness_frac",
@@ -551,7 +551,7 @@ def main(argv=None) -> int:
                         "NOT crank this (strips real detail without fixing depth "
                         "noise). Default from the profile's "
                         "reconstruct.min_component_size (or --preset). Parity "
-                        "with the RC runner's flag of the same name.")
+                        "with the RealityScan runner's flag of the same name.")
     p.add_argument("--smooth-strength", type=int,
                    default=preset.get("smooth_strength", 0),
                    help="Laplacian mesh-smoothing passes after cleanup (0 = "

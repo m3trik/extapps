@@ -5,7 +5,7 @@
 ``measure_mesh`` (QC metrics + gate), ``refine_mesh`` (isotropic remesh +
 curvature-weighted decimation with before/after/deviation QC),
 ``bake_vertex_color`` (vertex color → texture) and the legacy
-``clean_mesh_advanced`` repair pass are identical for RealityCapture and
+``clean_mesh_advanced`` repair pass are identical for RealityScan and
 Metashape — they operate on the *exported mesh file*, never the engine
 SDK, calling :class:`pythontk.MeshOps` plus the engine's QC log. One
 mixin both engines inherit, the :class:`PrepStagesMixin` pattern.

@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Tunable parameters surfaced in the RealityCapture Workflow panel.
+"""Tunable parameters surfaced in the RealityScan Workflow panel.
 
 Like the Metashape panel, this drives a single headless runner —
 :mod:`extapps.photogrammetry.realityscan_workflow.run_combined` — so each
@@ -11,9 +11,9 @@ flags.
 RealityScan's automation surface is deliberately thin: its strongest noise levers
 (image/depth downscale, depth-map filtering, a tight reconstruction region,
 masking) are GUI / per-project-Settings only and can't be reached from the CLI
-(see TUNING.md). So the panel exposes only RC's CLI-reachable knobs — the quality
+(see TUNING.md). So the panel exposes only RealityScan's CLI-reachable knobs — the quality
 tier, the mesh-cleanup floor + simplify target — plus the shared input
-pre-processing (curate + equalize), which runs before RC in the panel's own
+pre-processing (curate + equalize), which runs before RealityScan in the panel's own
 Python.
 """
 
@@ -35,7 +35,7 @@ from .._shared_params import (
 # Display order is iteration order over this dict. Keys mirror the run_combined
 # CLI flags / profile preset keys exactly. Input image pre-processing leads the
 # panel (it runs first in the pipeline — order of operations), so the shared
-# specs are merged in *first*; RC's reconstruction / cleanup params follow.
+# specs are merged in *first*; RealityScan's reconstruction / cleanup params follow.
 PARAMS: "Dict[str, AttributeSpec]" = dict(PREPROCESSING_PARAMS)
 PARAMS.update(
     {
@@ -47,7 +47,7 @@ PARAMS.update(
             # from the four runners that were already converted to it.
             default="balanced",
             choices=list(QUALITY_TIERS),
-            tooltip="Reconstruction quality → RC's mesh preset (draft=preview / "
+            tooltip="Reconstruction quality → RealityScan's mesh preset (draft=preview / "
             "balanced=normal / max=high). Maps to --quality.",
         ),
         "gate_mode": AttributeSpec(
@@ -64,7 +64,7 @@ PARAMS.update(
             label="Save .rsproj Project",
             kind="bool",
             default=False,
-            tooltip="Keep a reopenable RC project (.rsproj) so a later run can reopen "
+            tooltip="Keep a reopenable RealityScan project (.rsproj) so a later run can reopen "
             "it and re-run only some stages. Default off removes the local "
             ".rsproj after export, leaving only deliverables. Emits "
             "--save-project.",
@@ -79,7 +79,7 @@ PARAMS.update(
             minimum=0,
             maximum=200000,
             tooltip="Delete disconnected mesh islands smaller than this many faces "
-            "(RC -setMinComponentSize) - the main CLI-reachable lever against "
+            "(RealityScan -setMinComponentSize) - the main CLI-reachable lever against "
             "floater 'snow'. 0 disables. On specular / low-texture metal do "
             "NOT crank this (strips real detail without fixing depth noise). "
             "Maps to --clean-min-component.",
@@ -93,7 +93,7 @@ PARAMS.update(
             minimum=0,
             maximum=200_000_000,
             tooltip="Simplify the high model to ~N triangles before unwrap so the UV "
-            "atlas fits the texture budget (fixes RC's unwrap-overflow). "
+            "atlas fits the texture budget (fixes RealityScan's unwrap-overflow). "
             "Texture quality is unaffected (bakes from the photos). 0 = no "
             "simplify. Maps to --simplify.",
         ),
@@ -122,7 +122,7 @@ PARAMS.update(
             maximum=20000000,
             tooltip="PyMeshLab curvature-weighted quadric decimation of the "
             "exported mesh to this face count (0 = off) - adaptive density, "
-            "distinct from the RC-native pre-unwrap Simplify Target. Needs "
+            "distinct from the RealityScan-native pre-unwrap Simplify Target. Needs "
             "extapps[mesh]. Maps to --mesh-decimate-faces.",
         ),
         "bake_vertex_color": AttributeSpec(

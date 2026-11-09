@@ -118,7 +118,7 @@ PREPROCESSING_PARAMS: "Dict[str, AttributeSpec]" = {
 
 # Value params -> CLI flags that take an argument (always emitted).
 # ``video_window_sec`` is deliberately absent: extraction happens panel-side at
-# pick time (FramesSourceMixin reads the widget), and the RC runner has no
+# pick time (FramesSourceMixin reads the widget), and the RealityScan runner has no
 # --video path to accept such a flag.
 PREPROCESSING_VALUE_FLAGS: "Dict[str, str]" = {
     "curate_hash_threshold": "--curate-hash-threshold",

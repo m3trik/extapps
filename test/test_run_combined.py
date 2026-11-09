@@ -14,12 +14,12 @@ import unittest
 
 
 class PublishExcludesLegacyProjectTest(unittest.TestCase):
-    """publish_outputs must exclude the RC working project file for BOTH the
+    """publish_outputs must exclude the RealityScan working project file for BOTH the
     RealityScan (.rsproj) and the legacy RealityCapture (.rcproj) extension.
 
-    The engine picks project_ext = 'rcproj' whenever the RC exe basename lacks
+    The engine picks project_ext = 'rcproj' whenever the exe basename lacks
     'realityscan' (legacy install), so a --save-project run leaves <name>.rcproj
-    in the scratch project dir. Publishing it would push RC working state into
+    in the scratch project dir. Publishing it would push RealityScan working state into
     the cloud-synced deliverable root — exactly what the exclusion prevents.
     """
 

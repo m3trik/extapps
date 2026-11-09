@@ -10,15 +10,15 @@ pythontk keeps only the generic mechanism they compose (``HandoffBridge``,
 cannot import each other (mayatk ↔ blendertk ↔ extapps), each keeps a copy:
 
 * Marmoset engine — ``mayatk.mat_utils.marmoset_bridge`` /
-  ``blendertk.mat_utils.marmoset_bridge`` / ``extapps.marmoset_workflow``
-  (extapps vendors the import/lookdev subset its Marmoset Workflow panel
+  ``blendertk.mat_utils.marmoset_bridge`` / ``extapps.marmoset_scripts``
+  (extapps vendors the import/lookdev subset its Marmoset Scripts panel
   drives: no ``marmoset_rpc``, no bake template).
 * Substance engine (``_substance_engine.py``: the DCC-free Painter half each
   ``SubstanceBridge`` subclasses; byte-identical, mayatk's copy is the SSoT) +
   connection + parameters + RPC client/installer/plugin + templates —
   ``mayatk.mat_utils.substance_bridge`` / ``blendertk.mat_utils.substance_bridge``
-  (extapps' ``substance_workflow`` is a separate native in-Painter engine and
-  is NOT a copy).
+  / ``extapps.substance_scripts`` (the whole engine slice: Substance Scripts
+  runs the same scripts and plugin the host bridges do).
 
 That duplication is only safe if a fix to one copy is mirrored into the
 others; this test fails the moment the shared files diverge, so drift is
@@ -26,7 +26,7 @@ caught at test time instead of shipping.
 
 Two comparison contracts:
 
-* **extapps ↔ mayatk (Marmoset)** — strict content equality (line-ending
+* **extapps ↔ mayatk (Marmoset, Substance)** — strict content equality (line-ending
   tolerant) over an explicit vendored-file manifest: each copy is kept
   byte-identical to its SSoT.
 * **mayatk ↔ blendertk** — *semantic twin* equality. A twin is "the same
@@ -150,7 +150,7 @@ def _assert_code_identical(
 #: The extapps folder holding the vendored subset. m3trik's
 #: ``check_dcc_twins.py --written-once`` reads it and the tuple below, so the
 #: copies this test holds byte-equal are not reported as written twice.
-MARMOSET_PANEL_DIR = "marmoset_workflow"
+MARMOSET_PANEL_DIR = "marmoset_scripts"
 MARMOSET_PANEL_VENDORED = (
     "_marmoset_engine.py",
     "_toolbag_helpers.py",
@@ -169,10 +169,10 @@ INTENTIONALLY_DIVERGENT = {"parameters.py", "__init__.py"}
 # engine (mayatk's is ``_marmoset_bridge.py``). A file added here must be
 # classified here or above, else the guard fails instead of ignoring it.
 EXTAPPS_ONLY = {
-    "_marmoset_workflow.py",
+    "_marmoset_scripts.py",
     "launcher.py",
     "slots.py",
-    "marmoset_workflow.ui",
+    "marmoset_scripts.ui",
 }
 
 
@@ -194,7 +194,7 @@ class TestMarmosetEngineVendorSync(unittest.TestCase):
                 _lines(may_f),
                 _lines(ext_f),
                 f"vendored Marmoset file '{rel}' has drifted between "
-                f"mayatk.mat_utils.marmoset_bridge and extapps.marmoset_workflow. "
+                f"mayatk.mat_utils.marmoset_bridge and extapps.marmoset_scripts. "
                 f"Mirror the change into both copies (extapps AGENTS.md hard rule), "
                 f"or reclassify it if the difference is by design.",
             )
@@ -209,9 +209,63 @@ class TestMarmosetEngineVendorSync(unittest.TestCase):
         self.assertLessEqual(
             present,
             classified,
-            "unclassified files in extapps.marmoset_workflow: "
+            "unclassified files in extapps.marmoset_scripts: "
             f"{sorted(present - classified)} — mirror into MARMOSET_PANEL_VENDORED "
             "or ledger as EXTAPPS_ONLY/INTENTIONALLY_DIVERGENT",
+        )
+
+
+#: The extapps folder holding the vendored Substance engine slice (all of it:
+#: mayatk's SUBSTANCE_ENGINE_TOP and SUBSTANCE_ENGINE_DIRS, below).
+SUBSTANCE_PANEL_DIR = "substance_scripts"
+#: extapps' own Substance files: the standalone panel and its host-free door
+#: into the engine (mayatk's is ``_substance_bridge.py``).
+SUBSTANCE_EXTAPPS_ONLY = {
+    "__init__.py",
+    "_substance_scripts.py",
+    "launcher.py",
+    "slots.py",
+    "substance_scripts.ui",
+}
+
+
+class TestSubstanceEngineVendorSync(unittest.TestCase):
+    """extapps' Substance engine slice stays byte-identical to mayatk's: the
+    engine, connection, registry, scripts and the Painter plugin."""
+
+    def setUp(self):
+        self.ext_dir = Path(extapps.__file__).resolve().parent / SUBSTANCE_PANEL_DIR
+        self.may_dir = _sibling("mayatk", "mat_utils", "substance_bridge")
+        if self.may_dir is None:
+            self.skipTest("mayatk sibling not present (standalone extapps checkout)")
+
+    def _vendored(self):
+        rels = list(SUBSTANCE_ENGINE_TOP)
+        for sub in SUBSTANCE_ENGINE_DIRS:
+            rels.extend(os.path.join(sub, rel) for rel in sorted(_rel_files(self.may_dir / sub)))
+        return rels
+
+    def test_vendored_files_are_content_identical(self):
+        for rel in self._vendored():
+            may_f, ext_f = self.may_dir / rel, self.ext_dir / rel
+            self.assertTrue(ext_f.is_file(), f"missing {ext_f}: mirror mayatk's {rel}")
+            self.assertEqual(
+                _lines(may_f),
+                _lines(ext_f),
+                f"vendored Substance file '{rel}' has drifted between "
+                f"mayatk.mat_utils.substance_bridge and extapps.substance_scripts. "
+                f"Edit mayatk's copy (the SSoT) and mirror it.",
+            )
+
+    def test_panel_files_all_classified(self):
+        classified = set(self._vendored()) | SUBSTANCE_EXTAPPS_ONLY
+        present = {rel for rel in _rel_files(self.ext_dir) if not rel.endswith("_ui.py")}
+        self.assertLessEqual(
+            present,
+            classified,
+            "unclassified files in extapps.substance_scripts: "
+            f"{sorted(present - classified)} -- vendor from mayatk or ledger as "
+            "SUBSTANCE_EXTAPPS_ONLY",
         )
 
 
@@ -393,7 +447,7 @@ RIZOM_DCC_HALF = (
     "templates",
 )
 
-# The panel is extapps' Unity Workflow app; each library keeps its host's half:
+# The panel is extapps' Unity Scripts app; each library keeps its host's half:
 # the engine and the export rows it brings to the app (its registry).
 UNITY_SHARED_TOP = ("parameters.py",)
 UNITY_DCC_HALF = ("__init__.py", "_unity_bridge.py")
@@ -479,7 +533,7 @@ class TestUnityBridgeDccSync(
     _TopLevelLedgerMixin, _DccPairSyncMixin, unittest.TestCase
 ):
     """The parameter registry (the export rows) is shared; the export halves are
-    ports (the panel is extapps' Unity Workflow app)."""
+    ports (the panel is extapps' Unity Scripts app)."""
 
     subpath = ("env_utils", "unity_bridge")
     top_files = UNITY_SHARED_TOP

@@ -1,0 +1,12 @@
+{
+  "name": "com.m3trik.unity-scripts",
+  "version": "0.9.0",
+  "displayName": "M3trik Unity Scripts",
+  "description": "Runs the scripts extapps' Unity Scripts panel sends to this project, while the project is open: a job queue in Library/, served between editor updates. Tools > M3trik Scripts > Pause stops it.",
+  "unity": "2021.3",
+  "license": "MIT",
+  "author": {
+    "name": "m3trik",
+    "url": "https://github.com/m3trik/extapps"
+  }
+}

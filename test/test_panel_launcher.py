@@ -131,7 +131,7 @@ class TestRoster(unittest.TestCase):
         """Substance / Marmoset stay gated out of Maya: tentacle serves its own
         Substance and Marmoset bridges there."""
         extras = {name: e for name, (_m, _c, e) in entry_points().items()}
-        for gated in ("substance_workflow", "marmoset_workflow"):
+        for gated in ("substance_scripts", "marmoset_scripts"):
             self.assertIn("hide_maya", extras[gated])
 
 
@@ -221,6 +221,82 @@ class TestWindowChrome(unittest.TestCase):
         self.assertEqual(PanelLauncher.PRESETS_FOLDER[0], "extapps")
 
 
+RENAMED_GROUP = "uitk.external_apps.renamed"
+
+
+class TestRenamedApps(unittest.TestCase):
+    """An app renamed (``_panel_launcher.RENAMED_FROM``) keeps its users'
+    values and its former name: the store and presets carry once, and the
+    former name is declared to uitk's handler as an entry point naming the same
+    launcher (a restatement, held equal here)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = _ensure_app()
+
+    def test_every_former_name_is_declared_where_the_handler_reads_it(self):
+        apps = entry_points()
+        declared = {}
+        try:
+            declared = table(f'project.entry-points."{RENAMED_GROUP}"')
+        except AssertionError:
+            pass  # no app renamed yet
+        expected = {
+            former: f"{apps[app][0]}:{apps[app][1]}"
+            for app, formers in _panel_launcher.RENAMED_FROM.items()
+            for former in formers
+        }
+        self.assertEqual(declared, expected)
+        for app in _panel_launcher.RENAMED_FROM:
+            self.assertIn(app, apps, f"{app} is renamed but is no app")
+
+    def test_a_former_store_and_its_presets_carry_once(self):
+        from uitk import PresetManager, Switchboard
+
+        former, app = "old_preview", "webxr_preview"
+        Switchboard().settings.branch(former).setValue("probe/textChanged", "kept")
+        root = PresetManager.get_presets_root()
+        old = root / "extapps" / former / "mine.json"
+        old.parent.mkdir(parents=True, exist_ok=True)
+        old.write_text("{}", encoding="utf-8")
+        with mock.patch.dict(_panel_launcher.RENAMED_FROM, {app: {former: {}}}):
+            ui = launchers()[app]()
+            self.addCleanup(ui.deleteLater)
+            self.assertEqual(ui.sb.settings.branch(app).value("probe/textChanged"), "kept")
+            carried = root / Path(ui.slots.PRESETS_ROOT) / "mine.json"
+            self.assertTrue(carried.is_file())
+            carried.unlink()  # the user deletes it: a later launch never brings it back
+            again = launchers()[app]()
+            self.addCleanup(again.deleteLater)
+            self.assertFalse(carried.exists())
+
+    def test_the_unity_workflows_store_opens_unity_scripts_on_its_own_script(self):
+        """The Unity Workflow's script combo saved a row into a list the app no
+        longer has (copy_to_assets, manage_scripts): it is not carried, so the
+        app opens on Send to Unity, not on whatever sorts first; that
+        template's presets are Send to Unity's, and manage_scripts' stay behind."""
+        from uitk import PresetManager, Switchboard
+
+        former = Switchboard().settings.branch("unity_workflow")
+        former.setValue("cmb000/currentIndexChanged", 0)
+        former.setValue("unity_workflow_output_dir/textChanged", "C:/Proj")
+        root = PresetManager.get_presets_root()
+        for template in ("copy_to_assets", "manage_scripts"):
+            path = root / "extapps" / "unity_workflow" / template / "mine.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("{}", encoding="utf-8")
+        ui = launchers()["unity_scripts"]()
+        self.addCleanup(ui.deleteLater)
+        store = ui.sb.settings.branch("unity_scripts")
+        self.assertIsNone(store.value("cmb000/currentIndexChanged"))
+        self.assertEqual(store.value("unity_workflow_output_dir/textChanged"), "C:/Proj")
+        presets = root / Path(ui.slots.PRESETS_ROOT)
+        self.assertTrue((presets / "SendToUnity" / "mine.json").is_file())
+        self.assertFalse((presets / "copy_to_assets").exists())
+        self.assertFalse((presets / "manage_scripts").exists())
+        self.assertEqual(ui.slots._selected_template(), "SendToUnity")
+
+
 class TestLauncherMainBlocks(unittest.TestCase):
     """A ``launcher.py`` run as a program builds its own panel.
 
@@ -283,7 +359,7 @@ class TestLauncherMainBlocks(unittest.TestCase):
 class TestDocsLinks(unittest.TestCase):
     """A panel over an engine documented here links that page (logged at open, a
     clickable anchor in the log pane). Each is a GitHub blob URL into this repo,
-    so a doc rename fails here rather than 404-ing for users. RealityCapture /
+    so a doc rename fails here rather than 404-ing for users. RealityScan /
     Brush inherit the photogrammetry base's TUNING.md link; Metashape and
     Substance point at their own pages."""
 
@@ -291,7 +367,7 @@ class TestDocsLinks(unittest.TestCase):
         "metashape_workflow",
         "realityscan_workflow",
         "gaussian_splat_workflow",
-        "substance_workflow",
+        "substance_scripts",
     )
 
     def test_each_link_names_a_file_in_this_repo(self):

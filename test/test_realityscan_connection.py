@@ -93,7 +93,7 @@ class RealityScanConnectionTest(unittest.TestCase):
     def test_non_interactive_bat_preserves_non_ascii_path(self):
         # Regression: the cross-session .bat was written encoding="ascii",
         # errors="replace", so a non-ASCII output path (e.g. C:\Users\Zoë\...)
-        # was mangled to '?'. cmd then redirected RC output + the .done marker
+        # was mangled to '?'. cmd then redirected RealityScan output + the .done marker
         # to the wrong file while Python polled the correct one -> 2h hang +
         # TimeoutError. The wrapper must preserve the non-ASCII path verbatim.
         try:

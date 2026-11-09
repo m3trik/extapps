@@ -62,7 +62,7 @@
          </font>
         </property>
         <property name="text">
-         <string>REALITYCAPTURE WORKFLOW</string>
+         <string>REALITYSCAN WORKFLOW</string>
         </property>
        </widget>
       </item>
@@ -133,7 +133,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Run the RealityCapture pipeline headless in the local install.</string>
+            <string>Run the RealityScan pipeline headless in the local install.</string>
            </property>
            <property name="text">
             <string>Run Workflow</string>

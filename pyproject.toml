@@ -99,32 +99,27 @@ classifiers = [
 # ship what the panels call on dev before publishing: Look Match's mixes read
 # `ptk.LookSession.mixes`, which pythontk 0.18.2 does not have.
 # uitk 1.9.0: every panel subclasses `uitk.ParamPanelSlots` (BridgeSlotsBase
-# before), which an older uitk does not export; and the Unity Workflow builds
+# before), which an older uitk does not export; and the Unity app (now Unity Scripts) builds
 # a host engine's export rows through `ParamPanelSlots.add_param_rows`, which
 # first ships there (AttributeError when a host injects its engine).
-# pythontk 0.19.0: Look Match's mixes read `ptk.LookSession.mixes`, and the
-# Substance Workflow's batch takes `ptk.RpcJob.Call` / `RpcJob.Result` (the
-# root `Call` / `Result` aliases go in 0.20.0); neither is in 0.18.2.
+# pythontk 0.19.0: Look Match's mixes read `ptk.LookSession.mixes` (not in 0.18.2).
+# pythontk 0.21.0: Unity Scripts delivers through `ptk.FolderDeliverer` /
+# `FileDeliveryBridge` and lists the person's own scripts beside the built-ins
+# (`ptk.ScriptTemplate.search_dirs`), and Substance Scripts finds a Painter by
+# its instance record and token (`ptk.RpcInstances`, `RpcClient.instances`) and
+# shows a script's own rows (`ScriptTemplate.declared_rows`), all new there.
+# uitk 1.11.0: the panels' template combo lists those tiers
+# (`ParamPanelSlots.template_dirs`, Copy to My Scripts), and a renamed app's
+# former name launches it (`ExternalAppHandler.RENAMED_GROUP`).
 # No host and no tentacle: extapps is a product nothing imports, and it imports
-# neither (test/test_imports.py). unitytk stays an on-demand install inside
-# the Unity Workflow panel (Manage Unity Scripts > Install), never a dependency.
-dependencies = ["pythontk>=0.19.0", "uitk>=1.9.0", "qtpy"]
+# neither (test/test_imports.py).
+dependencies = ["pythontk>=0.21.0", "uitk>=1.11.0", "qtpy"]
 
-# unitytk is OPTIONAL: it backs only the Unity Workflow panel, which installs it
-# on demand (Manage Unity Scripts > Install), so a missing unitytk costs that
-# one panel nothing until it is used. The extra installs it up front:
-#   pip install extapps[unity]
-# unitytk 0.1.0: its templates moved into one folder per component; an older
-# deployer knows only the flat names, so its Install / Update writes flat
-# copies beside the moved ones -- every class twice, and the Unity assembly
-# fails to compile (CS0101).
-#
 # mesh pulls pythontk's PyMeshLab extra: it backs only the photogrammetry
 # mesh stages (measure / refine / bake via pythontk.MeshOps). Without it the
 # stages record an honest skip in the QC sidecar and everything else runs.
 # Install with the extra when you want it:  pip install extapps[mesh]
 [project.optional-dependencies]
-unity = ["unitytk>=0.1.0"]
 mesh = ["pythontk[mesh]"]
 
 [project.urls]
@@ -161,11 +156,21 @@ mesh_convert = "extapps.mesh_convert:MeshConvertUI"
 metashape_workflow = "extapps.photogrammetry.metashape_workflow:MetashapeWorkflowUI"
 realityscan_workflow = "extapps.photogrammetry.realityscan_workflow:RealityScanWorkflowUI"
 gaussian_splat_workflow = "extapps.photogrammetry.gaussian_splat_workflow:GaussianSplatWorkflowUI"
-substance_workflow = "extapps.substance_workflow:SubstanceWorkflowUI [hide_maya]"
-marmoset_workflow = "extapps.marmoset_workflow:MarmosetWorkflowUI [hide_maya]"
-unity_workflow = "extapps.unity_workflow:UnityWorkflowUI"
+substance_scripts = "extapps.substance_scripts:SubstanceScriptsUI [hide_maya]"
+marmoset_scripts = "extapps.marmoset_scripts:MarmosetScriptsUI [hide_maya]"
+unity_scripts = "extapps.unity_scripts:UnityScriptsUI"
 webxr_preview = "extapps.webxr_preview:WebXrPreviewUI"
 look_match = "extapps.look_match:LookMatchUI"
+
+# Each renamed app's FORMER name, naming the launcher its entry point above
+# names: uitk's handler resolves it to the app it became (a desktop shortcut or
+# `python -m extapps <former>` keeps working) and never lists it. Restated from
+# `extapps/_panel_launcher.py`'s RENAMED_FROM, which carries the values; the
+# two are held equal (test/test_panel_launcher.py).
+[project.entry-points."uitk.external_apps.renamed"]
+unity_workflow = "extapps.unity_scripts:UnityScriptsUI"
+marmoset_workflow = "extapps.marmoset_scripts:MarmosetScriptsUI"
+substance_workflow = "extapps.substance_scripts:SubstanceScriptsUI"
 
 [tool.m3trik.layers]
 # CODE_STANDARD section 0 (Parts): this package's parts, top first. A module may
@@ -175,7 +180,7 @@ look_match = "extapps.look_match:LookMatchUI"
 # photogrammetry parts (profile, stages, runners, panel slots); apps never
 # import each other.
 order = [
-    "photogrammetry/gaussian_splat_workflow | photogrammetry/metashape_workflow | photogrammetry/realityscan_workflow | photogrammetry/sugar_mesh_workflow | look_match | marmoset_workflow | mesh_convert | substance_workflow | texture_maps | unity_workflow | webxr_preview",
+    "photogrammetry/gaussian_splat_workflow | photogrammetry/metashape_workflow | photogrammetry/realityscan_workflow | photogrammetry/sugar_mesh_workflow | look_match | marmoset_scripts | mesh_convert | substance_scripts | texture_maps | unity_scripts | webxr_preview",
     "photogrammetry",
     "_panel_launcher",
 ]
@@ -195,6 +200,33 @@ include = ["extapps*"]
 # per-engine subdirs (presets/<engine>/*.json) — presets are engine-scoped.
 "extapps.photogrammetry" = ["presets/*/*.json"]
 "extapps.texture_maps.packer" = ["presets/*.json"]
+# Unity Scripts' C# scripts and the editor package it installs into a project
+# (data folders, not packages).
+# Substance Scripts' built-in scripts and the Painter plugin it vendors (its
+# payload is a data folder Painter imports, not part of the extapps package).
+"extapps.substance_scripts" = [
+    "templates/*.py",
+    "substance_rpc/README.md",
+    "substance_rpc/plugin_src/substance_rpc/*.py",
+    "substance_rpc/plugin_src/substance_rpc/ops/*.py",
+]
+"extapps.unity_scripts" = [
+    "templates/*.cs",
+    "unity_package/*.json",
+    "unity_package/*.md",
+    "unity_package/Editor/*.cs",
+    "unity_package/Editor/*.asmdef",
+]
+
+[tool.m3trik.layers.csharp]
+# CODE_STANDARD section 0 (Parts): the Unity editor package Unity Scripts
+# installs into a project, one editor-only assembly, its own kernel (it hosts
+# the scripts, so it calls Undo and the Console itself). Checked by
+# m3trik/scripts/check_layers.py (references) and check_csharp.py (prior art,
+# the generated QueueLayout.g.cs).
+root = "extapps/unity_scripts/unity_package"
+order = ["Editor"]
+kernel = "Editor"
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

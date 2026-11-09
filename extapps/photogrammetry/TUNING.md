@@ -63,7 +63,7 @@ the app and persist.
 | **Depth-map filtering strength** | Smooths noisy per-pixel depth before meshing | `--depth-filter moderate` | GUI: Reconstruction Settings → *Filtering strength* = **High** |
 | **Image / depth downscale** | Higher downscale = smoother, less noisy (less detail). On specular metal **don't go to ds=1/Ultra — it over-fits the noise and *warps* geometry**; ds=2 is the sweet spot. | `--align-downscale`, `--depth-downscale` | GUI: *Image downscale factor* (depth) |
 | **Alignment matching** (generic preselection + keypoint/tiepoint limits) | The lever that actually *aligns* featureless / specular subjects: generic preselection pairs images without camera coords, and a raised tiepoint limit builds a denser, more robust sparse cloud. Baseline: generic preselection **on** (Metashape's own default), keypoint `60000` (the verified value). | `--generic-preselection` / `--no-generic-preselection`, `--keypoint-limit`, `--tiepoint-limit` | GUI: Alignment Settings only (CLI ignores them) |
-| **Triage** (disable low-quality cameras pre-align) | Drops blurry/noisy frames by Metashape's own `Image/quality` score before matching — a strong cull for genuinely messy input, but the score correlates with *texture*, so it wholesale-disables good frames of low-texture/specular subjects. **Opt-in** (`0` = off, the default); `0.5` is the usual value when you do want it. | `--triage-quality` | folded into RC alignment |
+| **Triage** (disable low-quality cameras pre-align) | Drops blurry/noisy frames by Metashape's own `Image/quality` score before matching — a strong cull for genuinely messy input, but the score correlates with *texture*, so it wholesale-disables good frames of low-texture/specular subjects. **Opt-in** (`0` = off, the default); `0.5` is the usual value when you do want it. | `--triage-quality` | folded into RealityScan alignment |
 | **Min component size** (drop small disconnected islands) | Strips speckle islands — but it does **not** fix depth-level noise (warping/ghosting) and cranking it deletes real detail, so it's a last touch, not the lever. | `--clean-min-component` → `removeComponents` | `--clean-min-component` → `-setMinComponentSize` |
 | **Mesh smoothing** (light Laplacian denoise) | A single pass denoises specular geometry without melting detail (high values do melt it). | `--smooth-strength` | not on CLI |
 | **Exposure equalization** | Reduces ghosting from per-frame exposure drift | `equalize` prep stage (on by default) | same prep stage |
@@ -168,7 +168,7 @@ runner / RSNode as usual:
 2. **Reconstruction Settings → Filtering strength = High** (or *Ultra* if detail allows). Default *Medium* leaves specular speckle.
 3. **Image downscale factor** — try `2` for depth on noisy specular before `1`.
 4. **Masks** — paint/import per-image masks (background = excluded). RealityScan reads `<image>_mask.png` beside the source images; the runner's `import_masks` is currently a stub — wiring + verifying it on a live run is the open follow-up.
-5. As a last cosmetic touch only, `--clean-min-component N` strips residual speckle islands (not a substitute for the GUI dials above). **Unverified semantics**: the runner feeds `-setMinComponentSize` a triangle floor, but historic RealityCapture CLI docs describe that command as the minimal *camera count per alignment component* — A/B it on a live RC before leaning on it (open follow-up, like the mask import).
+5. As a last cosmetic touch only, `--clean-min-component N` strips residual speckle islands (not a substitute for the GUI dials above). **Unverified semantics**: the runner feeds `-setMinComponentSize` a triangle floor, but historic RealityCapture CLI docs describe that command as the minimal *camera count per alignment component* — A/B it on a live RealityScan before leaning on it (open follow-up, like the mask import).
 
 The runner records the requested texture size and notes these GUI-only levers in the
 QC sidecar, but does **not** apply them — they are not CLI-addressable.
@@ -192,7 +192,7 @@ Drop a JSON file in the relevant **engine's** preset dir — no runner code chan
 `<engine>` is `metashape` / `realityscan` / `gaussian_splat` / `sugar`. Presets are
 engine-scoped, so a Metashape template lists Metashape keys and is only offered to the
 Metashape runner/panel; to use the same environment on RealityScan, add a sibling copy
-under `realityscan/` carrying RC's reachable keys.
+under `realityscan/` carrying RealityScan's reachable keys.
 
 ```jsonc
 // presets/metashape/my_environment.json

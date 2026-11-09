@@ -67,12 +67,12 @@ QUALITY_TIERS = ("draft", "balanced", "max")
 _DERIVED_ROOTS = {
     "input_root": "{graphics_root}/input",
     "metashape_output_root": "{graphics_root}/metashape",
-    # Synced deliverable root for RealityScan: RC works in local scratch
+    # Synced deliverable root for RealityScan: RealityScan works in local scratch
     # (realityscan_scratch_root) — its live multi-GB project I/O must not run in
     # a cloud-sync folder — then the finished deliverables are published here.
     "realityscan_output_root": "{graphics_root}/RealityScan/output",
     "photogrammetry_root": "{graphics_root}/comparison",
-    "realityscan_scratch_root": "{scratch_root}/rc_out",
+    "realityscan_scratch_root": "{scratch_root}/realityscan_out",
     "gsplat_scratch_root": "{scratch_root}/gsplat_out",
 }
 _DERIVED_ROOT_KEYS = tuple(_DERIVED_ROOTS)
@@ -112,13 +112,13 @@ _TUNING = {
     # Reconstruction / mesh-cleanup tuning shared by the mesh engines. These are
     # the few noise-control levers reachable from RealityScan's CLI; the stronger
     # ones (depth/image downscale, depth-map filtering strength, a tight
-    # reconstruction region, subject masking) live in RC's per-project Settings or
+    # reconstruction region, subject masking) live in RealityScan's per-project Settings or
     # the GUI and can't be set from the command line — see TUNING.md for the full
     # per-environment recipe (and the Metashape runner's own --depth-filter /
     # --align-downscale knobs, which DO reach those levers).
     "reconstruct": {
         # Mesh-cleanup floor: disconnected components smaller than this many
-        # triangles are deleted (fed to clean_mesh -> RC -setMinComponentSize).
+        # triangles are deleted (fed to clean_mesh -> RealityScan -setMinComponentSize).
         # The main CLI-reachable lever against speckle / "snow" floaters. The
         # baseline keeps a conservative value (catches only dust) so a plain run
         # is unchanged. NOTE: on specular / low-texture metal do NOT crank this -

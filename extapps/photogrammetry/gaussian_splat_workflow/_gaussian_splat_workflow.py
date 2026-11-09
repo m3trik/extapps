@@ -5,7 +5,7 @@
 Brush has no Python API; this wraps its CLI via :class:`pythontk.AppLauncher`
 (the shared :class:`~extapps.photogrammetry._workflow_engine.WorkflowEngine`
 run), mirroring
-the structure of :class:`extapps.photogrammetry.realityscan_workflow._realityscan_workflow.RealityCaptureWorkflow`
+the structure of :class:`extapps.photogrammetry.realityscan_workflow._realityscan_workflow.RealityScanWorkflow`
 (exe discovery, QC log, mock mode, per-stage logging).
 
 Validated defaults (indoor scene dataset, 8 GB VRAM class GPU):

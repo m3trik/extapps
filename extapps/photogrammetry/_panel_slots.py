@@ -2,7 +2,7 @@
 # coding=utf-8
 """Shared scaffolding for the photogrammetry workflow panels.
 
-Metashape, RealityCapture, and Brush all present the *same* panel shape — a
+Metashape, RealityScan, and Brush all present the *same* panel shape — a
 :class:`uitk.bridge.ParamPanelSlots` with a Project-Name row, an engine-specific
 input row, a run-mode combo, semantic presets shared with the headless CLI, an
 Output-Root row, a header menu (Cancel / Open Output Folder / Clear Log + help),
@@ -16,7 +16,7 @@ and an async ``b000`` that streams a long bake into the log pane. That common
   :meth:`_resolve_input_argv` (its input row), :meth:`help_spec`, and optionally
   :meth:`_mode_argv` (extra ``--stop-after`` / ``--publish`` flags).
 * :class:`FramesSourceMixin` — the frames/video "Source" row + single browser
-  shared by the two photogrammetry (image-in) panels (Metashape, RealityCapture).
+  shared by the two photogrammetry (image-in) panels (Metashape, RealityScan).
   Brush takes a COLMAP dir instead, so it doesn't use this mixin.
 """
 from __future__ import annotations
@@ -140,7 +140,7 @@ class PhotogrammetryPanelSlots(ParamPanelSlots):
 
         Keys the preset names but this panel doesn't surface are logged (not
         silently dropped): e.g. RealityScan's ``specular_metal`` carries
-        ``mask_background``, which RC's panel has no widget for — the user
+        ``mask_background``, which RealityScan's panel has no widget for — the user
         must act on it in the GUI, so they need to see it.
         """
         for key, spec in self.params_module.PARAMS.items():
@@ -384,7 +384,7 @@ class PhotogrammetryPanelSlots(ParamPanelSlots):
 
 
 class FramesSourceMixin:
-    """A single 'Source' row + browser for image-in panels (Metashape, RC).
+    """A single 'Source' row + browser for image-in panels (Metashape, RealityScan).
 
     Pick video clip(s) → frames are extracted (sharpest-per-second) into a
     folder; or pick any frame from an existing frames folder → that folder

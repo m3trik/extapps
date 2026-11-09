@@ -6,13 +6,13 @@ Shared rules (packs; Claude Code loads them, other agents read them first): [pri
 
 **Role**: The standalone product: the host-free content-pipeline apps, each app's engine, panel (`.ui`) and Slots class together, on pythontk and uitk alone. Each is a uitk external app (`uitk.external_apps.in_process` entry points); tentacle's DCC menus open one BY NAME through uitk's `ExternalAppHandler`. Nothing imports extapps.
 
-**Nav**: [← root](../AGENTS.md) · [docs](docs/README.md) · **Deps**: [pythontk](../pythontk/AGENTS.md) · [uitk](../uitk/AGENTS.md) · [unitytk](../unitytk/AGENTS.md) (optional, `[unity]` extra; the Unity panel installs it on demand) · **Opened by**: [tentacle](../tentacle/AGENTS.md) (by name, never an import)
+**Nav**: [← root](../AGENTS.md) · [docs](docs/README.md) · **Deps**: [pythontk](../pythontk/AGENTS.md) · [uitk](../uitk/AGENTS.md) · **Opened by**: [tentacle](../tentacle/AGENTS.md) (by name, never an import)
 
 ## API surface
 
-Searched live (`api.search`; MCP `api_search`), never a committed file — rules in [root](../AGENTS.md). Upstream: [pythontk](../pythontk/AGENTS.md) · [uitk](../uitk/AGENTS.md) · [unitytk](../unitytk/AGENTS.md) (optional).
+Searched live (`api.search`; MCP `api_search`), never a committed file — rules in [root](../AGENTS.md). Upstream: [pythontk](../pythontk/AGENTS.md) · [uitk](../uitk/AGENTS.md).
 
-Package-level public API; `substance_workflow`'s internal `registry.py` op registry (below) is separate.
+Package-level public API.
 
 ## Scope
 
@@ -21,13 +21,13 @@ Belongs here: a host-free app -- no host half, needing no DCC to run (a host may
 ## Hard rules
 
 - **No host and no tentacle import.** No module imports `maya`, `bpy`, `mayatk`, `blendertk` or `tentacle` (`test/test_imports.py`), and nothing imports extapps (`check_layers.py`: the product role). A host reaches an app only through uitk's `ExternalAppHandler`, by its entry-point name, and hands it context on the window it gets back (`launch(name, show=False)`).
-- **Generic mechanism lives in `pythontk`; app-specific engines live with their apps.** pythontk is **app-agnostic** (`HandoffBridge`, `AppLauncher`, `RpcClient`, the pure domain cores), never product SDK glue, so an SDK-specific engine stays with its app (`metashape_workflow`, `substance_workflow`, `marmoset_workflow`). Code that *also* has DCC consumers is vendored, byte-identical, guarded by `test/test_vendor_sync.py`: the Marmoset engine (mayatk's the SSoT). A host's half is injected, never vendored: `unity_workflow` (the one Unity panel) and `webxr_preview` take the host's engine class (`slots.engine`), whose rows and scene export the panel calls.
+- **Generic mechanism lives in `pythontk`; app-specific engines live with their apps.** pythontk is **app-agnostic** (`HandoffBridge`, `AppLauncher`, `RpcClient`, the pure domain cores), never product SDK glue, so an SDK-specific engine stays with its app (`metashape_workflow`, `substance_scripts`, `marmoset_scripts`). Code that *also* has DCC consumers is vendored, byte-identical, guarded by `test/test_vendor_sync.py`: the Marmoset engine and the Substance engine with its Painter plugin (mayatk's the SSoT; edit there, never here). A host's half is injected, never vendored: `unity_scripts` (the one Unity panel) and `webxr_preview` take the host's engine class (`slots.engine`), whose rows and scene export the panel calls. `unity_scripts` also ships a Unity editor package (`unity_package/`, MIT, its C# held by `check_csharp.py`), which a person installs into their own project: it serves the panel's jobs in their open editor, visible and pausable there (CODE_STANDARD section 15); agents and tests drive it only in an owned editor or through a Python stand-in worker.
 
 ### Painter session safety — HARD BLOCK (protect user work)
 
-`substance_workflow`'s `PainterConnection.connect()` defaults to `force_new_instance=True`: every connection launches a **fresh** Painter on an unused port; the user's open session is never touched. `force_new_instance=False` is **rejected**.
+`substance_scripts` reaches a Painter by its instance record (`substance_rpc`'s, `SubstanceScripts.pick_painter`): one it launched, or the person's own **only on their Run**, through the plugin they installed (*Install in Painter*) and ticked, each run one undo entry there (CODE_STANDARD section 15). A send never installs the plugin.
 
-**AI agent rule**: never bypass `force_new_instance`, kill a Painter process you did not launch, or attach to the command port of one this tooling did not launch: an open Painter can hold hours of unsaved work. Spawn and teardown go through `pythontk.AppLauncher`, never raw `subprocess`.
+**AI agent rule**: the tooling only ever launches (`SubstanceConnection.open`, matched by the PID it launched; tests set `PYTHONTK_CACHE_ROOT` to a temp folder so they see no other record): never attach to a Painter you did not launch, never kill one, never run a test or an MCP call against a person's: an open Painter can hold hours of unsaved work.
 
 ## Structure
 
@@ -51,13 +51,8 @@ app's `parameters.py`: `PARAMS` + a `uitk.ParamRegistry`). Exempt: `@register`
 ops and `run_combined`. The root re-exports every app's UI + Slots pair
 (`test_imports.py`); `<app>_ui.py` are gitignored uitk compile caches.
 
-`substance_workflow` bundles its Painter engine: `registry.py`
-(`@register` — the SSoT for callable ops; check it before adding a helper),
-`*_utils.py` op modules (lazy-import `substance_painter` inside function bodies
-so they stay import-safe outside Painter), `env_utils/` (`PainterConnection`,
-`PainterFinder`), `job.py` (`run_batch`), and `plugins/startup/substance_workflow_bridge/`
-(a startup module of the root on `SUBSTANCE_PAINTER_PLUGINS_PATH`), all on pythontk's RPC pair.
-`marmoset_workflow` holds the vendored Toolbag engine and `MarmosetWorkflow`, its door.
+`substance_scripts` holds the vendored Painter engine (`_substance_engine.py`, `connection.py`, `parameters.py`, the built-in scripts in `templates/` and the `substance_rpc` plugin) and `SubstanceScripts`, its host-free door: a script on a mesh runs on the panel's Mesh File, and the rows only a host fills (`HOST_ROWS`) are hidden.
+`marmoset_scripts` holds the vendored Toolbag engine and `MarmosetScripts`, its door; it lists the engine's scripts, bundled and the person's own, but for one that reads a host's scene (`HOST_ROWS`: the bake's Bake Source).
 
 ## Run
 
@@ -78,7 +73,7 @@ and Blender, tentacle's menus open the apps by name. After editing
 Live-DCC tests (a real, new, never-attached Painter / Metashape) are opt-in:
 
 ```powershell
-$env:SUBSTANCE_WORKFLOW_RUN_INTEGRATION = '1'   # live Substance Painter tests
+$env:EXTAPPS_PAINTER_LIVE = '1'                 # live Substance Painter pass (an owned hidden Painter)
 $env:METASHAPE_RUN_INTEGRATION = '1'            # live Metashape pipeline test
 ```
 

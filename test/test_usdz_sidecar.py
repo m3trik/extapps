@@ -3,7 +3,7 @@
 """USDZ review-sidecar tests for the photogrammetry mesh workflows.
 
 ``export_model(save_usdz=True)`` authors ``<name>.usdz`` beside an exported
-OBJ via ``pythontk.obj_to_usdz`` — pure file-level, so no Metashape / RC /
+OBJ via ``pythontk.obj_to_usdz`` — pure file-level, so no Metashape / RealityScan /
 DCC is needed here. Covers both engines' ``_export_usdz_sidecar`` and the
 never-fatal contract.
 
@@ -65,7 +65,7 @@ class _SidecarCase(unittest.TestCase):
 
     def _sidecar(self, path):
         # A PrepStagesMixin staticmethod (shared by both engines) — callable
-        # on the class, so no SDK (Metashape module / RC transport) is needed.
+        # on the class, so no SDK (Metashape module / RealityScan transport) is needed.
         return self.workflow_cls._export_usdz_sidecar(path)
 
     def test_sidecar_authored_beside_obj(self):
@@ -101,10 +101,10 @@ class TestRealityScanUsdzSidecar(_SidecarCase):
     @property
     def workflow_cls(self):
         from extapps.photogrammetry.realityscan_workflow._realityscan_workflow import (
-            RealityCaptureWorkflow,
+            RealityScanWorkflow,
         )
 
-        return RealityCaptureWorkflow
+        return RealityScanWorkflow
 
 
 if __name__ == "__main__":

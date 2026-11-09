@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-"""Regression tests for ``marmoset_workflow._toolbag_helpers``.
+"""Regression tests for ``marmoset_scripts._toolbag_helpers``.
 
 These helpers normally run inside Marmoset Toolbag's bundled Python (where
 ``mset`` exists). Outside Toolbag ``mset`` is ``None``, so the wiring loop
@@ -21,7 +21,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from extapps.marmoset_workflow import _toolbag_helpers as tbh
+from extapps.marmoset_scripts import _toolbag_helpers as tbh
 
 
 class _FakeSub:
@@ -105,7 +105,7 @@ class TestWireMaterialsNullTexturePath(unittest.TestCase):
 class TestWireMaterialsWithoutAManifest(unittest.TestCase):
     """No manifest is the standalone panel's normal case, not a fault.
 
-    Bug: every Marmoset Workflow run (a model file, no sending DCC) logged
+    Bug: every Marmoset Scripts run (a model file, no sending DCC) logged
     "Manifest empty or missing" and "check Maya-side MatManifest.build()".
     Fixed: 2026-10-17
     """
@@ -119,7 +119,7 @@ class TestWireMaterialsWithoutAManifest(unittest.TestCase):
         self.assertNotIn("Maya", logged)
         self.assertIn("No material manifest", logged)
         # Routed into the panel log as info: the normal case is not yellow.
-        from extapps.marmoset_workflow.toolbag_log import ToolbagLog
+        from extapps.marmoset_scripts.toolbag_log import ToolbagLog
 
         for line in logged.split("[toolbag_helpers]")[1:]:
             level, _ = ToolbagLog.classify_log_line("[toolbag_helpers]" + line)

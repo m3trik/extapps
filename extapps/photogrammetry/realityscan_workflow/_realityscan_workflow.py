@@ -1,24 +1,25 @@
 #!/usr/bin/python
 # coding=utf-8
-"""RealityCapture / RealityScan workflow engine.
+"""RealityScan workflow engine.
 
 Mirrors :class:`extapps.photogrammetry.metashape_workflow._metashape_workflow.MetashapeWorkflow`
 public method shape so the same UI panel can target either engine.
 
-RC has no Python API; this wrapper builds + runs CLI command chains through
+RealityScan has no Python API; this wrapper builds + runs CLI command chains through
 :class:`pythontk.AppLauncher` (the transports). Project state persists in a ``.rcproj`` between calls
 (each stage loads the project, runs its commands, saves, and quits).
 
-Stages with no direct RC equivalent (depth maps, dedupe-by-pose, reduce
+Stages with no direct RealityScan equivalent (depth maps, dedupe-by-pose, reduce
 overlap) are no-ops here so a UI that drives both engines can present the
 same surface without engine-specific branches.
 """
 import functools
+import logging
 import os
 import xml.etree.ElementTree as ET
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from pythontk import AppLauncher, AppSpec, ImgUtils, QcGate
+from pythontk import AppLauncher, AppSpec, Deprecation, ImgUtils, QcGate
 
 from .._workflow_engine import WorkflowEngine
 from ..profile import Profile
@@ -32,7 +33,7 @@ from ._realityscan_connection import (
 
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp")
 
-# Minimal RealityScan report template, bundled with the package. RC's
+# Minimal RealityScan report template, bundled with the package. RealityScan's
 # ``-exportReport`` takes TWO params — ``outputFile templateFile`` — and renders
 # the template via its ``$Using``/``$ExportProjectInfo``/``$(var)`` substitution
 # engine. The stock templates (``<install>\Reports\*.html``) fail in the headless
@@ -55,14 +56,24 @@ APP = AppSpec(
         r"{program_files}\RealityScan\RealityScan.exe",
         r"{program_files}\Capturing Reality\RealityCapture\RealityCapture.exe",
     ),
-    not_found_msg="RealityScan/RealityCapture not found (set RC_EXE env or install)",
+    not_found_msg="RealityScan not found (set REALITYSCAN_EXE env or install)",
 )
 #: Looked up only after the install scan: an install dir outranks whatever
 #: PATH (or the App Paths registry) happens to name.
-_RC_APP_NAMES = ("RealityScan.exe", "RealityCapture.exe")
+_EXE_NAMES = ("RealityScan.exe", "RealityCapture.exe")
+#: RealityCapture is RealityScan since 2.0: each variable's name before that,
+#: read (with a warning) while only it is set, until ``RETIRE_IN``.
+FORMER_ENV = {
+    "REALITYSCAN_EXE": "RC_EXE",
+    "REALITYSCAN_RSNODE": "RC_RSNODE",
+    "REALITYSCAN_RSNODE_URL": "RC_RSNODE_URL",
+}
+#: The release the RealityCapture spellings (variables, methods, keywords) go in.
+RETIRE_IN = "0.11.0"
+_RENAMED_ON = "2026-11-08"
 
 
-# Acceptance-gate defaults. RC's report metric names differ from Metashape's;
+# Acceptance-gate defaults. RealityScan's report metric names differ from Metashape's;
 # the metric keys below match what _alignment_metrics() / _mesh_metrics() emit.
 DEFAULT_GATES: Dict[str, Dict[str, float]] = {
     "align": {
@@ -72,7 +83,7 @@ DEFAULT_GATES: Dict[str, Dict[str, float]] = {
         "min_largest_component_pct": 85.0,
     },
     "texture": {
-        # RC reports don't expose per-texel coverage; gate left empty.
+        # RealityScan reports don't expose per-texel coverage; gate left empty.
     },
     # File-level gate fed by MeshStagesMixin (measure_mesh / refine_mesh).
     # None thresholds are documented placeholders: QcGate skips them until
@@ -85,9 +96,9 @@ DEFAULT_GATES: Dict[str, Dict[str, float]] = {
 }
 
 
-class _RealityCaptureWorkflowInternal:
+class _RealityScanWorkflowInternal:
     """Discovery / version / image-listing helpers for
-    :class:`RealityCaptureWorkflow` (encapsulation standard: helpers on a
+    :class:`RealityScanWorkflow` (encapsulation standard: helpers on a
     ``_<Class>Internal`` base the public class inherits)."""
 
     @staticmethod
@@ -109,17 +120,37 @@ class _RealityCaptureWorkflowInternal:
         except Exception:
             return "unknown"
 
+    @staticmethod
+    def env_name(name: str) -> str:
+        """The variable to read for *name*: its former RealityCapture name
+        (:data:`FORMER_ENV`) while only that one is set, said once, else *name*.
+        Set at all is what counts, so ``RC_EXE=`` still forces mock mode."""
+        former = FORMER_ENV.get(name)
+        if name in os.environ or not former or former not in os.environ:
+            return name
+        if former not in _RealityScanWorkflowInternal._warned_env:
+            _RealityScanWorkflowInternal._warned_env.add(former)
+            logging.getLogger(__name__).warning(
+                "%s is RealityCapture's name, read until extapps %s: set %s instead.",
+                former,
+                RETIRE_IN,
+                name,
+            )
+        return former
+
+    _warned_env: set = set()
+
 
 # ---------------------------------------------------------------------------
 # Workflow
 # ---------------------------------------------------------------------------
-class RealityCaptureWorkflow(
+class RealityScanWorkflow(
     WorkflowEngine,
     PrepStagesMixin,
     MeshStagesMixin,
-    _RealityCaptureWorkflowInternal,
+    _RealityScanWorkflowInternal,
 ):
-    """Wrapper around RealityCapture's CLI for the standard photogrammetry
+    """Wrapper around RealityScan's CLI for the standard photogrammetry
     pipeline. Mirrors :class:`MetashapeWorkflow`'s public method shape.
 
     The SDK-agnostic input-prep stages (``curate_input_set`` /
@@ -130,10 +161,10 @@ class RealityCaptureWorkflow(
     the two engines can't drift apart.
     """
     @staticmethod
-    def find_realitycapture_exe() -> Optional[str]:
-        """Return the RealityCapture.exe path or None.
+    def find_realityscan_exe() -> Optional[str]:
+        """Return the RealityScan.exe path (or a legacy RealityCapture.exe) or None.
 
-        Runs the shared :func:`resolve_app` chain: the ``RC_EXE`` env override
+        Runs the shared :func:`resolve_app` chain: the ``REALITYSCAN_EXE`` env override
         (terminal — an empty string or a nonexistent path returns None so the
         caller enters mock mode, rather than falling through to the real install),
         then the profile's ``apps.realityscan_exe`` (network / non-standard
@@ -142,28 +173,56 @@ class RealityCaptureWorkflow(
         """
 
         def _on_path() -> Optional[str]:
-            return next(filter(None, map(AppLauncher.find_app, _RC_APP_NAMES)), None)
+            return next(filter(None, map(AppLauncher.find_app, _EXE_NAMES)), None)
 
         return Profile.resolve_app(
-            "RC_EXE", "realityscan_exe", spec=APP, fallbacks=(_on_path,)
+            RealityScanWorkflow.env_name("REALITYSCAN_EXE"),
+            "realityscan_exe",
+            spec=APP,
+            fallbacks=(_on_path,),
         )
-    @staticmethod
-    def is_realitycapture_available() -> bool:
-        return RealityCaptureWorkflow.find_realitycapture_exe() is not None
-    @staticmethod
-    def get_realitycapture_version() -> str:
-        """Read RC's FileVersion from Windows binary metadata.
 
-        RC's CLI is silent on ``-getVersion`` from non-interactive shells, so
+    @staticmethod
+    @Deprecation.symbol(
+        "RealityScanWorkflow.find_realityscan_exe", remove_in=RETIRE_IN, since=_RENAMED_ON
+    )
+    def find_realitycapture_exe() -> Optional[str]:
+        """Renamed :meth:`find_realityscan_exe` (RealityCapture is RealityScan since 2.0)."""
+        return RealityScanWorkflow.find_realityscan_exe()
+
+    @staticmethod
+    @Deprecation.symbol(
+        "RealityScanWorkflow.is_realityscan_available", remove_in=RETIRE_IN, since=_RENAMED_ON
+    )
+    def is_realitycapture_available() -> bool:
+        """Renamed :meth:`is_realityscan_available`."""
+        return RealityScanWorkflow.is_realityscan_available()
+
+    @staticmethod
+    @Deprecation.symbol(
+        "RealityScanWorkflow.get_realityscan_version", remove_in=RETIRE_IN, since=_RENAMED_ON
+    )
+    def get_realitycapture_version() -> str:
+        """Renamed :meth:`get_realityscan_version`."""
+        return RealityScanWorkflow.get_realityscan_version()
+
+    @staticmethod
+    def is_realityscan_available() -> bool:
+        return RealityScanWorkflow.find_realityscan_exe() is not None
+    @staticmethod
+    def get_realityscan_version() -> str:
+        """Read RealityScan's FileVersion from Windows binary metadata.
+
+        RealityScan's CLI is silent on ``-getVersion`` from non-interactive shells, so
         we fall back to ``Get-Item.VersionInfo``. Cached per exe path so
         repeated calls (e.g. from ``__init__`` + ``get_license_info``) don't
         re-spawn PowerShell.
         """
-        exe = RealityCaptureWorkflow.find_realitycapture_exe()
+        exe = RealityScanWorkflow.find_realityscan_exe()
         return (
             "n/a"
             if exe is None
-            else _RealityCaptureWorkflowInternal._version_from_exe(exe)
+            else _RealityScanWorkflowInternal._version_from_exe(exe)
         )
     @staticmethod
     def get_image_filepaths(directory: str) -> List[str]:
@@ -178,17 +237,19 @@ class RealityCaptureWorkflow(
 
     PROJECT_EXT = "rcproj"
 
+    @Deprecation.parameter("rc_exe", new="realityscan_exe", remove_in=RETIRE_IN, since=_RENAMED_ON)
+    @Deprecation.parameter("rc_timeout_sec", new="timeout_sec", remove_in=RETIRE_IN, since=_RENAMED_ON)
     def __init__(
         self,
-        project_path: str = "./rc_project",
-        name: str = "rc_project",
-        rc_exe: Optional[str] = None,
+        project_path: str = "./realityscan_project",
+        name: str = "realityscan_project",
+        realityscan_exe: Optional[str] = None,
         mock_mode: Optional[bool] = None,
         progress: Optional[Callable[[str, float], None]] = None,
         gates: Optional[Dict[str, Dict[str, float]]] = None,
         gate_mode: str = "warn",
         checkpoint_each_stage: bool = True,
-        rc_timeout_sec: int = 7200,
+        timeout_sec: int = 7200,
         connection: Optional[Any] = None,
         use_rsnode: Optional[bool] = None,
         rsnode_url: Optional[str] = None,
@@ -197,18 +258,18 @@ class RealityCaptureWorkflow(
         Parameters:
             project_path: Filesystem directory for the project + outputs.
             name: Project basename (no extension).
-            rc_exe: Override the RC executable path. Defaults to ``RC_EXE``
+            realityscan_exe: Override the RealityScan executable path. Defaults to ``REALITYSCAN_EXE``
                 env var or the standard install location.
             mock_mode: Force-enable mock mode. When None, mock mode is
-                selected automatically if RC is not found.
+                selected automatically if RealityScan is not found.
             progress: Callback ``fn(stage: str, fraction: float)`` invoked
                 at the start of each pipeline stage.
             gates: Override acceptance-gate thresholds (see DEFAULT_GATES).
             gate_mode: ``"warn"`` (default) or ``"halt"``.
-            checkpoint_each_stage: Per-stage ``.rcproj`` save (RC saves on
+            checkpoint_each_stage: Per-stage project save (RealityScan saves on
                 every CLI invocation anyway; this flag is kept for API
                 parity with MetashapeWorkflow).
-            rc_timeout_sec: Per-CLI-invocation timeout. Long pipelines
+            timeout_sec: Per-CLI-invocation timeout. Long pipelines
                 (mesh + texture on large frame sets) need generous values.
             connection: Inject a specific transport (duck-typed: ``is_available``
                 + ``run(commands, log_path, timeout)``). When None, the transport
@@ -216,41 +277,41 @@ class RealityCaptureWorkflow(
             use_rsnode: Transport preference. ``None`` (default) auto-selects the
                 RSNode REST transport when a running RealityScan is reachable,
                 else the CLI launcher; ``True`` forces RSNode (raises if no node);
-                ``False`` forces the CLI. Env ``RC_RSNODE`` (0/1) sets the default.
-            rsnode_url: RSNode base URL (default ``RC_RSNODE_URL`` env or
+                ``False`` forces the CLI. Env ``REALITYSCAN_RSNODE`` (0/1) sets the default.
+            rsnode_url: RSNode base URL (default ``REALITYSCAN_RSNODE_URL`` env or
                 ``http://127.0.0.1:8000``).
         """
         self.gates = {**DEFAULT_GATES, **(gates or {})}
         self.gate_mode = gate_mode
         self.checkpoint_each_stage = bool(checkpoint_each_stage)
-        self.rc_timeout_sec = rc_timeout_sec
+        self.timeout_sec = timeout_sec
 
-        self.rc_exe = rc_exe or self.find_realitycapture_exe()
+        self.realityscan_exe = realityscan_exe or self.find_realityscan_exe()
 
-        # Transport is resolved lazily on first _run_rc so construction never
+        # Transport is resolved lazily on first _run_commands so construction never
         # touches the network (unit tests stay hermetic). Auto-selection prefers
         # the RSNode REST transport when a signed-in RealityScan is reachable
         # (drives headlessly from any session), else the CLI launcher (which
         # handles interactive vs. PsExec-into-console + RealityScan's Epic gate).
         if use_rsnode is None:
-            _env = os.environ.get("RC_RSNODE")
+            _env = os.environ.get(self.env_name("REALITYSCAN_RSNODE"))
             if _env is not None:
                 use_rsnode = _env.strip().lower() not in ("", "0", "false", "no")
         self._use_rsnode = use_rsnode
-        self._rsnode_url = rsnode_url or os.environ.get("RC_RSNODE_URL")
+        self._rsnode_url = rsnode_url or os.environ.get(self.env_name("REALITYSCAN_RSNODE_URL"))
 
         # Mock only with NOTHING to drive: a forced RSNode needs no local exe --
         # it is how a host without RealityScan (Linux; it is Windows-only)
         # drives a node on another machine.
         if mock_mode is None:
-            mock_mode = self.rc_exe is None and not self._use_rsnode
+            mock_mode = self.realityscan_exe is None and not self._use_rsnode
         self.mock_mode = bool(mock_mode)
         # An injected connection is active immediately; otherwise None until
         # _connection() resolves + memoizes the auto-selected transport.
         self._conn = connection
 
         # RealityScan writes .rsproj; legacy RealityCapture writes .rcproj.
-        _exe_name = os.path.basename(self.rc_exe or "").lower()
+        _exe_name = os.path.basename(self.realityscan_exe or "").lower()
         self.project_ext = "rsproj" if "realityscan" in _exe_name else self.PROJECT_EXT
 
         self._open_run(
@@ -259,8 +320,8 @@ class RealityCaptureWorkflow(
             progress,
             qc_fields={
                 "project_path": project_path,
-                "rc_exe": self.rc_exe or "",
-                "rc_version": self.get_realitycapture_version(),
+                "realityscan_exe": self.realityscan_exe or "",
+                "realityscan_version": self.get_realityscan_version(),
             },
         )
         self._project_file = os.path.join(
@@ -270,7 +331,7 @@ class RealityCaptureWorkflow(
         os.makedirs(self._reports_dir, exist_ok=True)
         self.gate = QcGate(self.gates, self.qc, mode=self.gate_mode)
 
-        # True once the .rcproj has been written; subsequent _run_rc calls
+        # True once the .rcproj has been written; subsequent _run_commands calls
         # then prefix with -load to pick up where the last one left off.
         self._project_initialized = False
         # True after import_model — build_texture must NOT re-unwrap, or
@@ -280,7 +341,7 @@ class RealityCaptureWorkflow(
     # ----------------------------------------------------------- helpers
 
     def get_license_info(self) -> str:
-        if self.rc_exe is None:
+        if self.realityscan_exe is None:
             if self._use_rsnode:
                 # No local install needed: the run drives a node over REST.
                 from ._rsnode_connection import DEFAULT_RSNODE_URL
@@ -291,16 +352,16 @@ class RealityCaptureWorkflow(
             return APP.not_found_message
         product = (
             "RealityScan"
-            if "realityscan" in os.path.basename(self.rc_exe).lower()
+            if "realityscan" in os.path.basename(self.realityscan_exe).lower()
             else "RealityCapture"
         )
-        return f"{product} {self.get_realitycapture_version()} ({self.rc_exe})"
+        return f"{product} {self.get_realityscan_version()} ({self.realityscan_exe})"
 
     def _connection(self):
         """Resolve (once) and return the execution transport.
 
         Prefers the RSNode REST transport when a signed-in RealityScan is
-        reachable; otherwise the CLI launcher. See ``use_rsnode`` / ``RC_RSNODE``.
+        reachable; otherwise the CLI launcher. See ``use_rsnode`` / ``REALITYSCAN_RSNODE``.
         """
         if self._conn is None:
             self._conn = self._resolve_connection()
@@ -313,9 +374,9 @@ class RealityCaptureWorkflow(
             try:
                 from ._rsnode_connection import RsNodeConnection
 
-                conn = RsNodeConnection(base_url=self._rsnode_url, exe=self.rc_exe)
+                conn = RsNodeConnection(base_url=self._rsnode_url, exe=self.realityscan_exe)
                 if conn.is_available():
-                    print(f"[rc] RSNode REST transport: {conn.base_url}")
+                    print(f"[rs] RSNode REST transport: {conn.base_url}")
                     return conn
                 reason = f"no RealityScan node answered at {conn.base_url}"
             except Exception as e:  # import or transport failure
@@ -324,22 +385,22 @@ class RealityCaptureWorkflow(
                 raise RealityScanInteractiveError(
                     "RSNode transport forced (use_rsnode=True) but unavailable: "
                     f"{reason}. Start RealityScan + its Real-time Assistance node, "
-                    "or set RC_RSNODE_URL. A node on another host answers the "
+                    "or set REALITYSCAN_RSNODE_URL. A node on another host answers the "
                     "token handshake only on its own localhost: tunnel to it "
                     "(ssh -L 8000:127.0.0.1:8000 <node-host>) and point "
-                    "RC_RSNODE_URL at the local end."
+                    "REALITYSCAN_RSNODE_URL at the local end."
                 )
-        if self.rc_exe is None:
+        if self.realityscan_exe is None:
             # A local exe is the CLI transport's need, not the workflow's: a
             # host without RealityScan (Linux) still drives a node over REST.
             raise RuntimeError(
-                "RealityCapture executable not found"
+                "RealityScan executable not found"
                 + (f", and {reason}." if reason else ".")
             )
-        return RealityScanConnection(self.rc_exe)
+        return RealityScanConnection(self.realityscan_exe)
 
-    def _run_rc(self, *commands: str, label: str = "rc") -> int:
-        """Invoke RC with the given command sequence via :class:`RealityScanConnection`.
+    def _run_commands(self, *commands: str, label: str = "rs") -> int:
+        """Invoke RealityScan with the given command sequence via :class:`RealityScanConnection`.
 
         Builds the CLI tail ``[-load <proj>?] -<commands> -save <proj> -quit`` and
         delegates execution to the connection, which runs it directly when in an
@@ -351,7 +412,7 @@ class RealityCaptureWorkflow(
         ``logs/<label>.log``; non-zero exit raises ``RuntimeError`` with the tail.
         """
         if self.mock_mode:
-            print(f"[mock:{label}] rc {' '.join(commands)}")
+            print(f"[mock:{label}] rs {' '.join(commands)}")
             return 0
 
         tail_cmds: List[str] = []
@@ -361,9 +422,9 @@ class RealityCaptureWorkflow(
         tail_cmds += ["-save", self._project_file, "-quit"]
 
         log_path = self._log_path(label)
-        print(f"[rc:{label}] {' '.join(tail_cmds)}  >> {log_path}")
+        print(f"[rs:{label}] {' '.join(tail_cmds)}  >> {log_path}")
         completed = self._connection().run(
-            tail_cmds, log_path=log_path, timeout=self.rc_timeout_sec
+            tail_cmds, log_path=log_path, timeout=self.timeout_sec
         )
         if completed.returncode != 0:
             tail = ""
@@ -373,14 +434,14 @@ class RealityCaptureWorkflow(
             except Exception:
                 pass
             raise RuntimeError(
-                f"RealityCapture failed (exit {completed.returncode}, label={label}). "
+                f"RealityScan failed (exit {completed.returncode}, label={label}). "
                 f"Log tail:\n{tail}"
             )
         self._project_initialized = True
         return completed.returncode
 
     def _checkpoint(self, label: str) -> Optional[str]:
-        """RC's -save runs on every CLI call, so this is informational only."""
+        """RealityScan's -save runs on every CLI call, so this is informational only."""
         if not self.checkpoint_each_stage or self.mock_mode:
             return None
         print(f"[checkpoint:{label}] {self._project_file}")
@@ -401,7 +462,7 @@ class RealityCaptureWorkflow(
             return None
         report_path = os.path.join(self._reports_dir, f"{label}.xml")
         try:
-            self._run_rc(
+            self._run_commands(
                 "-exportReport", report_path, QC_REPORT_TEMPLATE,
                 label=f"report_{label}",
             )
@@ -504,7 +565,7 @@ class RealityCaptureWorkflow(
             )
 
     def _alignment_metrics(self) -> Dict[str, Any]:
-        """Snapshot of current alignment quality from RC's report.
+        """Snapshot of current alignment quality from RealityScan's report.
 
         Returns None values when metrics could not be extracted (rather
         than zeros) so gates can correctly skip with "not measured"
@@ -535,7 +596,7 @@ class RealityCaptureWorkflow(
         return metrics
 
     def _mesh_metrics(self) -> Dict[str, Any]:
-        """Snapshot of current mesh quality from RC's report.
+        """Snapshot of current mesh quality from RealityScan's report.
 
         Returns None values when metrics could not be extracted.
         """
@@ -569,7 +630,7 @@ class RealityCaptureWorkflow(
     # ----------------------------------------------------------- pipeline
 
     def create_chunk(self, label: str = "New Chunk"):
-        """Start a fresh RC scene. RC has no notion of named chunks, but
+        """Start a fresh RealityScan scene. RealityScan has no notion of named chunks, but
         the selected component can be labeled.
         """
         self._notify("create_chunk", 0.0)
@@ -578,13 +639,13 @@ class RealityCaptureWorkflow(
             if self.mock_mode:
                 print(f"[mock] create_chunk('{label}')")
                 return
-            # Force a new project on next _run_rc by clearing the flag and
+            # Force a new project on next _run_commands by clearing the flag and
             # deleting any pre-existing .rcproj for this name.
             self._project_initialized = False
             self._has_imported_mesh = False
             if os.path.isfile(self._project_file):
                 os.remove(self._project_file)
-            self._run_rc("-newScene", label="new_scene")
+            self._run_commands("-newScene", label="new_scene")
 
     def add_images(self, image_sources: Union[str, Sequence[str]]):
         """Add images from a directory (non-recursive) or list of paths."""
@@ -604,9 +665,9 @@ class RealityCaptureWorkflow(
                 if self.mock_mode:
                     print(f"[mock] add_images: {len(files)} file(s) from '{src_dir}'")
                 else:
-                    # A directory uses -addFolder; RC's -add is for a single
+                    # A directory uses -addFolder; RealityScan's -add is for a single
                     # file and fails ("Failed to add image <dir>") on a folder.
-                    self._run_rc("-addFolder", src_dir, label="add_dir")
+                    self._run_commands("-addFolder", src_dir, label="add_dir")
             else:
                 files = list(image_sources)
                 if not all(isinstance(p, str) for p in files):
@@ -617,16 +678,16 @@ class RealityCaptureWorkflow(
                 if self.mock_mode:
                     print(f"[mock] add_images: {len(files)} file(s)")
                     return
-                # RC's -add takes a single file, so emit one -add per file
+                # RealityScan's -add takes a single file, so emit one -add per file
                 # (all in one invocation): "-add f1 -add f2 ...".
                 add_cmds: List[str] = []
                 for f in files:
                     add_cmds += ["-add", f]
-                self._run_rc(*add_cmds, label="add_files")
+                self._run_commands(*add_cmds, label="add_files")
             print(f"Added {len(files)} images to scene.")
 
     def add_image_dirs(self, dirs: Sequence[str]):
-        """Add images from multiple directories — RC keeps them in one scene."""
+        """Add images from multiple directories — RealityScan keeps them in one scene."""
         self._notify("add_image_dirs", 0.0)
         with self.qc.stage("add_image_dirs") as st:
             st["dirs"] = list(dirs)
@@ -642,7 +703,7 @@ class RealityCaptureWorkflow(
                     print(f"[mock] add {len(here)} file(s) from '{d}'")
                 else:
                     # -addFolder for a directory (-add is single-file only).
-                    self._run_rc("-addFolder", d, label=f"add_dir:{os.path.basename(d)}")
+                    self._run_commands("-addFolder", d, label=f"add_dir:{os.path.basename(d)}")
             st["per_dir"] = per_dir
             st["total_image_count"] = total
             print(f"Added {total} images from {len(dirs)} directories.")
@@ -650,16 +711,16 @@ class RealityCaptureWorkflow(
     # curate_input_set / equalize_exposures are inherited from PrepStagesMixin.
 
     def triage_images(self, quality_threshold: float = 0.5):
-        """No direct RC equivalent. Externally pre-cull frames (sharpness,
+        """No direct RealityScan equivalent. Externally pre-cull frames (sharpness,
         exposure) before calling :meth:`add_images`. Stage is a no-op kept
         for API parity with MetashapeWorkflow.
         """
         self._notify("triage_images", 0.0)
         with self.qc.stage("triage") as st:
             st["quality_threshold"] = quality_threshold
-            st["note"] = "RC has no built-in triage; pre-cull externally."
+            st["note"] = "RealityScan has no built-in triage; pre-cull externally."
             print(
-                "[triage] no-op - RC has no built-in image triage. "
+                "[triage] no-op - RealityScan has no built-in image triage. "
                 "Pre-cull frames before add_images()."
             )
 
@@ -672,10 +733,10 @@ class RealityCaptureWorkflow(
         tiepoint_limit: int = 10000,
         filter_mask: bool = False,
     ):
-        """Run RC alignment (SfM).
+        """Run RealityScan alignment (SfM).
 
         NONE of these parameters reach RealityScan — the CLI has no alignment
-        tuning flags (RC tunes via per-app/per-project settings), so the stage
+        tuning flags (RealityScan tunes via per-app/per-project settings), so the stage
         issues a bare ``-align``. The parameters exist for API parity with
         :meth:`MetashapeWorkflow.align_photos` (same signature/defaults) and
         are recorded in the QC sidecar for diagnostics only; ``filter_mask``
@@ -686,16 +747,16 @@ class RealityCaptureWorkflow(
             st["downscale"] = downscale
             st["filter_mask"] = filter_mask
             st["params_note"] = (
-                "RC CLI ignores keypoint/tiepoint/preselection params; "
+                "RealityScan CLI ignores keypoint/tiepoint/preselection params; "
                 "tune via Settings/AlignmentSettings.xml on disk if needed."
             )
             if self.mock_mode:
                 print(f"[mock] align_photos(downscale={downscale})")
                 return
-            self._run_rc("-align", label="align")
+            self._run_commands("-align", label="align")
             metrics = self._alignment_metrics()
             # Cache for align_photos_with_retry: _alignment_metrics costs a
-            # full RC -exportReport invocation, so the threshold check reuses
+            # full RealityScan -exportReport invocation, so the threshold check reuses
             # this measurement instead of re-running it.
             self._last_align_metrics = metrics
             st.update(metrics)
@@ -707,7 +768,7 @@ class RealityCaptureWorkflow(
             tc = metrics["total_count"]
             ap = metrics["aligned_pct"]
             if ac is None or tc is None:
-                print("Aligned (metrics not extracted from RC report).")
+                print("Aligned (metrics not extracted from RealityScan report).")
             else:
                 pct_str = f"{ap:.1f}%" if ap is not None else "?"
                 print(f"Aligned {ac}/{tc} cameras ({pct_str}).")
@@ -725,12 +786,12 @@ class RealityCaptureWorkflow(
     ):
         """Run alignment; warn if under ``min_aligned_pct``.
 
-        Unlike :meth:`MetashapeWorkflow.align_photos_with_retry`, RC's CLI
+        Unlike :meth:`MetashapeWorkflow.align_photos_with_retry`, RealityScan's CLI
         offers no meaningful retry knob — re-running ``-align`` on the
         same project produces the same result. So this method runs align
         once and emits a QC warning when the result is below the
         threshold; the caller can then capture a fresh frame set or tune
-        RC's Settings/AlignmentSettings.xml on disk and re-run.
+        RealityScan's Settings/AlignmentSettings.xml on disk and re-run.
         """
         self.align_photos(
             downscale=downscale,
@@ -742,7 +803,7 @@ class RealityCaptureWorkflow(
         if self.mock_mode:
             return
         # Reuse align_photos' measurement — _alignment_metrics costs a full
-        # RC -exportReport invocation per call.
+        # RealityScan -exportReport invocation per call.
         metrics = getattr(self, "_last_align_metrics", None)
         if metrics is None:
             metrics = self._alignment_metrics()
@@ -756,37 +817,37 @@ class RealityCaptureWorkflow(
         if pct < min_aligned_pct:
             self.qc.warn(
                 f"align_photos_with_retry: aligned_pct {pct:.1f}% "
-                f"< {min_aligned_pct}% — no auto-retry available on RC; "
-                f"adjust input or RC alignment settings and re-run."
+                f"< {min_aligned_pct}% — no auto-retry available on RealityScan; "
+                f"adjust input or RealityScan alignment settings and re-run."
             )
 
     def refine_alignment(self, *args, **kwargs):
-        """RC performs alignment refinement internally during ``-align``;
+        """RealityScan performs alignment refinement internally during ``-align``;
         no separate CLI step. No-op kept for API parity. Args/kwargs are
         recorded in the QC log so a caller passing Metashape-style
         thresholds knows they were dropped.
         """
         self._notify("refine_alignment", 0.0)
         with self.qc.stage("refine_alignment") as st:
-            st["note"] = "RC refines alignment as part of -align; no-op here."
+            st["note"] = "RealityScan refines alignment as part of -align; no-op here."
             if args or kwargs:
                 st["dropped_args"] = list(args)
                 st["dropped_kwargs"] = dict(kwargs)
 
     def dedupe_cameras_by_pose(self, *args, **kwargs):
-        """No direct RC equivalent. Stage left as a no-op."""
+        """No direct RealityScan equivalent. Stage left as a no-op."""
         with self.qc.stage("dedupe_cameras") as st:
-            st["note"] = "Not implemented for RC."
+            st["note"] = "Not implemented for RealityScan."
             if args or kwargs:
                 st["dropped_args"] = list(args)
                 st["dropped_kwargs"] = dict(kwargs)
 
     def calibrate_colors(self, *args, **kwargs):
-        """RC applies color correction inside ``-calculateTexture`` via
+        """RealityScan applies color correction inside ``-calculateTexture`` via
         its MosaicBlending. No separate stage needed.
         """
         with self.qc.stage("calibrate_colors") as st:
-            st["note"] = "Folded into calculateTexture for RC."
+            st["note"] = "Folded into calculateTexture for RealityScan."
             if args or kwargs:
                 st["dropped_args"] = list(args)
                 st["dropped_kwargs"] = dict(kwargs)
@@ -825,38 +886,38 @@ class RealityCaptureWorkflow(
             return masks_dir if written else None
 
     def import_masks(self, masks_dir: str, mask_source: str = "alpha"):
-        """RC accepts per-image masks named ``<image>.png`` next to the
+        """RealityScan accepts per-image masks named ``<image>.png`` next to the
         source images. This helper copies / symlinks masks from
-        ``masks_dir`` into a layout RC will discover on next ``-add``.
+        ``masks_dir`` into a layout RealityScan will discover on next ``-add``.
         v1 implementation is a stub; wire when masking is enabled.
         """
         with self.qc.stage("masks") as st:
             st["masks_dir"] = masks_dir
             st["mask_source"] = mask_source
             st["note"] = (
-                "RC mask import is stage-stubbed; populate masks alongside "
-                "source images using RC's expected naming, then re-add."
+                "RealityScan mask import is stage-stubbed; populate masks alongside "
+                "source images using RealityScan's expected naming, then re-add."
             )
 
     def generate_depth_maps(self, *args, **kwargs):
-        """RC does not expose depth maps as a separate stage — mesh calc
+        """RealityScan does not expose depth maps as a separate stage — mesh calc
         produces them internally. No-op kept for API parity.
         """
         self._notify("generate_depth_maps", 0.0)
         with self.qc.stage("depth") as st:
-            st["note"] = "Folded into calculate*Model for RC."
+            st["note"] = "Folded into calculate*Model for RealityScan."
             if args or kwargs:
                 st["dropped_args"] = list(args)
                 st["dropped_kwargs"] = dict(kwargs)
 
     def build_model(
         self,
-        source_data=None,   # ignored; RC uses internal depth maps
+        source_data=None,   # ignored; RealityScan uses internal depth maps
         surface_type=None,  # ignored
         interpolation=None, # ignored
         face_count: Optional[str] = None,  # "preview" | "normal" | "high"
     ):
-        """Build a polygon mesh. ``face_count`` selects the RC quality
+        """Build a polygon mesh. ``face_count`` selects the RealityScan quality
         preset (``preview`` / ``normal`` / ``high``); defaults to ``normal``.
         """
         self._notify("build_model", 0.0)
@@ -877,7 +938,7 @@ class RealityCaptureWorkflow(
                 # Auto-mesh replaces any imported mesh as the active model.
                 self._has_imported_mesh = False
                 return
-            self._run_rc(cmd, label=f"model_{quality}")
+            self._run_commands(cmd, label=f"model_{quality}")
             self._has_imported_mesh = False
             metrics = self._mesh_metrics()
             st.update(metrics)
@@ -885,7 +946,7 @@ class RealityCaptureWorkflow(
             comps = metrics["components"]
             lpct = metrics["largest_component_pct"]
             if faces is None:
-                print("Model built (metrics not extracted from RC report).")
+                print("Model built (metrics not extracted from RealityScan report).")
             else:
                 lpct_str = f"{lpct:.1f}%" if lpct is not None else "?"
                 print(
@@ -903,15 +964,15 @@ class RealityCaptureWorkflow(
     ):
         """Mesh cleanup via ``-setMinComponentSize N`` + ``-cleanModel``.
 
-        Only ``remove_components_face_threshold`` reaches RC.
-        ``close_holes_level`` and ``smooth_strength`` have no RC CLI
+        Only ``remove_components_face_threshold`` reaches RealityScan.
+        ``close_holes_level`` and ``smooth_strength`` have no RealityScan CLI
         equivalent — both are accepted for API parity with
         :meth:`MetashapeWorkflow.clean_mesh`, QC-logged, and ignored.
 
         UNVERIFIED semantics note: this code treats ``-setMinComponentSize``
         as a mesh-island *triangle* floor; historic RealityCapture CLI docs
         describe it as the minimal *camera count per alignment component*.
-        Verify against a live RC A/B before leaning on this stage for
+        Verify against a live RealityScan A/B before leaning on this stage for
         floater cleanup (see TUNING.md).
         """
         self._notify("clean_mesh", 0.0)
@@ -932,7 +993,7 @@ class RealityCaptureWorkflow(
                     str(remove_components_face_threshold),
                 ]
             if commands:
-                self._run_rc(*commands, "-cleanModel", label="clean_mesh")
+                self._run_commands(*commands, "-cleanModel", label="clean_mesh")
             metrics = self._mesh_metrics()
             st["after"] = metrics
         self._checkpoint("clean_mesh")
@@ -966,7 +1027,7 @@ class RealityCaptureWorkflow(
             # explicit model selection is needed. (`-selectMaximalModel` is not
             # exposed over the RSNode REST transport — it 400s as an unknown
             # command — and `-simplify` alone works on both transports.)
-            self._run_rc("-simplify", str(target_face_count), label="simplify")
+            self._run_commands("-simplify", str(target_face_count), label="simplify")
             metrics = self._mesh_metrics()
             st["after"] = metrics
             faces = metrics.get("faces")
@@ -977,9 +1038,9 @@ class RealityCaptureWorkflow(
         self._checkpoint("simplify")
 
     def reduce_overlap(self, *args, **kwargs):
-        """No RC equivalent. No-op kept for API parity."""
+        """No RealityScan equivalent. No-op kept for API parity."""
         with self.qc.stage("reduce_overlap") as st:
-            st["note"] = "Not implemented for RC."
+            st["note"] = "Not implemented for RealityScan."
             if args or kwargs:
                 st["dropped_args"] = list(args)
                 st["dropped_kwargs"] = dict(kwargs)
@@ -999,7 +1060,7 @@ class RealityCaptureWorkflow(
                 return
             if not os.path.isfile(mesh_path):
                 raise ValueError(f"Mesh file not found: {mesh_path}")
-            self._run_rc("-importModel", mesh_path, label="import_model")
+            self._run_commands("-importModel", mesh_path, label="import_model")
             self._has_imported_mesh = True
             print(f"Imported model: {mesh_path}")
         self._checkpoint("import_model")
@@ -1007,16 +1068,16 @@ class RealityCaptureWorkflow(
     def build_texture(
         self,
         texture_size: int = 4096,
-        texture_type=None,    # accepted for parity; RC has no CLI hook here
-        blending_mode=None,   # accepted for parity; RC uses internal blending
-        mapping_mode=None,    # accepted for parity; controlled via RC settings
+        texture_type=None,    # accepted for parity; RealityScan has no CLI hook here
+        blending_mode=None,   # accepted for parity; RealityScan uses internal blending
+        mapping_mode=None,    # accepted for parity; controlled via RealityScan settings
         ghosting_filter: bool = True,
     ):
         """Unwrap (when no mesh was imported) + bake texture from solved
         cameras onto the current mesh.
 
-        ``texture_size`` is RECORDED in the QC log but **not passed to RC**
-        — RC's texture size comes from app settings (Texturing.xml), not
+        ``texture_size`` is RECORDED in the QC log but **not passed to RealityScan**
+        — RealityScan's texture size comes from app settings (Texturing.xml), not
         the CLI. To honor this caller-side, write the value into the
         per-project settings file before invoking. Same for blending /
         mapping modes.
@@ -1028,7 +1089,7 @@ class RealityCaptureWorkflow(
             st["unwrap_skipped"] = self._has_imported_mesh
             st["params_note"] = (
                 "texture_size / blending / mapping are not honored at the "
-                "CLI level; configure via RC's Settings/*.xml on disk."
+                "CLI level; configure via RealityScan's Settings/*.xml on disk."
             )
             if self.mock_mode:
                 print(
@@ -1040,7 +1101,7 @@ class RealityCaptureWorkflow(
             if not self._has_imported_mesh:
                 commands.append("-unwrap")
             commands.append("-calculateTexture")
-            self._run_rc(*commands, label="texture")
+            self._run_commands(*commands, label="texture")
             st["completed"] = True
             print(
                 f"Texture built (size_request={texture_size}; "
@@ -1050,7 +1111,7 @@ class RealityCaptureWorkflow(
         self._checkpoint("texture")
 
     def save_project(self):
-        """RC saves on every CLI call (``-save`` is appended); this is a
+        """RealityScan saves on every CLI call (``-save`` is appended); this is a
         no-op that records the project path for parity with Metashape.
         """
         self._notify("save_project", 0.0)
@@ -1073,11 +1134,11 @@ class RealityCaptureWorkflow(
     ):
         """Export the current model. Defaults to OBJ with diffuse texture.
 
-        Only ``export_format`` (the output extension) reaches RC — the
+        Only ``export_format`` (the output extension) reaches RealityScan — the
         command is a bare ``-exportSelectedModel <path>``, so ``binary`` /
         ``precision`` / ``texture_format`` / ``save_*`` / ``overwrite`` are
-        parity-only (Metashape honors them; RC uses its GUI-persisted export
-        settings). Configure RC's export settings once in the app if the
+        parity-only (Metashape honors them; RealityScan uses its GUI-persisted export
+        settings). Configure RealityScan's export settings once in the app if the
         defaults are wrong. ``save_usdz`` (OBJ only) authors an AR-ready
         ``<name>.usdz`` review sidecar beside the export via
         ``pythontk.obj_to_usdz`` — best-effort, never fatal.
@@ -1099,7 +1160,7 @@ class RealityCaptureWorkflow(
             if self.mock_mode:
                 print(f"[mock] export_model -> {export_path}")
                 return
-            self._run_rc("-exportSelectedModel", export_path, label="export")
+            self._run_commands("-exportSelectedModel", export_path, label="export")
             print(f"Exported model: {export_path}")
 
             # AR/QuickLook review sidecar beside the OBJ — zero-dep pythontk
@@ -1108,7 +1169,7 @@ class RealityCaptureWorkflow(
                 st["usdz"] = self._export_usdz_sidecar(export_path)
 
     def export_qc(self):
-        """Export RC's processing report XML and append to the QC log."""
+        """Export RealityScan's processing report XML and append to the QC log."""
         self._notify("export_qc", 0.0)
         with self.qc.stage("report") as st:
             if self.mock_mode:
@@ -1133,7 +1194,7 @@ class RealityCaptureWorkflow(
                 close()
             except Exception as e:  # teardown must never mask the run's outcome
                 import sys
-                print(f"[rc] connection teardown warning: {e}", file=sys.stderr)
+                print(f"[rs] connection teardown warning: {e}", file=sys.stderr)
 
     def finalize_run(self, success: bool = True) -> str:
         """Flush the QC JSON sidecar + release the transport. Returns the path."""
@@ -1147,7 +1208,7 @@ class RealityCaptureWorkflow(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run the RealityCapture workflow.")
+    parser = argparse.ArgumentParser(description="Run the RealityScan workflow.")
     parser.add_argument("--frames", required=True, help="Source frames directory.")
     parser.add_argument("--project", required=True, help="Project output directory.")
     parser.add_argument("--name", default=None, help="Project basename.")
@@ -1162,23 +1223,23 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     name = args.name or os.path.basename(os.path.normpath(args.project))
-    rc = RealityCaptureWorkflow(args.project, name=name)
-    print(rc.get_license_info())
+    rs = RealityScanWorkflow(args.project, name=name)
+    print(rs.get_license_info())
     try:
-        rc.create_chunk(f"{name} Chunk")
-        rc.add_images(args.frames)
-        rc.align_photos()
+        rs.create_chunk(f"{name} Chunk")
+        rs.add_images(args.frames)
+        rs.align_photos()
         if args.blockout:
-            rc.import_model(args.blockout)
+            rs.import_model(args.blockout)
         else:
-            rc.build_model(face_count=args.quality)
-            rc.clean_mesh()
-            rc.simplify_model()
-        rc.build_texture()
-        rc.save_project()
-        rc.export_model()
-        rc.export_qc()
-        rc.finalize_run(success=True)
+            rs.build_model(face_count=args.quality)
+            rs.clean_mesh()
+            rs.simplify_model()
+        rs.build_texture()
+        rs.save_project()
+        rs.export_model()
+        rs.export_qc()
+        rs.finalize_run(success=True)
     except Exception:
-        rc.finalize_run(success=False)
+        rs.finalize_run(success=False)
         raise

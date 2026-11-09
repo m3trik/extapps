@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Driver script for multi-session combined RealityCapture runs.
+"""Driver script for multi-session combined RealityScan runs.
 
 Usage::
 
@@ -9,15 +9,15 @@ Usage::
 Roots and prep defaults come from the photogrammetry **profile** (see
 :mod:`extapps.photogrammetry.profile`; override with ``--profile``). ``--input-root``
 defaults to the profile's input dir. ``--output-root`` defaults to the profile's
-**local** scratch dir (``scratch_root/rc_out``): RealityScan's live multi-GB project
-I/O must NOT run inside a cloud-sync folder, or the sync client and RC fight over the
+**local** scratch dir (``scratch_root/realityscan_out``): RealityScan's live multi-GB project
+I/O must NOT run inside a cloud-sync folder, or the sync client and RealityScan fight over the
 files (placeholder/.new churn, "file not found" on save). Publish the finished export
 to the synced comparison dir afterwards.
 
 Discovers immediate subdirectories of ``--input-root`` as source captures,
 optionally curates (dHash + sharpness) and equalizes exposures across them,
-then runs the full RC pipeline into ``--output-root/<name>/``: align → model
-at the ``--quality`` tier (draft/balanced/max → RC preview/normal/high) →
+then runs the full RealityScan pipeline into ``--output-root/<name>/``: align → model
+at the ``--quality`` tier (draft/balanced/max → RealityScan preview/normal/high) →
 clean → simplify (to fit the UV budget) → unwrap + texture → export.
 
 Mirrors :mod:`extapps.photogrammetry.metashape_workflow.run_combined` so the two engines
@@ -50,12 +50,12 @@ if __package__ in (None, ""):
     if os.path.isdir(_sibling_pythontk) and _sibling_pythontk not in sys.path:
         sys.path.insert(0, _sibling_pythontk)
     from extapps.photogrammetry.realityscan_workflow._realityscan_workflow import (
-        RealityCaptureWorkflow,
+        RealityScanWorkflow,
     )
     from extapps.photogrammetry.profile import (IMAGE_EXTS, Profile, QUALITY_TIERS)
     from extapps.photogrammetry.prep_stages import PrepStagesMixin
 else:
-    from ._realityscan_workflow import RealityCaptureWorkflow
+    from ._realityscan_workflow import RealityScanWorkflow
     from ..profile import (IMAGE_EXTS, Profile, QUALITY_TIERS)
     from ..prep_stages import PrepStagesMixin
 
@@ -68,10 +68,10 @@ _PUBLISH_EXCLUDE_DIRS = frozenset({"curated", "equalized", "logs", "masks"})
 def publish_outputs(project_dir: str, publish_dir: str):
     """Copy finished deliverables from local scratch to the synced output root.
 
-    RC must work in local scratch (cloud-sync fights its live multi-GB project
+    RealityScan must work in local scratch (cloud-sync fights its live multi-GB project
     I/O), so the static post-run deliverables are published separately. Copies
     everything in ``project_dir`` EXCEPT the project file (``.rsproj`` for
-    RealityScan / ``.rcproj`` for legacy RealityCapture — RC working state, not
+    RealityScan / ``.rcproj`` for legacy RealityCapture — RealityScan working state, not
     a deliverable) and the prep-stage intermediates (``curated/`` /
     ``equalized/`` frame copies, ``masks/``, ``logs/`` — publishing those
     pushed multi-GB image trees into the cloud-sync root). Returns the item
@@ -139,7 +139,7 @@ def main(argv=None) -> int:
     pre.add_argument("--quality", choices=QUALITY_TIERS, default=None,
                      help="Reconstruction quality preset (profile/--preset "
                           "default if omitted): draft / balanced / max. Maps to "
-                          "RC's mesh preset (preview / normal / high). Ignored "
+                          "RealityScan's mesh preset (preview / normal / high). Ignored "
                           "with --blockout.")
     preargs, _ = pre.parse_known_args(argv)
     if preargs.init_profile:
@@ -160,7 +160,7 @@ def main(argv=None) -> int:
         print(f"[preset] '{preargs.preset}' applied over defaults "
               f"(explicit flags still override).")
         if preset.get("mask_background"):
-            # RC mask import isn't wired (import_masks is a stub); be explicit
+            # RealityScan mask import isn't wired (import_masks is a stub); be explicit
             # rather than silently dropping a requested noise lever.
             print("[preset] note: mask_background is set, but RealityScan mask "
                   "import is not wired here - mask the subject / set a tight "
@@ -181,8 +181,8 @@ def main(argv=None) -> int:
     )
     p.add_argument(
         "--output-root", default=prof["realityscan_scratch_root"],
-        help="Root for the RC project + intermediate dirs. Defaults to the "
-             "profile's LOCAL scratch (scratch_root/rc_out) — RC must not work "
+        help="Root for the RealityScan project + intermediate dirs. Defaults to the "
+             "profile's LOCAL scratch (scratch_root/realityscan_out) — RealityScan must not work "
              "in a cloud-sync folder. Publish the finished export separately.",
     )
     p.add_argument("--name", default="combined", help="Project basename.")
@@ -209,7 +209,7 @@ def main(argv=None) -> int:
         "--simplify", type=int,
         default=preset.get("simplify_target", rec.get("simplify_target", 20_000_000)),
         help="Simplify the high model to ~N triangles before unwrap so the UV "
-             "atlas fits the texture budget (fixes RC's 'increase maximal "
+             "atlas fits the texture budget (fixes RealityScan's 'increase maximal "
              "texture count/resolution' unwrap failure). Texture quality is "
              "unaffected. Set 0 to disable. Default from the profile's "
              "reconstruct.simplify_target (or --preset).",
@@ -218,7 +218,7 @@ def main(argv=None) -> int:
         "--clean-min-component", type=int,
         default=preset.get("min_component_size", rec.get("min_component_size", 100)),
         help="Mesh-cleanup floor: delete disconnected components smaller than N "
-             "triangles (RC -setMinComponentSize). The main CLI-reachable lever "
+             "triangles (RealityScan -setMinComponentSize). The main CLI-reachable lever "
              "against speckle / 'snow' floaters; raise it hard on specular / "
              "low-texture captures. Default from the profile's "
              "reconstruct.min_component_size (or --preset). 0 disables.",
@@ -228,7 +228,7 @@ def main(argv=None) -> int:
         default=preset.get("mesh_decimate_faces", 0),
         help="PyMeshLab curvature-weighted quadric decimation of the exported "
              "mesh to N faces (0 = off). Runs inline (this interpreter is the "
-             "panel venv); distinct from --simplify, which is RC-native and "
+             "panel venv); distinct from --simplify, which is RealityScan-native and "
              "pre-unwrap.",
     )
     p.add_argument(
@@ -253,7 +253,7 @@ def main(argv=None) -> int:
     p.add_argument("--skip-curate", action=argparse.BooleanOptionalAction,
                    default=bool(preset.get("skip_curate", False)
                                 or _preset_prep_off),
-                   help="Skip pre-RC dHash + sharpness curation.")
+                   help="Skip pre-RealityScan dHash + sharpness curation.")
     p.add_argument("--curate-preview", action="store_true",
                    help="Dry-run: report curation survivor counts per dHash "
                         "threshold + the sharpness distribution, then exit (no "
@@ -301,7 +301,7 @@ def main(argv=None) -> int:
     p.add_argument("--equalize-strength", type=float,
                    default=preset.get("equalize_strength", eq.get("strength", 0.5)),
                    help="Exposure-match blend 0–1. <1 preserves each frame's "
-                        "local contrast (RC re-balances during texturing). "
+                        "local contrast (RealityScan re-balances during texturing). "
                         "1.0 = full Reinhard match.")
     p.add_argument("--equalize-reference", choices=("first", "median", "global"),
                    default=preset.get("equalize_reference",
@@ -320,8 +320,8 @@ def main(argv=None) -> int:
                    default=_gate_default)
     p.add_argument("--save-project", action=argparse.BooleanOptionalAction,
                    default=bool(preset.get("save_project", False)),
-                   help="Keep a reopenable RC project (.rsproj) so a later run "
-                        "can reopen it and re-run only some stages. RC always "
+                   help="Keep a reopenable RealityScan project (.rsproj) so a later run "
+                        "can reopen it and re-run only some stages. RealityScan always "
                         "writes its project during the run (state persistence), "
                         "so by DEFAULT (off) the local .rsproj is removed after "
                         "export, leaving only the deliverables. Note: via --rsnode "
@@ -330,23 +330,24 @@ def main(argv=None) -> int:
                         "here requires a local run (--rsnode off).")
     p.add_argument("--texture-size", default=preset.get("texture_size", "auto"),
                    help="'auto' (default) derives from source long edge (capped "
-                        "8192). NOTE: RC's bake size is GUI/settings-controlled, "
+                        "8192). NOTE: RealityScan's bake size is GUI/settings-controlled, "
                         "not CLI — this is RECORDED in QC but not applied; set it "
                         "once in RealityScan's texturing settings (it persists).")
-    p.add_argument("--rc-exe", default=None,
-                   help="Override RealityCapture.exe path. "
-                        "Default: RC_EXE env or standard install.")
+    p.add_argument("--realityscan-exe", "--rc-exe", dest="realityscan_exe", default=None,
+                   help="Override the RealityScan.exe path (--rc-exe: its "
+                        "RealityCapture name, read until extapps 0.11.0). "
+                        "Default: REALITYSCAN_EXE env or standard install.")
     p.add_argument("--rsnode", choices=("auto", "on", "off"), default="auto",
                    help="RSNode REST transport (drives a running, signed-in "
                         "RealityScan headlessly from any session): 'auto' uses it "
                         "when a node is reachable else falls back to the CLI "
                         "launcher; 'on' requires it; 'off' forces the CLI. "
-                        "Env RC_RSNODE overrides 'auto'.")
+                        "Env REALITYSCAN_RSNODE overrides 'auto'.")
     p.add_argument("--rsnode-url", default=None,
-                   help="RSNode base URL (default RC_RSNODE_URL env or "
+                   help="RSNode base URL (default REALITYSCAN_RSNODE_URL env or "
                         "http://127.0.0.1:8000).")
     p.add_argument("--publish-root", default=prof["realityscan_output_root"],
-                   help="Synced output root for finished deliverables. RC works "
+                   help="Synced output root for finished deliverables. RealityScan works "
                         "in local scratch (--output-root), then on success the "
                         "deliverables (OBJ/MTL/textures/report/QC/logs — not the "
                         ".rsproj) are copied to <publish-root>/<name>. Default: the "
@@ -355,7 +356,7 @@ def main(argv=None) -> int:
                    help="Skip publishing deliverables to the synced output root "
                         "(leave them only in local scratch).")
     p.add_argument("--mock", action="store_true",
-                   help="Force mock mode — no RC subprocess fired. "
+                   help="Force mock mode — no RealityScan subprocess fired. "
                         "Useful for validating plumbing on the real input set.")
     args = p.parse_args(argv)
 
@@ -380,7 +381,7 @@ def main(argv=None) -> int:
         sample = PrepStagesMixin.first_image_in_dirs(sources)
         texture_size = PrepStagesMixin.derive_texture_size(sample)
         print(f"Texture size: {texture_size} (auto, from {sample}; "
-              f"RC bake size is GUI-set - recorded only)")
+              f"RealityScan bake size is GUI-set - recorded only)")
     else:
         texture_size = int(args.texture_size)
 
@@ -393,7 +394,7 @@ def main(argv=None) -> int:
         # run's engine sidecar under the same project name; the preview is a
         # prep artifact and shares the prep sidecar name instead (parity with
         # the Metashape runner).
-        pv = RealityCaptureWorkflow(
+        pv = RealityScanWorkflow(
             project_path=project_dir,
             name=f"{args.name}_prep",
             mock_mode=True,  # preview needs cv2, never RealityScan
@@ -417,29 +418,29 @@ def main(argv=None) -> int:
         pv.finalize_run(success=True)  # flush the preview stage to the sidecar
         return 0
 
-    rc = RealityCaptureWorkflow(
+    rs = RealityScanWorkflow(
         project_path=project_dir,
         name=args.name,
-        rc_exe=args.rc_exe,
+        realityscan_exe=args.realityscan_exe,
         mock_mode=True if args.mock else None,
         gate_mode=args.gate_mode,
         checkpoint_each_stage=args.save_project,
         use_rsnode={"auto": None, "on": True, "off": False}[args.rsnode],
         rsnode_url=args.rsnode_url,
     )
-    print(rc.get_license_info())
-    if rc.mock_mode:
-        reason = "forced via --mock" if args.mock else "RealityScan/RealityCapture not found"
+    print(rs.get_license_info())
+    if rs.mock_mode:
+        reason = "forced via --mock" if args.mock else "RealityScan not found"
         print(
             f"Running in MOCK MODE ({reason}). "
             "QC sidecar will still be written; no scene produced."
         )
 
     try:
-        rc.create_chunk(f"{args.name} (combined)")
+        rs.create_chunk(f"{args.name} (combined)")
 
         if not args.skip_curate:
-            sources = rc.curate_input_set(
+            sources = rs.curate_input_set(
                 sources,
                 hash_threshold=args.curate_hash_threshold,
                 sharpness_floor=args.curate_sharpness_floor,
@@ -452,7 +453,7 @@ def main(argv=None) -> int:
             )
 
         if not args.skip_equalize and len(sources) > 1:
-            sources = rc.equalize_exposures(
+            sources = rs.equalize_exposures(
                 sources,
                 strength=args.equalize_strength,
                 reference_strategy=args.equalize_reference,
@@ -464,46 +465,46 @@ def main(argv=None) -> int:
                 "quality for no benefit (the engine re-balances color at texture)."
             )
 
-        rc.add_image_dirs(sources)
-        rc.align_photos_with_retry(min_aligned_pct=50.0)
+        rs.add_image_dirs(sources)
+        rs.align_photos_with_retry(min_aligned_pct=50.0)
 
         if args.blockout:
-            rc.import_model(args.blockout)
+            rs.import_model(args.blockout)
         else:
-            # Map the unified quality preset to RC's mesh preset.
-            rc_model = {"draft": "preview", "balanced": "normal", "max": "high"}
-            rc.build_model(face_count=rc_model[args.quality])
-            rc.clean_mesh(remove_components_face_threshold=args.clean_min_component)
+            # Map the unified quality preset to RealityScan's mesh preset.
+            quality_preset = {"draft": "preview", "balanced": "normal", "max": "high"}
+            rs.build_model(face_count=quality_preset[args.quality])
+            rs.clean_mesh(remove_components_face_threshold=args.clean_min_component)
             if args.simplify and args.simplify > 0:
-                rc.simplify_model(args.simplify)
+                rs.simplify_model(args.simplify)
 
-        rc.build_texture(texture_size=texture_size)
+        rs.build_texture(texture_size=texture_size)
         if args.save_project:
-            rc.save_project()
-        rc.export_model()
+            rs.save_project()
+        rs.export_model()
         # PyMeshLab file-level stages (repair -> refine/measure -> gate ->
         # optional bake). This interpreter is the panel venv, so unlike the
         # Metashape driver they run inline for real — no post-chain needed.
-        rc.run_mesh_stages(
+        rs.run_mesh_stages(
             remesh_target_pct=args.mesh_remesh_pct,
             decimate_target_faces=args.mesh_decimate_faces,
             bake_texture_size=args.bake_vertex_color,
         )
-        rc.export_qc()
-        sidecar = rc.finalize_run(success=True)
+        rs.export_qc()
+        sidecar = rs.finalize_run(success=True)
         if not args.save_project:
-            # RC writes its .rsproj during the run for state; with save-project
+            # RealityScan writes its .rsproj during the run for state; with save-project
             # off, drop the local project file so only the deliverables remain
             # (exports are separate files, untouched). No-op for RSNode runs,
             # where the project lives in the node session, not on local disk.
-            proj = getattr(rc, "_project_file", None)
+            proj = getattr(rs, "_project_file", None)
             if proj and os.path.isfile(proj):
                 try:
                     os.remove(proj)
                     print(f"[save-project off] removed local project {proj}")
                 except OSError as e:
                     print(f"[save-project off] could not remove {proj}: {e}")
-        if not args.no_publish and not rc.mock_mode:
+        if not args.no_publish and not rs.mock_mode:
             publish_dir = os.path.join(args.publish_root, args.name)
             published = publish_outputs(project_dir, publish_dir)
             if published is not None:
@@ -512,7 +513,7 @@ def main(argv=None) -> int:
         return 0
     except Exception as e:
         print(f"\nWorkflow failed: {e}", file=sys.stderr)
-        rc.finalize_run(success=False)
+        rs.finalize_run(success=False)
         raise
 
 

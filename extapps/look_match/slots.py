@@ -129,7 +129,11 @@ class LookMatchSlots(_LookMatchSlotsInternal):
     #: Milliseconds of quiet after a gesture before the scores catch up; after a
     #: typed edit or an undo, before everything does.
     SETTLE_MS, EDIT_MS = 300, 30
-    STATUS_COLORS = {True: "#59c27a", False: "#e0a33a", None: "#888888"}
+    #: Within tolerance / outside it / not measured: the shared status tiers.
+    STATUS_COLORS = {
+        within: str(ptk.Palette.status()[tier][0])
+        for within, tier in ((True, "success"), (False, "warn"), (None, "locked"))
+    }
     #: Seconds the bake worker stays up after the last renewal (the panel renews
     #: while it bakes), and how often it renews; how long a worker it launched
     #: may take to come up (a GUI Maya opening a production scene).

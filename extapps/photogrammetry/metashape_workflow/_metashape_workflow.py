@@ -55,7 +55,7 @@ class MetashapeWorkflow(WorkflowEngine, PrepStagesMixin, MeshStagesMixin):
     ``equalize_exposures``) come from :class:`PrepStagesMixin`, and the
     PyMeshLab file-level stages (``measure_mesh`` / ``refine_mesh`` /
     ``bake_vertex_color`` / ``clean_mesh_advanced``) from
-    :class:`MeshStagesMixin` — both shared with ``RealityCaptureWorkflow``
+    :class:`MeshStagesMixin` — both shared with ``RealityScanWorkflow``
     so the two engines can't drift apart.
     """
 

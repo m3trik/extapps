@@ -22,7 +22,7 @@ they all use:
   Switchboard-panel scaffolding (base slots + frames-source mixin, the async
   ``AppLauncher.spawn`` runner each engine's panel runner -- ``MetashapeRunner``,
   ... -- builds on, and the common pre-processing param specs) the Metashape /
-  RealityCapture / Brush panels are thin subclasses of.
+  RealityScan / Brush panels are thin subclasses of.
 
 Domain-specific by design: this shared layer is used only by the photogrammetry
 tools, so it lives here rather than in a generic ``extapps`` core (the genuinely

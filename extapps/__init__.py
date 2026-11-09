@@ -15,7 +15,7 @@ Hosts (tentacle's menus in Maya and Blender) open an app BY NAME through uitk's
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 # Base of every panel's "detailed docs" link (``ParamPanelSlots.DOCS_URL`` on
 # the bridge panels, the compositor's intro, Substance's startup line): the
@@ -42,11 +42,9 @@ DEFAULT_INCLUDE = {
         "GaussianSplatRunner",
         "BrushInstallRunner",
     ],
-    "substance_workflow.launcher": ["SubstanceWorkflowUI"],
-    "substance_workflow.slots": ["SubstanceWorkflowSlots"],
-    "substance_workflow.env_utils.painter_connection": ["PainterConnection"],
-    "substance_workflow.env_utils.painter_finder": ["PainterFinder"],
-    "substance_workflow.job": ["Job"],
+    "substance_scripts.launcher": ["SubstanceScriptsUI"],
+    "substance_scripts.slots": ["SubstanceScriptsSlots"],
+    "substance_scripts._substance_scripts": ["SubstanceScripts"],
     "texture_maps.converter.launcher": ["ConverterUI"],
     "texture_maps.converter.slots": ["ConverterSlots"],
     "texture_maps.converter._converter": ["MapConverter"],
@@ -54,11 +52,13 @@ DEFAULT_INCLUDE = {
     "texture_maps.packer.slots": ["PackerSlots"],
     "mesh_convert.launcher": ["MeshConvertUI"],
     "mesh_convert.slots": ["MeshConvertSlots"],
-    "marmoset_workflow.launcher": ["MarmosetWorkflowUI"],
-    "marmoset_workflow.slots": ["MarmosetWorkflowSlots"],
-    "marmoset_workflow._marmoset_workflow": ["MarmosetWorkflow"],
-    "unity_workflow.launcher": ["UnityWorkflowUI"],
-    "unity_workflow.slots": ["UnityWorkflowSlots"],
+    "marmoset_scripts.launcher": ["MarmosetScriptsUI"],
+    "marmoset_scripts.slots": ["MarmosetScriptsSlots"],
+    "marmoset_scripts._marmoset_scripts": ["MarmosetScripts"],
+    "unity_scripts.launcher": ["UnityScriptsUI"],
+    "unity_scripts.slots": ["UnityScriptsSlots"],
+    "unity_scripts.unity_connection": ["UnityConnection"],
+    "unity_scripts.unity_deliverer": ["UnityDeliverer"],
     "webxr_preview.launcher": ["WebXrPreviewUI"],
     "webxr_preview.slots": ["WebXrPreviewSlots"],
     "look_match.launcher": ["LookMatchUI"],
@@ -70,8 +70,29 @@ DEFAULT_INCLUDE = {
 #: ``MovedNameError`` naming the new home. ``{name: (new home, version)}``.
 MOVED_NAMES = {
     # One Unity panel now: the behavior the two Unity panels shared through a
-    # vendored mixin is the Unity Workflow's own.
-    "UnityPanelMixin": ("extapps.UnityWorkflowSlots", "0.8.0"),
+    # vendored mixin is the Unity panel's own.
+    "UnityPanelMixin": ("extapps.UnityScriptsSlots", "0.8.0"),
+    # The Unity Workflow became Unity Scripts, a script manager.
+    "UnityWorkflowUI": ("extapps.UnityScriptsUI", "0.9.0"),
+    "UnityWorkflowSlots": ("extapps.UnityScriptsSlots", "0.9.0"),
+    # The Marmoset Workflow became Marmoset Scripts: the bundled scripts and a
+    # person's own.
+    "MarmosetWorkflowUI": ("extapps.MarmosetScriptsUI", "0.9.0"),
+    "MarmosetWorkflowSlots": ("extapps.MarmosetScriptsSlots", "0.9.0"),
+    "MarmosetWorkflow": ("extapps.MarmosetScripts", "0.9.0"),
+    # The Substance Workflow became Substance Scripts: Python scripts run in
+    # Painter on the one Painter engine and plugin the host bridges use (its
+    # own Painter connection, finder, op registry and batch job went with it).
+    "SubstanceWorkflowUI": ("extapps.SubstanceScriptsUI", "0.9.0"),
+    "SubstanceWorkflowSlots": ("extapps.SubstanceScriptsSlots", "0.9.0"),
+    "PainterConnection": ("extapps.SubstanceScripts", "0.9.0"),
+    "PainterFinder": ("extapps.SubstanceScripts", "0.9.0"),
+    "Job": ("extapps.SubstanceScripts", "0.9.0"),
+    # The three subpackages themselves, renamed with their panels: a row naming
+    # one covers every module, function and constant it held.
+    "unity_workflow": ("extapps.unity_scripts", "0.9.0"),
+    "marmoset_workflow": ("extapps.marmoset_scripts", "0.9.0"),
+    "substance_workflow": ("extapps.substance_scripts", "0.9.0"),
 }
 
 

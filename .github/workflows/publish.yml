@@ -46,6 +46,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       publish: ${{ steps.version.outputs.publish }}
+      published: ${{ steps.version.outputs.published }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,11 +72,65 @@ jobs:
           # Empty on workflow_dispatch: with no push range the gate only reports.
           BASE: ${{ github.event.before }}
         run: |
-          PYPI=$(pip index versions extapps 2>/dev/null | grep -oP 'Available versions: \K[^,]+' || echo "none")
+          # PyPI's version, "none" only when PyPI says it has no extapps: any other
+          # failure (the network) fails here, never reading as a first release.
+          if LISTED=$(pip index versions extapps 2>&1); then
+            PYPI=$(printf '%s\n' "$LISTED" | grep -oP 'Available versions: \K[^,]+')
+          elif printf '%s\n' "$LISTED" | grep -q 'No matching distribution found'; then
+            PYPI=none
+          else
+            echo "::error::pip index versions extapps failed: $LISTED"
+            exit 1
+          fi
           python m3trik/scripts/check_version_bump.py extapps --repo extapps --published "$PYPI" --base "$BASE" >> "$GITHUB_OUTPUT"
+          echo "published=$PYPI" >> "$GITHUB_OUTPUT"
+
+  # What may this release remove? push.ps1 asks check_api_surface.py --semver
+  # for the cascade; nothing asked it here, so a push could publish a removal
+  # nothing accounts for (no alias, no MOVED_NAMES row), one its notice still
+  # holds, or one under a patch bump. --published names the baseline (the
+  # v<PyPI version> tag; the full history carries the tags), --release the
+  # version this run publishes; exit 1 refuses, exit 2 is no verdict (that
+  # tag missing). Nothing published yet, or no v* tag in the repo yet, has
+  # nothing to judge against and passes, said in the log: the tag this run
+  # makes is the next release's baseline. Same sibling layout as tests.yml's
+  # api-retirements job.
+  semver:
+    needs: version
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: extapps
+          fetch-depth: 0  # the release tags the baseline is read from
+
+      - uses: actions/checkout@v4
+        with:
+          repository: m3trik/m3trik
+          ref: main
+          path: m3trik
+
+      - uses: actions/checkout@v4
+        with:
+          repository: m3trik/pythontk
+          ref: dev
+          path: pythontk
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: The release owes no more than it gives
+        env:
+          PUBLISHED: ${{ needs.version.outputs.published }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: python m3trik/scripts/check_api_surface.py extapps --semver --published "$PUBLISHED" --release "$VERSION"
 
   publish:
-    needs: [test, version]
+    needs: [test, version, semver]
     if: needs.version.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:

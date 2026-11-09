@@ -1,16 +1,16 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Launch connection for RealityScan / RealityCapture.
+"""Launch connection for RealityScan.
 
 RealityScan 2.0 (Epic's rebrand) is **window-station bound and Epic-sign-in
 gated**: its CLI commands only execute inside an interactive desktop session
 where the user is signed into Epic. In a non-interactive context (SSH / Windows
-service *session 0*) RC starts but sits idle at the Epic sign-in with no window
+service *session 0*) RealityScan starts but sits idle at the Epic sign-in with no window
 station — it never processes. This connection encapsulates that reality so the
 engine and any remote driver don't each re-learn it the hard way:
 
 * **Interactive session** -> run the CLI directly (blocking, output captured).
-* **Non-interactive session** -> launch RC into the **active console session**
+* **Non-interactive session** -> launch RealityScan into the **active console session**
   via :meth:`pythontk.AppLauncher.launch_in_session` (PsExec), recovering the
   exit code through a done-marker + poll (PsExec detaches).
 * **No logged-in console session** to borrow -> raise
@@ -30,19 +30,19 @@ from pythontk import AppLauncher
 
 
 class RealityScanInteractiveError(RuntimeError):
-    """An RC run needs an interactive, Epic-signed-in desktop session that is not
+    """A RealityScan run needs an interactive, Epic-signed-in desktop session that is not
     available (e.g. driving from SSH with no user logged in)."""
 
 
 class RealityScanConnection:
-    """Discover + drive the RealityScan/RealityCapture CLI, interactive-aware."""
+    """Discover + drive the RealityScan CLI, interactive-aware."""
 
     def __init__(self, exe: Optional[str] = None):
         if exe is None:
             # Deferred import avoids a module-load cycle with the engine.
-            from ._realityscan_workflow import RealityCaptureWorkflow
+            from ._realityscan_workflow import RealityScanWorkflow
 
-            exe = RealityCaptureWorkflow.find_realitycapture_exe()
+            exe = RealityScanWorkflow.find_realityscan_exe()
         self.exe = exe
 
     def is_available(self) -> bool:
@@ -50,12 +50,12 @@ class RealityScanConnection:
 
     @staticmethod
     def is_interactive() -> bool:
-        """True if the current process can host RC's window (session != 0)."""
+        """True if the current process can host RealityScan's window (session != 0)."""
         return AppLauncher.is_interactive_session()
 
     @staticmethod
     def epic_signin_active() -> bool:
-        """Heuristic: True if Epic sign-in helpers are running (RC is waiting on
+        """Heuristic: True if Epic sign-in helpers are running (RealityScan is waiting on
         authentication). Diagnostic only — not a hard gate."""
         for name in ("EpicWebHelper.exe", "EpicGamesLauncher.exe"):
             if AppLauncher.get_running_processes(name):
@@ -70,7 +70,7 @@ class RealityScanConnection:
         session: Optional[int] = None,
         poll_interval: float = 5.0,
     ) -> subprocess.CompletedProcess:
-        """Run RC as ``[exe] + commands`` (the caller supplies the full CLI tail,
+        """Run RealityScan as ``[exe] + commands`` (the caller supplies the full CLI tail,
         e.g. ``-load .. -align .. -save .. -quit``).
 
         Interactive session: blocking ``subprocess`` with stdout+stderr -> *log_path*.
@@ -78,12 +78,12 @@ class RealityScanConnection:
         a done-marker beside *log_path* for the exit code.
 
         :return: ``subprocess.CompletedProcess`` (returncode is meaningful).
-        :raises FileNotFoundError: RC exe not found.
+        :raises FileNotFoundError: RealityScan exe not found.
         :raises RealityScanInteractiveError: non-interactive with no console session.
         :raises subprocess.TimeoutExpired | TimeoutError: on timeout.
         """
         if not self.exe:
-            raise FileNotFoundError("RealityScan/RealityCapture exe not found.")
+            raise FileNotFoundError("RealityScan exe not found.")
         argv: List[str] = [self.exe] + list(commands)
 
         if self.is_interactive():
@@ -118,7 +118,7 @@ class RealityScanConnection:
         )
         # AppLauncher owns the .bat bytes: the console OEM codepage (non-ASCII
         # paths survive verbatim; one cmd cannot spell raises rather than being
-        # mangled to '?', which would redirect RC output / the .done marker to
+        # mangled to '?', which would redirect RealityScan output / the .done marker to
         # a wrong file and hang the poll loop to its deadline) and exact CRLF.
         AppLauncher.write_batch_script(
             bat,

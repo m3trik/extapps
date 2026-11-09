@@ -1,12 +1,12 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Slots for the RealityCapture Workflow panel.
+"""Slots for the RealityScan Workflow panel.
 
 A thin :class:`~extapps.photogrammetry._panel_slots.PhotogrammetryPanelSlots`
 subclass sharing the photogrammetry-panel scaffolding with the Metashape panel
 (Project-Name row, frames Source row via :class:`FramesSourceMixin`, run-mode
 combo, semantic presets, header menu, async log-streaming ``b000``). It
-**discovers the local RealityScan / RealityCapture install and drives the
+**discovers the local RealityScan install and drives the
 headless pipeline** (``run_combined.py``) through it
 via :class:`RealityScanRunner`.
 
@@ -45,11 +45,11 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
     UI_NAME = "realityscan_workflow"
     LOG_TAG = "realityscan_workflow"
 
-    ENGINE_LABEL = "RealityCapture"
+    ENGINE_LABEL = "RealityScan"
     PRESET_ENGINE = "realityscan"
     MISSING_ENGINE_MESSAGE = (
-        "RealityScan / RealityCapture not found. Point the panel at an install "
-        "by any of: set $RC_EXE, set 'apps.realityscan_exe' in the photogrammetry "
+        "RealityScan not found. Point the panel at an install "
+        "by any of: set $REALITYSCAN_EXE, set 'apps.realityscan_exe' in the photogrammetry "
         "profile, or install it to the standard location. (No mock fallback — the "
         "panel drives the real install.)"
     )
@@ -109,7 +109,7 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
             "Real-time Assistance — the CLI fallback works only in an interactive "
             "desktop session. A node on another host answers only on its own "
             "localhost: tunnel to it (ssh -L 8000:127.0.0.1:8000 <host>) and set "
-            "$RC_RSNODE=1 + $RC_RSNODE_URL to the tunnel's local end."
+            "$REALITYSCAN_RSNODE=1 + $REALITYSCAN_RSNODE_URL to the tunnel's local end."
         )
 
     def list_template_modes(self) -> List[Tuple[str, str]]:
@@ -123,8 +123,8 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
 
     def help_spec(self) -> dict:
         return dict(
-            title="RealityCapture Workflow",
-            body="Drive RealityScan / RealityCapture photogrammetry headless from "
+            title="RealityScan Workflow",
+            body="Drive RealityScan photogrammetry headless from "
             "the local install — project setup, source frames, and tuning presets "
             "shared with the CLI.",
             steps=[
@@ -141,8 +141,8 @@ class RealityscanWorkflowSlots(FramesSourceMixin, PhotogrammetryPanelSlots):
                 "GUI / per-project Settings only — the panel exposes its "
                 "CLI-reachable knobs (quality, component floor, simplify) plus the "
                 "shared input pre-processing. See TUNING.md.",
-                "Needs RealityScan / RealityCapture installed (auto-discovered, "
-                "$RC_EXE, or the profile's apps.realityscan_exe). Deliverables are "
+                "Needs RealityScan installed (auto-discovered, "
+                "$REALITYSCAN_EXE, or the profile's apps.realityscan_exe). Deliverables are "
                 "auto-published to the synced output root on success.",
                 "For headless runs (and any non-interactive session), launch "
                 "RealityScan, sign in, and enable <b>Workflow ▸ Real-time "

@@ -118,7 +118,7 @@ class TestRoster(unittest.TestCase):
             MetashapeWorkflow,
         )
         from extapps.photogrammetry.realityscan_workflow._realityscan_workflow import (
-            RealityCaptureWorkflow,
+            RealityScanWorkflow,
         )
         from extapps.photogrammetry.sugar_mesh_workflow._sugar_mesh import (
             SugarMeshWorkflow,
@@ -128,7 +128,7 @@ class TestRoster(unittest.TestCase):
             GaussianSplatWorkflow,
             SplatPublishWorkflow,
             MetashapeWorkflow,
-            RealityCaptureWorkflow,
+            RealityScanWorkflow,
             SugarMeshWorkflow,
         )
 

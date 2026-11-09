@@ -4,9 +4,9 @@
 
 ``curate_input_set`` (dHash + sharpness culling), ``equalize_exposures``
 (cross-set exposure/WB matching) and the ``_export_usdz_sidecar`` export
-helper are identical for RealityCapture and Metashape — they only call
+helper are identical for RealityScan and Metashape — they only call
 :mod:`pythontk` primitives plus the engine's QC log. Keeping them in one
-mixin both engines inherit makes the documented RC↔Metashape "same public
+mixin both engines inherit makes the documented RealityScan↔Metashape "same public
 method shape" contract structural (the two cannot drift apart again) and
 unifies their QC payloads.
 
@@ -381,7 +381,7 @@ class PrepStagesMixin:
         """Cross-set exposure / WB equalization via :class:`pythontk.ExposureEqualizer`.
 
         ``strength`` (0-1) blends the match with each frame's original so local
-        contrast is preserved (RealityCapture/Metashape re-balance during
+        contrast is preserved (RealityScan/Metashape re-balance during
         texturing, so a gentle nudge beats a full flatten); ``reference_strategy``
         (``first``/``median``/``global``) picks the target distribution without
         letting the first capture's color cast dominate. Returns the equalized

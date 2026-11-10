@@ -15,7 +15,7 @@ Hosts (tentacle's menus in Maya and Blender) open an app BY NAME through uitk's
 from pythontk.core_utils.module_resolver import bootstrap_package
 
 __package__ = "extapps"
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 # Base of every panel's "detailed docs" link (``ParamPanelSlots.DOCS_URL`` on
 # the bridge panels, the compositor's intro, Substance's startup line): the

@@ -217,6 +217,7 @@ def _run_mesh_stages(mp, args, model_path=None) -> Optional[str]:
         remesh_target_pct=args.mesh_remesh_pct,
         decimate_target_faces=args.mesh_decimate_faces,
         bake_texture_size=args.bake_vertex_color,
+        lod_levels=args.mesh_lod_levels,
     )
 
 
@@ -578,6 +579,12 @@ def main(argv=None) -> int:
                    help="Bake per-vertex color to an N-px texture on "
                         "auto-generated UVs (PyMeshLab; 0 = off). For "
                         "vertex-colored meshes with no texture pass.")
+    p.add_argument("--mesh-lod-levels", type=int, choices=range(0, 9), metavar="N",
+                   default=preset.get("mesh_lod_levels", 0),
+                   help="Write a LOD chain of the final mesh beside it, N "
+                        "levels in all (<name>_LOD0..N-1, each half the last's "
+                        "faces, measured in the QC sidecar; PyMeshLab; 0 = "
+                        "off).")
     p.add_argument("--calibrate-colors", action=argparse.BooleanOptionalAction,
                    default=bool(preset.get("calibrate_colors", False)),
                    help="Run Metashape's calibrateColors (incl. white balance) "

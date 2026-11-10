@@ -4,7 +4,8 @@
 
 ``measure_mesh`` (QC metrics + gate), ``refine_mesh`` (isotropic remesh +
 curvature-weighted decimation with before/after/deviation QC),
-``bake_vertex_color`` (vertex color → texture) and the legacy
+``bake_vertex_color`` (vertex color → texture), ``make_lods`` (a LOD chain
+of the deliverable, each level measured) and the legacy
 ``clean_mesh_advanced`` repair pass are identical for RealityScan and
 Metashape — they operate on the *exported mesh file*, never the engine
 SDK, calling :class:`pythontk.MeshOps` plus the engine's QC log. One
@@ -27,7 +28,7 @@ checked when present) and ``self.mock_mode``.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class MeshStagesMixin:
@@ -162,16 +163,22 @@ class MeshStagesMixin:
                 if remesh_target_pct > 0:
                     s.op("remesh_isotropic", targetlen=remesh_target_pct)
                 if decimate_target_faces > 0:
-                    if curvature_weighted:
-                        s.op("curvature_scalar")
-                    s.op(
-                        "decimate_quadric",
-                        targetfacenum=int(decimate_target_faces),
-                        preserveboundary=True,
-                        preservenormal=True,
-                        qualityweight=curvature_weighted,
-                        autoclean=True,
+                    # A textured scan keeps its UVs (the session picks the
+                    # texture-aware collapse).
+                    s.decimate(
+                        target_faces=int(decimate_target_faces),
+                        curvature_weighted=curvature_weighted,
                     )
+                    # What the collapse applied: a textured scan's keeps its
+                    # UVs and has no curvature weighting.
+                    applied = s.last_decimation or {}
+                    st["decimation"] = applied
+                    st["curvature_weighted"] = applied.get("curvature_weighted", curvature_weighted)
+                    if curvature_weighted and not st["curvature_weighted"]:
+                        self.qc.warn(
+                            "refine_mesh: the scan is textured; its UV-keeping collapse "
+                            "applies no curvature weighting."
+                        )
                 out = s.save(output_path or f"{stem}_refined{in_ext}")
                 after = s.measure()
             st["output"] = out
@@ -228,18 +235,61 @@ class MeshStagesMixin:
             print(f"Vertex color baked: {mesh_path} + {tex_path}")
             return mesh_path, tex_path
 
+    def make_lods(
+        self,
+        model_path: Optional[str] = None,
+        levels: int = 3,
+        ratio: float = 0.5,
+    ) -> Optional[List[str]]:
+        """A LOD chain of the mesh (``pythontk.MeshOps.lods``): ``<stem>_LOD0``
+        (the mesh as it is) and each lower level ``<stem>_LOD<n>`` beside it,
+        one file per level in its format -- named by the LOD convention, not
+        yet one group: a DCC's Create LODs (or a GLB merge) makes the group --
+        each a share *ratio* of the last's triangles, measured against LOD0 in
+        the QC stage (``chain``). A textured scan keeps its UVs and texture.
+        Settings out of range (more than 8 levels) are warned and skipped.
+        Returns the levels' paths, LOD0 first, or ``None`` when skipped."""
+        self._notify("make_lods", 0.0)
+        with self.qc.stage("mesh_lods") as st:
+            model_path = model_path or self._default_model_path()
+            st["input"] = model_path
+            st["levels"] = levels
+            st["ratio"] = ratio
+            ops = self._resolve_mesh_ops(st)
+            if ops is None:
+                return None
+            src = self._mesh_input(st, "make_lods", model_path)
+            if src is None:
+                return None
+            try:
+                chain = ops.lods(src, levels=levels, ratio=ratio, ext=os.path.splitext(src)[1])
+            except ValueError as e:  # a level count or ratio out of range: a skip, not a failure
+                self.qc.warn(f"make_lods: {e}")
+                st["fallback"] = "invalid_lod_settings"
+                return None
+            st["chain"] = chain
+            print(
+                "LODs: "
+                + ", ".join(f"LOD{c['level']} {c['triangles']} faces" for c in chain)
+                + "."
+            )
+            return [c["path"] for c in chain]
+
     def run_mesh_stages(
         self,
         model_path: Optional[str] = None,
         remesh_target_pct: float = 0.0,
         decimate_target_faces: int = 0,
         bake_texture_size: int = 0,
+        lod_levels: int = 0,
     ) -> Optional[str]:
         """The file-level stages in pipeline order: repair → refine (when a
         remesh/decimate target is set) → measure + gate (otherwise) → bake
-        (opt-in). The single composition both engines' ``run_combined``
-        sequences and the Metashape ``--post-only`` pass share; returns the
-        path of the furthest-derived mesh (or ``None`` when nothing ran)."""
+        (opt-in) → LODs (opt-in, *lod_levels* levels in all, of the mesh the
+        stages before made). The single composition both engines'
+        ``run_combined`` sequences and the Metashape ``--post-only`` pass
+        share; returns the path of the furthest-derived mesh -- the baked one
+        when a bake ran -- or ``None`` when nothing ran."""
         cleaned = self.clean_mesh_advanced(exported_model_path=model_path)
         target = cleaned or model_path
         if remesh_target_pct > 0 or decimate_target_faces > 0:
@@ -252,7 +302,10 @@ class MeshStagesMixin:
         else:
             self.measure_mesh(model_path=target)  # gate the final mesh either way
         if bake_texture_size > 0:
-            self.bake_vertex_color(model_path=target, texture_size=bake_texture_size)
+            baked = self.bake_vertex_color(model_path=target, texture_size=bake_texture_size)
+            target = baked[0] if baked else target
+        if lod_levels > 1:
+            self.make_lods(model_path=target, levels=lod_levels)
         return target
 
     def clean_mesh_advanced(

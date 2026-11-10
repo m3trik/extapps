@@ -1,6 +1,13 @@
 # Changelog
 
 ## 2026
+- **2026-11-10 -- Photogrammetry LOD review fixes (`photogrammetry/mesh_stages.py`, both engines' `parameters.py` and `run_combined.py`).**
+  - `--mesh-lod-levels` takes 0..8 as the panel does. A level count out of range is a warned skip (`fallback: invalid_lod_settings`). It used to raise after the export and fail the run.
+  - The refine stage's QC record states what the collapse applied: a textured scan's keeps its UVs and weighs no curvature, which is warned.
+  - The LOD stage says what it writes: one file per level, named by the convention, which a DCC's Create LODs groups.
+  - Test(s): `test_metashape_workflow.py`: the out-of-range skip, the CLI refusal.
+- **2026-11-10 -- Photogrammetry: an optional LOD chain of the final mesh, and textured scans keep their UVs through decimation (`photogrammetry/mesh_stages.py` new `make_lods` stage, `run_mesh_stages(lod_levels=)`; both engines' new LOD Levels parameter and `--mesh-lod-levels`).** `make_lods` writes `<name>_LOD0..n` beside the mesh in its format, one file per level (a DCC's Create LODs groups them), each half the last's faces, each measured against LOD0 in the QC sidecar (`mesh_lods.chain`, `pythontk.MeshOps.lods`). `refine_mesh` decimates through `pythontk`'s session `decimate`, which keeps a textured scan's UVs. Fixed: `run_mesh_stages` returned the pre-bake mesh when a bake ran, though it states the furthest-derived one; it returns the baked mesh, and the LODs are of it.
+  - Test(s): `test_metashape_workflow.py` `test_lod_stage_writes_a_chain_beside_the_mesh`, `test_the_composition_ends_with_the_lods_of_its_final_mesh` (red first: no attribute, unexpected keyword); the photogrammetry suites 156 passed.
 - **2026-11-08 -- Fixed (test): the Marmoset Scripts list test reads a person's own script as uitk 1.11.0 marks it, in italics with its path as the tooltip, its label unchanged (`test/test_marmoset_scripts_panel.py`).** The test still asserted the retired `· mine` label suffix. `test_unity_scripts_panel.py` drops three local `import json` lines the module already imports (ruff F811, which CI's lint fails on).
   - Test(s): `test_marmoset_scripts_panel.py` (7 passed); the full suite 837 passed.
 - **2026-11-08 -- Fixed (release): the renamed `unity_workflow`, `marmoset_workflow` and `substance_workflow` subpackages name their new homes (`__init__.py` `MOVED_NAMES` three subpackage rows).** A read of `extapps.substance_workflow` raises `MovedNameError` naming `extapps.substance_scripts`, and the release judgment against 0.8.0 accounts for every name they held.

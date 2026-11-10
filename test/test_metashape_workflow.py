@@ -513,6 +513,73 @@ class TestMetashapeWorkflowPhase3(unittest.TestCase):
         mp2.run_mesh_stages()  # no targets -> measure/gate path
         self.assertIn("mesh_measure", mp2.qc.data["stages"])
         self.assertNotIn("mesh_refine", mp2.qc.data["stages"])
+        self.assertNotIn("mesh_lods", mp2.qc.data["stages"], "LODs are opt-in")
+
+    def _sphere_export(self, subdiv=4, colored=False) -> str:
+        from pythontk import MeshOps
+
+        if not MeshOps.available():
+            self.skipTest("pymeshlab not installed")
+        ms = MeshOps.resolve().MeshSet()
+        ms.create_sphere(radius=1.0, subdiv=subdiv)
+        if colored:
+            ms.compute_color_by_function_per_vertex(x="255*(x+1)/2", y="128", z="64")
+        path = os.path.join(self.tmp, "phase3.obj")
+        ms.save_current_mesh(path)
+        return path
+
+    def test_lod_settings_out_of_range_are_a_warned_skip(self) -> None:
+        """More levels than a LOD group holds (a CLI value or a preset the
+        panel never clamped) skips the stage, warned: the run finishes
+        (2026-11-10 review: it raised after the export and failed the run)."""
+        self._sphere_export(subdiv=2)
+        mp = self._new_workflow()
+        self.assertIsNone(mp.make_lods(levels=9))
+        self.assertEqual(mp.qc.data["stages"]["mesh_lods"]["fallback"], "invalid_lod_settings")
+
+    def test_the_cli_refuses_a_lod_level_count_past_the_limit(self) -> None:
+        """``--mesh-lod-levels`` takes 0..8, as the panel does."""
+        import contextlib
+        import io
+
+        from extapps.photogrammetry.metashape_workflow import run_combined
+
+        err = io.StringIO()
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(err):
+            run_combined.main(["--mesh-lod-levels", "9"])
+        self.assertIn("--mesh-lod-levels", err.getvalue())
+        self.assertIn("invalid choice", err.getvalue())
+
+    def test_lod_stage_writes_a_chain_beside_the_mesh(self) -> None:
+        """``make_lods``: ``<stem>_LOD0..n`` beside the mesh in its format, one
+        file per level named by the LOD convention, each level measured
+        against LOD0 (``pythontk.MeshOps.lods``) in the QC stage."""
+        self._sphere_export()
+        mp = self._new_workflow()
+        paths = mp.make_lods(levels=3)
+        self.assertEqual(
+            [os.path.basename(p) for p in paths],
+            ["phase3_LOD0.obj", "phase3_LOD1.obj", "phase3_LOD2.obj"],
+        )
+        chain = mp.qc.data["stages"]["mesh_lods"]["chain"]
+        self.assertEqual(chain[0]["triangles"], 5120)
+        self.assertLess(chain[2]["triangles"], chain[1]["triangles"])
+        self.assertGreater(chain[2]["peak"], 0.0)
+
+    def test_the_composition_ends_with_the_lods_of_its_final_mesh(self) -> None:
+        """``lod_levels`` chains the LODs onto the furthest-derived mesh: the
+        baked one when a bake ran (the textured deliverable), which is also
+        what the composition returns."""
+        self._sphere_export(subdiv=2, colored=True)
+        mp = self._new_workflow()
+        final = mp.run_mesh_stages(bake_texture_size=256, lod_levels=2)
+        baked = mp.qc.data["stages"]["mesh_bake"]["output"]
+        self.assertEqual(final, baked)
+        lod0 = mp.qc.data["stages"]["mesh_lods"]["chain"][0]["path"]
+        self.assertEqual(
+            os.path.basename(lod0),
+            os.path.splitext(os.path.basename(baked))[0] + "_LOD0.obj",
+        )
 
 
 class _FakeProc:
@@ -800,6 +867,7 @@ class TestRunCombinedPostOnlyInputGuard(unittest.TestCase):
             mesh_remesh_pct=0.0,
             mesh_decimate_faces=0,
             bake_vertex_color=0,
+            mesh_lod_levels=0,
         )
 
     def test_post_only_fails_when_the_export_is_missing(self) -> None:

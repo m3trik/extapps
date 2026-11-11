@@ -246,6 +246,13 @@ def main(argv=None) -> int:
              "(PyMeshLab; 0 = off). For vertex-colored meshes with no texture "
              "pass.",
     )
+    p.add_argument(
+        "--mesh-lod-levels", type=int, choices=range(0, 9), metavar="N",
+        default=preset.get("mesh_lod_levels", 0),
+        help="Write a LOD chain of the final mesh beside it, N levels in all "
+             "(<name>_LOD0..N-1, each half the last's faces, measured in the QC "
+             "sidecar; PyMeshLab; 0 = off).",
+    )
     # Panel-saved presets snapshot every widget, including the stage toggles —
     # honor them so a preset replayed via --preset reproduces the panel run
     # (preprocess_input=False is the panel's master off-switch for both).
@@ -489,6 +496,7 @@ def main(argv=None) -> int:
             remesh_target_pct=args.mesh_remesh_pct,
             decimate_target_faces=args.mesh_decimate_faces,
             bake_texture_size=args.bake_vertex_color,
+            lod_levels=args.mesh_lod_levels,
         )
         rs.export_qc()
         sidecar = rs.finalize_run(success=True)

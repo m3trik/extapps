@@ -111,9 +111,11 @@ classifiers = [
 # uitk 1.11.0: the panels' template combo lists those tiers
 # (`ParamPanelSlots.template_dirs`, Copy to My Scripts), and a renamed app's
 # former name launches it (`ExternalAppHandler.RENAMED_GROUP`).
+# pythontk 0.23.0: the photogrammetry LOD stage calls `ptk.MeshOps.lods`, and
+# the refine stage reads the session's `last_decimation`; neither is in 0.22.0.
 # No host and no tentacle: extapps is a product nothing imports, and it imports
 # neither (test/test_imports.py).
-dependencies = ["pythontk>=0.21.0", "uitk>=1.11.0", "qtpy"]
+dependencies = ["pythontk>=0.23.0", "uitk>=1.11.0", "qtpy"]
 
 # mesh pulls pythontk's PyMeshLab extra: it backs only the photogrammetry
 # mesh stages (measure / refine / bake via pythontk.MeshOps). Without it the

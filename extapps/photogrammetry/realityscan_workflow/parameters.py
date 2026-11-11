@@ -137,6 +137,21 @@ PARAMS.update(
             "auto-generated UVs (PyMeshLab; 0 = off). For vertex-colored "
             "meshes with no texture pass. Maps to --bake-vertex-color.",
         ),
+        "mesh_lod_levels": AttributeSpec(
+            key="mesh_lod_levels",
+            label="LOD Levels",
+            kind="int",
+            section="Mesh Processing",
+            default=0,
+            minimum=0,
+            maximum=8,
+            tooltip="Write a LOD chain of the final mesh beside it: <name>_LOD0 "
+            "(the mesh) and each lower level <name>_LOD<n> at half the last's "
+            "faces, one file per level (a DCC's Create LODs groups them), "
+            "each measured against LOD0 in the QC sidecar; a textured scan "
+            "keeps its UVs (PyMeshLab; 0 = off, else levels in all, 2-8). "
+            "Maps to --mesh-lod-levels.",
+        ),
     }
 )
 
@@ -153,6 +168,7 @@ _VALUE_FLAGS: "Dict[str, str]" = {
     "mesh_remesh_pct": "--mesh-remesh-pct",
     "mesh_decimate_faces": "--mesh-decimate-faces",
     "bake_vertex_color": "--bake-vertex-color",
+    "mesh_lod_levels": "--mesh-lod-levels",
 }
 
 # Bool params -> store_true flags (emitted only when truthy).

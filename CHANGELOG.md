@@ -1,6 +1,12 @@
 # Changelog
 
 ## 2026
+- **2026-11-14 -- Fixed: a Unity job nothing follows does not hold the Unity Scripts panel (`unity_scripts/slots.py` `_watch`).** If wiring the follower raised, every later Run was refused as "still running", the footer saying so, until the panel was reopened: the Substance Scripts panel's shape (the entry below), found here in the release review.
+  - Test(s): red first, then green: `test_unity_scripts_panel.py` new `test_a_follower_that_could_not_be_wired_leaves_the_panel_runnable`; the module 35 passed.
+- **2026-11-14 -- Fixed: review follow-ups to 0.10.1's Substance Scripts batch (`substance_scripts/`: `slots.py` `_watch`; the vendored `ops/bake_ops.py`, `_rpc_core.py`, `templates/new_project.py`, `_substance_engine.py`; `docs/substance_scripts.md`).**
+  - **A job nothing follows does not hold the panel.** If wiring the follower raised, every later Run was refused as "still running" until the panel was reopened, and the footer went on saying so (the footer half found in the release review); and a wait that raised was reported as a script that "did not run" though its job was queued.
+  - **Bake Lighting leaves the stack whole when a map is missing** (it had deleted the last run's layer and left an empty one); **New Project checks again before it saves**; the plugin's server drops an op whose caller gave up, so a Run that timed out and was clicked again no longer runs twice.
+  - Test(s): red first, then green: `test_substance_scripts_panel.py` new `TestAJobNothingFollowsDoesNotHoldThePanel`; `test_substance_scripts_panel`, `test_vendor_sync` 39 passed; live (`EXTAPPS_PAINTER_LIVE=1`, an owned hidden Painter) `test_substance_scripts_live.py` 12 passed.
 - **2026-11-13 -- Fixed: Substance Scripts' built-in scripts, their runner and the panel (`substance_scripts/`: the vendored engine, `substance_rpc` plugin and `templates/`; `slots.py`; `docs/substance_scripts.md`).**
   - A failed or cancelled job reads finished only once its error, traceback and console are written (`substance_rpc` plugin `ops/script_ops.py`, the vendored copy; found in review, tested in mayatk).
   - **Bake Lighting to Diffuse lights the texture**: its layer painted nothing (no channel active, no source); it is now painted from the baked AO map, with the curvature overlay above it.

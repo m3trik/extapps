@@ -614,6 +614,24 @@ class TestUnityScriptsPanel(_PanelCase):
         self.assertIn("[Unity] a warning", log)
         self.assertIn("Send to Unity ran", log)
 
+    def test_a_follower_that_could_not_be_wired_leaves_the_panel_runnable(self):
+        """If wiring the follower raised, every later Run was refused as "still
+        running", the footer saying so, until the panel was reopened (the
+        Substance panels' shape, found here in the release review)."""
+
+        class _Unwired:
+            def __init__(self, work, name):
+                pass
+
+            def when_done(self, _ui, _done):
+                raise RuntimeError("no event loop to come back on")
+
+        with mock.patch.object(self.slots.sb, "BackgroundTask", _Unwired):
+            with self.assertRaises(RuntimeError):
+                self.slots._watch(object(), "j1", "SendToUnity")
+        self.assertIsNone(self.slots._running)
+        self.assertFalse(self.slots.ui.footer.is_busy, "the footer still says the job is running")
+
 
 class TestUnityScriptsHostsTheScene(_PanelCase):
     """A host injects its engine (``launch(show=False)``, then ``engine =``):

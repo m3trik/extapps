@@ -9,7 +9,7 @@ Run Python scripts in Adobe Substance 3D Painter: the built-in ones and your own
 - **A script** is a Python file Painter runs as written, with `args` holding its values (`args["MESH"]`, `args.get("AO_RAYS", 64)`), `args.report(line)`, `args.progress(f, text)`, `args.check_cancel()` and `args.when_idle(fn)`: a step run once Painter is idle again (a save after a bake). Its header, read without running it:
 
   ```python
-  """Bake Lighting to Diffuse: Iray AO baked and laid over Base Color."""
+  """Bake Lighting to Diffuse: AO baked and laid over Base Color."""
   WORKS_ON = "project"   # "new" | "mesh" | "project"
   # Rows: __PAINTER_PROJECT__ __PAINTER_SAVE__ __PAINTER__
   # Row: __AO_RAYS__ int 64 "AO Rays" min=1 max=256
@@ -76,7 +76,7 @@ The engine and plugin are tested where they live: mayatk's `test_substance_bridg
 
 ## What to expect
 
-- **Bake Lighting to Diffuse** reads the AO map as data: an occlusion of a half darkens Base Color by a half (dropped onto the channel by hand, Painter reads the map as an sRGB picture and darkens it to about a fifth). **AO Intensity** is the layer's opacity. A re-run replaces its own layers and leaves the rest of the stack.
+- **Bake Lighting to Diffuse** reads the AO map as data: an occlusion of a half darkens Base Color by a half (dropped onto the channel by hand, Painter reads the map as an sRGB picture and darkens it to about a fifth). **AO Intensity** is the layer's opacity. A re-run replaces its own layers and leaves the rest of the stack; a texture set missing a map it needs is an error that leaves its stack as it was.
 - **New Project** with **Save When Done** never saves over a file that exists: Painter's own save replaces one without asking, so the run stops before it creates anything.
 - **Export Textures** fails when Painter writes nothing or reports an error, and names Painter's presets when the one asked for is not among them. Bit depths 16f and 32f are float (exr, tif).
 - A job is followed, and **Cancel Script** reaches it, while Painter's main thread is held by a long step (an export, a save).

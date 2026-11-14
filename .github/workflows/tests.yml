@@ -13,7 +13,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'test/**'
+      - 'tests/**'
       - '.github/workflows/tests.yml'
   workflow_call:
 
@@ -84,7 +84,7 @@ jobs:
           # Stream via tee, not $(...) capture: a buffered capture shows NOTHING
           # in the log while hung. With -v the last streamed line names the
           # hanging test; --timeout dumps its thread stacks and force-exits.
-          pytest --tb=short -v --timeout=300 --timeout-method=thread test/ 2>&1 | tee pytest_out.txt
+          pytest --tb=short -v --timeout=300 --timeout-method=thread tests/ 2>&1 | tee pytest_out.txt
           # PIPESTATUS, not $?: piping through tee would otherwise report tee's
           # exit code (always 0) and turn every failure green.
           RC=${PIPESTATUS[0]}
@@ -125,8 +125,8 @@ jobs:
     #
     # Scoped to ``.`` rather than the package dir: measured 2026-09-16, this repo
     # is clean against the declared rule set across BOTH the package and
-    # test/, so the gate covers the whole tree from day one. (uitk, blendertk
-    # and unitytk gate the package dir only -- their test/ trees still carry
+    # tests/, so the gate covers the whole tree from day one. (uitk, blendertk
+    # and unitytk gate the package dir only -- their tests/ trees still carry
     # findings.)
     #
     # Pinned, because an unpinned ruff turns an upstream rule addition into a

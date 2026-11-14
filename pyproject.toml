@@ -114,7 +114,7 @@ classifiers = [
 # pythontk 0.23.0: the photogrammetry LOD stage calls `ptk.MeshOps.lods`, and
 # the refine stage reads the session's `last_decimation`; neither is in 0.22.0.
 # No host and no tentacle: extapps is a product nothing imports, and it imports
-# neither (test/test_imports.py).
+# neither (tests/test_imports.py).
 dependencies = ["pythontk>=0.23.0", "uitk>=1.11.0", "qtpy"]
 
 # mesh pulls pythontk's PyMeshLab extra: it backs only the photogrammetry
@@ -168,7 +168,7 @@ look_match = "extapps.look_match:LookMatchUI"
 # names: uitk's handler resolves it to the app it became (a desktop shortcut or
 # `python -m extapps <former>` keeps working) and never lists it. Restated from
 # `extapps/_panel_launcher.py`'s RENAMED_FROM, which carries the values; the
-# two are held equal (test/test_panel_launcher.py).
+# two are held equal (tests/test_panel_launcher.py).
 [project.entry-points."uitk.external_apps.renamed"]
 unity_workflow = "extapps.unity_scripts:UnityScriptsUI"
 marmoset_workflow = "extapps.marmoset_scripts:MarmosetScriptsUI"
@@ -231,9 +231,9 @@ order = ["Editor"]
 kernel = "Editor"
 
 [tool.pytest.ini_options]
-testpaths = ["test"]
-pythonpath = [".", "test"]
-addopts = "--ignore=test/temp_tests"
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+addopts = "--ignore=tests/temp_tests"
 
 [tool.ruff]
 # House formatter/linter - rule set, exemptions and gate status: m3trik/docs/CODE_STANDARD.md section 1.

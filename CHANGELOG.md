@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026
+- **2026-11-12 -- Tests: the test folder is `tests/`, the pytest convention (was `test/`).** `test` is the standard library's own package name, so `from test.x import ...` could resolve to it.
 - **2026-11-10 -- Photogrammetry LOD review fixes (`photogrammetry/mesh_stages.py`, both engines' `parameters.py` and `run_combined.py`).**
   - `--mesh-lod-levels` takes 0..8 as the panel does. A level count out of range is a warned skip (`fallback: invalid_lod_settings`). It used to raise after the export and fail the run.
   - The refine stage's QC record states what the collapse applied: a textured scan's keeps its UVs and weighs no curvature, which is warned.

@@ -7,7 +7,7 @@ needed); the engines, runners and headless runs are extapps' own tests.
 
 Run::
 
-    python extapps/test/run_tests.py realityscan_workflow_panel
+    python extapps/tests/run_tests.py realityscan_workflow_panel
 """
 
 from __future__ import annotations

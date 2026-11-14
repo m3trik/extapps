@@ -10,7 +10,7 @@ live Toolbag session.
 
 Run::
 
-    pytest extapps/test/test_toolbag_helpers.py
+    pytest extapps/tests/test_toolbag_helpers.py
 """
 
 from __future__ import annotations

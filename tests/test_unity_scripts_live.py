@@ -24,7 +24,7 @@ from pathlib import Path
 import pythontk as ptk
 
 PKG = Path(__file__).resolve().parents[1] / "extapps" / "unity_scripts"
-FBX = Path(__file__).resolve().parents[2] / "pythontk" / "test" / "test_assets" / "fbx" / "maya_tangents.fbx"
+FBX = Path(__file__).resolve().parents[2] / "pythontk" / "tests" / "test_assets" / "fbx" / "maya_tangents.fbx"
 LICENSE_WALL = 198
 
 

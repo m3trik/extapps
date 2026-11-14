@@ -66,10 +66,10 @@ status = engine.wait(result)   # {"state": "done", "report": [...], ...}
 ## Tests
 
 ```powershell
-& python -m pytest test/test_substance_scripts_panel.py      # the panel, a stand-in Painter
+& python -m pytest tests/test_substance_scripts_panel.py      # the panel, a stand-in Painter
 # live, in an owned hidden Painter (launches one; yours is never touched):
 $env:EXTAPPS_PAINTER_LIVE = '1'
-& python -m pytest test/test_substance_scripts_live.py
+& python -m pytest tests/test_substance_scripts_live.py
 ```
 
 The engine and plugin are tested where they live: mayatk's `test_substance_bridge.py`, `test_substance_rpc_plugin.py`, `test_substance_bake_ops.py` and `test_substance_connection.py`.

@@ -1,6 +1,6 @@
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 ![Platform](https://img.shields.io/badge/Platform-Windows%2C%20Linux-lightgrey.svg)
-[![Tests](https://img.shields.io/badge/Tests-841%20passed-brightgreen.svg)](test/)
+[![Tests](https://img.shields.io/badge/Tests-841%20passed-brightgreen.svg)](tests/)
 
 # extapps
 

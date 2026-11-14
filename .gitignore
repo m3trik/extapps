@@ -29,5 +29,5 @@ Thumbs.db
 *.bak
 
 # Test scratch artifacts (every sibling package ignores this dir)
-test/temp_tests/*
-!test/temp_tests/.gitkeep
+tests/temp_tests/*
+!tests/temp_tests/.gitkeep

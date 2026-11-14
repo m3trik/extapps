@@ -3,7 +3,7 @@
 """
 Tests for the standalone Map Converter panel (``slots/tools/converter.py``).
 
-Its batch rules are extapps' ``MapConverter`` (``extapps/test/test_converter.py``).
+Its batch rules are extapps' ``MapConverter`` (``extapps/tests/test_converter.py``).
 The panel reports through its logger and the engine through ``print``, so a run's
 report is read from both (:class:`_Reported`).
 

@@ -30,7 +30,7 @@ from qtpy.QtWidgets import QApplication
 
 from uitk.testing import TestSandbox
 
-# A direct `python test/test_unity_scripts_panel.py` loads no conftest, so the
+# A direct `python tests/test_unity_scripts_panel.py` loads no conftest, so the
 # sandbox is activated here too -- before the first QSettings or user folder.
 TestSandbox.activate()
 

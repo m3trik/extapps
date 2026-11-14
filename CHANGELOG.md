@@ -1,6 +1,13 @@
 # Changelog
 
 ## 2026
+- **2026-11-13 -- Fixed: Substance Scripts' built-in scripts, their runner and the panel (`substance_scripts/`: the vendored engine, `substance_rpc` plugin and `templates/`; `slots.py`; `docs/substance_scripts.md`).**
+  - **Bake Lighting to Diffuse lights the texture**: its layer painted nothing (no channel active, no source); it is now painted from the baked AO map, with the curvature overlay above it.
+  - **Export Textures writes what the stack holds** (inside the job's undo entry Painter exported the maps of before the last edit), fails when Painter reports an error or writes nothing, and gains Size and Dilation rows and the float bit depths.
+  - **New Project never saves over a project on disk**; **Update Mesh finds its Painter straight after New Project**; a job is followed, and cancelled, while Painter's main thread is held; a failed script logs its own traceback and what it printed.
+  - **The panel follows one job at a time** (`slots.py` `b000`, `_watch`): a Run while one was followed replaced it, so Cancel Script reached the wrong job and the first one's end cleared the panel's state under the second. A Run is refused, saying so, until the job ends.
+  - Not fixed, logged: Update Mesh's reload never ends in an owned hidden or offscreen Painter 12.1.5 (a windowed one is not yet measured).
+  - Test(s): `test_substance_scripts_panel.py` new `TestOneFollowedJobAtATime` (red first); `test_vendor_sync`, `test_substance_scripts_panel` 38 passed. Live (`EXTAPPS_PAINTER_LIVE=1`, an owned hidden Painter): `test_substance_scripts_live.py` 12 passed; it now reads the exported Base Color for the baked lighting, exports float exr, and holds the refusal to save over a project and the record's mesh path.
 - **2026-11-12 -- Tests: the test folder is `tests/`, the pytest convention (was `test/`).** `test` is the standard library's own package name, so `from test.x import ...` could resolve to it.
 - **2026-11-10 -- Photogrammetry LOD review fixes (`photogrammetry/mesh_stages.py`, both engines' `parameters.py` and `run_combined.py`).**
   - `--mesh-lod-levels` takes 0..8 as the panel does. A level count out of range is a warned skip (`fallback: invalid_lod_settings`). It used to raise after the export and fail the run.

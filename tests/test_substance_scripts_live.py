@@ -22,22 +22,49 @@ from pathlib import Path
 import pythontk as ptk
 
 
-def _cube_obj() -> str:
-    """A UV'd cube as OBJ text: Painter's importer reads no mesh from the
-    FBX 2020 test asset (its project then never finishes loading)."""
-    corners = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
+def _boxes_obj() -> str:
+    """A slab with a small box resting on it, every face its own UV cell, as
+    OBJ text: the box shades the slab around it, so a baked AO map is not
+    plain white. (OBJ: Painter's importer reads no mesh from the FBX 2020 test
+    asset, and its project then never finishes loading.)"""
     faces = ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3))
-    lines = [f"v {x} {y} {z}" for x, y, z in corners]
-    lines += [f"vt {(i % 3) / 3 + u / 3.2:.4f} {(i // 3) / 2 + v / 2.2:.4f}" for i in range(6) for u, v in ((0, 0), (1, 0), (1, 1), (0, 1))]
-    lines += ["f " + " ".join(f"{c + 1}/{i * 4 + k + 1}" for k, c in enumerate(face)) for i, face in enumerate(faces)]
-    return "\n".join(lines) + "\n"
+    points, uvs, polys = [], [], []
+    for b, (centre, half) in enumerate((((0.0, 0.0, 0.0), (2.0, 0.5, 2.0)), ((0.0, 1.0, 0.0), (0.5, 0.5, 0.5)))):
+        points += [
+            f"v {centre[0] + x * half[0]} {centre[1] + y * half[1]} {centre[2] + z * half[2]}"
+            for x in (-1, 1)
+            for y in (-1, 1)
+            for z in (-1, 1)
+        ]
+        for i, face in enumerate(faces):
+            cell = b * 6 + i
+            cu, cv = (cell % 4) / 4.0, (cell // 4) / 3.0
+            uvs += [f"vt {cu + 0.01 + u * 0.23:.4f} {cv + 0.01 + v * 0.31:.4f}" for u, v in ((0, 0), (1, 0), (1, 1), (0, 1))]
+            polys.append("f " + " ".join(f"{b * 8 + c + 1}/{cell * 4 + k + 1}" for k, c in enumerate(face)))
+    return "\n".join(points + uvs + polys) + "\n"
+
+
+def _greys(path):
+    """``(darkest, lightest, width)`` of an image, its pixels sampled on a grid."""
+    from qtpy import QtGui
+
+    image = QtGui.QImage(str(path))
+    if image.isNull():
+        raise AssertionError(f"not an image Qt reads: {path}")
+    step = max(1, image.width() // 64)
+    values = [
+        QtGui.qGray(image.pixel(x, y)) for y in range(0, image.height(), step) for x in range(0, image.width(), step)
+    ]
+    return min(values), max(values), image.width()
 
 
 @unittest.skipUnless(os.environ.get("EXTAPPS_PAINTER_LIVE"), "live Painter pass: set EXTAPPS_PAINTER_LIVE=1")
 class TestSubstanceScriptsLive(unittest.TestCase):
     """In order: a new project from a mesh, a script of one's own with its own
-    row, the lighting bake, the mesh-map bake, the texture export, a failing
-    script, and a run meant for another project refused."""
+    row, the lighting bake, the mesh-map bake, the texture export (the baked
+    lighting in its Base Color), an export naming no preset, a failing script,
+    a new project that would replace one on disk, and a run meant for another
+    project refused."""
 
     @classmethod
     def setUpClass(cls):
@@ -64,8 +91,8 @@ class TestSubstanceScriptsLive(unittest.TestCase):
         # The refresh's target: a folder of the test's, never the person's plugins.
         os.environ["SUBSTANCE_PAINTER_PLUGINS_PATH"] = str(cls.root / "painter")
         cls.engine = SubstanceScripts()
-        cls.mesh = cls.root / "cube.obj"
-        cls.mesh.write_text(_cube_obj(), encoding="utf-8")
+        cls.mesh = cls.root / "boxes.obj"
+        cls.mesh.write_text(_boxes_obj(), encoding="utf-8")
         cls.project = cls.root / "live.spp"
         cls.result = None
 
@@ -126,16 +153,30 @@ class TestSubstanceScriptsLive(unittest.TestCase):
         self.assertTrue(self.project.is_file(), "saved as Project")
         record = next(r for r in self.engine.painters() if r["id"] == conn.record["id"])
         self.assertTrue(PainterPath.same(record["state"]["project"]["file_path"], self.project), record)
+        # What Update Mesh finds its Painter by: Painter cannot say the mesh or
+        # the UUID at its own save event (the record once kept them empty).
+        self.assertTrue(PainterPath.same(record["state"]["project"]["mesh_path"], self.mesh), record)
+        self.assertEqual(record["state"]["project"]["uuid"], held["uuid"], record)
+        picked = self.engine.pick_painter("mesh", mesh=str(self.mesh), launch=False)
+        self.assertIs(picked, conn, "Update Mesh's Painter, straight after New Project")
 
     def test_2_a_persons_script_runs_with_its_own_row(self):
         mine = ptk.ScriptTemplate.user_dir("substance")
         mine.mkdir(parents=True, exist_ok=True)
         script = mine / "live_probe.py"
+        # It also gives every texture set a plain Base Color to light (a
+        # fill layer paints nothing until a channel of it is switched on).
         script.write_text(
             '"""Live probe."""\nWORKS_ON = "project"\n'
             '# Row: __GREETING__ str "hello" "Greeting"\n'
+            "import substance_painter.layerstack as layerstack\n"
             "import substance_painter.textureset as ts\n"
-            "args.report(args['GREETING'] + ' ' + str(len(ts.all_texture_sets())))\n",
+            "args.report(args['GREETING'] + ' ' + str(len(ts.all_texture_sets())))\n"
+            "for texture_set in ts.all_texture_sets():\n"
+            "    stack = ts.Stack.from_name(str(texture_set.name))\n"
+            "    base = layerstack.insert_fill(layerstack.InsertPosition.from_textureset_stack(stack))\n"
+            "    base.set_name('Base')\n"
+            "    base.active_channels = {ts.ChannelType.BaseColor}\n",
             encoding="utf-8",
         )
         self.addCleanup(script.unlink)
@@ -145,23 +186,55 @@ class TestSubstanceScriptsLive(unittest.TestCase):
 
     def test_3_bake_lighting_on_the_open_project(self):
         _result, status = self._run(
-            "bake_lighting", params={"BAKE_RESOLUTION": "512", "AO_RAYS": 16}
+            "bake_lighting", params={"BAKE_RESOLUTION": "512", "AO_RAYS": 16, "INCLUDE_CURVATURE": True}
         )
         self.assertEqual(status["state"], "done", status)
-        self.assertTrue(any(line.startswith("Baked:") for line in status["report"]), status)
+        said = "\n".join(status["report"])
+        self.assertIn("baked AO, Curvature", said)
+        self.assertIn("lighting laid over Base Color", said)
 
     def test_4_bake_mesh_maps(self):
         _result, status = self._run(
             "bake_mesh_maps",
-            params={"BAKE_RESOLUTION": "512", "BAKE_POSITION": False, "BAKE_THICKNESS": False, "BAKE_ID": False},
+            params={"MAP_BAKE_RESOLUTION": "512", "BAKE_POSITION": False, "BAKE_THICKNESS": False, "BAKE_ID": False},
         )
         self.assertEqual(status["state"], "done", status)
+        self.assertIn("baked Normal, WorldSpaceNormal, AO, Curvature", "\n".join(status["report"]))
 
-    def test_5_export_textures(self):
+    def test_5_export_textures_and_the_baked_lighting_is_in_its_base_color(self):
+        """The export runs straight after the scripts that changed the stack,
+        in a Painter no one looks at: it must write what the stack holds NOW.
+        (Run inside the job's undo entry it wrote the maps of before any edit;
+        and the lighting layer the bake added once painted nothing.)"""
         out = self.root / "maps"
-        _result, status = self._run("export_textures", params={"EXPORT_DIR": str(out)})
+        _result, status = self._run(
+            "export_textures",
+            params={"EXPORT_DIR": str(out), "EXPORT_SIZE": "512", "EXPORT_PADDING": "diffusion", "EXPORT_DILATION": 8},
+        )
         self.assertEqual(status["state"], "done", status)
-        self.assertTrue(any(out.rglob("*.png")), f"no maps in {out}: {status}")
+        (base,) = list(out.rglob("*BaseColor.png"))
+        darkest, lightest, width = _greys(base)
+        self.assertEqual(width, 512, "Size")
+        self.assertGreater(lightest, 200, "the plain Base Color where nothing shades it")
+        self.assertLess(darkest, 150, f"no occlusion in the exported Base Color ({darkest}..{lightest})")
+
+    def test_55_an_export_preset_painter_does_not_have_fails_naming_the_ones_it_has(self):
+        """Shelf presets among them: PBR Metallic Roughness is one, not a
+        predefined preset."""
+        out = self.root / "refused"
+        _result, status = self._run("export_textures", params={"EXPORT_DIR": str(out), "EXPORT_PRESET": "No Such Preset"})
+        self.assertEqual(status["state"], "failed", status)
+        self.assertIn("PBR Metallic Roughness", status["error"])
+        self.assertIn("glTF PBR Metal Roughness", status["error"])
+        self.assertFalse(out.exists(), "nothing is written, not even the folder")
+
+    def test_56_a_float_export_writes_exr(self):
+        out = self.root / "float"
+        _result, status = self._run(
+            "export_textures", params={"EXPORT_DIR": str(out), "EXPORT_FORMAT": "exr", "EXPORT_BIT_DEPTH": "32f", "EXPORT_SIZE": "512"}
+        )
+        self.assertEqual(status["state"], "done", status)
+        self.assertTrue(any(out.rglob("*BaseColor.exr")), status)
 
     def test_6_a_failing_script_is_its_jobs_failure_and_painter_serves_on(self):
         mine = ptk.ScriptTemplate.user_dir("substance")
@@ -174,6 +247,24 @@ class TestSubstanceScriptsLive(unittest.TestCase):
         self.assertIn("no such layer", status["error"])
         _result, status = self._run("export_textures", params={"EXPORT_DIR": str(self.root / "again")})
         self.assertEqual(status["state"], "done", status)
+
+    def test_65_new_project_never_replaces_a_project_on_disk(self):
+        """Painter's ``save_as`` replaces a file without asking, and the
+        Project row may still name the project the last script ran on."""
+        from extapps.substance_scripts._substance_scripts import SubstanceScripts
+
+        conn = self.engine.instances[-1]
+        before = (self.project.stat().st_size, self.project.stat().st_mtime_ns)
+        template = SubstanceScripts.template_path("new_project")
+        job = conn.rpc.run_script(
+            template.read_text(encoding="utf-8"),
+            path=str(template),
+            args={"MESH": str(self.mesh), "MESH_MAP_FILES": [], "PAINTER_SAVE": True, "PROJECT": str(self.project)},
+        )
+        status = conn.rpc.wait(job, timeout=120)
+        self.assertEqual(status["state"], "failed", status)
+        self.assertIn("already exists", status["error"])
+        self.assertEqual((self.project.stat().st_size, self.project.stat().st_mtime_ns), before)
 
     def test_7_a_run_meant_for_another_project_is_refused(self):
         conn = self.engine.instances[-1]

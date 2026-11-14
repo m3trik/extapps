@@ -52,9 +52,10 @@ class SubstanceScriptsSlots(ParamPanelSlots):
     LOG_TAG = "substance_scripts"
     TRANSIENT_OUTPUT_MODES = (ptk.SEND_TO, ptk.ROUND_TRIP)
     OUTPUT_DIR_TOOLTIP = (
-        "Directory a script's own files fall back to (an export's maps).\n\n"
-        "Leave blank and they go to a temp folder per run; the project itself\n"
-        "is saved where Project names it."
+        "Directory a script's own files fall back to (its ``OUTPUT_DIR``).\n\n"
+        "Leave blank and they go to a temp folder per run. The project itself\n"
+        "is saved where Project names it, and Export Textures writes to its\n"
+        "own Export Dir."
     )
     DOCS_URL = DOCS_BASE_URL + "docs/substance_scripts.md"
     DOCS_LABEL = "Detailed docs (scripts, finding Painter, the plugin)"
@@ -257,6 +258,13 @@ class SubstanceScriptsSlots(ParamPanelSlots):
         if self._starting:
             self.bridge.logger.warning("Painter is still starting or opening the project: Run again once the script is queued.")
             return None
+        if self._running is not None:
+            # The panel follows one job: a second would take its place, and
+            # Cancel Script would reach the wrong one.
+            self.bridge.logger.warning(
+                "A script is still running in Painter: Run again when it ends, or stop it first (Cancel Script)."
+            )
+            return None
         meta = SubstanceScripts.parse_template(SubstanceScripts.template_path(template))
         mesh = None
         if meta["WORKS_ON"] in ("new", "mesh"):
@@ -318,7 +326,8 @@ class SubstanceScriptsSlots(ParamPanelSlots):
         task = self.sb.BackgroundTask(lambda: SubstanceScripts.follow(result), "substance-script")
 
         def done() -> None:
-            self._running = None
+            if self._running is result:
+                self._running = None
             status = self.bridge.conclude(task)
             if footer is not None:
                 footer.finish_progress(f"{label}: {status.get('state', 'failed')} in Painter.")

@@ -1,5 +1,5 @@
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
-[![Tests](https://img.shields.io/badge/Tests-841%20passed-brightgreen.svg)](../tests/)
+[![Tests](https://img.shields.io/badge/Tests-842%20passed-brightgreen.svg)](../tests/)
 
 <!-- short_description_start -->
 Standalone Switchboard apps for content-pipeline workflows — map compositing, texture conversion and channel packing, photogrammetry, mesh conversion, Substance / Marmoset / Unity automation, WebXR preview and look matching.

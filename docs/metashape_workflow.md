@@ -134,10 +134,10 @@ it the stages record an honest QC skip.
 ## Testing
 
 ```bash
-pytest test/test_metashape_workflow.py                  # from the extapps/ root
+pytest tests/test_metashape_workflow.py                  # from the extapps/ root
 ```
 
-Scope ([extapps/test/test_metashape_workflow.py](../test/test_metashape_workflow.py)): the engine in mock mode, the runner's process chains and the headless `run_combined` flags. The panel's tests (it builds, its widgets resolve, its runs dispatch) are [`test_metashape_workflow_panel.py`](../test/test_metashape_workflow_panel.py). Behavioral coverage of the photogrammetry pipeline against a real Metashape is opt-in (`METASHAPE_RUN_INTEGRATION=1`).
+Scope ([extapps/tests/test_metashape_workflow.py](../tests/test_metashape_workflow.py)): the engine in mock mode, the runner's process chains and the headless `run_combined` flags. The panel's tests (it builds, its widgets resolve, its runs dispatch) are [`test_metashape_workflow_panel.py`](../tests/test_metashape_workflow_panel.py). Behavioral coverage of the photogrammetry pipeline against a real Metashape is opt-in (`METASHAPE_RUN_INTEGRATION=1`).
 
 ## Adding a preset
 

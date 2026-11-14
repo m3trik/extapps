@@ -9,7 +9,7 @@ needed: the host bridge is faked, which is the point of the panel.
 
 Run::
 
-    python extapps/test/run_tests.py webxr_preview_panel
+    python extapps/tests/run_tests.py webxr_preview_panel
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ from qtpy.QtWidgets import QApplication
 from uitk.bridge import KindFactory
 from uitk.testing import TestSandbox
 
-# A direct `python test/test_webxr_preview_panel.py` loads no conftest, so the sandbox is
+# A direct `python tests/test_webxr_preview_panel.py` loads no conftest, so the sandbox is
 # activated here too -- before the first QSettings, or tearDown's
 # store.clear() would wipe the developer's live panel state. Idempotent.
 TestSandbox.activate()

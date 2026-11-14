@@ -9,7 +9,7 @@ license is out of scope here. The panel is
 
 Run::
 
-    pytest extapps/test/test_metashape_workflow.py
+    pytest extapps/tests/test_metashape_workflow.py
 """
 
 from __future__ import annotations

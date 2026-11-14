@@ -1,6 +1,6 @@
 # !/usr/bin/python
 # coding=utf-8
-"""Tests for ``test/run_tests.py`` — the badge-stamping suite runner.
+"""Tests for ``tests/run_tests.py`` — the badge-stamping suite runner.
 
 The runner publishes a number. Two ways that number can lie are already known
 failures in this ecosystem (m3trik/docs/TEST_BADGE_STANDARD.md): a scoped run
@@ -52,12 +52,12 @@ class CollectorTallyTest(unittest.TestCase):
         self.c = rt.ExtappsTestRunner.Collector()
 
     def test_counts_call_phase_outcomes(self):
-        self.c.pytest_runtest_logreport(_report("test/test_a.py::T::test_ok"))
+        self.c.pytest_runtest_logreport(_report("tests/test_a.py::T::test_ok"))
         self.c.pytest_runtest_logreport(
-            _report("test/test_a.py::T::test_bad", outcome="failed")
+            _report("tests/test_a.py::T::test_bad", outcome="failed")
         )
         self.c.pytest_runtest_logreport(
-            _report("test/test_b.py::T::test_gated", when="setup", outcome="skipped")
+            _report("tests/test_b.py::T::test_gated", when="setup", outcome="skipped")
         )
         self.assertEqual((self.c.passed, self.c.failed, self.c.skipped), (1, 1, 1))
 
@@ -65,10 +65,10 @@ class CollectorTallyTest(unittest.TestCase):
         """``pytest-subtests`` emits an extra report per subtest, tagged with a
         ``context``. This suite runs 80+ of them; counting them would publish a
         badge higher than ``pytest test`` prints for the same run."""
-        self.c.pytest_runtest_logreport(_report("test/test_a.py::T::test_many"))
+        self.c.pytest_runtest_logreport(_report("tests/test_a.py::T::test_many"))
         for i in range(5):
             self.c.pytest_runtest_logreport(
-                _report("test/test_a.py::T::test_many", context=("i", i))
+                _report("tests/test_a.py::T::test_many", context=("i", i))
             )
         self.assertEqual(self.c.passed, 1)
 
@@ -76,20 +76,20 @@ class CollectorTallyTest(unittest.TestCase):
         """An error before the call phase means the case never ran; a tally that
         only reads call-phase reports would publish it as neither."""
         self.c.pytest_runtest_logreport(
-            _report("test/test_a.py::T::test_x", when="setup", outcome="failed")
+            _report("tests/test_a.py::T::test_x", when="setup", outcome="failed")
         )
         self.assertEqual((self.c.passed, self.c.failed), (0, 1))
 
     def test_module_names_come_from_the_nodeid(self):
-        self.c.pytest_runtest_logreport(_report("test/test_alpha.py::T::test_x"))
-        self.c.pytest_runtest_logreport(_report("test/test_beta.py::T::test_y"))
+        self.c.pytest_runtest_logreport(_report("tests/test_alpha.py::T::test_x"))
+        self.c.pytest_runtest_logreport(_report("tests/test_beta.py::T::test_y"))
         self.assertEqual(self.c.modules_ran, {"test_alpha", "test_beta"})
 
     def test_collect_failure_fails_the_run_without_crediting_the_module(self):
         """A module that fails to import contributes zero cases. Crediting it
         would let the gate stamp a badge for a suite that partly never loaded."""
         self.c.pytest_collectreport(
-            types.SimpleNamespace(failed=True, nodeid="test/test_broken.py")
+            types.SimpleNamespace(failed=True, nodeid="tests/test_broken.py")
         )
         self.assertEqual(self.c.failed, 1)
         self.assertNotIn("test_broken", self.c.modules_ran)
@@ -99,7 +99,7 @@ class BadgeGateTest(unittest.TestCase):
     """A partial run must never stamp — the clobber this guard exists to stop."""
 
     def setUp(self):
-        # Allocated under test/temp_tests/ rather than the system temp dir: the
+        # Allocated under tests/temp_tests/ rather than the system temp dir: the
         # badge href is a relpath from the README to the test dir, and on
         # Windows that is undefined across drives (the repo lives on one drive,
         # %TEMP% on another). Same-drive here mirrors the real README/test-dir

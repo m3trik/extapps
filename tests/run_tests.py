@@ -3,11 +3,11 @@
 """extapps test runner — run the suite and stamp the README test badge.
 
 Usage:
-    python test/run_tests.py                 # full suite, stamp the badge
-    python test/run_tests.py profile slots   # scoped run (badge refused)
-    python test/run_tests.py --list          # list test modules
-    python test/run_tests.py --no-badge      # run, never stamp
-    python test/run_tests.py --log           # also write test/temp_tests/run_tests.log
+    python tests/run_tests.py                 # full suite, stamp the badge
+    python tests/run_tests.py profile slots   # scoped run (badge refused)
+    python tests/run_tests.py --list          # list test modules
+    python tests/run_tests.py --no-badge      # run, never stamp
+    python tests/run_tests.py --log           # also write tests/temp_tests/run_tests.log
 
 Why this exists at all, given CI already runs ``pytest test``: CI proves the
 suite green but publishes nothing, and ``pythontk.StatusBadge`` — the documented
@@ -17,12 +17,12 @@ reader comparing it against its siblings read "no tests" over 600 of them.
 
 Why it is a *pytest* driver and not a unittest one, unlike some siblings:
 
-* ``test/conftest.py`` activates ``uitk.testing.TestSandbox``, which redirects
+* ``tests/conftest.py`` activates ``uitk.testing.TestSandbox``, which redirects
   QSettings and the pythontk user-config root away from the developer's live
   ones. ``unittest`` discovery never loads a conftest, so a unittest runner here
   would quietly write panel state into ``HKCU\\Software\\uitk`` and save presets
   into the real config root. Driving pytest keeps that protection.
-* CI runs ``pytest test/``, and AGENTS.md names this runner as the way to run
+* CI runs ``pytest tests/``, and AGENTS.md names this runner as the way to run
   the suite. A second, differently-discovering entry point is a drift
   risk; this one runs the same pytest over the same directory, so the two
   cannot disagree.
@@ -195,7 +195,7 @@ class ExtappsTestRunner(_ExtappsTestRunnerInternal):
             update_badge: Attempt the badge stamp (still subject to the gate).
             log: Also write the captured output (the pytest report plus
                 this runner's own tally and badge line) to
-                ``test/temp_tests/run_tests.log``.
+                ``tests/temp_tests/run_tests.log``.
             extra: Additional raw pytest arguments.
             patterns: ``-k`` filters, joined with ``or`` into pytest's own
                 ``-k`` expression (substring match on the test id, as in every
@@ -231,7 +231,7 @@ class ExtappsTestRunner(_ExtappsTestRunnerInternal):
         finally:
             sys.stdout, sys.stderr = real_out, real_err
         if log:
-            # test/temp_tests/ is the repo's sanctioned (and gitignored) home
+            # tests/temp_tests/ is the repo's sanctioned (and gitignored) home
             # for test artifacts -- the workspace AGENTS.md, "Testing".
             log_dir = TEST_DIR / "temp_tests"
             log_dir.mkdir(exist_ok=True)
@@ -253,7 +253,7 @@ def main() -> int:
     parser.add_argument(
         "--log",
         action="store_true",
-        help="Write test/temp_tests/run_tests.log",
+        help="Write tests/temp_tests/run_tests.log",
     )
     parser.add_argument(
         "--pytest-arg",

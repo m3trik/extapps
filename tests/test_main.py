@@ -19,7 +19,7 @@ from qtpy.QtWidgets import QApplication
 from uitk import ExternalAppHub
 from uitk.testing import TestSandbox
 
-# A direct `python test/test_main.py` loads no conftest, and the hub's
+# A direct `python tests/test_main.py` loads no conftest, and the hub's
 # switchboard and browser read and write QSettings: the sandbox is activated
 # here too, before the first one. Idempotent.
 TestSandbox.activate()

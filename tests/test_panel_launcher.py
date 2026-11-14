@@ -34,7 +34,7 @@ from qtpy.QtWidgets import QApplication  # noqa: E402
 
 from uitk.testing import TestSandbox  # noqa: E402
 
-# A direct `python test/test_panel_launcher.py` loads no conftest: the panels
+# A direct `python tests/test_panel_launcher.py` loads no conftest: the panels
 # read and write QSettings, so the sandbox is activated before the first one.
 TestSandbox.activate()
 

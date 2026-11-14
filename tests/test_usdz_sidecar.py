@@ -9,7 +9,7 @@ never-fatal contract.
 
 Run::
 
-    pytest extapps/test/test_usdz_sidecar.py
+    pytest extapps/tests/test_usdz_sidecar.py
 """
 from __future__ import annotations
 

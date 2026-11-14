@@ -25,7 +25,7 @@ from qtpy.QtWidgets import QApplication
 
 from uitk.testing import TestSandbox
 
-# A direct `python test/test_substance_scripts_panel.py` loads no conftest, so
+# A direct `python tests/test_substance_scripts_panel.py` loads no conftest, so
 # the sandbox is activated here too -- before the first QSettings or user folder.
 TestSandbox.activate()
 
@@ -224,6 +224,44 @@ class TestSubstanceScriptsRun(_PanelCase):
                 self.app.processEvents()
                 time.sleep(0.01)
         self.assertIn("New Project finished in Painter", self.ui.txt000.toPlainText())
+
+
+class TestOneFollowedJobAtATime(_PanelCase):
+    """The panel follows one job: a second Run while it does replaced the one
+    it followed, so Cancel Script reached the wrong job and the first one's
+    end cleared the panel's state under the second."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._open()
+        self._choose("export_textures")
+        self.addCleanup(mock.patch.stopall)
+        self.send = mock.patch.object(
+            self.slots.bridge, "send", side_effect=lambda **kw: {"job": f"j{self.send.call_count}", "connection": object()}
+        ).start()
+
+    def test_a_run_while_a_job_is_followed_sends_nothing_and_cancel_still_reaches_it(self):
+        import threading
+        import time
+
+        from extapps.substance_scripts._substance_scripts import SubstanceScripts
+
+        gate = threading.Event()
+        done = {"state": "done", "job": "j1", "label": "Export Textures", "report": []}
+        with mock.patch.object(SubstanceScripts, "follow", staticmethod(lambda result: gate.wait(5) and done)):
+            self.ui.b000.click()
+            first = self.slots._running
+            self.ui.b000.click()
+            self.assertEqual(self.send.call_count, 1)
+            self.assertIn("still running in Painter", self.ui.txt000.toPlainText())
+            self.assertIs(self.slots._running, first, "Cancel Script still reaches the job under way")
+            gate.set()
+            deadline = time.time() + 5
+            while self.slots._running is not None and time.time() < deadline:
+                self.app.processEvents()
+                time.sleep(0.01)
+            self.ui.b000.click()  # the job ended: the next Run goes out
+        self.assertEqual(self.send.call_count, 2)
 
 
 class TestSubstanceWorkflowRenamed(unittest.TestCase):

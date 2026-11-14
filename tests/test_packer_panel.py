@@ -31,7 +31,7 @@ from pythontk import ImgUtils
 
 from uitk.testing import TestSandbox
 
-# A direct `python test/test_packer_panel.py` loads no conftest, so the sandbox is
+# A direct `python tests/test_packer_panel.py` loads no conftest, so the sandbox is
 # activated here too -- before the preset-combo test's panel opens its preset
 # store and restores widget state. Idempotent.
 TestSandbox.activate()

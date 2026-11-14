@@ -20,8 +20,8 @@ Belongs here: a host-free app -- no host half, needing no DCC to run (a host may
 
 ## Hard rules
 
-- **No host and no tentacle import.** No module imports `maya`, `bpy`, `mayatk`, `blendertk` or `tentacle` (`test/test_imports.py`), and nothing imports extapps (`check_layers.py`: the product role). A host reaches an app only through uitk's `ExternalAppHandler`, by its entry-point name, and hands it context on the window it gets back (`launch(name, show=False)`).
-- **Generic mechanism lives in `pythontk`; app-specific engines live with their apps.** pythontk is **app-agnostic** (`HandoffBridge`, `AppLauncher`, `RpcClient`, the pure domain cores), never product SDK glue, so an SDK-specific engine stays with its app (`metashape_workflow`, `substance_scripts`, `marmoset_scripts`). Code that *also* has DCC consumers is vendored, byte-identical, guarded by `test/test_vendor_sync.py`: the Marmoset engine and the Substance engine with its Painter plugin (mayatk's the SSoT; edit there, never here). A host's half is injected, never vendored: `unity_scripts` (the one Unity panel) and `webxr_preview` take the host's engine class (`slots.engine`), whose rows and scene export the panel calls. `unity_scripts` also ships a Unity editor package (`unity_package/`, MIT, its C# held by `check_csharp.py`), which a person installs into their own project: it serves the panel's jobs in their open editor, visible and pausable there (CODE_STANDARD section 15); agents and tests drive it only in an owned editor or through a Python stand-in worker.
+- **No host and no tentacle import.** No module imports `maya`, `bpy`, `mayatk`, `blendertk` or `tentacle` (`tests/test_imports.py`), and nothing imports extapps (`check_layers.py`: the product role). A host reaches an app only through uitk's `ExternalAppHandler`, by its entry-point name, and hands it context on the window it gets back (`launch(name, show=False)`).
+- **Generic mechanism lives in `pythontk`; app-specific engines live with their apps.** pythontk is **app-agnostic** (`HandoffBridge`, `AppLauncher`, `RpcClient`, the pure domain cores), never product SDK glue, so an SDK-specific engine stays with its app (`metashape_workflow`, `substance_scripts`, `marmoset_scripts`). Code that *also* has DCC consumers is vendored, byte-identical, guarded by `tests/test_vendor_sync.py`: the Marmoset engine and the Substance engine with its Painter plugin (mayatk's the SSoT; edit there, never here). A host's half is injected, never vendored: `unity_scripts` (the one Unity panel) and `webxr_preview` take the host's engine class (`slots.engine`), whose rows and scene export the panel calls. `unity_scripts` also ships a Unity editor package (`unity_package/`, MIT, its C# held by `check_csharp.py`), which a person installs into their own project: it serves the panel's jobs in their open editor, visible and pausable there (CODE_STANDARD section 15); agents and tests drive it only in an owned editor or through a Python stand-in worker.
 
 ### Painter session safety — HARD BLOCK (protect user work)
 
@@ -66,8 +66,8 @@ and Blender, tentacle's menus open the apps by name. After editing
 ## Run tests
 
 ```powershell
-& python test/run_tests.py webxr_preview_panel -k scope   # pointed (from extapps/)
-& python test/run_tests.py                                # full: review / release
+& python tests/run_tests.py webxr_preview_panel -k scope   # pointed (from extapps/)
+& python tests/run_tests.py                                # full: review / release
 ```
 
 Live-DCC tests (a real, new, never-attached Painter / Metashape) are opt-in:

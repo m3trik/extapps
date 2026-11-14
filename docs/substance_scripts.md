@@ -6,7 +6,7 @@ Run Python scripts in Adobe Substance 3D Painter: the built-in ones and your own
 
 `substance_scripts` is a Switchboard panel over the Painter engine the Maya and Blender **Substance Bridge** panels use (`SubstanceEngine`, vendored byte-identical from mayatk with its Painter plugin, `substance_rpc`). With no host, a script that works on a mesh takes a **mesh file**.
 
-- **A script** is a Python file Painter runs as written, with `args` holding its values (`args["MESH"]`, `args.get("AO_RAYS", 64)`), `args.report(line)`, `args.progress(f, text)` and `args.check_cancel()`. Its header, read without running it:
+- **A script** is a Python file Painter runs as written, with `args` holding its values (`args["MESH"]`, `args.get("AO_RAYS", 64)`), `args.report(line)`, `args.progress(f, text)`, `args.check_cancel()` and `args.when_idle(fn)`: a step run once Painter is idle again (a save after a bake). Its header, read without running it:
 
   ```python
   """Bake Lighting to Diffuse: Iray AO baked and laid over Base Color."""
@@ -23,9 +23,9 @@ Run Python scripts in Adobe Substance 3D Painter: the built-in ones and your own
   |---|---|---|
   | New Project | a new project from the mesh | `project.create` with its mesh maps; the high poly and per-material mesh maps from a host |
   | Update Mesh | the project made from the mesh | reloads it (paint kept where UVs match) |
-  | Bake Lighting to Diffuse | a project | Iray AO (and curvature) baked and laid over Base Color |
+  | Bake Lighting to Diffuse | a project | AO (and curvature) baked, then laid over Base Color: a Multiply layer painted from the AO map on top of each stack, an Overlay one from curvature above it |
   | Bake Mesh Maps | a project | the ticked mesh maps, every texture set |
-  | Export Textures | a project | every texture set through an export preset |
+  | Export Textures | a project | every texture set through an export preset, to its Export Dir (format, bit depth, size, padding) |
 
 - **Your scripts** live in `ptk.ScriptTemplate.user_dir("substance")`. The Maya and Blender bridges list them too. One named like a built-in runs in its place; **Copy to My Scripts** on the script list's menu copies the selected one there to edit.
 
@@ -42,7 +42,7 @@ A run carries the project it was meant for, and Painter refuses it if another pr
 
 ## Your Painter, by your hand
 
-**Install in Painter** (Utilities menu) puts the plugin in Painter's plugins folder, ticked in its **Python** menu, and untick it there to switch it off. While it serves, Painter's menu bar shows **M3trik Scripts**: what it serves, and **Pause scripts**, which refuses scripts sent to that Painter until you untick it (one under way finishes; nothing from outside Painter resumes it). The panel's Painter row says when one is paused, and Auto never takes a paused Painter as a free one. A Painter you open then runs a script only when you click **Run in Painter**, and only when it isn't busy (not mid-bake or mid-load). Its edits are in **Painter's undo history**, one entry per step (the script, then each `args.when_idle` step) named for the script (`layerstack.ScopedModification`). What Painter itself does not undo (a project created, opened or saved) stays done. **Cancel Script** (Utilities) stops a queued script or a bake under way. A Run that has to launch Painter, or open the project in it, waits for that off the panel's UI thread: the panel stays live, and the script is queued once Painter is ready.
+**Install in Painter** (Utilities menu) puts the plugin in Painter's plugins folder, ticked in its **Python** menu, and untick it there to switch it off. While it serves, Painter's menu bar shows **M3trik Scripts**: what it serves, and **Pause scripts**, which refuses scripts sent to that Painter until you untick it (one under way finishes; nothing from outside Painter resumes it). The panel's Painter row says when one is paused, and Auto never takes a paused Painter as a free one. A Painter you open then runs a script only when you click **Run in Painter**, and only when it isn't busy (not mid-bake or mid-load). Its edits are in **Painter's undo history**, one entry per step (the script, then each `args.when_idle` step) named for the script (`layerstack.ScopedModification`). What Painter itself does not undo (a project created, opened or saved) stays done. Painter computes the layer stack only once such an entry is closed, so a step that reads what the stack computes (a texture export) is queued outside one: `args.when_idle(fn, undo=False)`. **Cancel Script** (Utilities) stops a queued script or a bake under way. A Run that has to launch Painter, or open the project in it, waits for that off the panel's UI thread: the panel stays live, and the script is queued once Painter is ready.
 
 A send never installs the plugin: it only refreshes an install already there. A Painter the panel launches loads the plugin from a launch root (`SUBSTANCE_PAINTER_PLUGINS_PATH`) and touches nothing of yours.
 
@@ -66,15 +66,18 @@ status = engine.wait(result)   # {"state": "done", "report": [...], ...}
 ## Tests
 
 ```powershell
-& python -m pytest test/test_substance_scripts_panel.py      # the panel, a stand-in Painter
+& python -m pytest tests/test_substance_scripts_panel.py      # the panel, a stand-in Painter
 # live, in an owned hidden Painter (launches one; yours is never touched):
 $env:EXTAPPS_PAINTER_LIVE = '1'
-& python -m pytest test/test_substance_scripts_live.py
+& python -m pytest tests/test_substance_scripts_live.py
 ```
 
 The engine and plugin are tested where they live: mayatk's `test_substance_bridge.py`, `test_substance_rpc_plugin.py`, `test_substance_bake_ops.py` and `test_substance_connection.py`.
 
-## Known gaps
+## What to expect
 
-- Bake Lighting to Diffuse bakes the AO and adds its layer, but the layer's Base Color is not yet driven by the AO map: Painter's Python API has no verified setter for a fill layer's mesh-map source, so it warns.
-- Bake Mesh Maps and Export Textures are new. They had no implementation before, and their live pass is the opt-in test above.
+- **Bake Lighting to Diffuse** reads the AO map as data: an occlusion of a half darkens Base Color by a half (dropped onto the channel by hand, Painter reads the map as an sRGB picture and darkens it to about a fifth). **AO Intensity** is the layer's opacity. A re-run replaces its own layers and leaves the rest of the stack.
+- **New Project** with **Save When Done** never saves over a file that exists: Painter's own save replaces one without asking, so the run stops before it creates anything.
+- **Export Textures** fails when Painter writes nothing or reports an error, and names Painter's presets when the one asked for is not among them. Bit depths 16f and 32f are float (exr, tif).
+- A job is followed, and **Cancel Script** reaches it, while Painter's main thread is held by a long step (an export, a save).
+- A script that fails logs its own traceback (the line in your file) and what it printed.

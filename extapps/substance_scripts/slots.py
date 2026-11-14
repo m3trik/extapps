@@ -319,19 +319,27 @@ class SubstanceScriptsSlots(ParamPanelSlots):
     def _watch(self, result, label):
         """Follow the job off the UI thread (the engine's ``follow`` says
         nothing there), then say how it ended, on the UI thread."""
-        self._running = result
         footer = getattr(self.ui, "footer", None)
-        if footer is not None:
-            footer.start_progress(text=f"{label}: running in Painter…")
         task = self.sb.BackgroundTask(lambda: SubstanceScripts.follow(result), "substance-script")
 
         def done() -> None:
             if self._running is result:
                 self._running = None
-            status = self.bridge.conclude(task)
+            status = self.bridge.conclude(task, job=result.get("job"))
             if footer is not None:
                 footer.finish_progress(f"{label}: {status.get('state', 'failed')} in Painter.")
             self.refresh_painters()
 
-        task.when_done(self.ui, done)
+        self._running = result
+        try:
+            if footer is not None:
+                footer.start_progress(text=f"{label}: running in Painter…")
+            task.when_done(self.ui, done)
+        except Exception:
+            # Nothing follows the job now: the panel must not go on waiting for
+            # it, nor its footer say it is running.
+            self._running = None
+            if footer is not None:
+                footer.finish_progress(f"{label}: queued in Painter, not followed.")
+            raise
         return task

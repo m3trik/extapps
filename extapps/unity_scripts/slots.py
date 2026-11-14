@@ -643,14 +643,7 @@ class UnityScriptsSlots(ParamPanelSlots):
         """Wait for Unity's answer off the UI thread (a changed script compiles
         first: seconds), then report it. The panel and its host stay live."""
         label = UnityDeliverer.label(script)
-        self._running = (connection, job, script)
-        self._cancel_asked = False
         footer = getattr(self.ui, "footer", None)
-        if footer is not None:
-            footer.start_progress(text=f"{label}: running in Unity…")
-        task = self.sb.BackgroundTask(
-            lambda: connection.wait(job, cancelled=lambda: self._cancel_asked), "unity-script"
-        )
 
         def done() -> None:
             self._running = None
@@ -665,7 +658,22 @@ class UnityScriptsSlots(ParamPanelSlots):
             if footer is not None:
                 footer.finish_progress(f"{label}: {'done' if ok else 'failed'} in Unity.")
 
-        task.when_done(self.ui, done)
+        self._running = (connection, job, script)
+        self._cancel_asked = False
+        try:
+            if footer is not None:
+                footer.start_progress(text=f"{label}: running in Unity…")
+            task = self.sb.BackgroundTask(
+                lambda: connection.wait(job, cancelled=lambda: self._cancel_asked), "unity-script"
+            )
+            task.when_done(self.ui, done)
+        except Exception:
+            # Nothing follows the job now: the panel must not go on waiting for
+            # it, nor its footer say it is running.
+            self._running = None
+            if footer is not None:
+                footer.finish_progress(f"{label}: queued in Unity, not followed.")
+            raise
         return task
 
     def report(self, record: dict, project: str) -> bool:

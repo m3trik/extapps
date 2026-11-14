@@ -264,6 +264,33 @@ class TestOneFollowedJobAtATime(_PanelCase):
         self.assertEqual(self.send.call_count, 2)
 
 
+class TestAJobNothingFollowsDoesNotHoldThePanel(_PanelCase):
+    """The panel refuses a Run while it follows a job: if wiring the follower
+    raised, nothing would ever end the wait, and every later Run was refused
+    until the panel was reopened."""
+
+    def test_a_follower_that_could_not_be_wired_leaves_the_panel_runnable(self):
+        self._open()
+        self._choose("export_textures")
+        self.addCleanup(mock.patch.stopall)
+        mock.patch.object(self.slots.bridge, "send", return_value={"job": "j1", "connection": object()}).start()
+
+        class _Unwired:
+            def __init__(self, work, name):
+                pass
+
+            def when_done(self, _ui, _done):
+                raise RuntimeError("no event loop to come back on")
+
+        with mock.patch.object(self.slots.sb, "BackgroundTask", _Unwired):
+            try:
+                self.slots.b000()
+            except RuntimeError:
+                pass
+        self.assertIsNone(self.slots._running)
+        self.assertFalse(self.slots.ui.footer.is_busy, "the footer still says the job is running")
+
+
 class TestSubstanceWorkflowRenamed(unittest.TestCase):
     def test_the_old_names_say_where_they_went(self):
         import extapps

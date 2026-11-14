@@ -2,6 +2,7 @@
 
 ## 2026
 - **2026-11-13 -- Fixed: Substance Scripts' built-in scripts, their runner and the panel (`substance_scripts/`: the vendored engine, `substance_rpc` plugin and `templates/`; `slots.py`; `docs/substance_scripts.md`).**
+  - A failed or cancelled job reads finished only once its error, traceback and console are written (`substance_rpc` plugin `ops/script_ops.py`, the vendored copy; found in review, tested in mayatk).
   - **Bake Lighting to Diffuse lights the texture**: its layer painted nothing (no channel active, no source); it is now painted from the baked AO map, with the curvature overlay above it.
   - **Export Textures writes what the stack holds** (inside the job's undo entry Painter exported the maps of before the last edit), fails when Painter reports an error or writes nothing, and gains Size and Dilation rows and the float bit depths.
   - **New Project never saves over a project on disk**; **Update Mesh finds its Painter straight after New Project**; a job is followed, and cancelled, while Painter's main thread is held; a failed script logs its own traceback and what it printed.

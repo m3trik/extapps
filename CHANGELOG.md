@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026
+- **2026-11-26 -- Tests: a run's start ages out `tests/temp_tests` (`tests/conftest.py`; tentacle also `tests/run_tests.py`, a guarded step of its own).** Through `ptk.TestSandbox.sweep_scratch`: an entry untouched for `SCRATCH_DAYS` goes unless the folder's `.keep` names it.
 - **2026-11-14 -- Fixed: a Unity job nothing follows does not hold the Unity Scripts panel (`unity_scripts/slots.py` `_watch`).** If wiring the follower raised, every later Run was refused as "still running", the footer saying so, until the panel was reopened: the Substance Scripts panel's shape (the entry below), found here in the release review.
   - Test(s): red first, then green: `test_unity_scripts_panel.py` new `test_a_follower_that_could_not_be_wired_leaves_the_panel_runnable`; the module 35 passed.
 - **2026-11-14 -- Fixed: review follow-ups to 0.10.1's Substance Scripts batch (`substance_scripts/`: `slots.py` `_watch`; the vendored `ops/bake_ops.py`, `_rpc_core.py`, `templates/new_project.py`, `_substance_engine.py`; `docs/substance_scripts.md`).**

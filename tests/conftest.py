@@ -32,3 +32,4 @@ from uitk.testing import TestSandbox
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 TestSandbox.activate()
+TestSandbox.sweep_scratch(os.path.dirname(os.path.abspath(__file__)))  # its scratch folder ages out
